@@ -18,7 +18,7 @@ export interface SpeciesDef {
   unitIds: string[];
   /** Main hall building key (GDD). */
   mainHallId: string;
-  palette: { primary: number; accent: number };
+  palette: { primary: number; accent: number; silver?: number };
 }
 
 export const SPECIES: Record<SpeciesId, SpeciesDef> = {
@@ -52,7 +52,7 @@ export const SPECIES: Record<SpeciesId, SpeciesDef> = {
       'boom_cart',
     ],
     mainHallId: 'royal_keep',
-    palette: { primary: 0x3d7ea6, accent: 0xf0c75e },
+    palette: { primary: 0x3d7ea6, accent: 0xf0c75e, silver: 0xc0c8d4 },
   },
   weirdos: {
     id: 'weirdos',

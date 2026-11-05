@@ -6,14 +6,22 @@ import Phaser from 'phaser';
 import { BRAND } from '../../config/brand';
 import { flags } from '../../config/flags';
 import { RESOURCES } from '../../data/resources';
-import { SPECIES } from '../../data/speciesStub';
-import { getBuildingType } from '../../data/buildings';
+import {
+  getBuildingType,
+  placeableBuildings,
+  type BuildingTypeId,
+} from '../../data/buildings';
+import { SPECIES, type SpeciesId } from '../../data/speciesStub';
 import { getUnitType } from '../../data/units';
 import {
   createAiState,
   tickBattlefieldAi,
   type AiState,
 } from '../../gameplay/battlefield/battlefieldAi';
+import {
+  tickFormations,
+  toggleFormationSelected,
+} from '../../gameplay/battlefield/battlefieldFormations';
 import {
   buildingBlocks,
   findBuildingAt,
@@ -70,7 +78,9 @@ export class BattlefieldScene extends Phaser.Scene {
   private status!: Phaser.GameObjects.Text;
   private resourceHud!: Phaser.GameObjects.Text;
   private shiftKey: Phaser.Input.Keyboard.Key | null = null;
-  private placeType: 'bonker_hut' = 'bonker_hut';
+  private placeables: BuildingTypeId[] = [];
+  private placeIndex = 0;
+  private placeType: BuildingTypeId = 'bonker_hut';
   private ghostPos = { x: 0, y: 0 };
   private ghostValid = false;
   private selectedBuilding: BattlefieldBuilding | null = null;
@@ -81,11 +91,17 @@ export class BattlefieldScene extends Phaser.Scene {
     super('Battlefield');
   }
 
-  create(): void {
+  create(data?: { species?: SpeciesId }): void {
     this.input.mouse?.disableContextMenu();
 
+    const playerSpecies: SpeciesId =
+      data?.species === 'nobles' ? 'nobles' : 'brutes';
+
     createSkirmishMap(this);
-    this.world = createBattlefieldWorld();
+    this.world = createBattlefieldWorld(playerSpecies);
+    this.placeables = placeableBuildings(playerSpecies);
+    this.placeIndex = 0;
+    this.placeType = this.placeables[0] ?? 'bonker_hut';
     this.ai = createAiState();
     this.cameraCtl = new RtsCamera(this);
     const first = this.world.units.find((u) => u.team === 'player');
@@ -97,7 +113,7 @@ export class BattlefieldScene extends Phaser.Scene {
     this.ghostGfx = this.add.graphics().setDepth(40);
 
     this.add
-      .text(12, 8, `${BRAND.name}  ·  Full skirmish`, {
+      .text(12, 8, `${BRAND.name}  ·  ${SPECIES[playerSpecies].name}`, {
         fontFamily: 'Georgia, "Times New Roman", serif',
         fontSize: '18px',
         color: '#f5e6c8',
@@ -108,11 +124,16 @@ export class BattlefieldScene extends Phaser.Scene {
       .setDepth(100);
 
     const species = SPECIES[this.world.speciesId];
+    const enemy = SPECIES[this.world.enemySpeciesId];
+    const mech =
+      playerSpecies === 'nobles'
+        ? 'FORMATIONS (F) · B cycle buildings'
+        : 'B place hut · Rage later';
     this.add
       .text(
         12,
         42,
-        `Species: ${species.name}  ·  Click building · 1/2 train  ·  B = hut`,
+        `You: ${species.name}  vs  ${enemy.name}  ·  ${mech}`,
         {
           fontFamily: 'system-ui, sans-serif',
           fontSize: '12px',
@@ -202,8 +223,22 @@ export class BattlefieldScene extends Phaser.Scene {
       }
     });
     this.input.keyboard?.on('keydown-B', () => {
+      if (this.mode === 'place' && this.placeables.length > 1) {
+        this.placeIndex = (this.placeIndex + 1) % this.placeables.length;
+        this.placeType = this.placeables[this.placeIndex]!;
+        this.drawGhost();
+        return;
+      }
       this.mode = this.mode === 'place' ? 'none' : 'place';
+      if (this.mode === 'place' && this.placeables.length) {
+        this.placeType = this.placeables[this.placeIndex]!;
+      }
       if (this.mode !== 'place') this.ghostGfx.clear();
+    });
+    this.input.keyboard?.on('keydown-F', () => {
+      if (this.world.speciesId === 'nobles') {
+        toggleFormationSelected(this.world);
+      }
     });
     this.input.keyboard?.on('keydown-ONE', () =>
       trainHotkey(this.world, this.selectedBuilding, 0),
@@ -366,6 +401,7 @@ export class BattlefieldScene extends Phaser.Scene {
       tickBattlefieldEconomy(this.world);
       tickBuildings(this.world, delta);
       tickProduction(this.world, delta);
+      tickFormations(this.world, delta);
       tickBattlefieldAi(this.world, this.ai, delta);
       tickBattlefieldCombat(this.world, delta);
       const result = evaluateMatch(this.world);
@@ -415,8 +451,8 @@ export class BattlefieldScene extends Phaser.Scene {
         width / 2,
         height * 0.5,
         win
-          ? 'Enemy Keep destroyed — The Brutes claim the field.'
-          : 'Your Junkyard fell — rematch when ready.',
+          ? `Enemy hall destroyed — ${SPECIES[this.world.speciesId].name} claim the field.`
+          : `Your hall fell — ${SPECIES[this.world.speciesId].name} need a rematch.`,
         {
           fontFamily: 'system-ui, sans-serif',
           fontSize: '16px',
@@ -473,7 +509,7 @@ export class BattlefieldScene extends Phaser.Scene {
       );
     } else if (n === 0) {
       this.status.setText(
-        `Alive ${friends} vs ${foes}  ·  Click Junkyard/Hut to train  ·  RMB gather/attack`,
+        `Alive ${friends} vs ${foes}  ·  Click hall/production to train  ·  RMB gather/attack`,
       );
     } else if (n === 1) {
       const u = sel[0]!;
@@ -481,19 +517,31 @@ export class BattlefieldScene extends Phaser.Scene {
         u.carrying > 0
           ? ` · carrying ${u.carrying} ${u.carryingResource ?? ''}`
           : u.canGather
-            ? ' · scavenger'
+            ? ' · worker'
             : '';
+      const form = u.inFormation ? ' · FORMATION' : '';
       this.status.setText(
-        `1 selected — ${u.name}  HP ${Math.ceil(u.hp)}/${u.maxHp}${carry}`,
+        `1 selected — ${u.name}  HP ${Math.ceil(u.hp)}/${u.maxHp}${carry}${form}`,
       );
     } else {
-      this.status.setText(`${n} selected  ·  RMB resource / enemy / ground`);
+      const formed = sel.filter((u) => u.inFormation).length;
+      this.status.setText(
+        `${n} selected${formed ? ` · ${formed} in formation` : ''}  ·  RMB resource / enemy / ground`,
+      );
     }
-    this.hint.setText(
-      this.mode === 'place'
-        ? 'Place Bonker Hut (100 Gold) · LMB place · RMB/Esc cancel · green=valid'
-        : 'LMB unit/building · 1/2 train · B hut · RMB gather/attack/move · Esc clear',
-    );
+    if (this.mode === 'place') {
+      const def = getBuildingType(this.placeType);
+      const cost = def.cost.gold ?? 0;
+      this.hint.setText(
+        `Place ${def.name} (${cost}g) · B cycle · LMB place · RMB/Esc cancel`,
+      );
+    } else {
+      this.hint.setText(
+        this.world.speciesId === 'nobles'
+          ? 'LMB select · 1/2 train · B buildings · F formation · RMB gather/attack · Esc'
+          : 'LMB select · 1/2 train · B hut · RMB gather/attack/move · Esc clear',
+      );
+    }
   }
 
   private drawWorld(): void {
@@ -566,10 +614,14 @@ export class BattlefieldScene extends Phaser.Scene {
         g.lineStyle(2, 0xf0c75e, 1);
         g.strokeCircle(u.x, u.y, u.radius + 6);
       }
+      if (u.inFormation) {
+        g.lineStyle(2, 0xc0c8d4, 0.95);
+        g.strokeCircle(u.x, u.y, u.radius + 9);
+      }
 
       const flash = u.lastAttackFlashMs > 0;
       g.fillStyle(flash ? 0xffffff : u.color, 1);
-      g.fillCircle(u.x, u.y, u.radius);
+      this.drawUnitBody(g, u.x, u.y, u.radius, getUnitType(u.typeId).shape);
       g.fillStyle(u.team === 'player' ? 0xf0c75e : 0xe8a0ff, 0.95);
       g.fillCircle(u.x, u.y - 5, 3.5);
 
@@ -604,5 +656,44 @@ export class BattlefieldScene extends Phaser.Scene {
         }
       }
     }
+  }
+
+  private drawUnitBody(
+    g: Phaser.GameObjects.Graphics,
+    x: number,
+    y: number,
+    r: number,
+    shape: ReturnType<typeof getUnitType>['shape'],
+  ): void {
+    if (shape === 'square') {
+      g.fillRect(x - r, y - r, r * 2, r * 2);
+      return;
+    }
+    if (shape === 'diamond') {
+      g.fillTriangle(x, y - r, x + r, y, x, y + r);
+      g.fillTriangle(x, y - r, x - r, y, x, y + r);
+      return;
+    }
+    if (shape === 'triangle') {
+      g.fillTriangle(x, y - r, x + r, y + r * 0.7, x - r, y + r * 0.7);
+      return;
+    }
+    if (shape === 'hex') {
+      // Approximate hex with overlapping triangles (Phaser 4 Graphics).
+      for (let i = 0; i < 6; i++) {
+        const a0 = (Math.PI / 3) * i - Math.PI / 6;
+        const a1 = (Math.PI / 3) * (i + 1) - Math.PI / 6;
+        g.fillTriangle(
+          x,
+          y,
+          x + Math.cos(a0) * r,
+          y + Math.sin(a0) * r,
+          x + Math.cos(a1) * r,
+          y + Math.sin(a1) * r,
+        );
+      }
+      return;
+    }
+    g.fillCircle(x, y, r);
   }
 }

@@ -17,7 +17,7 @@ export function createKaneGame(parent: HTMLElement): Phaser.Game {
   const server = createMatchServerStub();
   const db = createDatabaseStub();
   console.info(
-    `[${BRAND.name}] Phaser ${Phaser.VERSION} · milestone=victory · net=${connection.status} · server=${server.enabled} · db=${db.enabled} · ads=${flags.adsEnabled}`,
+    `[${BRAND.name}] Phaser ${Phaser.VERSION} · milestone=nobles · net=${connection.status} · server=${server.enabled} · db=${db.enabled} · ads=${flags.adsEnabled}`,
   );
 
   if (flags.adsEnabled) {

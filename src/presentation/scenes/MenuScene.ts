@@ -1,7 +1,7 @@
 import Phaser from 'phaser';
-import { FACTION } from '../../config/balance';
 import { BRAND } from '../../config/brand';
 import { flags } from '../../config/flags';
+import { SPECIES, type SpeciesId } from '../../data/speciesStub';
 import { hideDomHud } from '../ui/domHud';
 
 export class MenuScene extends Phaser.Scene {
@@ -16,16 +16,16 @@ export class MenuScene extends Phaser.Scene {
     bg.fillGradientStyle(0x0f1a2e, 0x0f1a2e, 0x1a3a4a, 0x243a28, 1);
     bg.fillRect(0, 0, width, height);
 
-    const orb = this.add.circle(width * 0.7, height * 0.25, 90, 0x3d7ea6, 0.15);
+    const orb = this.add.circle(width * 0.72, height * 0.22, 90, 0x3d7ea6, 0.18);
     this.tweens.add({
       targets: orb,
       scale: 1.15,
-      alpha: 0.25,
+      alpha: 0.28,
       duration: 3200,
       yoyo: true,
       repeat: -1,
     });
-    const orb2 = this.add.circle(width * 0.2, height * 0.7, 60, 0xf0c75e, 0.1);
+    const orb2 = this.add.circle(width * 0.18, height * 0.72, 60, 0x4a7a3a, 0.14);
     this.tweens.add({
       targets: orb2,
       y: orb2.y - 20,
@@ -35,9 +35,9 @@ export class MenuScene extends Phaser.Scene {
     });
 
     const title = this.add
-      .text(width / 2, height * 0.18, BRAND.name, {
+      .text(width / 2, height * 0.14, BRAND.name, {
         fontFamily: 'Georgia, "Times New Roman", serif',
-        fontSize: Math.min(80, width * 0.2) + 'px',
+        fontSize: Math.min(80, width * 0.18) + 'px',
         color: '#f5e6c8',
         stroke: '#1a2a4a',
         strokeThickness: 8,
@@ -47,7 +47,7 @@ export class MenuScene extends Phaser.Scene {
     this.tweens.add({ targets: title, alpha: 1, y: title.y + 6, duration: 700 });
 
     this.add
-      .text(width / 2, height * 0.3, BRAND.tagline, {
+      .text(width / 2, height * 0.26, BRAND.tagline, {
         fontFamily: 'system-ui, sans-serif',
         fontSize: Math.min(18, width * 0.045) + 'px',
         color: '#f0c75e',
@@ -56,38 +56,45 @@ export class MenuScene extends Phaser.Scene {
       .setOrigin(0.5);
 
     this.add
-      .text(width / 2, height * 0.36, BRAND.genre, {
+      .text(width / 2, height * 0.32, 'Pick your species for a local skirmish', {
         fontFamily: 'system-ui, sans-serif',
         fontSize: '14px',
         color: '#b8c9d9',
       })
       .setOrigin(0.5);
 
-    this.add
-      .text(width / 2, height * 0.46, `${FACTION.name}\n${FACTION.blurb}`, {
-        fontFamily: 'system-ui, sans-serif',
-        fontSize: '14px',
-        color: '#d7e6f2',
-        align: 'center',
-        wordWrap: { width: Math.min(420, width - 40) },
-        lineSpacing: 6,
-      })
-      .setOrigin(0.5);
-
-    this.makeButton(width / 2, height * 0.64, 'Enter Battlefield', () => {
-      this.scene.start('Battlefield');
-    });
+    const brutes = SPECIES.brutes;
+    const nobles = SPECIES.nobles;
+    this.makeSpeciesCard(
+      width / 2 - Math.min(170, width * 0.22),
+      height * 0.52,
+      brutes.name,
+      brutes.motto,
+      brutes.uniqueMechanic,
+      0x4a7a3a,
+      0xd4782e,
+      () => this.startMatch('brutes'),
+    );
+    this.makeSpeciesCard(
+      width / 2 + Math.min(170, width * 0.22),
+      height * 0.52,
+      nobles.name,
+      nobles.motto,
+      nobles.uniqueMechanic,
+      0x3d7ea6,
+      0xf0c75e,
+      () => this.startMatch('nobles'),
+    );
 
     this.add
       .text(
         width / 2,
-        height * 0.78,
+        height * 0.82,
         `Ages ${flags.ageGateMinYears}+  ·  Ads ${flags.adsEnabled ? 'on' : 'off'}  ·  Local-first`,
         {
           fontFamily: 'system-ui, sans-serif',
           fontSize: '12px',
           color: '#7a8fa3',
-          align: 'center',
         },
       )
       .setOrigin(0.5);
@@ -95,21 +102,8 @@ export class MenuScene extends Phaser.Scene {
     this.add
       .text(
         width / 2,
-        height * 0.86,
-        'Combat: select · move · RMB attack enemy  ·  buildings/economy later',
-        {
-          fontFamily: 'system-ui, sans-serif',
-          fontSize: '12px',
-          color: '#6a7f94',
-        },
-      )
-      .setOrigin(0.5);
-
-    this.add
-      .text(
-        width / 2,
-        height * 0.92,
-        'LMB select · Shift add · drag box · RMB attack/move · WASD pan · Q/E zoom',
+        height * 0.9,
+        'Nobles: FORMATIONS (F) · Brutes: swarm  ·  opponent is the other species',
         {
           fontFamily: 'system-ui, sans-serif',
           fontSize: '12px',
@@ -119,28 +113,59 @@ export class MenuScene extends Phaser.Scene {
       .setOrigin(0.5);
   }
 
-  private makeButton(x: number, y: number, label: string, onClick: () => void): void {
-    const w = Math.min(280, this.scale.width - 48);
-    const h = 56;
+  private startMatch(species: SpeciesId): void {
+    this.scene.start('Battlefield', { species });
+  }
+
+  private makeSpeciesCard(
+    x: number,
+    y: number,
+    name: string,
+    motto: string,
+    mechanic: string,
+    fill: number,
+    stroke: number,
+    onClick: () => void,
+  ): void {
+    const w = Math.min(280, this.scale.width * 0.4);
+    const h = 150;
     const bg = this.add
-      .rectangle(x, y, w, h, 0x3d7ea6, 1)
-      .setStrokeStyle(3, 0xf0c75e)
-      .setInteractive({ useHandCursor: true })
-      .setDepth(0);
+      .rectangle(x, y, w, h, fill, 1)
+      .setStrokeStyle(3, stroke)
+      .setInteractive({ useHandCursor: true });
     this.add
-      .text(x, y, label, {
-        fontFamily: 'system-ui, sans-serif',
+      .text(x, y - 40, name, {
+        fontFamily: 'Georgia, "Times New Roman", serif',
         fontSize: '22px',
         color: '#fff8e8',
+      })
+      .setOrigin(0.5);
+    this.add
+      .text(x, y - 8, motto, {
+        fontFamily: 'system-ui, sans-serif',
+        fontSize: '11px',
+        color: '#e8f0f8',
+        align: 'center',
+        wordWrap: { width: w - 24 },
+      })
+      .setOrigin(0.5);
+    this.add
+      .text(x, y + 36, mechanic, {
+        fontFamily: 'system-ui, sans-serif',
+        fontSize: '13px',
+        color: '#f0c75e',
         fontStyle: 'bold',
       })
-      .setOrigin(0.5)
-      .setDepth(1);
-    bg.on('pointerover', () => bg.setFillStyle(0x4b93bd));
-    bg.on('pointerout', () => bg.setFillStyle(0x3d7ea6));
-    bg.on('pointerdown', () => {
-      bg.setFillStyle(0x2f6280);
-      onClick();
-    });
+      .setOrigin(0.5);
+    this.add
+      .text(x, y + 58, 'Play', {
+        fontFamily: 'system-ui, sans-serif',
+        fontSize: '14px',
+        color: '#fff8e8',
+      })
+      .setOrigin(0.5);
+    bg.on('pointerover', () => bg.setAlpha(0.92));
+    bg.on('pointerout', () => bg.setAlpha(1));
+    bg.on('pointerdown', onClick);
   }
 }
