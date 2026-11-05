@@ -4,6 +4,10 @@
  */
 import Phaser from 'phaser';
 import { MAP } from '../../config/balance';
+import {
+  enemyRevealed,
+  isExplored,
+} from '../../gameplay/battlefield/battlefieldFog';
 import type { BattlefieldWorld } from '../../gameplay/battlefield/battlefieldWorld';
 import type { RtsCamera } from '../camera/rtsCamera';
 import { playSfx } from '../audio/sfx';
@@ -98,16 +102,31 @@ export class Minimap {
     const g = this.gfx;
     g.clear();
 
-    // Terrain fill
-    g.fillStyle(0x1a2a28, 1);
+    // Terrain fill (explored tint)
+    g.fillStyle(0x0a1018, 1);
     g.fillRect(this.mapX, this.mapY, this.mapW, this.mapH);
 
     const sx = this.mapW / MAP.width;
     const sy = this.mapH / MAP.height;
+    const fog = this.world.fog;
 
-    // Resource nodes (tiny)
+    // Explored / visible terrain samples (coarse — cheap)
+    const step = 80;
+    for (let wy = step / 2; wy < MAP.height; wy += step) {
+      for (let wx = step / 2; wx < MAP.width; wx += step) {
+        if (!isExplored(fog, wx, wy)) continue;
+        const x = this.mapX + wx * sx;
+        const y = this.mapY + wy * sy;
+        const vis = enemyRevealed(fog, wx, wy);
+        g.fillStyle(vis ? 0x1a2a28 : 0x121a22, 1);
+        g.fillRect(x - step * sx * 0.5, y - step * sy * 0.5, step * sx + 1, step * sy + 1);
+      }
+    }
+
+    // Resource nodes (tiny) — explored only
     for (const n of this.world.nodes) {
       if (n.remaining <= 0) continue;
+      if (!isExplored(fog, n.x, n.y)) continue;
       const x = this.mapX + n.x * sx;
       const y = this.mapY + n.y * sy;
       g.fillStyle(n.resourceId === 'magic_crystals' ? 0x7ec8ff : 0xf0c75e, 0.85);
@@ -117,6 +136,7 @@ export class Minimap {
     // Buildings
     for (const b of this.world.buildings) {
       if (b.hp <= 0) continue;
+      if (b.team === 'enemy' && !enemyRevealed(fog, b.x, b.y)) continue;
       const x = this.mapX + b.x * sx;
       const y = this.mapY + b.y * sy;
       const player = b.team === 'player';
@@ -127,6 +147,7 @@ export class Minimap {
     // Units
     for (const u of this.world.units) {
       if (u.hp <= 0) continue;
+      if (u.team === 'enemy' && !enemyRevealed(fog, u.x, u.y)) continue;
       const x = this.mapX + u.x * sx;
       const y = this.mapY + u.y * sy;
       const player = u.team === 'player';

@@ -14,6 +14,7 @@ import { getUnitType, type UnitTypeId } from '../../data/units';
 import { clamp, dist, moveToward } from '../math';
 import type { Vec2 } from '../types';
 import { createDefaultNodes } from './battlefieldEconomy';
+import { createFogState } from './battlefieldFog';
 import { mutationSpeedMult } from './battlefieldMutations';
 
 export type BattlefieldTeam = 'player' | 'enemy' | 'neutral';
@@ -112,6 +113,8 @@ export interface BattlefieldWorld {
   heroRuntime: import('./battlefieldHeroes').HeroRuntime | null;
   enemyHeroRuntime: import('./battlefieldHeroes').HeroRuntime | null;
   vfx: import('./battlefieldHeroes').HeroVfx[];
+  /** Player fog of war (explored / visible). */
+  fog: import('./battlefieldFog').FogState;
 }
 
 function seedHall(
@@ -357,6 +360,7 @@ export function createBattlefieldWorld(
     heroRuntime: null,
     enemyHeroRuntime: null,
     vfx: [],
+    fog: createFogState(),
   };
 
   const baseX = 420;

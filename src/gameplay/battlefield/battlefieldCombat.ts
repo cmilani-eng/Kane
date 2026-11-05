@@ -6,6 +6,7 @@ import { getBuildingType } from '../../data/buildings';
 import { getUnitType } from '../../data/units';
 import { dist } from '../math';
 import { damageBuilding } from './battlefieldBuildings';
+import { canPlayerSeeTarget } from './battlefieldFog';
 import { incomingDamage, outgoingDamage } from './battlefieldFormations';
 import { heroIncomingMult, heroOutgoingMult } from './battlefieldHeroes';
 import {
@@ -43,6 +44,9 @@ export function findEnemyAt(
   for (const u of world.units) {
     if (u.team === forTeam || u.team === 'neutral') continue;
     if (u.hp <= 0) continue;
+    if (forTeam === 'player' && !canPlayerSeeTarget(world.fog, u.x, u.y)) {
+      continue;
+    }
     const d = dist(u.x, u.y, x, y);
     if (d <= u.radius + 22 && d < bestD) {
       best = u;
@@ -52,6 +56,9 @@ export function findEnemyAt(
   for (const b of world.buildings) {
     if (b.team === forTeam || b.team === 'neutral') continue;
     if (b.hp <= 0) continue;
+    if (forTeam === 'player' && !canPlayerSeeTarget(world.fog, b.x, b.y)) {
+      continue;
+    }
     const d = dist(b.x, b.y, x, y);
     if (d <= b.radius + 14 && d < bestD) {
       best = b;
@@ -81,9 +88,11 @@ function acquireNearestEnemy(
 ): CombatTarget | null {
   let best: CombatTarget | null = null;
   let bestD = u.vision;
+  const fogGate = u.team === 'player';
   for (const o of world.units) {
     if (o.team === u.team || o.team === 'neutral') continue;
     if (o.hp <= 0) continue;
+    if (fogGate && !canPlayerSeeTarget(world.fog, o.x, o.y)) continue;
     const d = dist(u.x, u.y, o.x, o.y);
     if (d < bestD) {
       best = o;
@@ -93,6 +102,7 @@ function acquireNearestEnemy(
   for (const b of world.buildings) {
     if (b.team === u.team || b.team === 'neutral') continue;
     if (b.hp <= 0 || !b.complete) continue;
+    if (fogGate && !canPlayerSeeTarget(world.fog, b.x, b.y)) continue;
     const d = dist(u.x, u.y, b.x, b.y);
     if (d < bestD) {
       best = b;
@@ -121,6 +131,15 @@ export function tickBattlefieldCombat(
   world: BattlefieldWorld,
   dtMs: number,
 ): void {
+  // Drop player targets that slipped into fog.
+  for (const u of world.units) {
+    if (u.team !== 'player' || u.attackTargetId == null) continue;
+    const t = findTarget(world, u.attackTargetId);
+    if (t && !canPlayerSeeTarget(world.fog, t.x, t.y)) {
+      u.attackTargetId = null;
+    }
+  }
+
   // Auto-acquire: enemies always; player when idle (not gathering / pure-moving).
   // Without this, player units in melee take hits but never fire back.
   for (const u of world.units) {
