@@ -9,13 +9,15 @@ export type BuildingTypeId =
   // Brutes
   | 'junkyard'
   | 'bonker_hut'
+  | 'big_boss_den'
   // Nobles
   | 'royal_keep'
   | 'barracks'
   | 'archery_hall'
   | 'stable'
   | 'engineering_yard'
-  | 'watchtower';
+  | 'watchtower'
+  | 'royal_academy';
 
 export interface BuildingTypeDef {
   id: BuildingTypeId;
@@ -27,6 +29,8 @@ export interface BuildingTypeDef {
   cost: Partial<ResourceWallet>;
   isDropOff: boolean;
   isMainHall: boolean;
+  /** Recruits the species hero when selected (H). */
+  recruitsHero?: boolean;
   trains: UnitTypeId[];
   color: number;
   accent: number;
@@ -60,6 +64,21 @@ export const BUILDING_TYPES: Record<BuildingTypeId, BuildingTypeDef> = {
     trains: ['bonker', 'rock_thrower'],
     color: 0x3d6a32,
     accent: 0xf0c75e,
+  },
+  big_boss_den: {
+    id: 'big_boss_den',
+    name: 'Big Boss Den',
+    speciesId: 'brutes',
+    maxHp: 600,
+    radius: 30,
+    buildMs: 5000,
+    cost: { gold: 120, magic_crystals: 20 },
+    isDropOff: false,
+    isMainHall: false,
+    recruitsHero: true,
+    trains: [],
+    color: 0x5a3a20,
+    accent: 0xd4782e,
   },
   royal_keep: {
     id: 'royal_keep',
@@ -143,6 +162,21 @@ export const BUILDING_TYPES: Record<BuildingTypeId, BuildingTypeDef> = {
     isMainHall: false,
     trains: [],
     color: 0x3a4a5a,
+    accent: 0xf0c75e,
+  },
+  royal_academy: {
+    id: 'royal_academy',
+    name: 'Royal Academy',
+    speciesId: 'nobles',
+    maxHp: 580,
+    radius: 30,
+    buildMs: 5200,
+    cost: { gold: 130, magic_crystals: 25 },
+    isDropOff: false,
+    isMainHall: false,
+    recruitsHero: true,
+    trains: [],
+    color: 0x2a4a6a,
     accent: 0xf0c75e,
   },
 };

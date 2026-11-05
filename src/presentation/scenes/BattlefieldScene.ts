@@ -23,6 +23,12 @@ import {
   toggleFormationSelected,
 } from '../../gameplay/battlefield/battlefieldFormations';
 import {
+  castHeroAbility,
+  heroHudLine,
+  recruitHero,
+  tickHeroes,
+} from '../../gameplay/battlefield/battlefieldHeroes';
+import {
   buildingBlocks,
   findBuildingAt,
   placeBuilding,
@@ -77,6 +83,7 @@ export class BattlefieldScene extends Phaser.Scene {
   private hint!: Phaser.GameObjects.Text;
   private status!: Phaser.GameObjects.Text;
   private resourceHud!: Phaser.GameObjects.Text;
+  private heroHud!: Phaser.GameObjects.Text;
   private shiftKey: Phaser.Input.Keyboard.Key | null = null;
   private placeables: BuildingTypeId[] = [];
   private placeIndex = 0;
@@ -167,6 +174,17 @@ export class BattlefieldScene extends Phaser.Scene {
       .setScrollFactor(0)
       .setDepth(100);
 
+    this.heroHud = this.add
+      .text(12, 132, '', {
+        fontFamily: 'system-ui, sans-serif',
+        fontSize: '12px',
+        color: '#f0c75e',
+        backgroundColor: '#0f1a2ecc',
+        padding: { x: 8, y: 6 },
+      })
+      .setScrollFactor(0)
+      .setDepth(100);
+
     this.hint = this.add
       .text(0, 0, '', {
         fontFamily: 'system-ui, sans-serif',
@@ -239,6 +257,18 @@ export class BattlefieldScene extends Phaser.Scene {
       if (this.world.speciesId === 'nobles') {
         toggleFormationSelected(this.world);
       }
+    });
+    this.input.keyboard?.on('keydown-H', () => {
+      recruitHero(this.world, 'player');
+    });
+    this.input.keyboard?.on('keydown-Q', () => {
+      castHeroAbility(this.world, 'ability1', 'player');
+    });
+    this.input.keyboard?.on('keydown-W', () => {
+      castHeroAbility(this.world, 'ability2', 'player');
+    });
+    this.input.keyboard?.on('keydown-E', () => {
+      castHeroAbility(this.world, 'ultimate', 'player');
     });
     this.input.keyboard?.on('keydown-ONE', () =>
       trainHotkey(this.world, this.selectedBuilding, 0),
@@ -402,6 +432,7 @@ export class BattlefieldScene extends Phaser.Scene {
       tickBuildings(this.world, delta);
       tickProduction(this.world, delta);
       tickFormations(this.world, delta);
+      tickHeroes(this.world, delta);
       tickBattlefieldAi(this.world, this.ai, delta);
       tickBattlefieldCombat(this.world, delta);
       const result = evaluateMatch(this.world);
@@ -486,6 +517,7 @@ export class BattlefieldScene extends Phaser.Scene {
     this.resourceHud.setText(
       `Gold ${Math.floor(w.gold)}   ·   Magic Crystals ${Math.floor(w.magic_crystals)}   (GDD: Scrap/Core)`,
     );
+    this.heroHud.setText(heroHudLine(this.world));
 
     const n = selectedCount(this.world);
     const sel = selectedUnits(this.world);
@@ -538,8 +570,8 @@ export class BattlefieldScene extends Phaser.Scene {
     } else {
       this.hint.setText(
         this.world.speciesId === 'nobles'
-          ? 'LMB select · 1/2 train · B buildings · F formation · RMB gather/attack · Esc'
-          : 'LMB select · 1/2 train · B hut · RMB gather/attack/move · Esc clear',
+          ? 'H recruit hero · Q/W/E abilities · F formation · B build · RMB orders'
+          : 'H recruit GRUK · Q/W/E abilities · B build · RMB gather/attack · Esc',
       );
     }
   }
@@ -547,6 +579,14 @@ export class BattlefieldScene extends Phaser.Scene {
   private drawWorld(): void {
     const g = this.unitGfx;
     g.clear();
+
+    for (const v of this.world.vfx) {
+      const a = Math.max(0.15, v.lifeMs / v.maxLifeMs);
+      g.lineStyle(3, v.color, a);
+      g.strokeCircle(v.x, v.y, v.radius * (1.15 - a * 0.3));
+      g.fillStyle(v.color, a * 0.12);
+      g.fillCircle(v.x, v.y, v.radius * (1.05 - a * 0.2));
+    }
 
     for (const b of this.world.buildings) {
       const alpha = b.complete ? 1 : 0.45 + 0.4 * b.buildProgress;
@@ -679,7 +719,6 @@ export class BattlefieldScene extends Phaser.Scene {
       return;
     }
     if (shape === 'hex') {
-      // Approximate hex with overlapping triangles (Phaser 4 Graphics).
       for (let i = 0; i < 6; i++) {
         const a0 = (Math.PI / 3) * i - Math.PI / 6;
         const a1 = (Math.PI / 3) * (i + 1) - Math.PI / 6;
@@ -692,6 +731,12 @@ export class BattlefieldScene extends Phaser.Scene {
           y + Math.sin(a1) * r,
         );
       }
+      return;
+    }
+    if (shape === 'star') {
+      g.fillCircle(x, y, r);
+      g.fillStyle(0xffffff, 0.85);
+      g.fillCircle(x, y - r * 0.15, r * 0.35);
       return;
     }
     g.fillCircle(x, y, r);
