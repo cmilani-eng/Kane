@@ -75,6 +75,7 @@ import {
   type BattlefieldBuilding,
   type BattlefieldWorld,
 } from '../../gameplay/battlefield/battlefieldWorld';
+import { playSfx } from '../audio/sfx';
 import { RtsCamera } from '../camera/rtsCamera';
 import { createSkirmishMap } from '../maps/mapManager';
 
@@ -205,26 +206,26 @@ export class BattlefieldScene extends Phaser.Scene {
       }
     });
     this.input.keyboard?.on('keydown-H', () => {
-      recruitHero(this.world, 'player');
+      if (recruitHero(this.world, 'player')) playSfx('hero');
     });
     this.input.keyboard?.on('keydown-Q', () => {
-      castHeroAbility(this.world, 'ability1', 'player');
+      if (castHeroAbility(this.world, 'ability1', 'player')) playSfx('ability');
     });
     this.input.keyboard?.on('keydown-W', () => {
-      castHeroAbility(this.world, 'ability2', 'player');
+      if (castHeroAbility(this.world, 'ability2', 'player')) playSfx('ability');
     });
     this.input.keyboard?.on('keydown-E', () => {
-      castHeroAbility(this.world, 'ultimate', 'player');
+      if (castHeroAbility(this.world, 'ultimate', 'player')) playSfx('ability');
     });
-    this.input.keyboard?.on('keydown-ONE', () =>
-      trainHotkey(this.world, this.selectedBuilding, 0),
-    );
-    this.input.keyboard?.on('keydown-TWO', () =>
-      trainHotkey(this.world, this.selectedBuilding, 1),
-    );
-    this.input.keyboard?.on('keydown-THREE', () =>
-      trainHotkey(this.world, this.selectedBuilding, 2),
-    );
+    this.input.keyboard?.on('keydown-ONE', () => {
+      if (trainHotkey(this.world, this.selectedBuilding, 0)) playSfx('train');
+    });
+    this.input.keyboard?.on('keydown-TWO', () => {
+      if (trainHotkey(this.world, this.selectedBuilding, 1)) playSfx('train');
+    });
+    this.input.keyboard?.on('keydown-THREE', () => {
+      if (trainHotkey(this.world, this.selectedBuilding, 2)) playSfx('train');
+    });
   }
 
   private clearBuildingSelection(): void {
@@ -255,6 +256,7 @@ export class BattlefieldScene extends Phaser.Scene {
           this.ghostPos.y,
         );
         if (placed) {
+          playSfx('build');
           this.mode = 'none';
           this.ghostGfx.clear();
         }
@@ -274,9 +276,13 @@ export class BattlefieldScene extends Phaser.Scene {
       }
       const enemy = findEnemyAt(this.world, wp.x, wp.y, 'player');
       const node = findNodeAt(this.world, wp.x, wp.y);
-      if (enemy) issueAttackSelected(this.world, enemy);
-      else if (node) issueGatherSelected(this.world, node);
-      else issueMoveSelected(this.world, wp.x, wp.y);
+      if (enemy) {
+        issueAttackSelected(this.world, enemy);
+        playSfx('attack');
+      } else if (node) {
+        issueGatherSelected(this.world, node);
+        playSfx('gather');
+      } else issueMoveSelected(this.world, wp.x, wp.y);
       this.mode = 'none';
       return;
     }
@@ -341,6 +347,7 @@ export class BattlefieldScene extends Phaser.Scene {
         wp.y,
         additive,
       );
+      if (selectedCount(this.world) > 0) playSfx('select');
       this.boxGfx.clear();
       this.mode = 'none';
       return;
@@ -353,9 +360,10 @@ export class BattlefieldScene extends Phaser.Scene {
         this.clearBuildingSelection();
         b.selected = true;
         this.selectedBuilding = b;
+        playSfx('select');
       } else {
         this.clearBuildingSelection();
-        selectAt(this.world, wp.x, wp.y, additive);
+        if (selectAt(this.world, wp.x, wp.y, additive)) playSfx('select');
       }
     }
     this.mode = 'none';
@@ -404,6 +412,7 @@ export class BattlefieldScene extends Phaser.Scene {
     this.mode = 'none';
     this.ghostGfx.clear();
     this.cameraCtl.suppressPan = true;
+    playSfx(result === 'victory' ? 'victory' : 'defeat');
 
     const { width, height } = this.scale;
     const win = result === 'victory';
