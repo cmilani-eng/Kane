@@ -1,11 +1,21 @@
 /**
- * Data-driven building defs — Brutes first (Junkyard / Bonker Hut).
+ * Data-driven buildings — Brutes + Nobles (GDD v2).
  */
 
 import type { ResourceWallet } from './resources';
 import type { UnitTypeId } from './units';
 
-export type BuildingTypeId = 'junkyard' | 'bonker_hut' | 'rival_keep' | 'rival_barracks';
+export type BuildingTypeId =
+  // Brutes
+  | 'junkyard'
+  | 'bonker_hut'
+  // Nobles
+  | 'royal_keep'
+  | 'barracks'
+  | 'archery_hall'
+  | 'stable'
+  | 'engineering_yard'
+  | 'watchtower';
 
 export interface BuildingTypeDef {
   id: BuildingTypeId;
@@ -15,9 +25,8 @@ export interface BuildingTypeDef {
   radius: number;
   buildMs: number;
   cost: Partial<ResourceWallet>;
-  /** Acts as resource drop-off when complete. */
   isDropOff: boolean;
-  /** Units this building can train (production milestone). */
+  isMainHall: boolean;
   trains: UnitTypeId[];
   color: number;
   accent: number;
@@ -33,6 +42,7 @@ export const BUILDING_TYPES: Record<BuildingTypeId, BuildingTypeDef> = {
     buildMs: 0,
     cost: {},
     isDropOff: true,
+    isMainHall: true,
     trains: ['scavenger'],
     color: 0x4a7a3a,
     accent: 0xd4782e,
@@ -46,38 +56,116 @@ export const BUILDING_TYPES: Record<BuildingTypeId, BuildingTypeDef> = {
     buildMs: 4500,
     cost: { gold: 100, magic_crystals: 0 },
     isDropOff: false,
+    isMainHall: false,
     trains: ['bonker', 'rock_thrower'],
     color: 0x3d6a32,
     accent: 0xf0c75e,
   },
-  rival_keep: {
-    id: 'rival_keep',
-    name: 'Rival Keep',
+  royal_keep: {
+    id: 'royal_keep',
+    name: 'Royal Keep',
     speciesId: 'nobles',
-    maxHp: 1200,
-    radius: 36,
+    maxHp: 1300,
+    radius: 38,
     buildMs: 0,
     cost: {},
     isDropOff: true,
-    trains: ['rival_scavenger'],
-    color: 0x6b4a8a,
-    accent: 0xc4a0e0,
+    isMainHall: true,
+    trains: ['serf'],
+    color: 0x3d7ea6,
+    accent: 0xf0c75e,
   },
-  rival_barracks: {
-    id: 'rival_barracks',
-    name: 'Rival Barracks',
+  barracks: {
+    id: 'barracks',
+    name: 'Barracks',
     speciesId: 'nobles',
-    maxHp: 500,
+    maxHp: 550,
     radius: 28,
     buildMs: 4500,
     cost: { gold: 100 },
     isDropOff: false,
-    trains: ['rival_grunt'],
-    color: 0x5a3a70,
-    accent: 0xe8a0ff,
+    isMainHall: false,
+    trains: ['tin_knight', 'hammer_dwarf'],
+    color: 0x2f6f94,
+    accent: 0xc0c8d4,
+  },
+  archery_hall: {
+    id: 'archery_hall',
+    name: 'Archery Hall',
+    speciesId: 'nobles',
+    maxHp: 480,
+    radius: 26,
+    buildMs: 4200,
+    cost: { gold: 110, magic_crystals: 5 },
+    isDropOff: false,
+    isMainHall: false,
+    trains: ['bolt_boy'],
+    color: 0x4a6a8a,
+    accent: 0xf0c75e,
+  },
+  stable: {
+    id: 'stable',
+    name: 'Stable',
+    speciesId: 'nobles',
+    maxHp: 500,
+    radius: 28,
+    buildMs: 4800,
+    cost: { gold: 120 },
+    isDropOff: false,
+    isMainHall: false,
+    trains: ['boar_knight'],
+    color: 0x5a4a3a,
+    accent: 0xd4b896,
+  },
+  engineering_yard: {
+    id: 'engineering_yard',
+    name: 'Engineering Yard',
+    speciesId: 'nobles',
+    maxHp: 520,
+    radius: 30,
+    buildMs: 5500,
+    cost: { gold: 140, magic_crystals: 15 },
+    isDropOff: false,
+    isMainHall: false,
+    trains: ['walking_tank', 'boom_cart'],
+    color: 0x4a5560,
+    accent: 0xa8b4c0,
+  },
+  watchtower: {
+    id: 'watchtower',
+    name: 'Watchtower',
+    speciesId: 'nobles',
+    maxHp: 400,
+    radius: 22,
+    buildMs: 3500,
+    cost: { gold: 80 },
+    isDropOff: false,
+    isMainHall: false,
+    trains: [],
+    color: 0x3a4a5a,
+    accent: 0xf0c75e,
   },
 };
 
 export function getBuildingType(id: BuildingTypeId): BuildingTypeDef {
   return BUILDING_TYPES[id];
+}
+
+/** Placeable production / defense buildings for a species (not main hall). */
+export function placeableBuildings(
+  speciesId: 'brutes' | 'nobles' | 'weirdos',
+): BuildingTypeId[] {
+  return (Object.values(BUILDING_TYPES) as BuildingTypeDef[])
+    .filter((b) => b.speciesId === speciesId && !b.isMainHall && b.buildMs > 0)
+    .map((b) => b.id);
+}
+
+export function mainHallId(
+  speciesId: 'brutes' | 'nobles' | 'weirdos',
+): BuildingTypeId {
+  const hall = (Object.values(BUILDING_TYPES) as BuildingTypeDef[]).find(
+    (b) => b.speciesId === speciesId && b.isMainHall,
+  );
+  if (!hall) throw new Error(`No main hall for ${speciesId}`);
+  return hall.id;
 }

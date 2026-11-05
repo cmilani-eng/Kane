@@ -84,6 +84,10 @@ export interface BattlefieldUnit {
   carrying: number;
   carryingResource: ResourceId | null;
   gatherNodeId: number | null;
+  /** Nobles FORMATIONS state. */
+  inFormation: boolean;
+  formationLocked: boolean;
+  formationStillMs: number;
 }
 
 export interface BattlefieldWorld {
@@ -94,7 +98,10 @@ export interface BattlefieldWorld {
   stockpiles: Stockpile[];
   wallet: ResourceWallet;
   enemyWallet: ResourceWallet;
+  /** Player species for this match. */
   speciesId: SpeciesId;
+  /** Enemy species (the other playable faction). */
+  enemySpeciesId: SpeciesId;
 }
 
 function seedHall(
@@ -172,13 +179,108 @@ export function spawnUnit(
     carrying: 0,
     carryingResource: null,
     gatherNodeId: null,
+    inFormation: false,
+    formationLocked: false,
+    formationStillMs: 0,
   };
   world.units.push(u);
   return u;
 }
 
-export function createBattlefieldWorld(): BattlefieldWorld {
-  const brutes = SPECIES.brutes;
+function oppositePlayable(id: SpeciesId): SpeciesId {
+  return id === 'nobles' ? 'brutes' : 'nobles';
+}
+
+function seedArmy(
+  world: BattlefieldWorld,
+  team: BattlefieldTeam,
+  speciesId: SpeciesId,
+  originX: number,
+  originY: number,
+): void {
+  const pal = SPECIES[speciesId].palette;
+  if (speciesId === 'brutes') {
+    for (let i = 0; i < 4; i++) {
+      spawnUnit(world, {
+        team,
+        typeId: 'scavenger',
+        x: originX + i * 40,
+        y: originY - 50,
+        color: 0x6a9a4a,
+        speciesId,
+      });
+    }
+    for (let i = 0; i < 6; i++) {
+      const row = Math.floor(i / 3);
+      const col = i % 3;
+      spawnUnit(world, {
+        team,
+        typeId: 'bonker',
+        x: originX + col * 48,
+        y: originY + row * 48,
+        color: i % 2 === 0 ? pal.primary : pal.accent,
+        speciesId,
+      });
+    }
+    for (let i = 0; i < 2; i++) {
+      spawnUnit(world, {
+        team,
+        typeId: 'rock_thrower',
+        x: originX + 160 + i * 48,
+        y: originY + 20,
+        color: pal.accent,
+        speciesId,
+      });
+    }
+    return;
+  }
+
+  // Nobles — blue / gold / silver placeholders
+  for (let i = 0; i < 4; i++) {
+    spawnUnit(world, {
+      team,
+      typeId: 'serf',
+      x: originX + i * 40,
+      y: originY - 50,
+      color: pal.silver ?? 0xc0c8d4,
+      speciesId,
+    });
+  }
+  for (let i = 0; i < 4; i++) {
+    spawnUnit(world, {
+      team,
+      typeId: 'tin_knight',
+      x: originX + (i % 2) * 48,
+      y: originY + Math.floor(i / 2) * 48,
+      color: pal.primary,
+      speciesId,
+    });
+  }
+  for (let i = 0; i < 2; i++) {
+    spawnUnit(world, {
+      team,
+      typeId: 'bolt_boy',
+      x: originX + 110 + i * 44,
+      y: originY + 10,
+      color: pal.accent,
+      speciesId,
+    });
+  }
+  spawnUnit(world, {
+    team,
+    typeId: 'hammer_dwarf',
+    x: originX + 60,
+    y: originY + 100,
+    color: pal.silver ?? 0xc0c8d4,
+    speciesId,
+  });
+}
+
+export function createBattlefieldWorld(
+  playerSpecies: SpeciesId = 'brutes',
+): BattlefieldWorld {
+  if (playerSpecies === 'weirdos') playerSpecies = 'nobles';
+  const enemySpecies = oppositePlayable(playerSpecies);
   const world: BattlefieldWorld = {
     nextId: 1,
     units: [],
@@ -187,7 +289,8 @@ export function createBattlefieldWorld(): BattlefieldWorld {
     stockpiles: [],
     wallet: emptyWallet({ gold: 200, magic_crystals: 20 }),
     enemyWallet: emptyWallet({ gold: 180, magic_crystals: 15 }),
-    speciesId: 'brutes',
+    speciesId: playerSpecies,
+    enemySpeciesId: enemySpecies,
   };
 
   const baseX = 420;
@@ -195,66 +298,23 @@ export function createBattlefieldWorld(): BattlefieldWorld {
   const ex = MAP.width * 0.55;
   const ey = MAP.height * 0.45;
 
-  seedHall(world, 'player', 'junkyard', baseX - 60, baseY + 60);
-  seedHall(world, 'enemy', 'rival_keep', ex - 60, ey + 60);
+  seedHall(
+    world,
+    'player',
+    playerSpecies === 'nobles' ? 'royal_keep' : 'junkyard',
+    baseX - 60,
+    baseY + 60,
+  );
+  seedHall(
+    world,
+    'enemy',
+    enemySpecies === 'nobles' ? 'royal_keep' : 'junkyard',
+    ex - 60,
+    ey + 60,
+  );
 
-  // Gatherers
-  for (let i = 0; i < 4; i++) {
-    spawnUnit(world, {
-      team: 'player',
-      typeId: 'scavenger',
-      x: baseX + i * 40,
-      y: baseY - 50,
-      color: 0x6a9a4a,
-      speciesId: 'brutes',
-    });
-  }
-  // Military
-  for (let i = 0; i < 6; i++) {
-    const row = Math.floor(i / 3);
-    const col = i % 3;
-    spawnUnit(world, {
-      team: 'player',
-      typeId: 'bonker',
-      x: baseX + col * 48,
-      y: baseY + row * 48,
-      color: i % 2 === 0 ? brutes.palette.primary : brutes.palette.accent,
-      speciesId: 'brutes',
-    });
-  }
-  for (let i = 0; i < 2; i++) {
-    spawnUnit(world, {
-      team: 'player',
-      typeId: 'rock_thrower',
-      x: baseX + 160 + i * 48,
-      y: baseY + 20,
-      color: brutes.palette.accent,
-      speciesId: 'brutes',
-    });
-  }
-
-  for (let i = 0; i < 2; i++) {
-    spawnUnit(world, {
-      team: 'enemy',
-      typeId: 'rival_scavenger',
-      x: ex + i * 40,
-      y: ey - 50,
-      color: 0xa070b8,
-      speciesId: 'nobles',
-    });
-  }
-  for (let i = 0; i < 6; i++) {
-    const row = Math.floor(i / 3);
-    const col = i % 3;
-    spawnUnit(world, {
-      team: 'enemy',
-      typeId: 'rival_grunt',
-      x: ex + col * 46,
-      y: ey + row * 46,
-      color: 0x8a4a9a,
-      speciesId: 'nobles',
-    });
-  }
+  seedArmy(world, 'player', playerSpecies, baseX, baseY);
+  seedArmy(world, 'enemy', enemySpecies, ex, ey);
 
   createDefaultNodes(world);
   return world;

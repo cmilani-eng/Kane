@@ -2,8 +2,11 @@
  * Battlefield combat — gameplay only (no Phaser).
  * Friendly fire off; death removes units/buildings; chase targets.
  */
+import { getBuildingType } from '../../data/buildings';
+import { getUnitType } from '../../data/units';
 import { dist } from '../math';
 import { damageBuilding } from './battlefieldBuildings';
+import { incomingDamage, outgoingDamage } from './battlefieldFormations';
 import type {
   BattlefieldBuilding,
   BattlefieldUnit,
@@ -140,12 +143,16 @@ export function tickBattlefieldCombat(
 
     u.moveTarget = null;
     if (u.attackCd <= 0) {
+      const udef = getUnitType(u.typeId);
+      let raw = outgoingDamage(u, u.dmg);
       const isBuilding = 'typeId' in t && 'buildProgress' in t;
       if (isBuilding) {
-        damageBuilding(world, t as BattlefieldBuilding, u.dmg);
+        raw *= udef.structureMult ?? 1;
+        damageBuilding(world, t as BattlefieldBuilding, raw);
       } else {
-        t.hp -= u.dmg;
-        if (t.hp <= 0) t.hp = 0;
+        const victim = t as BattlefieldUnit;
+        victim.hp -= incomingDamage(victim, raw);
+        if (victim.hp <= 0) victim.hp = 0;
       }
       u.attackCd = u.attackCooldownMs;
       u.lastAttackFlashMs = 120;
@@ -177,6 +184,6 @@ export function keepAlive(
     (b) =>
       b.team === team &&
       b.hp > 0 &&
-      (b.typeId === 'junkyard' || b.typeId === 'rival_keep'),
+      getBuildingType(b.typeId).isMainHall,
   );
 }

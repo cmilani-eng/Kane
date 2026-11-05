@@ -1,13 +1,13 @@
 /**
- * Simple skirmish AI — gather, build, train, attack.
- * Not a full RTS brain; enough for SP match testing.
+ * Simple skirmish AI — gather, build, train, attack (species-aware).
  */
-import { MAP } from '../../config/balance';
+import { placeableBuildings } from '../../data/buildings';
 import { buildingBlocks, placeBuilding } from './battlefieldBuildings';
 import { walletOf } from './battlefieldEconomy';
 import { queueTrain } from './battlefieldProduction';
 import type { BattlefieldWorld } from './battlefieldWorld';
 import { dist } from '../math';
+import { getBuildingType } from '../../data/buildings';
 
 export interface AiState {
   thinkCd: number;
@@ -27,21 +27,26 @@ export function tickBattlefieldAi(
   if (ai.thinkCd > 0) return;
   ai.thinkCd = 900;
 
+  const species = world.enemySpeciesId;
   const wallet = walletOf(world, 'enemy');
   const keep = world.buildings.find(
-    (b) => b.team === 'enemy' && b.typeId === 'rival_keep' && b.complete,
+    (b) =>
+      b.team === 'enemy' &&
+      getBuildingType(b.typeId).isMainHall &&
+      b.complete,
   );
-  const barracks = world.buildings.find(
-    (b) => b.team === 'enemy' && b.typeId === 'rival_barracks' && b.complete,
+  const prodBuildings = world.buildings.filter(
+    (b) =>
+      b.team === 'enemy' &&
+      b.complete &&
+      !getBuildingType(b.typeId).isMainHall &&
+      getBuildingType(b.typeId).trains.length > 0,
   );
   const scavengers = world.units.filter(
     (u) => u.team === 'enemy' && u.canGather,
   );
-  const army = world.units.filter(
-    (u) => u.team === 'enemy' && !u.canGather,
-  );
+  const army = world.units.filter((u) => u.team === 'enemy' && !u.canGather);
 
-  // 1) Idle scavengers → nearest gold/crystal node
   for (const s of scavengers) {
     if (s.gatherNodeId != null || s.carrying > 0 || s.attackTargetId != null)
       continue;
@@ -61,38 +66,51 @@ export function tickBattlefieldAi(
     }
   }
 
-  // 2) Build barracks when rich enough
-  if (!barracks && keep && wallet.gold >= 100) {
+  // Build first placeable production building
+  const placeables = placeableBuildings(species).filter((id) => {
+    const d = getBuildingType(id);
+    return d.trains.length > 0;
+  });
+  const needType = placeables[0];
+  if (
+    needType &&
+    keep &&
+    !prodBuildings.some((b) => b.typeId === needType) &&
+    wallet.gold >= (getBuildingType(needType).cost.gold ?? 100)
+  ) {
     const spots = [
       { x: keep.x + 120, y: keep.y },
       { x: keep.x - 120, y: keep.y },
       { x: keep.x, y: keep.y + 120 },
       { x: keep.x + 90, y: keep.y + 90 },
     ];
+    const radius = getBuildingType(needType).radius;
     for (const p of spots) {
-      if (buildingBlocks(world, p.x, p.y, 28)) continue;
-      if (placeBuilding(world, 'enemy', 'rival_barracks', p.x, p.y)) break;
+      if (buildingBlocks(world, p.x, p.y, radius)) continue;
+      if (placeBuilding(world, 'enemy', needType, p.x, p.y)) break;
     }
   }
 
-  // 3) Train scavengers from keep, grunts from barracks
-  if (keep && scavengers.length < 4 && wallet.gold >= 40) {
-    queueTrain(world, keep, 'rival_scavenger');
+  if (keep && scavengers.length < 4) {
+    const worker = getBuildingType(keep.typeId).trains[0];
+    if (worker) queueTrain(world, keep, worker);
   }
-  if (barracks && army.length < 10 && wallet.gold >= 55) {
-    queueTrain(world, barracks, 'rival_grunt');
+  for (const b of prodBuildings) {
+    if (army.length >= 10) break;
+    const trains = getBuildingType(b.typeId).trains;
+    const pick = trains[0];
+    if (pick) queueTrain(world, b, pick);
   }
 
-  // 4) Attack when army is large enough
   if (army.length >= 5) ai.phase = 'attack';
   else if (army.length >= 3) ai.phase = 'army';
   else ai.phase = 'eco';
 
   if (ai.phase === 'attack') {
-    const targetUnit = world.units.find((u) => u.team === 'player');
     const targetKeep = world.buildings.find(
-      (b) => b.team === 'player' && b.typeId === 'junkyard',
+      (b) => b.team === 'player' && getBuildingType(b.typeId).isMainHall,
     );
+    const targetUnit = world.units.find((u) => u.team === 'player');
     const target = targetKeep ?? targetUnit;
     if (!target) return;
     for (const u of army) {
@@ -101,20 +119,15 @@ export function tickBattlefieldAi(
       u.attackTargetId = target.id;
       u.moveTarget = { x: target.x, y: target.y };
     }
-  } else {
-    // Hold near keep
-    if (keep) {
-      for (const u of army) {
-        if (u.attackTargetId != null) continue;
-        if (dist(u.x, u.y, keep.x, keep.y) > 160) {
-          u.moveTarget = {
-            x: keep.x + (Math.random() - 0.5) * 80,
-            y: keep.y + (Math.random() - 0.5) * 80,
-          };
-        }
+  } else if (keep) {
+    for (const u of army) {
+      if (u.attackTargetId != null) continue;
+      if (dist(u.x, u.y, keep.x, keep.y) > 160) {
+        u.moveTarget = {
+          x: keep.x + (Math.random() - 0.5) * 80,
+          y: keep.y + (Math.random() - 0.5) * 80,
+        };
       }
     }
   }
-
-  void MAP;
 }
