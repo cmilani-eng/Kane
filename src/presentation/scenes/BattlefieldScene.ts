@@ -67,6 +67,7 @@ type PointerMode = 'none' | 'select' | 'box' | 'pan' | 'place';
 export class BattlefieldScene extends Phaser.Scene {
   private world!: BattlefieldWorld;
   private cameraCtl!: RtsCamera;
+  private hudCam!: Phaser.Cameras.Scene2D.Camera;
   private boxGfx!: Phaser.GameObjects.Graphics;
   private unitGfx!: Phaser.GameObjects.Graphics;
   private ghostGfx!: Phaser.GameObjects.Graphics;
@@ -97,7 +98,7 @@ export class BattlefieldScene extends Phaser.Scene {
     const playerSpecies: SpeciesId =
       data?.species === 'nobles' ? 'nobles' : 'brutes';
 
-    createSkirmishMap(this);
+    const { layer } = createSkirmishMap(this);
     this.world = createBattlefieldWorld(playerSpecies);
     this.placeables = placeableBuildings(playerSpecies);
     this.placeIndex = 0;
@@ -193,11 +194,17 @@ export class BattlefieldScene extends Phaser.Scene {
       .setInteractive({ useHandCursor: true })
       .on('pointerup', () => this.scene.start('Menu'));
 
-    this.scale.on('resize', () => {
+    const onResize = (): void => {
       menuBtn.setPosition(this.scale.width - 12, 12);
       this.hint.setPosition(this.scale.width / 2, this.scale.height - 16);
-    });
+      this.hudCam.setSize(this.scale.width, this.scale.height);
+    };
+    this.scale.on('resize', onResize);
+    this.events.once(Phaser.Scenes.Events.SHUTDOWN, () =>
+      this.scale.off('resize', onResize),
+    );
     this.hint.setPosition(this.scale.width / 2, this.scale.height - 16);
+    this.splitHudCamera([layer, this.boxGfx, this.unitGfx, this.ghostGfx]);
 
     this.shiftKey =
       this.input.keyboard?.addKey(Phaser.Input.Keyboard.KeyCodes.SHIFT) ?? null;
@@ -206,6 +213,18 @@ export class BattlefieldScene extends Phaser.Scene {
     if (flags.adsEnabled) {
       console.warn(`[${BRAND.name}] ads should stay off`);
     }
+  }
+
+  /**
+   * Phaser applies camera zoom to every object, scrollFactor 0 included, so
+   * HUD drawn by the zoomed main camera drifts off the screen edges. A second
+   * camera at zoom 1 draws the HUD instead: everything in `world` is hidden
+   * from it, and everything else currently in the scene is hidden from main.
+   */
+  private splitHudCamera(world: Phaser.GameObjects.GameObject[]): void {
+    this.cameras.main.ignore(this.children.list.filter((o) => !world.includes(o)));
+    this.hudCam = this.cameras.add(0, 0, this.scale.width, this.scale.height);
+    this.hudCam.ignore(world);
   }
 
   private bindInput(): void {
@@ -356,6 +375,7 @@ export class BattlefieldScene extends Phaser.Scene {
     const additive = this.shiftHeld();
     if (this.mode === 'box') {
       const wp = this.cameraCtl.worldPoint(pointer.x, pointer.y);
+      this.clearBuildingSelection();
       selectInRect(
         this.world,
         this.worldStart.x,
@@ -478,7 +498,8 @@ export class BattlefieldScene extends Phaser.Scene {
       .setInteractive({ useHandCursor: true })
       .on('pointerup', () => this.scene.start('Menu'));
 
-    this.add.container(0, 0, [bg, title, sub, btn]);
+    // Added after splitHudCamera, so keep it off the zoomed main camera.
+    this.cameras.main.ignore(this.add.container(0, 0, [bg, title, sub, btn]));
   }
 
   private refreshHud(): void {
