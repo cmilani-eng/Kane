@@ -29,6 +29,10 @@ import {
   tickHeroes,
 } from '../../gameplay/battlefield/battlefieldHeroes';
 import {
+  tickMutations,
+  toggleMutationSelected,
+} from '../../gameplay/battlefield/battlefieldMutations';
+import {
   buildingBlocks,
   findBuildingAt,
   placeBuilding,
@@ -102,7 +106,9 @@ export class BattlefieldScene extends Phaser.Scene {
     this.input.mouse?.disableContextMenu();
 
     const playerSpecies: SpeciesId =
-      data?.species === 'nobles' ? 'nobles' : 'brutes';
+      data?.species === 'nobles' || data?.species === 'weirdos'
+        ? data.species
+        : 'brutes';
 
     createSkirmishMap(this);
     this.world = createBattlefieldWorld(playerSpecies);
@@ -135,7 +141,9 @@ export class BattlefieldScene extends Phaser.Scene {
     const mech =
       playerSpecies === 'nobles'
         ? 'FORMATIONS (F) · B cycle buildings'
-        : 'B place hut · Rage later';
+        : playerSpecies === 'weirdos'
+          ? 'MUTATION (M) · B cycle buildings'
+          : 'B place hut · Rage later';
     this.add
       .text(
         12,
@@ -256,6 +264,11 @@ export class BattlefieldScene extends Phaser.Scene {
     this.input.keyboard?.on('keydown-F', () => {
       if (this.world.speciesId === 'nobles') {
         toggleFormationSelected(this.world);
+      }
+    });
+    this.input.keyboard?.on('keydown-M', () => {
+      if (this.world.speciesId === 'weirdos') {
+        toggleMutationSelected(this.world);
       }
     });
     this.input.keyboard?.on('keydown-H', () => {
@@ -432,6 +445,7 @@ export class BattlefieldScene extends Phaser.Scene {
       tickBuildings(this.world, delta);
       tickProduction(this.world, delta);
       tickFormations(this.world, delta);
+      tickMutations(this.world, delta);
       tickHeroes(this.world, delta);
       tickBattlefieldAi(this.world, this.ai, delta);
       tickBattlefieldCombat(this.world, delta);
@@ -552,13 +566,21 @@ export class BattlefieldScene extends Phaser.Scene {
             ? ' · worker'
             : '';
       const form = u.inFormation ? ' · FORMATION' : '';
+      const mut = u.mutated ? ' · MUTATED' : '';
       this.status.setText(
-        `1 selected — ${u.name}  HP ${Math.ceil(u.hp)}/${u.maxHp}${carry}${form}`,
+        `1 selected — ${u.name}  HP ${Math.ceil(u.hp)}/${u.maxHp}${carry}${form}${mut}`,
       );
     } else {
       const formed = sel.filter((u) => u.inFormation).length;
+      const mutated = sel.filter((u) => u.mutated).length;
+      const extra = [
+        formed ? `${formed} in formation` : '',
+        mutated ? `${mutated} mutated` : '',
+      ]
+        .filter(Boolean)
+        .join(' · ');
       this.status.setText(
-        `${n} selected${formed ? ` · ${formed} in formation` : ''}  ·  RMB resource / enemy / ground`,
+        `${n} selected${extra ? ` · ${extra}` : ''}  ·  RMB resource / enemy / ground`,
       );
     }
     if (this.mode === 'place') {
@@ -568,10 +590,13 @@ export class BattlefieldScene extends Phaser.Scene {
         `Place ${def.name} (${cost}g) · B cycle · LMB place · RMB/Esc cancel`,
       );
     } else {
+      const sid = this.world.speciesId;
       this.hint.setText(
-        this.world.speciesId === 'nobles'
+        sid === 'nobles'
           ? 'H recruit hero · Q/W/E abilities · F formation · B build · RMB orders'
-          : 'H recruit GRUK · Q/W/E abilities · B build · RMB gather/attack · Esc',
+          : sid === 'weirdos'
+            ? 'H recruit ZOGGLE · Q/W/E · M mutation · B build · RMB orders'
+            : 'H recruit GRUK · Q/W/E abilities · B build · RMB gather/attack · Esc',
       );
     }
   }
@@ -657,6 +682,10 @@ export class BattlefieldScene extends Phaser.Scene {
       if (u.inFormation) {
         g.lineStyle(2, 0xc0c8d4, 0.95);
         g.strokeCircle(u.x, u.y, u.radius + 9);
+      }
+      if (u.mutated) {
+        g.lineStyle(2, 0xe87aa8, 0.95);
+        g.strokeCircle(u.x, u.y, u.radius + 10);
       }
 
       const flash = u.lastAttackFlashMs > 0;

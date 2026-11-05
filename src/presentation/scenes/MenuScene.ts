@@ -33,11 +33,20 @@ export class MenuScene extends Phaser.Scene {
       yoyo: true,
       repeat: -1,
     });
+    const orb3 = this.add.circle(width * 0.5, height * 0.18, 50, 0x7a4aa8, 0.16);
+    this.tweens.add({
+      targets: orb3,
+      scale: 1.2,
+      alpha: 0.3,
+      duration: 2800,
+      yoyo: true,
+      repeat: -1,
+    });
 
     const title = this.add
-      .text(width / 2, height * 0.14, BRAND.name, {
+      .text(width / 2, height * 0.12, BRAND.name, {
         fontFamily: 'Georgia, "Times New Roman", serif',
-        fontSize: Math.min(80, width * 0.18) + 'px',
+        fontSize: Math.min(72, width * 0.16) + 'px',
         color: '#f5e6c8',
         stroke: '#1a2a4a',
         strokeThickness: 8,
@@ -47,7 +56,7 @@ export class MenuScene extends Phaser.Scene {
     this.tweens.add({ targets: title, alpha: 1, y: title.y + 6, duration: 700 });
 
     this.add
-      .text(width / 2, height * 0.26, BRAND.tagline, {
+      .text(width / 2, height * 0.22, BRAND.tagline, {
         fontFamily: 'system-ui, sans-serif',
         fontSize: Math.min(18, width * 0.045) + 'px',
         color: '#f0c75e',
@@ -56,35 +65,37 @@ export class MenuScene extends Phaser.Scene {
       .setOrigin(0.5);
 
     this.add
-      .text(width / 2, height * 0.32, 'Pick your species for a local skirmish', {
+      .text(width / 2, height * 0.28, 'Pick your species for a local skirmish', {
         fontFamily: 'system-ui, sans-serif',
         fontSize: '14px',
         color: '#b8c9d9',
       })
       .setOrigin(0.5);
 
-    const brutes = SPECIES.brutes;
-    const nobles = SPECIES.nobles;
-    this.makeSpeciesCard(
-      width / 2 - Math.min(170, width * 0.22),
-      height * 0.52,
-      brutes.name,
-      brutes.motto,
-      brutes.uniqueMechanic,
-      0x4a7a3a,
-      0xd4782e,
-      () => this.startMatch('brutes'),
-    );
-    this.makeSpeciesCard(
-      width / 2 + Math.min(170, width * 0.22),
-      height * 0.52,
-      nobles.name,
-      nobles.motto,
-      nobles.uniqueMechanic,
-      0x3d7ea6,
-      0xf0c75e,
-      () => this.startMatch('nobles'),
-    );
+    const gap = Math.min(200, width * 0.28);
+    const cardY = height * 0.52;
+    const cards: {
+      id: SpeciesId;
+      fill: number;
+      stroke: number;
+    }[] = [
+      { id: 'brutes', fill: 0x4a7a3a, stroke: 0xd4782e },
+      { id: 'nobles', fill: 0x3d7ea6, stroke: 0xf0c75e },
+      { id: 'weirdos', fill: 0x7a4aa8, stroke: 0x6ecfbf },
+    ];
+    cards.forEach((c, i) => {
+      const s = SPECIES[c.id];
+      this.makeSpeciesCard(
+        width / 2 + (i - 1) * gap,
+        cardY,
+        s.name,
+        s.motto,
+        s.uniqueMechanic,
+        c.fill,
+        c.stroke,
+        () => this.startMatch(c.id),
+      );
+    });
 
     this.add
       .text(
@@ -103,7 +114,7 @@ export class MenuScene extends Phaser.Scene {
       .text(
         width / 2,
         height * 0.9,
-        'Nobles: FORMATIONS (F) · Brutes: swarm  ·  opponent is the other species',
+        'FORMATIONS (F) · MUTATION (M) · Heroes (H, Q/W/E) · opponent rotates species',
         {
           fontFamily: 'system-ui, sans-serif',
           fontSize: '12px',
@@ -127,7 +138,7 @@ export class MenuScene extends Phaser.Scene {
     stroke: number,
     onClick: () => void,
   ): void {
-    const w = Math.min(280, this.scale.width * 0.4);
+    const w = Math.min(190, this.scale.width * 0.28);
     const h = 150;
     const bg = this.add
       .rectangle(x, y, w, h, fill, 1)
@@ -136,23 +147,23 @@ export class MenuScene extends Phaser.Scene {
     this.add
       .text(x, y - 40, name, {
         fontFamily: 'Georgia, "Times New Roman", serif',
-        fontSize: '22px',
+        fontSize: '18px',
         color: '#fff8e8',
       })
       .setOrigin(0.5);
     this.add
       .text(x, y - 8, motto, {
         fontFamily: 'system-ui, sans-serif',
-        fontSize: '11px',
+        fontSize: '10px',
         color: '#e8f0f8',
         align: 'center',
-        wordWrap: { width: w - 24 },
+        wordWrap: { width: w - 16 },
       })
       .setOrigin(0.5);
     this.add
       .text(x, y + 36, mechanic, {
         fontFamily: 'system-ui, sans-serif',
-        fontSize: '13px',
+        fontSize: '12px',
         color: '#f0c75e',
         fontStyle: 'bold',
       })

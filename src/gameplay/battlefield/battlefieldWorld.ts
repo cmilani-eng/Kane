@@ -14,6 +14,7 @@ import { getUnitType, type UnitTypeId } from '../../data/units';
 import { clamp, dist, moveToward } from '../math';
 import type { Vec2 } from '../types';
 import { createDefaultNodes } from './battlefieldEconomy';
+import { mutationSpeedMult } from './battlefieldMutations';
 
 export type BattlefieldTeam = 'player' | 'enemy' | 'neutral';
 
@@ -88,6 +89,9 @@ export interface BattlefieldUnit {
   inFormation: boolean;
   formationLocked: boolean;
   formationStillMs: number;
+  /** Weirdos MUTATION state. */
+  mutated: boolean;
+  mutationLocked: boolean;
 }
 
 export interface BattlefieldWorld {
@@ -186,13 +190,23 @@ export function spawnUnit(
     inFormation: false,
     formationLocked: false,
     formationStillMs: 0,
+    mutated: false,
+    mutationLocked: false,
   };
   world.units.push(u);
   return u;
 }
 
 function oppositePlayable(id: SpeciesId): SpeciesId {
-  return id === 'nobles' ? 'brutes' : 'nobles';
+  if (id === 'weirdos') return 'nobles';
+  if (id === 'nobles') return 'brutes';
+  return 'weirdos';
+}
+
+function hallForSpecies(speciesId: SpeciesId): BuildingTypeId {
+  if (speciesId === 'nobles') return 'royal_keep';
+  if (speciesId === 'weirdos') return 'weird_core';
+  return 'junkyard';
 }
 
 function seedArmy(
@@ -236,6 +250,49 @@ function seedArmy(
         speciesId,
       });
     }
+    return;
+  }
+
+  if (speciesId === 'weirdos') {
+    const pink = pal.pink ?? 0xe87aa8;
+    for (let i = 0; i < 4; i++) {
+      spawnUnit(world, {
+        team,
+        typeId: 'goo_worker',
+        x: originX + i * 40,
+        y: originY - 50,
+        color: pink,
+        speciesId,
+      });
+    }
+    for (let i = 0; i < 5; i++) {
+      spawnUnit(world, {
+        team,
+        typeId: 'bloblet',
+        x: originX + (i % 3) * 44,
+        y: originY + Math.floor(i / 3) * 44,
+        color: i % 2 === 0 ? pal.primary : pink,
+        speciesId,
+      });
+    }
+    for (let i = 0; i < 2; i++) {
+      spawnUnit(world, {
+        team,
+        typeId: 'eyebat',
+        x: originX + 120 + i * 44,
+        y: originY + 8,
+        color: pal.accent,
+        speciesId,
+      });
+    }
+    spawnUnit(world, {
+      team,
+      typeId: 'shroom_mage',
+      x: originX + 70,
+      y: originY + 100,
+      color: pink,
+      speciesId,
+    });
     return;
   }
 
@@ -283,7 +340,6 @@ function seedArmy(
 export function createBattlefieldWorld(
   playerSpecies: SpeciesId = 'brutes',
 ): BattlefieldWorld {
-  if (playerSpecies === 'weirdos') playerSpecies = 'nobles';
   const enemySpecies = oppositePlayable(playerSpecies);
   const world: BattlefieldWorld = {
     nextId: 1,
@@ -308,14 +364,14 @@ export function createBattlefieldWorld(
   seedHall(
     world,
     'player',
-    playerSpecies === 'nobles' ? 'royal_keep' : 'junkyard',
+    hallForSpecies(playerSpecies),
     baseX - 60,
     baseY + 60,
   );
   seedHall(
     world,
     'enemy',
-    enemySpecies === 'nobles' ? 'royal_keep' : 'junkyard',
+    hallForSpecies(enemySpecies),
     ex - 60,
     ey + 60,
   );
@@ -399,12 +455,13 @@ export function tickBattlefield(world: BattlefieldWorld, dtMs: number): void {
   const dt = Math.min(dtMs, 50) / 1000;
   for (const u of world.units) {
     if (!u.moveTarget || u.speed <= 0) continue;
+    const spd = u.speed * mutationSpeedMult(u);
     const next = moveToward(
       u.x,
       u.y,
       u.moveTarget.x,
       u.moveTarget.y,
-      u.speed,
+      spd,
       dt,
     );
     u.x = clamp(next.x, u.radius, MAP.width - u.radius);

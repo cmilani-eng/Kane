@@ -1,5 +1,5 @@
 /**
- * Data-driven buildings — Brutes + Nobles (GDD v2).
+ * Data-driven buildings — Brutes + Nobles + Weirdos (GDD v2).
  */
 
 import type { ResourceWallet } from './resources';
@@ -17,7 +17,15 @@ export type BuildingTypeId =
   | 'stable'
   | 'engineering_yard'
   | 'watchtower'
-  | 'royal_academy';
+  | 'royal_academy'
+  // Weirdos
+  | 'weird_core'
+  | 'blob_factory'
+  | 'eye_nest'
+  | 'mushroom_lab'
+  | 'mutation_pool'
+  | 'magic_bubble'
+  | 'portal_of_chaos';
 
 export interface BuildingTypeDef {
   id: BuildingTypeId;
@@ -178,6 +186,105 @@ export const BUILDING_TYPES: Record<BuildingTypeId, BuildingTypeDef> = {
     trains: [],
     color: 0x2a4a6a,
     accent: 0xf0c75e,
+  },
+  weird_core: {
+    id: 'weird_core',
+    name: 'Weird Core',
+    speciesId: 'weirdos',
+    maxHp: 1250,
+    radius: 38,
+    buildMs: 0,
+    cost: {},
+    isDropOff: true,
+    isMainHall: true,
+    trains: ['goo_worker'],
+    color: 0x7a4aa8,
+    accent: 0x6ecfbf,
+  },
+  blob_factory: {
+    id: 'blob_factory',
+    name: 'Blob Factory',
+    speciesId: 'weirdos',
+    maxHp: 520,
+    radius: 28,
+    buildMs: 4500,
+    cost: { gold: 100 },
+    isDropOff: false,
+    isMainHall: false,
+    trains: ['bloblet', 'grabber'],
+    color: 0x6a3a98,
+    accent: 0xe87aa8,
+  },
+  eye_nest: {
+    id: 'eye_nest',
+    name: 'Eye Nest',
+    speciesId: 'weirdos',
+    maxHp: 460,
+    radius: 26,
+    buildMs: 4200,
+    cost: { gold: 110, magic_crystals: 5 },
+    isDropOff: false,
+    isMainHall: false,
+    trains: ['eyebat'],
+    color: 0x5a4a88,
+    accent: 0x6ecfbf,
+  },
+  mushroom_lab: {
+    id: 'mushroom_lab',
+    name: 'Mushroom Lab',
+    speciesId: 'weirdos',
+    maxHp: 500,
+    radius: 28,
+    buildMs: 4800,
+    cost: { gold: 115, magic_crystals: 10 },
+    isDropOff: false,
+    isMainHall: false,
+    trains: ['shroom_mage', 'floaty'],
+    color: 0x4a6a58,
+    accent: 0xe87aa8,
+  },
+  mutation_pool: {
+    id: 'mutation_pool',
+    name: 'Mutation Pool',
+    speciesId: 'weirdos',
+    maxHp: 560,
+    radius: 30,
+    buildMs: 5000,
+    cost: { gold: 120, magic_crystals: 20 },
+    isDropOff: false,
+    isMainHall: false,
+    recruitsHero: true,
+    trains: [],
+    color: 0x8a3a78,
+    accent: 0x6ecfbf,
+  },
+  magic_bubble: {
+    id: 'magic_bubble',
+    name: 'Magic Bubble',
+    speciesId: 'weirdos',
+    maxHp: 380,
+    radius: 22,
+    buildMs: 3400,
+    cost: { gold: 80 },
+    isDropOff: false,
+    isMainHall: false,
+    trains: [],
+    color: 0x3a5a78,
+    accent: 0xe87aa8,
+  },
+  portal_of_chaos: {
+    id: 'portal_of_chaos',
+    name: 'Portal of Chaos',
+    speciesId: 'weirdos',
+    maxHp: 540,
+    radius: 30,
+    buildMs: 5500,
+    cost: { gold: 140, magic_crystals: 18 },
+    isDropOff: false,
+    isMainHall: false,
+    trains: ['crystal_freak'],
+    color: 0x4a2a68,
+    accent: 0x6ecfbf,
   },
 };
 
