@@ -10,6 +10,11 @@ import { SPECIES } from '../../data/speciesStub';
 import { getBuildingType } from '../../data/buildings';
 import { getUnitType } from '../../data/units';
 import {
+  createAiState,
+  tickBattlefieldAi,
+  type AiState,
+} from '../../gameplay/battlefield/battlefieldAi';
+import {
   buildingBlocks,
   findBuildingAt,
   placeBuilding,
@@ -65,6 +70,7 @@ export class BattlefieldScene extends Phaser.Scene {
   private ghostPos = { x: 0, y: 0 };
   private ghostValid = false;
   private selectedBuilding: BattlefieldBuilding | null = null;
+  private ai!: AiState;
 
   constructor() {
     super('Battlefield');
@@ -75,6 +81,7 @@ export class BattlefieldScene extends Phaser.Scene {
 
     createSkirmishMap(this);
     this.world = createBattlefieldWorld();
+    this.ai = createAiState();
     this.cameraCtl = new RtsCamera(this);
     const first = this.world.units.find((u) => u.team === 'player');
     if (first) this.cameras.main.centerOn(first.x + 80, first.y - 40);
@@ -85,7 +92,7 @@ export class BattlefieldScene extends Phaser.Scene {
     this.ghostGfx = this.add.graphics().setDepth(40);
 
     this.add
-      .text(12, 8, `${BRAND.name}  ·  Production + buildings`, {
+      .text(12, 8, `${BRAND.name}  ·  Skirmish AI`, {
         fontFamily: 'Georgia, "Times New Roman", serif',
         fontSize: '18px',
         color: '#f5e6c8',
@@ -352,6 +359,7 @@ export class BattlefieldScene extends Phaser.Scene {
     tickBattlefieldEconomy(this.world);
     tickBuildings(this.world, delta);
     tickProduction(this.world, delta);
+    tickBattlefieldAi(this.world, this.ai, delta);
     tickBattlefieldCombat(this.world, delta);
     // Drop selection if building destroyed
     if (
