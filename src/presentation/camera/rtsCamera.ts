@@ -37,8 +37,9 @@ export class RtsCamera {
         right: wasd.right,
         up: wasd.up,
         down: wasd.down,
-        zoomIn: kb.addKey(Phaser.Input.Keyboard.KeyCodes.Q),
-        zoomOut: kb.addKey(Phaser.Input.Keyboard.KeyCodes.E),
+        // Q/E reserved for hero abilities on Battlefield — zoom via mouse wheel / [ ]
+        zoomIn: kb.addKey(Phaser.Input.Keyboard.KeyCodes.OPEN_BRACKET),
+        zoomOut: kb.addKey(Phaser.Input.Keyboard.KeyCodes.CLOSED_BRACKET),
         zoomSpeed: 0.02,
         minZoom: 0.45,
         maxZoom: 1.6,

@@ -102,6 +102,10 @@ export interface BattlefieldWorld {
   speciesId: SpeciesId;
   /** Enemy species (the other playable faction). */
   enemySpeciesId: SpeciesId;
+  /** Hero runtime + ability VFX (see battlefieldHeroes). */
+  heroRuntime: import('./battlefieldHeroes').HeroRuntime | null;
+  enemyHeroRuntime: import('./battlefieldHeroes').HeroRuntime | null;
+  vfx: import('./battlefieldHeroes').HeroVfx[];
 }
 
 function seedHall(
@@ -287,10 +291,13 @@ export function createBattlefieldWorld(
     buildings: [],
     nodes: [],
     stockpiles: [],
-    wallet: emptyWallet({ gold: 200, magic_crystals: 20 }),
-    enemyWallet: emptyWallet({ gold: 180, magic_crystals: 15 }),
+    wallet: emptyWallet({ gold: 220, magic_crystals: 40 }),
+    enemyWallet: emptyWallet({ gold: 200, magic_crystals: 30 }),
     speciesId: playerSpecies,
     enemySpeciesId: enemySpecies,
+    heroRuntime: null,
+    enemyHeroRuntime: null,
+    vfx: [],
   };
 
   const baseX = 420;

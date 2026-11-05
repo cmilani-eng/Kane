@@ -7,6 +7,7 @@ export type UnitTypeId =
   | 'scavenger'
   | 'bonker'
   | 'rock_thrower'
+  | 'gruk'
   // Nobles
   | 'serf'
   | 'tin_knight'
@@ -14,7 +15,10 @@ export type UnitTypeId =
   | 'hammer_dwarf'
   | 'boar_knight'
   | 'walking_tank'
-  | 'boom_cart';
+  | 'boom_cart'
+  | 'boniface'
+  // Weirdos (roster lands with Weirdos PR; hero stub ok)
+  | 'zoggle';
 
 export interface UnitTypeDef {
   id: UnitTypeId;
@@ -36,8 +40,9 @@ export interface UnitTypeDef {
   structureMult?: number;
   /** Participates in FORMATIONS when Nobles. */
   usesFormation?: boolean;
+  isHero?: boolean;
   /** Shape hint for presentation placeholders. */
-  shape?: 'circle' | 'square' | 'diamond' | 'triangle' | 'hex';
+  shape?: 'circle' | 'square' | 'diamond' | 'triangle' | 'hex' | 'star';
 }
 
 export const UNIT_TYPES: Record<UnitTypeId, UnitTypeDef> = {
@@ -228,6 +233,64 @@ export const UNIT_TYPES: Record<UnitTypeId, UnitTypeDef> = {
     structureMult: 2.2,
     usesFormation: false,
     shape: 'hex',
+  },
+  gruk: {
+    id: 'gruk',
+    name: 'GRUK',
+    speciesId: 'brutes',
+    maxHp: 380,
+    dmg: 28,
+    range: 42,
+    speed: 95,
+    radius: 22,
+    vision: 300,
+    attackCooldownMs: 750,
+    canGather: false,
+    carryCapacity: 0,
+    costGold: 150,
+    costCrystals: 40,
+    trainMs: 1000,
+    isHero: true,
+    shape: 'star',
+  },
+  boniface: {
+    id: 'boniface',
+    name: 'KING BONIFACE',
+    speciesId: 'nobles',
+    maxHp: 340,
+    dmg: 20,
+    range: 40,
+    speed: 85,
+    radius: 20,
+    vision: 290,
+    attackCooldownMs: 800,
+    canGather: false,
+    carryCapacity: 0,
+    costGold: 160,
+    costCrystals: 45,
+    trainMs: 1000,
+    isHero: true,
+    usesFormation: true,
+    shape: 'star',
+  },
+  zoggle: {
+    id: 'zoggle',
+    name: 'ZOGGLE',
+    speciesId: 'weirdos',
+    maxHp: 300,
+    dmg: 22,
+    range: 110,
+    speed: 90,
+    radius: 20,
+    vision: 360,
+    attackCooldownMs: 780,
+    canGather: false,
+    carryCapacity: 0,
+    costGold: 155,
+    costCrystals: 50,
+    trainMs: 1000,
+    isHero: true,
+    shape: 'star',
   },
 };
 
