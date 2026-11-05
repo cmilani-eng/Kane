@@ -22,6 +22,7 @@ import {
   tickAi,
   tryPlaceBarracks,
 } from '../sim/world';
+import { hideDomHud, showDomHud } from '../ui/domHud';
 
 type PointerMode = 'none' | 'tap' | 'box' | 'pan' | 'place-barracks';
 
@@ -55,12 +56,12 @@ export class GameScene extends Phaser.Scene {
   private pinchStartDist = 0;
   private pinchStartZoom = 1;
 
-  private hud!: Phaser.GameObjects.Container;
   private forageText!: Phaser.GameObjects.Text;
   private auraText!: Phaser.GameObjects.Text;
   private holdText!: Phaser.GameObjects.Text;
   private coachText!: Phaser.GameObjects.Text;
   private cmdHint!: Phaser.GameObjects.Text;
+  private topBar!: Phaser.GameObjects.Rectangle;
   private endOverlay: Phaser.GameObjects.Container | null = null;
   private placingBarracks = false;
 
@@ -132,27 +133,37 @@ export class GameScene extends Phaser.Scene {
   }
 
   private buildHud(): void {
-    this.hud = this.add.container(0, 0).setScrollFactor(0).setDepth(100);
+    // Resource / coach stay on-canvas; command buttons are DOM for reliable touch.
+    this.topBar = this.add
+      .rectangle(0, 0, 10, 56, 0x0f1a2e, 0.82)
+      .setOrigin(0, 0)
+      .setScrollFactor(0)
+      .setDepth(100);
 
-    const top = this.add.rectangle(0, 0, 10, 56, 0x0f1a2e, 0.82).setOrigin(0, 0);
-    top.name = 'topBar';
-
-    this.forageText = this.add.text(12, 10, '', {
-      fontFamily: 'system-ui, sans-serif',
-      fontSize: '15px',
-      color: '#d7f0c8',
-    });
-    this.auraText = this.add.text(12, 30, '', {
-      fontFamily: 'system-ui, sans-serif',
-      fontSize: '15px',
-      color: '#c8e0f5',
-    });
-    this.holdText = this.add.text(0, 14, '', {
-      fontFamily: 'system-ui, sans-serif',
-      fontSize: '14px',
-      color: '#f0c75e',
-    });
-
+    this.forageText = this.add
+      .text(12, 10, '', {
+        fontFamily: 'system-ui, sans-serif',
+        fontSize: '15px',
+        color: '#d7f0c8',
+      })
+      .setScrollFactor(0)
+      .setDepth(101);
+    this.auraText = this.add
+      .text(12, 30, '', {
+        fontFamily: 'system-ui, sans-serif',
+        fontSize: '15px',
+        color: '#c8e0f5',
+      })
+      .setScrollFactor(0)
+      .setDepth(101);
+    this.holdText = this.add
+      .text(0, 14, '', {
+        fontFamily: 'system-ui, sans-serif',
+        fontSize: '14px',
+        color: '#f0c75e',
+      })
+      .setScrollFactor(0)
+      .setDepth(101);
     this.coachText = this.add
       .text(0, 0, '', {
         fontFamily: 'system-ui, sans-serif',
@@ -162,112 +173,46 @@ export class GameScene extends Phaser.Scene {
         padding: { x: 10, y: 8 },
         wordWrap: { width: 320 },
       })
-      .setOrigin(0.5, 0);
-
+      .setOrigin(0.5, 0)
+      .setScrollFactor(0)
+      .setDepth(101);
     this.cmdHint = this.add
       .text(0, 0, '', {
         fontFamily: 'system-ui, sans-serif',
         fontSize: '13px',
         color: '#b8c9d9',
       })
-      .setOrigin(0.5, 1);
+      .setOrigin(0.5, 1)
+      .setScrollFactor(0)
+      .setDepth(101);
 
-    const btnBuild = this.makeHudButton('Build Barracks', () => this.togglePlaceBarracks());
-    btnBuild.name = 'btnBuild';
-    const btnMelee = this.makeHudButton('Train Blade', () => this.train('melee'));
-    btnMelee.name = 'btnMelee';
-    const btnRanged = this.makeHudButton('Train Archer', () => this.train('ranged'));
-    btnRanged.name = 'btnRanged';
-    const btnScout = this.makeHudButton('Train Scout', () => this.train('scout'));
-    btnScout.name = 'btnScout';
-    const btnMenu = this.makeHudButton('Menu', () => this.scene.start('Menu'), 0x3a4555);
-    btnMenu.name = 'btnMenu';
-
-    this.hud.add([
-      top,
-      this.forageText,
-      this.auraText,
-      this.holdText,
-      this.coachText,
-      this.cmdHint,
-      btnBuild,
-      btnMelee,
-      btnRanged,
-      btnScout,
-      btnMenu,
-    ]);
-    this.layoutHud();
-  }
-
-  private makeHudButton(
-    label: string,
-    onClick: () => void,
-    color = 0x3d7ea6,
-  ): Phaser.GameObjects.Container {
-    const w = 110;
-    const h = 44;
-    const bg = this.add
-      .rectangle(0, 0, w, h, color, 0.95)
-      .setStrokeStyle(2, 0xf0c75e)
-      .setName('bg');
-    const text = this.add
-      .text(0, 0, label, {
-        fontFamily: 'system-ui, sans-serif',
-        fontSize: '12px',
-        color: '#fff8e8',
-        align: 'center',
-        wordWrap: { width: w - 8 },
-      })
-      .setOrigin(0.5)
-      .setName('label');
-    const c = this.add.container(0, 0, [bg, text]);
-    bg.setInteractive({ useHandCursor: true }).on(
-      'pointerup',
-      (p: Phaser.Input.Pointer) => {
-        p.event.stopPropagation();
-        onClick();
+    showDomHud({
+      buildBarracks: () => this.togglePlaceBarracks(),
+      trainMelee: () => this.train('melee'),
+      trainRanged: () => this.train('ranged'),
+      trainScout: () => this.train('scout'),
+      menu: () => {
+        hideDomHud();
+        this.scene.start('Menu');
       },
-    );
-    return c;
+    });
+
+    this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => hideDomHud());
+    this.events.once(Phaser.Scenes.Events.DESTROY, () => hideDomHud());
+
+    this.layoutHud();
   }
 
   private layoutHud = (): void => {
     const w = this.scale.width;
     const h = this.scale.height;
-    const top = this.hud.getByName('topBar') as Phaser.GameObjects.Rectangle;
-    top.setSize(w, 56);
-    this.holdText.setPosition(w / 2, 14);
-    this.holdText.setOrigin(0.5, 0);
+    this.topBar.setSize(w, 56);
+    // Keep status on the right so it doesn't collide with forage/aura.
+    this.holdText.setPosition(w - 12, 14).setOrigin(1, 0);
     this.coachText.setPosition(w / 2, 64);
     this.coachText.setStyle({ wordWrap: { width: Math.min(420, w - 24) } });
-
-    const row1 = ['btnBuild', 'btnMelee', 'btnRanged'];
-    const row2 = ['btnScout', 'btnMenu'];
-    const gap = 6;
-    const bw = Math.min(118, (w - gap * 4) / 3);
-    const bh = 44;
-    const layoutRow = (names: string[], y: number) => {
-      const total = names.length * bw + (names.length - 1) * gap;
-      let x = (w - total) / 2 + bw / 2;
-      for (const name of names) {
-        const b = this.hud.getByName(name) as Phaser.GameObjects.Container;
-        const bg = b.getByName('bg') as Phaser.GameObjects.Rectangle;
-        const label = b.getByName('label') as Phaser.GameObjects.Text;
-        bg.setSize(bw, bh);
-        if (bg.input) {
-          bg.input.hitArea.setTo(-bw / 2, -bh / 2, bw, bh);
-        }
-        label.setStyle({
-          wordWrap: { width: bw - 8 },
-          fontSize: bw < 100 ? '11px' : '12px',
-        });
-        b.setPosition(x, y);
-        x += bw + gap;
-      }
-    };
-    layoutRow(row1, h - 28 - (bh + gap));
-    layoutRow(row2, h - 28);
-    this.cmdHint.setPosition(w / 2, h - 28 - (bh + gap) * 2 - 8);
+    // Leave room above the fixed DOM command bar (~120px).
+    this.cmdHint.setPosition(w / 2, h - 128);
   };
 
   private bindInput(): void {
@@ -453,7 +398,7 @@ export class GameScene extends Phaser.Scene {
 
   private train(kind: UnitKind): void {
     let barracks = selectedBuilding(this.world, 'player');
-    if (!barracks || barracks.kind !== 'barracks') {
+    if (!barracks || barracks.kind !== 'barracks' || barracks.buildProgress < 1) {
       barracks =
         this.world.buildings.find(
           (b) =>
@@ -461,7 +406,12 @@ export class GameScene extends Phaser.Scene {
         ) ?? null;
     }
     if (!barracks) {
-      this.world.coach = 'Build a Barracks first, then train units.';
+      const pending = this.world.buildings.find(
+        (b) => b.team === 'player' && b.kind === 'barracks' && b.buildProgress < 1,
+      );
+      this.world.coach = pending
+        ? 'Barracks still building — wait for it to finish.'
+        : 'Build a Barracks first, then train units.';
       return;
     }
     if (enqueueTrain(this.world, barracks, kind)) {
