@@ -39,7 +39,7 @@ export function findEnemyAt(
     if (u.team === forTeam || u.team === 'neutral') continue;
     if (u.hp <= 0) continue;
     const d = dist(u.x, u.y, x, y);
-    if (d <= u.radius + 14 && d < bestD) {
+    if (d <= u.radius + 22 && d < bestD) {
       best = u;
       bestD = d;
     }
@@ -48,7 +48,7 @@ export function findEnemyAt(
     if (b.team === forTeam || b.team === 'neutral') continue;
     if (b.hp <= 0) continue;
     const d = dist(b.x, b.y, x, y);
-    if (d <= b.radius + 10 && d < bestD) {
+    if (d <= b.radius + 14 && d < bestD) {
       best = b;
       bestD = d;
     }
@@ -115,13 +115,19 @@ export function tickBattlefieldCombat(
   world: BattlefieldWorld,
   dtMs: number,
 ): void {
+  // Auto-acquire: enemies always; player when idle (not gathering / pure-moving).
+  // Without this, player units in melee take hits but never fire back.
   for (const u of world.units) {
-    if (u.team !== 'enemy') continue;
+    if (u.team === 'neutral') continue;
     let t = findTarget(world, u.attackTargetId);
-    if (!t || t.hp <= 0) {
-      t = acquireNearestEnemy(world, u);
-      u.attackTargetId = t?.id ?? null;
+    if (t && t.hp > 0) continue;
+    if (u.team === 'player') {
+      if (u.gatherNodeId != null || u.carrying > 0) continue;
+      // Honor pure move orders — don't convert march into attack-move mid-path.
+      if (u.moveTarget != null) continue;
     }
+    t = acquireNearestEnemy(world, u);
+    u.attackTargetId = t?.id ?? null;
   }
 
   for (const u of world.units) {
