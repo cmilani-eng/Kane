@@ -17,17 +17,17 @@ npm run dev
 
 Open `http://localhost:5173` (use the LAN URL for phones).
 
-## Milestone 1 (current) — what works
+## Current milestone — combat skirmish
 
-Playable **battlefield** scene (GDD v2 aligned for data only):
+Playable **battlefield** (select / move / attack):
 
-- Camera: **WASD** / arrows, **edge scroll**, **Q/E** + wheel zoom ([FixedKeyControl](https://docs.phaser.io/api-documentation/class/cameras-controls-fixedkeycontrol))
-- Temporary **Nobles** placeholders (prototype species; ~10 units)
-- **Left-click** select · **drag** multi-select · **right-click** move
+- Camera: **WASD** / arrows, **edge scroll**, **Q/E** + wheel zoom
+- **Player Brutes** (Bonkers + Rock Throwers) vs **enemy** placeholders
+- **LMB** select · **Shift** add/toggle · **drag** box · **RMB** attack enemy or move
+- Health bars, attack range when selected, death removal, no friendly fire
 - Menu → **Enter Battlefield**
-- Data stubs: species Brutes / Nobles / Weirdos; resources **Scrap** + **Core** (`src/data/`)
 
-**Not in this milestone:** combat, gather/spend economy, buildings, full species systems, AI, multiplayer.
+**Not in this milestone:** buildings, Scrap/Core economy, production, full AI, multiplayer.
 
 ## Architecture
 
@@ -38,8 +38,9 @@ Playable **battlefield** scene (GDD v2 aligned for data only):
 | **KANE GAME CLIENT** (Phaser 4 + TS) | `src/game/`, `src/gameplay/`, `src/presentation/` | Yes |
 | → Gameplay | `src/gameplay/` (+ `battlefield/` for M1) | Yes |
 | → Presentation | `src/presentation/` | Yes |
-| Species data (later) | `src/data/speciesStub.ts` | Stub — Nobles first |
+| Species / units | `src/data/speciesStub.ts`, `src/data/units.ts` | Brutes combat stats |
 | Resources (later) | `src/data/resources.ts` | Stub — Scrap + Core IDs |
+| Battlefield combat | `src/gameplay/battlefield/` | Select/move + combat |
 | Online connection | `src/networking/` | Stub |
 | Multiplayer server | `src/server/` | Stub |
 | Database | `src/database/` | Stub |
@@ -51,8 +52,10 @@ Gameplay does not import presentation. Full skirmish systems under `gameplay/` r
 | Input | Action |
 |-------|--------|
 | LMB | Select unit |
+| Shift+LMB | Add / toggle select |
 | LMB drag | Multi-select box |
-| RMB | Move selected |
+| RMB on enemy | Attack |
+| RMB on ground | Move selected |
 | WASD / arrows | Pan |
 | Edge of screen | Pan |
 | Q / E / wheel | Zoom |
@@ -63,6 +66,6 @@ Gameplay does not import presentation. Full skirmish systems under `gameplay/` r
 
 - **KANE** · **BUILD. COMMAND. CONQUER.** · Fantasy Real-Time Strategy Game
 
-## What’s next (not this PR milestone)
+## What’s next
 
-Combat, economy, buildings, data-driven Brutes/Nobles/Weirdos, AI skirmish, then online.
+Buildings, Scrap/Core economy, production, species mechanics, smarter AI, then online.
