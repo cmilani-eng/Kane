@@ -225,6 +225,7 @@ function applyAbility(
       if (dist(hero.x, hero.y, u.x, u.y) > radius) continue;
       u.hp -= hero.dmg * 1.55;
       u.attackTargetId = null;
+      u.path = [];
       u.moveTarget = null;
       u.gatherNodeId = null;
       u.attackCd = Math.max(u.attackCd, 1400);

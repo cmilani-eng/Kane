@@ -19,6 +19,7 @@ import {
 } from './aiDifficulty';
 import { createDefaultNodes } from './battlefieldEconomy';
 import { createFogState } from './battlefieldFog';
+import { setUnitPath } from './battlefieldPathfinding';
 import { mutationSpeedMult } from './battlefieldMutations';
 
 export type BattlefieldTeam = 'player' | 'enemy' | 'neutral';
@@ -84,6 +85,8 @@ export interface BattlefieldUnit {
   lastAttackFlashMs: number;
   selected: boolean;
   moveTarget: Vec2 | null;
+  /** Remaining path waypoints after `moveTarget` (building-aware). */
+  path: Vec2[];
   /** When true, auto-acquire enemies while marching (attack-move). */
   attackMove: boolean;
   color: number;
@@ -192,6 +195,7 @@ export function spawnUnit(
     lastAttackFlashMs: 0,
     selected: false,
     moveTarget: null,
+    path: [],
     attackMove: false,
     color: opts.color,
     canGather: def.canGather,
@@ -464,17 +468,21 @@ export function issueMoveSelected(
     u.attackMove = false;
     const ox = (i % 5) * 28 - 56;
     const oy = Math.floor(i / 5) * 28;
-    u.moveTarget = {
+    setUnitPath(world, u, {
       x: clamp(x + ox, 20, MAP.width - 20),
       y: clamp(y + oy, 20, MAP.height - 20),
-    };
+    });
   });
 }
 
 export function tickBattlefield(world: BattlefieldWorld, dtMs: number): void {
   const dt = Math.min(dtMs, 50) / 1000;
   for (const u of world.units) {
-    if (!u.moveTarget || u.speed <= 0) continue;
+    if (u.speed <= 0) continue;
+    if (!u.moveTarget) {
+      if (u.path.length > 0) u.moveTarget = u.path.shift()!;
+      else continue;
+    }
     const spd = u.speed * mutationSpeedMult(u);
     const next = moveToward(
       u.x,
@@ -487,7 +495,7 @@ export function tickBattlefield(world: BattlefieldWorld, dtMs: number): void {
     u.x = clamp(next.x, u.radius, MAP.width - u.radius);
     u.y = clamp(next.y, u.radius, MAP.height - u.radius);
     if (dist(u.x, u.y, u.moveTarget.x, u.moveTarget.y) < 4) {
-      u.moveTarget = null;
+      u.moveTarget = u.path.length > 0 ? u.path.shift()! : null;
     }
   }
 }

@@ -13,6 +13,7 @@ import {
   mutationIncomingMult,
   mutationOutgoingMult,
 } from './battlefieldMutations';
+import { setUnitPath } from './battlefieldPathfinding';
 import type {
   BattlefieldBuilding,
   BattlefieldUnit,
@@ -75,6 +76,7 @@ export function issueAttackSelected(
   if (target.team === 'player' || target.hp <= 0) return;
   for (const u of world.units) {
     if (u.team !== 'player' || !u.selected) continue;
+    u.path = [];
     u.moveTarget = null;
     u.gatherNodeId = null;
     u.attackMove = false;
@@ -168,10 +170,17 @@ export function tickBattlefieldCombat(
     const d = dist(u.x, u.y, t.x, t.y);
     const reach = u.range + t.radius;
     if (d > reach) {
-      u.moveTarget = { x: t.x, y: t.y };
+      const goal = { x: t.x, y: t.y };
+      const tip =
+        u.path.length > 0 ? u.path[u.path.length - 1]! : u.moveTarget;
+      // Repath only when tip drifted — avoid A* every combat tick.
+      if (!tip || dist(tip.x, tip.y, goal.x, goal.y) > 56) {
+        setUnitPath(world, u, goal);
+      }
       continue;
     }
 
+    u.path = [];
     u.moveTarget = null;
     if (u.attackCd <= 0) {
       const udef = getUnitType(u.typeId);

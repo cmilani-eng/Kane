@@ -13,6 +13,7 @@ import {
   type AiDifficultyId,
   type AiDifficultyProfile,
 } from './aiDifficulty';
+import { setUnitPath } from './battlefieldPathfinding';
 
 export interface AiState {
   thinkCd: number;
@@ -76,7 +77,7 @@ export function tickBattlefieldAi(
     }
     if (best) {
       s.gatherNodeId = best.id;
-      s.moveTarget = { x: best.x, y: best.y };
+      setUnitPath(world, s, { x: best.x, y: best.y });
     }
   }
 
@@ -136,16 +137,16 @@ export function tickBattlefieldAi(
       if (u.attackTargetId != null) continue;
       u.gatherNodeId = null;
       u.attackTargetId = target.id;
-      u.moveTarget = { x: target.x, y: target.y };
+      setUnitPath(world, u, { x: target.x, y: target.y });
     }
   } else if (keep) {
     for (const u of army) {
       if (u.attackTargetId != null) continue;
       if (dist(u.x, u.y, keep.x, keep.y) > 160) {
-        u.moveTarget = {
+        setUnitPath(world, u, {
           x: keep.x + (Math.random() - 0.5) * 80,
           y: keep.y + (Math.random() - 0.5) * 80,
-        };
+        });
       }
     }
   }
