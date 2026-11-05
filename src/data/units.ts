@@ -1,5 +1,5 @@
 /**
- * Data-driven unit stats — Brutes + Nobles (GDD v2).
+ * Data-driven unit stats — Brutes + Nobles + Weirdos (GDD v2).
  */
 
 export type UnitTypeId =
@@ -17,7 +17,14 @@ export type UnitTypeId =
   | 'walking_tank'
   | 'boom_cart'
   | 'boniface'
-  // Weirdos (roster lands with Weirdos PR; hero stub ok)
+  // Weirdos
+  | 'goo_worker'
+  | 'bloblet'
+  | 'eyebat'
+  | 'shroom_mage'
+  | 'floaty'
+  | 'grabber'
+  | 'crystal_freak'
   | 'zoggle';
 
 export interface UnitTypeDef {
@@ -40,6 +47,8 @@ export interface UnitTypeDef {
   structureMult?: number;
   /** Participates in FORMATIONS when Nobles. */
   usesFormation?: boolean;
+  /** Participates in MUTATION when Weirdos. */
+  canMutate?: boolean;
   isHero?: boolean;
   /** Shape hint for presentation placeholders. */
   shape?: 'circle' | 'square' | 'diamond' | 'triangle' | 'hex' | 'star';
@@ -273,6 +282,139 @@ export const UNIT_TYPES: Record<UnitTypeId, UnitTypeDef> = {
     usesFormation: true,
     shape: 'star',
   },
+  goo_worker: {
+    id: 'goo_worker',
+    name: 'Goo Worker',
+    speciesId: 'weirdos',
+    maxHp: 45,
+    dmg: 3,
+    range: 20,
+    speed: 95,
+    radius: 12,
+    vision: 220,
+    attackCooldownMs: 900,
+    canGather: true,
+    carryCapacity: 12,
+    costGold: 50,
+    costCrystals: 0,
+    trainMs: 2200,
+    shape: 'circle',
+  },
+  bloblet: {
+    id: 'bloblet',
+    name: 'Bloblet',
+    speciesId: 'weirdos',
+    maxHp: 70,
+    dmg: 9,
+    range: 28,
+    speed: 105,
+    radius: 13,
+    vision: 230,
+    attackCooldownMs: 650,
+    canGather: false,
+    carryCapacity: 0,
+    costGold: 55,
+    costCrystals: 0,
+    trainMs: 2600,
+    canMutate: true,
+    shape: 'circle',
+  },
+  eyebat: {
+    id: 'eyebat',
+    name: 'Eyebat',
+    speciesId: 'weirdos',
+    maxHp: 48,
+    dmg: 10,
+    range: 150,
+    speed: 115,
+    radius: 12,
+    vision: 280,
+    attackCooldownMs: 780,
+    canGather: false,
+    carryCapacity: 0,
+    costGold: 65,
+    costCrystals: 5,
+    trainMs: 2800,
+    canMutate: true,
+    shape: 'diamond',
+  },
+  shroom_mage: {
+    id: 'shroom_mage',
+    name: 'Shroom Mage',
+    speciesId: 'weirdos',
+    maxHp: 55,
+    dmg: 14,
+    range: 130,
+    speed: 80,
+    radius: 13,
+    vision: 260,
+    attackCooldownMs: 900,
+    canGather: false,
+    carryCapacity: 0,
+    costGold: 80,
+    costCrystals: 10,
+    trainMs: 3400,
+    canMutate: true,
+    shape: 'triangle',
+  },
+  floaty: {
+    id: 'floaty',
+    name: 'Floaty',
+    speciesId: 'weirdos',
+    maxHp: 90,
+    dmg: 11,
+    range: 35,
+    speed: 140,
+    radius: 14,
+    vision: 250,
+    attackCooldownMs: 700,
+    canGather: false,
+    carryCapacity: 0,
+    costGold: 75,
+    costCrystals: 5,
+    trainMs: 3200,
+    canMutate: true,
+    shape: 'diamond',
+  },
+  grabber: {
+    id: 'grabber',
+    name: 'Grabber',
+    speciesId: 'weirdos',
+    maxHp: 130,
+    dmg: 15,
+    range: 36,
+    speed: 75,
+    radius: 16,
+    vision: 230,
+    attackCooldownMs: 850,
+    canGather: false,
+    carryCapacity: 0,
+    costGold: 90,
+    costCrystals: 8,
+    trainMs: 3800,
+    canMutate: true,
+    shape: 'hex',
+  },
+  crystal_freak: {
+    id: 'crystal_freak',
+    name: 'Crystal Freak',
+    speciesId: 'weirdos',
+    maxHp: 100,
+    dmg: 24,
+    range: 170,
+    speed: 55,
+    radius: 17,
+    vision: 260,
+    attackCooldownMs: 1300,
+    canGather: false,
+    carryCapacity: 0,
+    costGold: 120,
+    costCrystals: 20,
+    trainMs: 5000,
+    structureMult: 2.0,
+    canMutate: true,
+    shape: 'star',
+  },
   zoggle: {
     id: 'zoggle',
     name: 'ZOGGLE',
@@ -290,6 +432,7 @@ export const UNIT_TYPES: Record<UnitTypeId, UnitTypeDef> = {
     costCrystals: 50,
     trainMs: 1000,
     isHero: true,
+    canMutate: true,
     shape: 'star',
   },
 };

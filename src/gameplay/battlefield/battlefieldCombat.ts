@@ -8,6 +8,10 @@ import { dist } from '../math';
 import { damageBuilding } from './battlefieldBuildings';
 import { incomingDamage, outgoingDamage } from './battlefieldFormations';
 import { heroIncomingMult, heroOutgoingMult } from './battlefieldHeroes';
+import {
+  mutationIncomingMult,
+  mutationOutgoingMult,
+} from './battlefieldMutations';
 import type {
   BattlefieldBuilding,
   BattlefieldUnit,
@@ -152,7 +156,9 @@ export function tickBattlefieldCombat(
     if (u.attackCd <= 0) {
       const udef = getUnitType(u.typeId);
       let raw =
-        outgoingDamage(u, u.dmg) * heroOutgoingMult(world, u);
+        outgoingDamage(u, u.dmg) *
+        heroOutgoingMult(world, u) *
+        mutationOutgoingMult(u);
       const isBuilding = 'typeId' in t && 'buildProgress' in t;
       if (isBuilding) {
         raw *= udef.structureMult ?? 1;
@@ -160,7 +166,9 @@ export function tickBattlefieldCombat(
       } else {
         const victim = t as BattlefieldUnit;
         victim.hp -=
-          incomingDamage(victim, raw) * heroIncomingMult(world, victim);
+          incomingDamage(victim, raw) *
+          heroIncomingMult(world, victim) *
+          mutationIncomingMult(victim);
         if (victim.hp <= 0) victim.hp = 0;
       }
       u.attackCd = u.attackCooldownMs;

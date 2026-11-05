@@ -18,7 +18,7 @@ export interface SpeciesDef {
   unitIds: string[];
   /** Main hall building key (GDD). */
   mainHallId: string;
-  palette: { primary: number; accent: number; silver?: number };
+  palette: { primary: number; accent: number; silver?: number; pink?: number };
 }
 
 export const SPECIES: Record<SpeciesId, SpeciesDef> = {
@@ -57,11 +57,20 @@ export const SPECIES: Record<SpeciesId, SpeciesDef> = {
   weirdos: {
     id: 'weirdos',
     name: 'The Weirdos',
-    motto: 'REALITY IS OPTIONAL.',
-    uniqueMechanic: 'MUTATIONS',
-    unitIds: [],
+    motto: 'WE KNOW WHAT WE ARE DOING. PROBABLY.',
+    uniqueMechanic: 'MUTATION',
+    unitIds: [
+      'goo_worker',
+      'bloblet',
+      'eyebat',
+      'shroom_mage',
+      'floaty',
+      'grabber',
+      'crystal_freak',
+      'zoggle',
+    ],
     mainHallId: 'weird_core',
-    palette: { primary: 0x7a4aa8, accent: 0x6ecfbf },
+    palette: { primary: 0x7a4aa8, accent: 0x6ecfbf, pink: 0xe87aa8 },
   },
 };
 
