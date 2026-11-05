@@ -70,6 +70,7 @@ export function issueAttackSelected(
     if (u.team !== 'player' || !u.selected) continue;
     u.moveTarget = null;
     u.gatherNodeId = null;
+    u.attackMove = false;
     u.attackTargetId = target.id;
   }
 }
@@ -128,8 +129,8 @@ export function tickBattlefieldCombat(
     if (t && t.hp > 0) continue;
     if (u.team === 'player') {
       if (u.gatherNodeId != null || u.carrying > 0) continue;
-      // Honor pure move orders — don't convert march into attack-move mid-path.
-      if (u.moveTarget != null) continue;
+      // Honor pure move orders — attack-move may acquire while pathing.
+      if (u.moveTarget != null && !u.attackMove) continue;
     }
     t = acquireNearestEnemy(world, u);
     u.attackTargetId = t?.id ?? null;

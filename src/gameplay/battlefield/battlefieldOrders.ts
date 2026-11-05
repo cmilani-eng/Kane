@@ -1,0 +1,93 @@
+/**
+ * Control groups + stop / attack-move orders.
+ */
+import { MAP } from '../../config/balance';
+import { clamp } from '../math';
+import type { BattlefieldWorld } from './battlefieldWorld';
+import { clearSelection, selectedUnits } from './battlefieldWorld';
+
+export type ControlGroups = Map<number, number[]>;
+
+export function createControlGroups(): ControlGroups {
+  return new Map();
+}
+
+/** Ctrl+N — save selected player units into group 0–9. */
+export function assignControlGroup(
+  world: BattlefieldWorld,
+  groups: ControlGroups,
+  slot: number,
+): boolean {
+  if (slot < 0 || slot > 9) return false;
+  const ids = selectedUnits(world).map((u) => u.id);
+  if (ids.length === 0) {
+    groups.delete(slot);
+    return false;
+  }
+  groups.set(slot, ids);
+  return true;
+}
+
+/** N — select living members of group (additive with Shift). */
+export function recallControlGroup(
+  world: BattlefieldWorld,
+  groups: ControlGroups,
+  slot: number,
+  additive = false,
+): number {
+  const ids = groups.get(slot);
+  if (!ids || ids.length === 0) return 0;
+  const living = new Set(
+    world.units.filter((u) => u.team === 'player' && u.hp > 0).map((u) => u.id),
+  );
+  const valid = ids.filter((id) => living.has(id));
+  groups.set(slot, valid);
+  if (valid.length === 0) return 0;
+  if (!additive) clearSelection(world);
+  let n = 0;
+  for (const u of world.units) {
+    if (u.team !== 'player') continue;
+    if (valid.includes(u.id)) {
+      u.selected = true;
+      n++;
+    }
+  }
+  return n;
+}
+
+/** S — halt selected units. */
+export function stopSelected(world: BattlefieldWorld): number {
+  let n = 0;
+  for (const u of selectedUnits(world)) {
+    u.moveTarget = null;
+    u.attackTargetId = null;
+    u.gatherNodeId = null;
+    u.attackMove = false;
+    n++;
+  }
+  return n;
+}
+
+/**
+ * A-click — march to point but auto-engage enemies along the way.
+ * Sets `attackMove` so combat may acquire while pathing.
+ */
+export function issueAttackMoveSelected(
+  world: BattlefieldWorld,
+  x: number,
+  y: number,
+): number {
+  const selected = selectedUnits(world);
+  selected.forEach((u, i) => {
+    u.gatherNodeId = null;
+    u.attackTargetId = null;
+    u.attackMove = true;
+    const ox = (i % 5) * 28 - 56;
+    const oy = Math.floor(i / 5) * 28;
+    u.moveTarget = {
+      x: clamp(x + ox, 20, MAP.width - 20),
+      y: clamp(y + oy, 20, MAP.height - 20),
+    };
+  });
+  return selected.length;
+}

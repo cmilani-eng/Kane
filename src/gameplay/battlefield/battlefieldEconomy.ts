@@ -56,6 +56,7 @@ export function issueGatherSelected(
   for (const u of world.units) {
     if (u.team !== 'player' || !u.selected || !u.canGather) continue;
     u.attackTargetId = null;
+    u.attackMove = false;
     u.gatherNodeId = node.id;
     u.moveTarget = { x: node.x, y: node.y };
   }
