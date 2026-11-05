@@ -1,0 +1,19 @@
+{
+  "name": "kane",
+  "private": true,
+  "version": "0.1.0",
+  "description": "Kane — mobile-web fantasy RTS vertical slice (local-first, Phaser 4)",
+  "type": "module",
+  "scripts": {
+    "dev": "vite --host",
+    "build": "tsc && vite build",
+    "preview": "vite preview --host"
+  },
+  "dependencies": {
+    "phaser": "^4.2.1"
+  },
+  "devDependencies": {
+    "typescript": "~5.7.2",
+    "vite": "^6.0.3"
+  }
+}

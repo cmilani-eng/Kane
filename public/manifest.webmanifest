@@ -1,0 +1,11 @@
+{
+  "name": "Kane",
+  "short_name": "Kane",
+  "description": "Fantasy RTS — light the Wardstones, defend your Keep.",
+  "start_url": ".",
+  "display": "standalone",
+  "background_color": "#0f1a2e",
+  "theme_color": "#1a2a4a",
+  "orientation": "any",
+  "lang": "en"
+}
