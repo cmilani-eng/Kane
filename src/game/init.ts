@@ -6,7 +6,7 @@ import Phaser from 'phaser';
 import { flags } from '../config/flags';
 import { BRAND } from '../config/brand';
 import { BootScene } from '../presentation/scenes/BootScene';
-import { GameScene } from '../presentation/scenes/GameScene';
+import { BattlefieldScene } from '../presentation/scenes/BattlefieldScene';
 import { MenuScene } from '../presentation/scenes/MenuScene';
 import { createOfflineConnection } from '../networking/connectionStub';
 import { createMatchServerStub } from '../server/matchServerStub';
@@ -17,7 +17,7 @@ export function createKaneGame(parent: HTMLElement): Phaser.Game {
   const server = createMatchServerStub();
   const db = createDatabaseStub();
   console.info(
-    `[${BRAND.name}] Phaser ${Phaser.VERSION} · net=${connection.status} · server=${server.enabled} · db=${db.enabled} · ads=${flags.adsEnabled}`,
+    `[${BRAND.name}] Phaser ${Phaser.VERSION} · milestone=1-battlefield · net=${connection.status} · server=${server.enabled} · db=${db.enabled} · ads=${flags.adsEnabled}`,
   );
 
   if (flags.adsEnabled) {
@@ -40,7 +40,8 @@ export function createKaneGame(parent: HTMLElement): Phaser.Game {
       keyboard: true,
       mouse: true,
     },
-    scene: [BootScene, MenuScene, GameScene],
+    // Milestone 1: Menu → Battlefield (select/move). Full skirmish scene deferred.
+    scene: [BootScene, MenuScene, BattlefieldScene],
   };
 
   return new Phaser.Game(config);

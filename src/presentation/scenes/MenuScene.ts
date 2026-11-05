@@ -74,8 +74,8 @@ export class MenuScene extends Phaser.Scene {
       })
       .setOrigin(0.5);
 
-    this.makeButton(width / 2, height * 0.64, 'Play vs AI', () => {
-      this.scene.start('Game');
+    this.makeButton(width / 2, height * 0.64, 'Enter Battlefield', () => {
+      this.scene.start('Battlefield');
     });
 
     this.add
@@ -95,8 +95,21 @@ export class MenuScene extends Phaser.Scene {
     this.add
       .text(
         width / 2,
-        height * 0.88,
-        'Touch · Mouse · WASD/Arrows · Q/E zoom · Shift box-select',
+        height * 0.86,
+        'Milestone 1: select · multi-select · move  ·  combat/economy later',
+        {
+          fontFamily: 'system-ui, sans-serif',
+          fontSize: '12px',
+          color: '#6a7f94',
+        },
+      )
+      .setOrigin(0.5);
+
+    this.add
+      .text(
+        width / 2,
+        height * 0.92,
+        'LMB select · drag box · RMB move · WASD pan · Q/E zoom',
         {
           fontFamily: 'system-ui, sans-serif',
           fontSize: '12px',
