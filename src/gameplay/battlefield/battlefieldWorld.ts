@@ -8,6 +8,7 @@ import {
   type ResourceId,
   type ResourceWallet,
 } from '../../data/resources';
+import { getBuildingType, type BuildingTypeId } from '../../data/buildings';
 import { SPECIES, type SpeciesId } from '../../data/speciesStub';
 import { getUnitType, type UnitTypeId } from '../../data/units';
 import { clamp, dist, moveToward } from '../math';
@@ -32,6 +33,28 @@ export interface Stockpile {
   x: number;
   y: number;
   radius: number;
+}
+
+export interface BattlefieldBuilding {
+  id: number;
+  team: BattlefieldTeam;
+  typeId: BuildingTypeId;
+  name: string;
+  x: number;
+  y: number;
+  radius: number;
+  maxHp: number;
+  hp: number;
+  buildProgress: number;
+  buildMs: number;
+  complete: boolean;
+  isDropOff: boolean;
+  color: number;
+  accent: number;
+  /** Production queue (unit type ids). */
+  trainQueue: UnitTypeId[];
+  trainProgressMs: number;
+  selected?: boolean;
 }
 
 export interface BattlefieldUnit {
@@ -66,11 +89,48 @@ export interface BattlefieldUnit {
 export interface BattlefieldWorld {
   nextId: number;
   units: BattlefieldUnit[];
+  buildings: BattlefieldBuilding[];
   nodes: ResourceNode[];
   stockpiles: Stockpile[];
   wallet: ResourceWallet;
   enemyWallet: ResourceWallet;
   speciesId: SpeciesId;
+}
+
+function seedHall(
+  world: BattlefieldWorld,
+  team: BattlefieldTeam,
+  typeId: BuildingTypeId,
+  x: number,
+  y: number,
+): void {
+  const def = getBuildingType(typeId);
+  world.buildings.push({
+    id: world.nextId++,
+    team,
+    typeId,
+    name: def.name,
+    x,
+    y,
+    radius: def.radius,
+    maxHp: def.maxHp,
+    hp: def.maxHp,
+    buildProgress: 1,
+    buildMs: 0,
+    complete: true,
+    isDropOff: def.isDropOff,
+    color: def.color,
+    accent: def.accent,
+    trainQueue: [],
+    trainProgressMs: 0,
+  });
+  world.stockpiles.push({
+    id: world.nextId++,
+    team,
+    x,
+    y,
+    radius: def.radius + 8,
+  });
 }
 
 export function spawnUnit(
@@ -122,30 +182,21 @@ export function createBattlefieldWorld(): BattlefieldWorld {
   const world: BattlefieldWorld = {
     nextId: 1,
     units: [],
+    buildings: [],
     nodes: [],
     stockpiles: [],
-    wallet: emptyWallet({ gold: 100, magic_crystals: 10 }),
-    enemyWallet: emptyWallet({ gold: 80, magic_crystals: 5 }),
+    wallet: emptyWallet({ gold: 200, magic_crystals: 20 }),
+    enemyWallet: emptyWallet({ gold: 180, magic_crystals: 15 }),
     speciesId: 'brutes',
   };
 
   const baseX = 420;
   const baseY = MAP.height - 420;
+  const ex = MAP.width * 0.55;
+  const ey = MAP.height * 0.45;
 
-  world.stockpiles.push({
-    id: world.nextId++,
-    team: 'player',
-    x: baseX - 40,
-    y: baseY + 40,
-    radius: 28,
-  });
-  world.stockpiles.push({
-    id: world.nextId++,
-    team: 'enemy',
-    x: MAP.width * 0.55 - 40,
-    y: MAP.height * 0.45 + 40,
-    radius: 28,
-  });
+  seedHall(world, 'player', 'junkyard', baseX - 60, baseY + 60);
+  seedHall(world, 'enemy', 'rival_keep', ex - 60, ey + 60);
 
   // Gatherers
   for (let i = 0; i < 4; i++) {
@@ -182,8 +233,6 @@ export function createBattlefieldWorld(): BattlefieldWorld {
     });
   }
 
-  const ex = MAP.width * 0.55;
-  const ey = MAP.height * 0.45;
   for (let i = 0; i < 2; i++) {
     spawnUnit(world, {
       team: 'enemy',
