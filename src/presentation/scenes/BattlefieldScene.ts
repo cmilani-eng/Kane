@@ -24,7 +24,6 @@ import {
 } from '../../gameplay/battlefield/battlefieldFormations';
 import {
   castHeroAbility,
-  heroHudLine,
   recruitHero,
   tickHeroes,
 } from '../../gameplay/battlefield/battlefieldHeroes';
@@ -32,6 +31,7 @@ import {
   tickMutations,
   toggleMutationSelected,
 } from '../../gameplay/battlefield/battlefieldMutations';
+import { BattlefieldHud } from '../ui/battlefieldHud';
 import {
   buildingBlocks,
   findBuildingAt,
@@ -84,10 +84,7 @@ export class BattlefieldScene extends Phaser.Scene {
   private pointerStart = { x: 0, y: 0 };
   private worldStart = { x: 0, y: 0 };
   private cameraStart = { x: 0, y: 0 };
-  private hint!: Phaser.GameObjects.Text;
-  private status!: Phaser.GameObjects.Text;
-  private resourceHud!: Phaser.GameObjects.Text;
-  private heroHud!: Phaser.GameObjects.Text;
+  private hud!: BattlefieldHud;
   private shiftKey: Phaser.Input.Keyboard.Key | null = null;
   private placeables: BuildingTypeId[] = [];
   private placeIndex = 0;
@@ -125,111 +122,8 @@ export class BattlefieldScene extends Phaser.Scene {
 
     this.ghostGfx = this.add.graphics().setDepth(40);
 
-    this.add
-      .text(12, 8, `${BRAND.name}  ·  ${SPECIES[playerSpecies].name}`, {
-        fontFamily: 'Georgia, "Times New Roman", serif',
-        fontSize: '18px',
-        color: '#f5e6c8',
-        backgroundColor: '#0f1a2ecc',
-        padding: { x: 10, y: 6 },
-      })
-      .setScrollFactor(0)
-      .setDepth(100);
-
-    const species = SPECIES[this.world.speciesId];
-    const enemy = SPECIES[this.world.enemySpeciesId];
-    const mech =
-      playerSpecies === 'nobles'
-        ? 'FORMATIONS (F) · B cycle buildings'
-        : playerSpecies === 'weirdos'
-          ? 'MUTATION (M) · B cycle buildings'
-          : 'B place hut · Rage later';
-    this.add
-      .text(
-        12,
-        42,
-        `You: ${species.name}  vs  ${enemy.name}  ·  ${mech}`,
-        {
-          fontFamily: 'system-ui, sans-serif',
-          fontSize: '12px',
-          color: '#9eb4c8',
-          backgroundColor: '#0f1a2ecc',
-          padding: { x: 8, y: 4 },
-        },
-      )
-      .setScrollFactor(0)
-      .setDepth(100);
-
-    this.resourceHud = this.add
-      .text(12, 68, '', {
-        fontFamily: 'system-ui, sans-serif',
-        fontSize: '14px',
-        color: '#f5e6c8',
-        backgroundColor: '#0f1a2ecc',
-        padding: { x: 8, y: 6 },
-      })
-      .setScrollFactor(0)
-      .setDepth(100);
-
-    this.status = this.add
-      .text(12, 100, '', {
-        fontFamily: 'system-ui, sans-serif',
-        fontSize: '13px',
-        color: '#d7e6f2',
-        backgroundColor: '#0f1a2ecc',
-        padding: { x: 8, y: 6 },
-      })
-      .setScrollFactor(0)
-      .setDepth(100);
-
-    const heroHudColor =
-      playerSpecies === 'weirdos'
-        ? '#6ecfbf'
-        : playerSpecies === 'nobles'
-          ? '#f0c75e'
-          : '#d4782e';
-    this.heroHud = this.add
-      .text(12, 132, '', {
-        fontFamily: 'system-ui, sans-serif',
-        fontSize: '12px',
-        color: heroHudColor,
-        backgroundColor: '#0f1a2ecc',
-        padding: { x: 8, y: 6 },
-      })
-      .setScrollFactor(0)
-      .setDepth(100);
-
-    this.hint = this.add
-      .text(0, 0, '', {
-        fontFamily: 'system-ui, sans-serif',
-        fontSize: '12px',
-        color: '#b8c9d9',
-        backgroundColor: '#0f1a2ecc',
-        padding: { x: 8, y: 6 },
-      })
-      .setOrigin(0.5, 1)
-      .setScrollFactor(0)
-      .setDepth(100);
-
-    const menuBtn = this.add
-      .text(this.scale.width - 12, 12, 'Menu', {
-        fontFamily: 'system-ui, sans-serif',
-        fontSize: '14px',
-        color: '#fff8e8',
-        backgroundColor: '#3a4555',
-        padding: { x: 12, y: 8 },
-      })
-      .setOrigin(1, 0)
-      .setScrollFactor(0)
-      .setDepth(101)
-      .setInteractive({ useHandCursor: true })
-      .on('pointerup', () => this.scene.start('Menu'));
-
-    this.scale.on('resize', () => {
-      menuBtn.setPosition(this.scale.width - 12, 12);
-      this.hint.setPosition(this.scale.width / 2, this.scale.height - 16);
-    });
-    this.hint.setPosition(this.scale.width / 2, this.scale.height - 16);
+    this.hud = new BattlefieldHud(this, this.world);
+    this.hud.menuBtn.on('pointerup', () => this.scene.start('Menu'));
 
     this.shiftKey =
       this.input.keyboard?.addKey(Phaser.Input.Keyboard.KeyCodes.SHIFT) ?? null;
@@ -533,17 +427,12 @@ export class BattlefieldScene extends Phaser.Scene {
   }
 
   private refreshHud(): void {
-    const w = this.world.wallet;
-    this.resourceHud.setText(
-      `Gold ${Math.floor(w.gold)}   ·   Magic Crystals ${Math.floor(w.magic_crystals)}   (GDD: Scrap/Core)`,
-    );
-    this.heroHud.setText(heroHudLine(this.world));
-
     const n = selectedCount(this.world);
     const sel = selectedUnits(this.world);
     const friends = livingByTeam(this.world, 'player');
     const foes = livingByTeam(this.world, 'enemy');
     const b = this.selectedBuilding;
+    let status = '';
     if (b) {
       const trains = getBuildingType(b.typeId).trains;
       const labels = trains
@@ -556,13 +445,9 @@ export class BattlefieldScene extends Phaser.Scene {
         b.trainQueue.length > 0
           ? ` · queue ${b.trainQueue.length} (${Math.floor((b.trainProgressMs / getUnitType(b.trainQueue[0]!).trainMs) * 100)}%)`
           : '';
-      this.status.setText(
-        `${b.name}  HP ${Math.ceil(b.hp)}/${b.maxHp}${q}  ·  ${labels}`,
-      );
+      status = `${b.name}  HP ${Math.ceil(b.hp)}/${b.maxHp}${q}  ·  ${labels}`;
     } else if (n === 0) {
-      this.status.setText(
-        `Alive ${friends} vs ${foes}  ·  Click hall/production to train  ·  RMB gather/attack`,
-      );
+      status = `Alive ${friends} vs ${foes}  ·  Select hall to train · use hero pads below`;
     } else if (n === 1) {
       const u = sel[0]!;
       const carry =
@@ -573,9 +458,7 @@ export class BattlefieldScene extends Phaser.Scene {
             : '';
       const form = u.inFormation ? ' · FORMATION' : '';
       const mut = u.mutated ? ' · MUTATED' : '';
-      this.status.setText(
-        `1 selected — ${u.name}  HP ${Math.ceil(u.hp)}/${u.maxHp}${carry}${form}${mut}`,
-      );
+      status = `1 selected — ${u.name}  HP ${Math.ceil(u.hp)}/${u.maxHp}${carry}${form}${mut}`;
     } else {
       const formed = sel.filter((u) => u.inFormation).length;
       const mutated = sel.filter((u) => u.mutated).length;
@@ -585,26 +468,17 @@ export class BattlefieldScene extends Phaser.Scene {
       ]
         .filter(Boolean)
         .join(' · ');
-      this.status.setText(
-        `${n} selected${extra ? ` · ${extra}` : ''}  ·  RMB resource / enemy / ground`,
-      );
+      status = `${n} selected${extra ? ` · ${extra}` : ''}  ·  RMB / long-press for orders`;
     }
-    if (this.mode === 'place') {
-      const def = getBuildingType(this.placeType);
-      const cost = def.cost.gold ?? 0;
-      this.hint.setText(
-        `Place ${def.name} (${cost}g) · B cycle · LMB place · RMB/Esc cancel`,
-      );
-    } else {
-      const sid = this.world.speciesId;
-      this.hint.setText(
-        sid === 'nobles'
-          ? 'H recruit hero · Q/W/E abilities · F formation · B build · RMB orders'
-          : sid === 'weirdos'
-            ? 'H recruit ZOGGLE · Q/W/E · M mutation · B build · RMB orders'
-            : 'H recruit GRUK · Q/W/E abilities · B build · RMB gather/attack · Esc',
-      );
-    }
+
+    const placing = this.mode === 'place';
+    const def = placing ? getBuildingType(this.placeType) : null;
+    const hint = this.hud.controlHint(
+      placing,
+      def?.name,
+      def?.cost.gold ?? 0,
+    );
+    this.hud.refresh(status, hint);
   }
 
   private drawWorld(): void {
