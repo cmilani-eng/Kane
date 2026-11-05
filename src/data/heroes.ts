@@ -111,7 +111,7 @@ export const HEROES: Record<HeroId, HeroDef> = {
     unitTypeId: 'zoggle',
     speciesId: 'weirdos',
     title: 'The All-Seeing (Except When Sleeping)',
-    passive: 'Slightly larger vision radius.',
+    passive: 'All-seeing aura — larger vision for ZOGGLE and nearby allies.',
     recruitCostGold: 155,
     recruitCostCrystals: 20,
     abilities: {
@@ -122,7 +122,7 @@ export const HEROES: Record<HeroId, HeroDef> = {
         cooldownMs: 9000,
         costCrystals: 0,
         radius: 100,
-        description: 'Damage and interrupt nearest enemies.',
+        description: 'Damage and interrupt nearby enemies (stun orders).',
       },
       ability2: {
         id: 'portal_trick',
@@ -131,7 +131,7 @@ export const HEROES: Record<HeroId, HeroDef> = {
         cooldownMs: 15000,
         costCrystals: 0,
         radius: 120,
-        description: 'Blink nearby friendlies forward a short hop.',
+        description: 'Blink ZOGGLE and nearby friendlies toward the fight.',
       },
       ultimate: {
         id: 'what_is_happening',
@@ -140,7 +140,8 @@ export const HEROES: Record<HeroId, HeroDef> = {
         cooldownMs: 32000,
         costCrystals: 8,
         radius: 150,
-        description: 'Chaos zone — damage + break enemy formations.',
+        description:
+          'Chaos zone — damage, break formations/mutations, linger DoT.',
       },
     },
   },

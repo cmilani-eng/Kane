@@ -1,6 +1,7 @@
 /**
  * Hero recruit + ability casting (gameplay only).
  * Presentation reads `world.vfx` flashes for rings/pulses.
+ * Heroes: GRUK (Brutes), KING BONIFACE (Nobles), ZOGGLE (Weirdos).
  */
 import {
   heroForSpecies,
@@ -40,7 +41,19 @@ export interface HeroRuntime {
   angryUntilMs: number;
   orderUntilMs: number;
   decreeUntilMs: number;
+  /** ZOGGLE ultimate chaos zone remaining. */
+  chaosUntilMs: number;
+  chaosX: number;
+  chaosY: number;
+  chaosRadius: number;
+  chaosTickMs: number;
 }
+
+const HERO_DISPLAY: Record<HeroId, string> = {
+  gruk: 'GRUK',
+  boniface: 'KING BONIFACE',
+  zoggle: 'ZOGGLE',
+};
 
 export function ensureHeroFields(world: BattlefieldWorld): void {
   if (world.heroRuntime === undefined) world.heroRuntime = null;
@@ -69,6 +82,22 @@ export function findPlayerHero(world: BattlefieldWorld): BattlefieldUnit | null 
   );
 }
 
+function emptyRuntime(heroId: HeroId, unitId: number): HeroRuntime {
+  return {
+    heroId,
+    unitId,
+    cds: { ability1: 0, ability2: 0, ultimate: 0 },
+    angryUntilMs: 0,
+    orderUntilMs: 0,
+    decreeUntilMs: 0,
+    chaosUntilMs: 0,
+    chaosX: 0,
+    chaosY: 0,
+    chaosRadius: 0,
+    chaosTickMs: 0,
+  };
+}
+
 export function recruitHero(
   world: BattlefieldWorld,
   team: BattlefieldTeam = 'player',
@@ -95,7 +124,6 @@ export function recruitHero(
         getBuildingType(b.typeId).recruitsHero),
   );
   if (!hall) {
-    // refund
     wallet.gold += cost.gold;
     wallet.magic_crystals += cost.magic_crystals ?? 0;
     return false;
@@ -110,16 +138,14 @@ export function recruitHero(
     color: pal.accent,
     speciesId: species,
   });
-  hero.name = `${def.unitTypeId === 'gruk' ? 'GRUK' : def.unitTypeId === 'boniface' ? 'KING BONIFACE' : 'ZOGGLE'}`;
+  hero.name = HERO_DISPLAY[def.id];
 
-  const runtime: HeroRuntime = {
-    heroId: def.id,
-    unitId: hero.id,
-    cds: { ability1: 0, ability2: 0, ultimate: 0 },
-    angryUntilMs: 0,
-    orderUntilMs: 0,
-    decreeUntilMs: 0,
-  };
+  // ZOGGLE passive: larger personal vision
+  if (def.id === 'zoggle') {
+    hero.vision = Math.max(hero.vision, 420);
+  }
+
+  const runtime = emptyRuntime(def.id, hero.id);
   if (team === 'player') world.heroRuntime = runtime;
   else world.enemyHeroRuntime = runtime;
 
@@ -148,15 +174,16 @@ export function castHeroAbility(
 
   rt.cds[slot] = ab.cooldownMs;
   applyAbility(world, hero, def, slot, ab.radius, rt);
-  pushVfx(
-    world,
-    hero.x,
-    hero.y,
-    ab.radius,
-    slot === 'ultimate' ? 0xf0c75e : SPECIES[hero.speciesId].palette.primary,
-    550,
-    ab.name,
-  );
+  const pal = SPECIES[hero.speciesId].palette;
+  const color =
+    slot === 'ultimate'
+      ? def.id === 'zoggle'
+        ? 0xe87aa8
+        : 0xf0c75e
+      : def.id === 'zoggle'
+        ? pal.accent
+        : pal.primary;
+  pushVfx(world, hero.x, hero.y, ab.radius, color, 550, ab.name);
   return true;
 }
 
@@ -170,18 +197,13 @@ function applyAbility(
 ): void {
   const id = def.abilities[slot].id;
 
-  if (id === 'ground_smash' || id === 'big_bonk' || id === 'brain_zap' || id === 'what_is_happening') {
-    const power =
-      id === 'big_bonk' ? hero.dmg * 2.4 : id === 'what_is_happening' ? hero.dmg * 1.6 : hero.dmg * 1.5;
+  if (id === 'ground_smash' || id === 'big_bonk') {
+    const power = id === 'big_bonk' ? hero.dmg * 2.4 : hero.dmg * 1.5;
     const knock = id === 'big_bonk' ? 55 : 0;
     for (const u of world.units) {
       if (u.team === hero.team || u.hp <= 0) continue;
       if (dist(hero.x, hero.y, u.x, u.y) > radius) continue;
       u.hp -= power;
-      if (id === 'what_is_happening') {
-        u.inFormation = false;
-        u.formationLocked = false;
-      }
       if (knock > 0) {
         const d = dist(hero.x, hero.y, u.x, u.y) || 1;
         u.x += ((u.x - hero.x) / d) * knock;
@@ -194,6 +216,43 @@ function applyAbility(
       if (dist(hero.x, hero.y, b.x, b.y) > radius) continue;
       damageBuilding(world, b, power * 0.6);
     }
+  }
+
+  if (id === 'brain_zap') {
+    // Damage + interrupt nearest enemies (clear orders / stun attack CD)
+    for (const u of world.units) {
+      if (u.team === hero.team || u.hp <= 0) continue;
+      if (dist(hero.x, hero.y, u.x, u.y) > radius) continue;
+      u.hp -= hero.dmg * 1.55;
+      u.attackTargetId = null;
+      u.moveTarget = null;
+      u.gatherNodeId = null;
+      u.attackCd = Math.max(u.attackCd, 1400);
+      u.inFormation = false;
+      u.formationLocked = false;
+      if (u.hp <= 0) u.hp = 0;
+    }
+  }
+
+  if (id === 'what_is_happening') {
+    const power = hero.dmg * 1.35;
+    for (const u of world.units) {
+      if (u.team === hero.team || u.hp <= 0) continue;
+      if (dist(hero.x, hero.y, u.x, u.y) > radius) continue;
+      u.hp -= power;
+      u.inFormation = false;
+      u.formationLocked = false;
+      u.mutated = false;
+      u.mutationLocked = false;
+      u.attackTargetId = null;
+      if (u.hp <= 0) u.hp = 0;
+    }
+    rt.chaosUntilMs = 5500;
+    rt.chaosX = hero.x;
+    rt.chaosY = hero.y;
+    rt.chaosRadius = radius;
+    rt.chaosTickMs = 400;
+    pushVfx(world, hero.x, hero.y, radius * 1.05, 0xe87aa8, 900, 'CHAOS');
   }
 
   if (id === 'get_angry') {
@@ -221,11 +280,32 @@ function applyAbility(
     }
   }
   if (id === 'portal_trick') {
+    // Blink friendlies (and ZOGGLE) toward nearest enemy cluster / eastward
+    let tx = hero.x + 100;
+    let ty = hero.y - 30;
+    let bestD = Infinity;
+    for (const e of world.units) {
+      if (e.team === hero.team || e.hp <= 0) continue;
+      const d = dist(hero.x, hero.y, e.x, e.y);
+      if (d < bestD) {
+        bestD = d;
+        tx = e.x;
+        ty = e.y;
+      }
+    }
+    const dx = tx - hero.x;
+    const dy = ty - hero.y;
+    const len = Math.hypot(dx, dy) || 1;
+    const hop = 95;
+    const ox = (dx / len) * hop;
+    const oy = (dy / len) * hop;
     for (const u of world.units) {
-      if (u.team !== hero.team || u.id === hero.id) continue;
-      if (dist(hero.x, hero.y, u.x, u.y) > radius) continue;
-      u.x += 80;
-      u.y -= 20;
+      if (u.team !== hero.team) continue;
+      if (u.id !== hero.id && dist(hero.x, hero.y, u.x, u.y) > radius) continue;
+      pushVfx(world, u.x, u.y, 28, 0x6ecfbf, 320);
+      u.x += ox;
+      u.y += oy;
+      pushVfx(world, u.x, u.y, 28, 0xe87aa8, 320);
     }
   }
 }
@@ -247,12 +327,48 @@ export function tickHeroes(world: BattlefieldWorld, dtMs: number): void {
     rt.orderUntilMs = Math.max(0, rt.orderUntilMs - dtMs);
     rt.decreeUntilMs = Math.max(0, rt.decreeUntilMs - dtMs);
 
-    // Passive auras applied via combat helpers; temporary buffs mark units
     if (rt.angryUntilMs > 0) {
       for (const u of world.units) {
         if (u.team !== hero.team) continue;
         if (dist(hero.x, hero.y, u.x, u.y) > 140) continue;
         u.attackCd = Math.max(0, u.attackCd - dtMs * 0.35);
+      }
+    }
+
+    // ZOGGLE passive: slight vision buff to nearby allies
+    if (rt.heroId === 'zoggle') {
+      for (const u of world.units) {
+        if (u.team !== hero.team || u.id === hero.id) continue;
+        if (dist(hero.x, hero.y, u.x, u.y) <= 180) {
+          const base = getUnitType(u.typeId).vision;
+          u.vision = Math.max(u.vision, base + 40);
+        }
+      }
+    }
+
+    // Chaos zone DoT + disruption
+    if (rt.chaosUntilMs > 0) {
+      rt.chaosUntilMs = Math.max(0, rt.chaosUntilMs - dtMs);
+      rt.chaosTickMs -= dtMs;
+      if (rt.chaosTickMs <= 0) {
+        rt.chaosTickMs = 450;
+        const tickDmg = hero.dmg * 0.35;
+        for (const u of world.units) {
+          if (u.team === hero.team || u.hp <= 0) continue;
+          if (dist(rt.chaosX, rt.chaosY, u.x, u.y) > rt.chaosRadius) continue;
+          u.hp -= tickDmg;
+          u.inFormation = false;
+          u.formationLocked = false;
+          if (u.hp <= 0) u.hp = 0;
+        }
+        pushVfx(
+          world,
+          rt.chaosX,
+          rt.chaosY,
+          rt.chaosRadius * 0.85,
+          0x7a4aa8,
+          280,
+        );
       }
     }
   }
@@ -310,12 +426,22 @@ export function heroHudLine(world: BattlefieldWorld): string {
   const rt = world.heroRuntime;
   const def = heroForSpecies(world.speciesId);
   if (!def) return '';
+  const recruitHint =
+    def.id === 'zoggle'
+      ? 'Hero: H recruits ZOGGLE at Weird Core / Portal of Chaos'
+      : def.id === 'boniface'
+        ? 'Hero: H recruits KING BONIFACE at Keep / Academy'
+        : 'Hero: H recruits GRUK at Junkyard / Big Boss Den';
   if (!rt) {
-    return `Hero: recruit with H at hall/den (${def.recruitCostGold}g/${def.recruitCostCrystals}c)`;
+    return `${recruitHint} (${def.recruitCostGold}g/${def.recruitCostCrystals}c)`;
   }
   const hero = world.units.find((u) => u.id === rt.unitId);
   if (!hero) return 'Hero fallen';
   const cd = (s: HeroAbilitySlot) =>
     rt.cds[s] > 0 ? `${Math.ceil(rt.cds[s] / 1000)}s` : 'READY';
-  return `${hero.name} HP ${Math.ceil(hero.hp)}  ·  Q ${def.abilities.ability1.name}[${cd('ability1')}]  W ${def.abilities.ability2.name}[${cd('ability2')}]  E ${def.abilities.ultimate.name}[${cd('ultimate')}]`;
+  const chaos =
+    rt.chaosUntilMs > 0
+      ? `  ·  CHAOS ${Math.ceil(rt.chaosUntilMs / 1000)}s`
+      : '';
+  return `${hero.name} HP ${Math.ceil(hero.hp)}  ·  Q ${def.abilities.ability1.name}[${cd('ability1')}]  W ${def.abilities.ability2.name}[${cd('ability2')}]  E ${def.abilities.ultimate.name}[${cd('ultimate')}]${chaos}`;
 }
