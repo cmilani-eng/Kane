@@ -36,6 +36,10 @@ import {
   trainHotkey,
 } from '../../gameplay/battlefield/battlefieldProduction';
 import {
+  evaluateMatch,
+  type MatchResult,
+} from '../../gameplay/battlefield/battlefieldVictory';
+import {
   clearSelection,
   createBattlefieldWorld,
   issueMoveSelected,
@@ -71,6 +75,7 @@ export class BattlefieldScene extends Phaser.Scene {
   private ghostValid = false;
   private selectedBuilding: BattlefieldBuilding | null = null;
   private ai!: AiState;
+  private matchResult: MatchResult = 'ongoing';
 
   constructor() {
     super('Battlefield');
@@ -92,7 +97,7 @@ export class BattlefieldScene extends Phaser.Scene {
     this.ghostGfx = this.add.graphics().setDepth(40);
 
     this.add
-      .text(12, 8, `${BRAND.name}  ·  Skirmish AI`, {
+      .text(12, 8, `${BRAND.name}  ·  Full skirmish`, {
         fontFamily: 'Georgia, "Times New Roman", serif',
         fontSize: '18px',
         color: '#f5e6c8',
@@ -221,6 +226,7 @@ export class BattlefieldScene extends Phaser.Scene {
   }
 
   private onDown(pointer: Phaser.Input.Pointer): void {
+    if (this.matchResult !== 'ongoing') return;
     if (pointer.y < 40 && pointer.x > this.scale.width - 80) return;
 
     this.pointerStart = { x: pointer.x, y: pointer.y };
@@ -355,13 +361,16 @@ export class BattlefieldScene extends Phaser.Scene {
 
   update(_t: number, delta: number): void {
     this.cameraCtl.update(delta);
-    tickBattlefield(this.world, delta);
-    tickBattlefieldEconomy(this.world);
-    tickBuildings(this.world, delta);
-    tickProduction(this.world, delta);
-    tickBattlefieldAi(this.world, this.ai, delta);
-    tickBattlefieldCombat(this.world, delta);
-    // Drop selection if building destroyed
+    if (this.matchResult === 'ongoing') {
+      tickBattlefield(this.world, delta);
+      tickBattlefieldEconomy(this.world);
+      tickBuildings(this.world, delta);
+      tickProduction(this.world, delta);
+      tickBattlefieldAi(this.world, this.ai, delta);
+      tickBattlefieldCombat(this.world, delta);
+      const result = evaluateMatch(this.world);
+      if (result !== 'ongoing') this.showEndScreen(result);
+    }
     if (
       this.selectedBuilding &&
       !this.world.buildings.includes(this.selectedBuilding)
@@ -370,6 +379,70 @@ export class BattlefieldScene extends Phaser.Scene {
     }
     this.drawWorld();
     this.refreshHud();
+  }
+
+  private showEndScreen(result: MatchResult): void {
+    if (this.matchResult !== 'ongoing') return;
+    this.matchResult = result;
+    this.mode = 'none';
+    this.ghostGfx.clear();
+    this.cameraCtl.suppressPan = true;
+
+    const { width, height } = this.scale;
+    const win = result === 'victory';
+    const bg = this.add
+      .rectangle(width / 2, height / 2, width, height, 0x0a1220, 0.72)
+      .setScrollFactor(0)
+      .setDepth(200);
+    const title = this.add
+      .text(
+        width / 2,
+        height * 0.38,
+        win ? 'VICTORY' : 'DEFEAT',
+        {
+          fontFamily: 'Georgia, "Times New Roman", serif',
+          fontSize: '56px',
+          color: win ? '#f0c75e' : '#e85a5a',
+          stroke: '#000',
+          strokeThickness: 6,
+        },
+      )
+      .setOrigin(0.5)
+      .setScrollFactor(0)
+      .setDepth(201);
+    const sub = this.add
+      .text(
+        width / 2,
+        height * 0.5,
+        win
+          ? 'Enemy Keep destroyed — The Brutes claim the field.'
+          : 'Your Junkyard fell — rematch when ready.',
+        {
+          fontFamily: 'system-ui, sans-serif',
+          fontSize: '16px',
+          color: '#d7e6f2',
+          align: 'center',
+          wordWrap: { width: Math.min(480, width - 40) },
+        },
+      )
+      .setOrigin(0.5)
+      .setScrollFactor(0)
+      .setDepth(201);
+    const btn = this.add
+      .text(width / 2, height * 0.62, 'Return to Menu', {
+        fontFamily: 'system-ui, sans-serif',
+        fontSize: '18px',
+        color: '#fff8e8',
+        backgroundColor: '#3a4555',
+        padding: { x: 20, y: 12 },
+      })
+      .setOrigin(0.5)
+      .setScrollFactor(0)
+      .setDepth(201)
+      .setInteractive({ useHandCursor: true })
+      .on('pointerup', () => this.scene.start('Menu'));
+
+    this.add.container(0, 0, [bg, title, sub, btn]);
   }
 
   private refreshHud(): void {
