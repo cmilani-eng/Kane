@@ -235,6 +235,27 @@ export class BattlefieldHud {
     }
   }
 
+  /** All HUD GameObjects — hide from the zoomed world camera. */
+  worldExcludeList(): Phaser.GameObjects.GameObject[] {
+    const list: Phaser.GameObjects.GameObject[] = [
+      this.title,
+      this.matchLine,
+      this.goldText,
+      this.crystalText,
+      this.status,
+      this.heroLine,
+      this.hint,
+      this.menuBtn,
+      this.goldDot,
+      this.crystalDot,
+      this.resourcePanel,
+    ];
+    for (const b of this.abilityBtns) {
+      list.push(b.bg, b.label, b.sub);
+    }
+    return list;
+  }
+
   layout(): void {
     const w = this.scene.scale.width;
     const h = this.scene.scale.height;

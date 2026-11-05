@@ -11,6 +11,21 @@ export class MenuScene extends Phaser.Scene {
 
   create(): void {
     hideDomHud();
+    this.buildLayout(true);
+    this.scale.on('resize', this.onResize, this);
+    this.events.once(Phaser.Scenes.Events.SHUTDOWN, () =>
+      this.scale.off('resize', this.onResize, this),
+    );
+  }
+
+  /** Everything is positioned from the canvas size, so rebuild when it changes. */
+  private onResize(): void {
+    this.tweens.killAll();
+    this.children.removeAll(true);
+    this.buildLayout(false);
+  }
+
+  private buildLayout(intro: boolean): void {
     const { width, height } = this.scale;
     const bg = this.add.graphics();
     bg.fillGradientStyle(0x0f1a2e, 0x0f1a2e, 0x1a3a4a, 0x243a28, 1);
@@ -52,8 +67,12 @@ export class MenuScene extends Phaser.Scene {
         strokeThickness: 8,
       })
       .setOrigin(0.5);
-    title.setAlpha(0);
-    this.tweens.add({ targets: title, alpha: 1, y: title.y + 6, duration: 700 });
+    if (intro) {
+      title.setAlpha(0);
+      this.tweens.add({ targets: title, alpha: 1, y: title.y + 6, duration: 700 });
+    } else {
+      title.y += 6;
+    }
 
     this.add
       .text(width / 2, height * 0.22, BRAND.tagline, {
