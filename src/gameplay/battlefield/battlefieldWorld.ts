@@ -1,8 +1,15 @@
 /**
  * Milestone 1 gameplay — placeholder units, selection, move orders only.
  * No combat / economy / buildings / AI.
+ * Placeholders use GDD prototype species (Nobles) colors; resource IDs unused here.
  */
 import { MAP } from '../../config/balance';
+import { emptyWallet, type ResourceWallet } from '../../data/resources';
+import {
+  PROTOTYPE_SPECIES_ID,
+  SPECIES,
+  type SpeciesId,
+} from '../../data/speciesStub';
 import { clamp, dist, moveToward } from '../math';
 import type { Vec2 } from '../types';
 
@@ -11,6 +18,8 @@ export type PlaceholderTeam = 'player' | 'neutral';
 export interface PlaceholderUnit {
   id: number;
   team: PlaceholderTeam;
+  /** Data-driven species id (presentation may tint from SPECIES.palette). */
+  speciesId: SpeciesId;
   x: number;
   y: number;
   radius: number;
@@ -24,31 +33,51 @@ export interface PlaceholderUnit {
 export interface BattlefieldWorld {
   nextId: number;
   units: PlaceholderUnit[];
+  /** Placeholder wallet — not spent in M1; IDs are scrap/core. */
+  wallet: ResourceWallet;
+  speciesId: SpeciesId;
 }
 
-export function createBattlefieldWorld(): BattlefieldWorld {
-  const world: BattlefieldWorld = { nextId: 1, units: [] };
-  // Player squad — temporary geometric placeholders
+const PLACEHOLDER_SQUAD = 10;
+
+export function createBattlefieldWorld(
+  speciesId: SpeciesId = PROTOTYPE_SPECIES_ID,
+): BattlefieldWorld {
+  const def = SPECIES[speciesId];
+  const world: BattlefieldWorld = {
+    nextId: 1,
+    units: [],
+    wallet: emptyWallet({ scrap: 0, core: 0 }),
+    speciesId,
+  };
+
+  // Player squad — temporary geometric placeholders (Nobles blue/gold by default)
   const baseX = 400;
   const baseY = MAP.height - 400;
-  const colors = [0x3d7ea6, 0x4a9bc4, 0x2f6f94, 0x5aadce, 0xf0c75e, 0xe8b84a];
-  for (let i = 0; i < 6; i++) {
+  const cols = 5;
+  for (let i = 0; i < PLACEHOLDER_SQUAD; i++) {
+    const row = Math.floor(i / cols);
+    const col = i % cols;
+    const accent = i % 3 === 2;
     world.units.push({
       id: world.nextId++,
       team: 'player',
-      x: baseX + (i % 3) * 48,
-      y: baseY + Math.floor(i / 3) * 48,
+      speciesId,
+      x: baseX + col * 44,
+      y: baseY + row * 44,
       radius: 14,
       speed: 110,
       selected: false,
       moveTarget: null,
-      color: colors[i]!,
+      color: accent ? def.palette.accent : def.palette.primary,
     });
   }
-  // Neutral markers so the field isn't empty
+
+  // Neutral marker so the field isn't empty (CORE fragment stand-in later)
   world.units.push({
     id: world.nextId++,
     team: 'neutral',
+    speciesId: 'weirdos',
     x: MAP.width * 0.5,
     y: MAP.height * 0.5,
     radius: 16,
@@ -114,8 +143,8 @@ export function issueMoveSelected(
 ): void {
   const selected = world.units.filter((u) => u.selected && u.team === 'player');
   selected.forEach((u, i) => {
-    const ox = (i % 3) * 20 - 20;
-    const oy = Math.floor(i / 3) * 20;
+    const ox = (i % 5) * 18 - 36;
+    const oy = Math.floor(i / 5) * 18;
     u.moveTarget = {
       x: clamp(x + ox, 20, MAP.width - 20),
       y: clamp(y + oy, 20, MAP.height - 20),

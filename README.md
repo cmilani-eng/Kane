@@ -19,14 +19,15 @@ Open `http://localhost:5173` (use the LAN URL for phones).
 
 ## Milestone 1 (current) — what works
 
-Playable **battlefield** scene:
+Playable **battlefield** scene (GDD v2 aligned for data only):
 
 - Camera: **WASD** / arrows, **edge scroll**, **Q/E** + wheel zoom ([FixedKeyControl](https://docs.phaser.io/api-documentation/class/cameras-controls-fixedkeycontrol))
-- Temporary **placeholder units**
+- Temporary **Nobles** placeholders (prototype species; ~10 units)
 - **Left-click** select · **drag** multi-select · **right-click** move
 - Menu → **Enter Battlefield**
+- Data stubs: species Brutes / Nobles / Weirdos; resources **Scrap** + **Core** (`src/data/`)
 
-**Not in this milestone:** combat, economy, buildings, species rosters, AI, multiplayer.
+**Not in this milestone:** combat, gather/spend economy, buildings, full species systems, AI, multiplayer.
 
 ## Architecture
 
@@ -37,7 +38,8 @@ Playable **battlefield** scene:
 | **KANE GAME CLIENT** (Phaser 4 + TS) | `src/game/`, `src/gameplay/`, `src/presentation/` | Yes |
 | → Gameplay | `src/gameplay/` (+ `battlefield/` for M1) | Yes |
 | → Presentation | `src/presentation/` | Yes |
-| Species data (later) | `src/data/speciesStub.ts` | Stub (Brutes / Nobles / Weirdos) |
+| Species data (later) | `src/data/speciesStub.ts` | Stub — Nobles first |
+| Resources (later) | `src/data/resources.ts` | Stub — Scrap + Core IDs |
 | Online connection | `src/networking/` | Stub |
 | Multiplayer server | `src/server/` | Stub |
 | Database | `src/database/` | Stub |

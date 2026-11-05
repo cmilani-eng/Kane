@@ -8,7 +8,8 @@
 import Phaser from 'phaser';
 import { BRAND } from '../../config/brand';
 import { flags } from '../../config/flags';
-import { listSpecies } from '../../data/speciesStub';
+import { listResources } from '../../data/resources';
+import { prototypeSpecies } from '../../data/speciesStub';
 import {
   clearSelection,
   createBattlefieldWorld,
@@ -78,15 +79,21 @@ export class BattlefieldScene extends Phaser.Scene {
       .setScrollFactor(0)
       .setDepth(100);
 
-    const species = listSpecies()
-      .map((s) => s.name)
-      .join(' · ');
+    const species = prototypeSpecies();
+    const resources = listResources()
+      .map((r) => r.label)
+      .join(' + ');
     this.add
-      .text(12, 44, `${BRAND.name} · Milestone 1  ·  Species later: ${species}`, {
-        fontFamily: 'system-ui, sans-serif',
-        fontSize: '11px',
-        color: '#7a8fa3',
-      })
+      .text(
+        12,
+        44,
+        `${BRAND.name} · Milestone 1  ·  ${species.name} (prototype)  ·  Resources later: ${resources}`,
+        {
+          fontFamily: 'system-ui, sans-serif',
+          fontSize: '11px',
+          color: '#7a8fa3',
+        },
+      )
       .setScrollFactor(0)
       .setDepth(100);
 

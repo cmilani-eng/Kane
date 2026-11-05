@@ -1,4 +1,9 @@
-/** Tunable vertical-slice balance. Times in ms; distances in world px. */
+/**
+ * Tunable vertical-slice balance. Times in ms; distances in world px.
+ * Canonical resources: Scrap + Core — see `src/data/resources.ts`.
+ * Canonical species: Brutes / Nobles / Weirdos — see `src/data/speciesStub.ts`.
+ * Legacy forage/aura keys below are temporary aliases until economy is rewritten.
+ */
 
 export const MAP = {
   width: 2400,
@@ -6,17 +11,22 @@ export const MAP = {
   tile: 40,
 } as const;
 
+/** Menu / M1 presentation — GDD prototype species = Nobles. */
 export const FACTION = {
-  id: 'sunkeep',
-  name: 'Sunkeep Kin',
+  id: 'nobles',
+  name: 'The Nobles',
   blurb:
-    'Bright castle folk and lantern knights. Hold Wardstones to light the field and call kin from the barracks.',
+    'Knights, dwarves, and inventors with a plan (probably expensive). Prototype species — Formations later.',
   color: 0x3d7ea6,
   colorAlt: 0xf0c75e,
   enemyColor: 0x6b4a8a,
   enemyAlt: 0xc4a0e0,
 } as const;
 
+/**
+ * @deprecated Prefer `src/data/resources.ts` (`scrap` / `core`).
+ * Kept so deferred GameScene systems still compile until economy rewrite.
+ */
 export const RESOURCES = {
   startingForage: 220,
   startingAura: 0,
