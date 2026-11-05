@@ -13,6 +13,10 @@ import { SPECIES, type SpeciesId } from '../../data/speciesStub';
 import { getUnitType, type UnitTypeId } from '../../data/units';
 import { clamp, dist, moveToward } from '../math';
 import type { Vec2 } from '../types';
+import {
+  getAiDifficulty,
+  type AiDifficultyId,
+} from './aiDifficulty';
 import { createDefaultNodes } from './battlefieldEconomy';
 import { createFogState } from './battlefieldFog';
 import { mutationSpeedMult } from './battlefieldMutations';
@@ -115,6 +119,8 @@ export interface BattlefieldWorld {
   vfx: import('./battlefieldHeroes').HeroVfx[];
   /** Player fog of war (explored / visible). */
   fog: import('./battlefieldFog').FogState;
+  /** Skirmish AI difficulty for this match. */
+  aiDifficulty: import('./aiDifficulty').AiDifficultyId;
 }
 
 function seedHall(
@@ -345,8 +351,10 @@ function seedArmy(
 
 export function createBattlefieldWorld(
   playerSpecies: SpeciesId = 'brutes',
+  difficulty: AiDifficultyId = 'normal',
 ): BattlefieldWorld {
   const enemySpecies = oppositePlayable(playerSpecies);
+  const ai = getAiDifficulty(difficulty);
   const world: BattlefieldWorld = {
     nextId: 1,
     units: [],
@@ -354,13 +362,17 @@ export function createBattlefieldWorld(
     nodes: [],
     stockpiles: [],
     wallet: emptyWallet({ gold: 220, magic_crystals: 40 }),
-    enemyWallet: emptyWallet({ gold: 200, magic_crystals: 30 }),
+    enemyWallet: emptyWallet({
+      gold: Math.max(40, 200 + ai.startGoldBonus),
+      magic_crystals: Math.max(0, 30 + ai.startCrystalBonus),
+    }),
     speciesId: playerSpecies,
     enemySpeciesId: enemySpecies,
     heroRuntime: null,
     enemyHeroRuntime: null,
     vfx: [],
     fog: createFogState(),
+    aiDifficulty: ai.id,
   };
 
   const baseX = 420;

@@ -3,12 +3,18 @@ import { BRAND } from '../../config/brand';
 import { flags } from '../../config/flags';
 import { recordGameStarted, wantsAdminPanel } from '../../database/localStats';
 import { SPECIES, type SpeciesId } from '../../data/speciesStub';
+import {
+  AI_DIFFICULTIES,
+  AI_DIFFICULTY_ORDER,
+  type AiDifficultyId,
+} from '../../gameplay/battlefield/aiDifficulty';
 import { playSfx } from '../audio/sfx';
 import { hideDomHud } from '../ui/domHud';
 import { showStatsPanel } from '../ui/statsPanel';
 
 export class MenuScene extends Phaser.Scene {
   private statsOpen = false;
+  private difficulty: AiDifficultyId = 'normal';
 
   constructor() {
     super('Menu');
@@ -103,7 +109,17 @@ export class MenuScene extends Phaser.Scene {
       .setOrigin(0.5);
 
     this.add
-      .text(width / 2, height * 0.28, 'Pick your species for a local skirmish', {
+      .text(width / 2, height * 0.26, 'Difficulty', {
+        fontFamily: 'system-ui, sans-serif',
+        fontSize: '13px',
+        color: '#b8c9d9',
+      })
+      .setOrigin(0.5);
+
+    this.drawDifficultyRow(width, height * 0.31);
+
+    this.add
+      .text(width / 2, height * 0.38, 'Pick your species for a local skirmish', {
         fontFamily: 'system-ui, sans-serif',
         fontSize: '14px',
         color: '#b8c9d9',
@@ -121,12 +137,12 @@ export class MenuScene extends Phaser.Scene {
       { id: 'weirdos', fill: 0x7a4aa8, stroke: 0x6ecfbf },
     ];
     if (narrow) {
-      const startY = height * 0.38;
+      const startY = height * 0.44;
       cards.forEach((c, i) => {
         const s = SPECIES[c.id];
         this.makeSpeciesCard(
           width / 2,
-          startY + i * 118,
+          startY + i * 108,
           s.name,
           s.motto,
           s.uniqueMechanic,
@@ -134,12 +150,12 @@ export class MenuScene extends Phaser.Scene {
           c.stroke,
           () => this.startMatch(c.id),
           Math.min(300, width * 0.88),
-          100,
+          92,
         );
       });
     } else {
       const gap = Math.min(200, width * 0.28);
-      const cardY = height * 0.52;
+      const cardY = height * 0.56;
       cards.forEach((c, i) => {
         const s = SPECIES[c.id];
         this.makeSpeciesCard(
@@ -195,10 +211,50 @@ export class MenuScene extends Phaser.Scene {
       .setOrigin(0.5);
   }
 
+  private drawDifficultyRow(width: number, y: number): void {
+    const gap = Math.min(118, width * 0.28);
+    AI_DIFFICULTY_ORDER.forEach((id, i) => {
+      const d = AI_DIFFICULTIES[id];
+      const selected = this.difficulty === id;
+      const x = width / 2 + (i - 1) * gap;
+      const bg = this.add
+        .rectangle(x, y, Math.min(108, gap - 8), 44, selected ? 0x2a3a28 : 0x1a2433, 0.95)
+        .setStrokeStyle(2, selected ? 0xf0c75e : 0x3a4555)
+        .setInteractive({ useHandCursor: true });
+      this.add
+        .text(x, y - 8, d.label, {
+          fontFamily: 'Georgia, "Times New Roman", serif',
+          fontSize: '15px',
+          color: selected ? '#f0c75e' : '#fff8e8',
+        })
+        .setOrigin(0.5);
+      this.add
+        .text(x, y + 12, d.blurb, {
+          fontFamily: 'system-ui, sans-serif',
+          fontSize: '9px',
+          color: '#9eb4c8',
+          align: 'center',
+          wordWrap: { width: Math.min(100, gap - 12) },
+        })
+        .setOrigin(0.5);
+      bg.on('pointerup', () => {
+        if (this.difficulty === id) return;
+        this.difficulty = id;
+        playSfx('ui');
+        this.tweens.killAll();
+        this.children.removeAll(true);
+        this.buildLayout(false);
+      });
+    });
+  }
+
   private startMatch(species: SpeciesId): void {
     recordGameStarted(species);
     playSfx('ui');
-    this.scene.start('Battlefield', { species });
+    this.scene.start('Battlefield', {
+      species,
+      difficulty: this.difficulty,
+    });
   }
 
   private makeSpeciesCard(

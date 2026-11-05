@@ -14,6 +14,10 @@ import {
 import { SPECIES, type SpeciesId } from '../../data/speciesStub';
 import { getUnitType } from '../../data/units';
 import {
+  getAiDifficulty,
+  type AiDifficultyId,
+} from '../../gameplay/battlefield/aiDifficulty';
+import {
   createAiState,
   tickBattlefieldAi,
   type AiState,
@@ -129,20 +133,21 @@ export class BattlefieldScene extends Phaser.Scene {
     super('Battlefield');
   }
 
-  create(data?: { species?: SpeciesId }): void {
+  create(data?: { species?: SpeciesId; difficulty?: AiDifficultyId }): void {
     this.input.mouse?.disableContextMenu();
 
     const playerSpecies: SpeciesId =
       data?.species === 'nobles' || data?.species === 'weirdos'
         ? data.species
         : 'brutes';
+    const difficulty = getAiDifficulty(data?.difficulty).id;
 
     const { layer } = createSkirmishMap(this);
-    this.world = createBattlefieldWorld(playerSpecies);
+    this.world = createBattlefieldWorld(playerSpecies, difficulty);
     this.placeables = placeableBuildings(playerSpecies);
     this.placeIndex = 0;
     this.placeType = this.placeables[0] ?? 'bonker_hut';
-    this.ai = createAiState();
+    this.ai = createAiState(difficulty);
     this.cameraCtl = new RtsCamera(this);
     const first = this.world.units.find((u) => u.team === 'player');
     if (first) this.cameras.main.centerOn(first.x + 80, first.y - 40);

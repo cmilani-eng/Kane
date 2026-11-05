@@ -5,6 +5,7 @@
 import { MAP } from '../../config/balance';
 import type { ResourceId } from '../../data/resources';
 import { dist } from '../math';
+import { getAiDifficulty } from './aiDifficulty';
 import type {
   BattlefieldTeam,
   BattlefieldUnit,
@@ -75,7 +76,12 @@ export function tickBattlefieldEconomy(world: BattlefieldWorld): void {
       const pile = stockpileOf(world, u.team);
       if (!pile) continue;
       if (dist(u.x, u.y, pile.x, pile.y) <= GATHER.depositRange) {
-        walletOf(world, u.team)[u.carryingResource] += u.carrying;
+        let amt = u.carrying;
+        if (u.team === 'enemy') {
+          const rate = getAiDifficulty(world.aiDifficulty).economyRate;
+          amt = Math.max(1, Math.round(amt * rate));
+        }
+        walletOf(world, u.team)[u.carryingResource] += amt;
         u.carrying = 0;
         u.carryingResource = null;
         if (u.gatherNodeId != null) {
