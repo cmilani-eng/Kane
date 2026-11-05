@@ -8,8 +8,10 @@ import { flags } from '../../config/flags';
 import { RESOURCES } from '../../data/resources';
 import { SPECIES } from '../../data/speciesStub';
 import { getBuildingType } from '../../data/buildings';
+import { getUnitType } from '../../data/units';
 import {
   buildingBlocks,
+  findBuildingAt,
   placeBuilding,
   tickBuildings,
 } from '../../gameplay/battlefield/battlefieldBuildings';
@@ -25,6 +27,10 @@ import {
   tickBattlefieldEconomy,
 } from '../../gameplay/battlefield/battlefieldEconomy';
 import {
+  tickProduction,
+  trainHotkey,
+} from '../../gameplay/battlefield/battlefieldProduction';
+import {
   clearSelection,
   createBattlefieldWorld,
   issueMoveSelected,
@@ -33,6 +39,7 @@ import {
   selectedCount,
   selectedUnits,
   tickBattlefield,
+  type BattlefieldBuilding,
   type BattlefieldWorld,
 } from '../../gameplay/battlefield/battlefieldWorld';
 import { RtsCamera } from '../camera/rtsCamera';
@@ -57,6 +64,7 @@ export class BattlefieldScene extends Phaser.Scene {
   private placeType: 'bonker_hut' = 'bonker_hut';
   private ghostPos = { x: 0, y: 0 };
   private ghostValid = false;
+  private selectedBuilding: BattlefieldBuilding | null = null;
 
   constructor() {
     super('Battlefield');
@@ -77,7 +85,7 @@ export class BattlefieldScene extends Phaser.Scene {
     this.ghostGfx = this.add.graphics().setDepth(40);
 
     this.add
-      .text(12, 8, `${BRAND.name}  ·  Buildings + economy`, {
+      .text(12, 8, `${BRAND.name}  ·  Production + buildings`, {
         fontFamily: 'Georgia, "Times New Roman", serif',
         fontSize: '18px',
         color: '#f5e6c8',
@@ -92,7 +100,7 @@ export class BattlefieldScene extends Phaser.Scene {
       .text(
         12,
         42,
-        `Species: ${species.name}  ·  Junkyard drop-off  ·  B = Bonker Hut`,
+        `Species: ${species.name}  ·  Click building · 1/2 train  ·  B = hut`,
         {
           fontFamily: 'system-ui, sans-serif',
           fontSize: '12px',
@@ -176,12 +184,29 @@ export class BattlefieldScene extends Phaser.Scene {
       if (this.mode === 'place') {
         this.mode = 'none';
         this.ghostGfx.clear();
-      } else clearSelection(this.world);
+      } else {
+        clearSelection(this.world);
+        this.clearBuildingSelection();
+      }
     });
     this.input.keyboard?.on('keydown-B', () => {
       this.mode = this.mode === 'place' ? 'none' : 'place';
       if (this.mode !== 'place') this.ghostGfx.clear();
     });
+    this.input.keyboard?.on('keydown-ONE', () =>
+      trainHotkey(this.world, this.selectedBuilding, 0),
+    );
+    this.input.keyboard?.on('keydown-TWO', () =>
+      trainHotkey(this.world, this.selectedBuilding, 1),
+    );
+    this.input.keyboard?.on('keydown-THREE', () =>
+      trainHotkey(this.world, this.selectedBuilding, 2),
+    );
+  }
+
+  private clearBuildingSelection(): void {
+    for (const b of this.world.buildings) b.selected = false;
+    this.selectedBuilding = null;
   }
 
   private shiftHeld(): boolean {
@@ -297,7 +322,16 @@ export class BattlefieldScene extends Phaser.Scene {
     }
     if (this.mode === 'select' && pointer.leftButtonReleased()) {
       const wp = this.cameraCtl.worldPoint(pointer.x, pointer.y);
-      selectAt(this.world, wp.x, wp.y, additive);
+      const b = findBuildingAt(this.world, wp.x, wp.y, 'player');
+      if (b && !additive) {
+        clearSelection(this.world);
+        this.clearBuildingSelection();
+        b.selected = true;
+        this.selectedBuilding = b;
+      } else {
+        this.clearBuildingSelection();
+        selectAt(this.world, wp.x, wp.y, additive);
+      }
     }
     this.mode = 'none';
   }
@@ -317,7 +351,15 @@ export class BattlefieldScene extends Phaser.Scene {
     tickBattlefield(this.world, delta);
     tickBattlefieldEconomy(this.world);
     tickBuildings(this.world, delta);
+    tickProduction(this.world, delta);
     tickBattlefieldCombat(this.world, delta);
+    // Drop selection if building destroyed
+    if (
+      this.selectedBuilding &&
+      !this.world.buildings.includes(this.selectedBuilding)
+    ) {
+      this.selectedBuilding = null;
+    }
     this.drawWorld();
     this.refreshHud();
   }
@@ -332,9 +374,25 @@ export class BattlefieldScene extends Phaser.Scene {
     const sel = selectedUnits(this.world);
     const friends = livingByTeam(this.world, 'player');
     const foes = livingByTeam(this.world, 'enemy');
-    if (n === 0) {
+    const b = this.selectedBuilding;
+    if (b) {
+      const trains = getBuildingType(b.typeId).trains;
+      const labels = trains
+        .map((id, i) => {
+          const d = getUnitType(id);
+          return `${i + 1}:${d.name}(${d.costGold}g${d.costCrystals ? '/' + d.costCrystals + 'c' : ''})`;
+        })
+        .join('  ');
+      const q =
+        b.trainQueue.length > 0
+          ? ` · queue ${b.trainQueue.length} (${Math.floor((b.trainProgressMs / getUnitType(b.trainQueue[0]!).trainMs) * 100)}%)`
+          : '';
       this.status.setText(
-        `Alive ${friends} vs ${foes}  ·  RMB node=gather · enemy=attack · ground=move`,
+        `${b.name}  HP ${Math.ceil(b.hp)}/${b.maxHp}${q}  ·  ${labels}`,
+      );
+    } else if (n === 0) {
+      this.status.setText(
+        `Alive ${friends} vs ${foes}  ·  Click Junkyard/Hut to train  ·  RMB gather/attack`,
       );
     } else if (n === 1) {
       const u = sel[0]!;
@@ -348,14 +406,12 @@ export class BattlefieldScene extends Phaser.Scene {
         `1 selected — ${u.name}  HP ${Math.ceil(u.hp)}/${u.maxHp}${carry}`,
       );
     } else {
-      this.status.setText(
-        `${n} selected  ·  RMB resource / enemy / ground`,
-      );
+      this.status.setText(`${n} selected  ·  RMB resource / enemy / ground`);
     }
     this.hint.setText(
       this.mode === 'place'
         ? 'Place Bonker Hut (100 Gold) · LMB place · RMB/Esc cancel · green=valid'
-        : 'LMB select · B build hut · RMB gather/attack/move · WASD pan · Esc clear',
+        : 'LMB unit/building · 1/2 train · B hut · RMB gather/attack/move · Esc clear',
     );
   }
 
@@ -373,7 +429,7 @@ export class BattlefieldScene extends Phaser.Scene {
         b.radius * 2,
         6,
       );
-      g.lineStyle(2, b.accent, 1);
+      g.lineStyle(2, b.selected ? 0xf0c75e : b.accent, b.selected ? 1 : 0.9);
       g.strokeRoundedRect(
         b.x - b.radius,
         b.y - b.radius,
@@ -381,6 +437,15 @@ export class BattlefieldScene extends Phaser.Scene {
         b.radius * 2,
         6,
       );
+      if (b.trainQueue.length > 0) {
+        const tw = b.radius * 2;
+        const udef = getUnitType(b.trainQueue[0]!);
+        const tp = Math.min(1, b.trainProgressMs / udef.trainMs);
+        g.fillStyle(0x1a1a1a, 0.8);
+        g.fillRect(b.x - b.radius, b.y + b.radius + 10, tw, 4);
+        g.fillStyle(0x7ec8ff, 1);
+        g.fillRect(b.x - b.radius, b.y + b.radius + 10, tw * tp, 4);
+      }
       if (!b.complete) {
         const bw = b.radius * 2;
         g.fillStyle(0x222222, 0.8);
@@ -449,7 +514,9 @@ export class BattlefieldScene extends Phaser.Scene {
         g.lineBetween(u.x, u.y, u.moveTarget.x, u.moveTarget.y);
       }
       if (u.attackTargetId != null) {
-        const t = this.world.units.find((o) => o.id === u.attackTargetId);
+        const t =
+          this.world.units.find((o) => o.id === u.attackTargetId) ??
+          this.world.buildings.find((o) => o.id === u.attackTargetId);
         if (t) {
           g.lineStyle(1, 0xe85a5a, 0.55);
           g.lineBetween(u.x, u.y, t.x, t.y);
