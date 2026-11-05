@@ -11,15 +11,15 @@ export const MAP = {
   tile: 40,
 } as const;
 
-/** Menu / M1 presentation — GDD prototype species = Nobles. */
+/** Menu / combat skirmish — player commands The Brutes. */
 export const FACTION = {
-  id: 'nobles',
-  name: 'The Nobles',
+  id: 'brutes',
+  name: 'The Brutes',
   blurb:
-    'Knights, dwarves, and inventors with a plan (probably expensive). Prototype species — Formations later.',
-  color: 0x3d7ea6,
-  colorAlt: 0xf0c75e,
-  enemyColor: 0x6b4a8a,
+    'Smash-first goblins and beasts. Combat milestone: select, move, attack. Buildings/economy later.',
+  color: 0x4a7a3a,
+  colorAlt: 0xd4782e,
+  enemyColor: 0x8a4a9a,
   enemyAlt: 0xc4a0e0,
 } as const;
 

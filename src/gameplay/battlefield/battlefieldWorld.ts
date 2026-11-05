@@ -1,91 +1,140 @@
 /**
- * Milestone 1 gameplay — placeholder units, selection, move orders only.
- * No combat / economy / buildings / AI.
- * Placeholders use GDD prototype species (Nobles) colors; resource IDs unused here.
+ * Battlefield gameplay world — select/move + combat stats.
+ * No buildings / economy / full AI. Presentation stays in scenes.
  */
 import { MAP } from '../../config/balance';
 import { emptyWallet, type ResourceWallet } from '../../data/resources';
-import {
-  PROTOTYPE_SPECIES_ID,
-  SPECIES,
-  type SpeciesId,
-} from '../../data/speciesStub';
+import { SPECIES, type SpeciesId } from '../../data/speciesStub';
+import { getUnitType, type UnitTypeId } from '../../data/units';
 import { clamp, dist, moveToward } from '../math';
 import type { Vec2 } from '../types';
 
-export type PlaceholderTeam = 'player' | 'neutral';
+export type BattlefieldTeam = 'player' | 'enemy' | 'neutral';
 
-export interface PlaceholderUnit {
+export interface BattlefieldUnit {
   id: number;
-  team: PlaceholderTeam;
-  /** Data-driven species id (presentation may tint from SPECIES.palette). */
+  team: BattlefieldTeam;
   speciesId: SpeciesId;
+  typeId: UnitTypeId;
+  name: string;
   x: number;
   y: number;
   radius: number;
   speed: number;
+  maxHp: number;
+  hp: number;
+  dmg: number;
+  range: number;
+  vision: number;
+  attackCooldownMs: number;
+  attackCd: number;
+  attackTargetId: number | null;
+  /** Brief presentation flash after dealing damage. */
+  lastAttackFlashMs: number;
   selected: boolean;
   moveTarget: Vec2 | null;
-  /** Tint key for presentation. */
   color: number;
 }
 
 export interface BattlefieldWorld {
   nextId: number;
-  units: PlaceholderUnit[];
-  /** Placeholder wallet — not spent in M1; IDs are scrap/core. */
+  units: BattlefieldUnit[];
   wallet: ResourceWallet;
+  /** Player species for this skirmish. */
   speciesId: SpeciesId;
 }
 
-const PLACEHOLDER_SQUAD = 10;
+function spawnUnit(
+  world: BattlefieldWorld,
+  opts: {
+    team: BattlefieldTeam;
+    typeId: UnitTypeId;
+    x: number;
+    y: number;
+    color: number;
+    speciesId?: SpeciesId;
+  },
+): BattlefieldUnit {
+  const def = getUnitType(opts.typeId);
+  const u: BattlefieldUnit = {
+    id: world.nextId++,
+    team: opts.team,
+    speciesId: opts.speciesId ?? def.speciesId,
+    typeId: opts.typeId,
+    name: def.name,
+    x: opts.x,
+    y: opts.y,
+    radius: def.radius,
+    speed: def.speed,
+    maxHp: def.maxHp,
+    hp: def.maxHp,
+    dmg: def.dmg,
+    range: def.range,
+    vision: def.vision,
+    attackCooldownMs: def.attackCooldownMs,
+    attackCd: 0,
+    attackTargetId: null,
+    lastAttackFlashMs: 0,
+    selected: false,
+    moveTarget: null,
+    color: opts.color,
+  };
+  world.units.push(u);
+  return u;
+}
 
-export function createBattlefieldWorld(
-  speciesId: SpeciesId = PROTOTYPE_SPECIES_ID,
-): BattlefieldWorld {
-  const def = SPECIES[speciesId];
+/** Player Brutes vs enemy placeholder grunts — enough for a skirmish. */
+export function createBattlefieldWorld(): BattlefieldWorld {
+  const brutes = SPECIES.brutes;
   const world: BattlefieldWorld = {
     nextId: 1,
     units: [],
     wallet: emptyWallet({ scrap: 0, core: 0 }),
-    speciesId,
+    speciesId: 'brutes',
   };
 
-  // Player squad — temporary geometric placeholders (Nobles blue/gold by default)
-  const baseX = 400;
-  const baseY = MAP.height - 400;
-  const cols = 5;
-  for (let i = 0; i < PLACEHOLDER_SQUAD; i++) {
-    const row = Math.floor(i / cols);
-    const col = i % cols;
-    const accent = i % 3 === 2;
-    world.units.push({
-      id: world.nextId++,
+  const baseX = 420;
+  const baseY = MAP.height - 420;
+  // 8 melee Bonkers + 4 Rock Throwers = 12 friendly
+  for (let i = 0; i < 8; i++) {
+    const row = Math.floor(i / 4);
+    const col = i % 4;
+    spawnUnit(world, {
       team: 'player',
-      speciesId,
-      x: baseX + col * 44,
-      y: baseY + row * 44,
-      radius: 14,
-      speed: 110,
-      selected: false,
-      moveTarget: null,
-      color: accent ? def.palette.accent : def.palette.primary,
+      typeId: 'bonker',
+      x: baseX + col * 48,
+      y: baseY + row * 48,
+      color: i % 2 === 0 ? brutes.palette.primary : brutes.palette.accent,
+      speciesId: 'brutes',
+    });
+  }
+  for (let i = 0; i < 4; i++) {
+    spawnUnit(world, {
+      team: 'player',
+      typeId: 'rock_thrower',
+      x: baseX + i * 48,
+      y: baseY + 110,
+      color: brutes.palette.accent,
+      speciesId: 'brutes',
     });
   }
 
-  // Neutral marker so the field isn't empty (CORE fragment stand-in later)
-  world.units.push({
-    id: world.nextId++,
-    team: 'neutral',
-    speciesId: 'weirdos',
-    x: MAP.width * 0.5,
-    y: MAP.height * 0.5,
-    radius: 16,
-    speed: 0,
-    selected: false,
-    moveTarget: null,
-    color: 0x8a8a8a,
-  });
+  // Enemy cluster toward map center-east
+  const ex = MAP.width * 0.55;
+  const ey = MAP.height * 0.45;
+  for (let i = 0; i < 8; i++) {
+    const row = Math.floor(i / 4);
+    const col = i % 4;
+    spawnUnit(world, {
+      team: 'enemy',
+      typeId: 'rival_grunt',
+      x: ex + col * 46,
+      y: ey + row * 46,
+      color: 0x8a4a9a,
+      speciesId: 'nobles',
+    });
+  }
+
   return world;
 }
 
@@ -97,9 +146,9 @@ export function selectAt(
   world: BattlefieldWorld,
   x: number,
   y: number,
+  additive = false,
 ): boolean {
-  clearSelection(world);
-  let best: PlaceholderUnit | null = null;
+  let best: BattlefieldUnit | null = null;
   let bestD = Infinity;
   for (const u of world.units) {
     if (u.team !== 'player') continue;
@@ -109,8 +158,10 @@ export function selectAt(
       bestD = d;
     }
   }
+  if (!additive) clearSelection(world);
   if (best) {
-    best.selected = true;
+    if (additive) best.selected = !best.selected;
+    else best.selected = true;
     return true;
   }
   return false;
@@ -122,12 +173,13 @@ export function selectInRect(
   y1: number,
   x2: number,
   y2: number,
+  additive = false,
 ): void {
   const minX = Math.min(x1, x2);
   const maxX = Math.max(x1, x2);
   const minY = Math.min(y1, y2);
   const maxY = Math.max(y1, y2);
-  clearSelection(world);
+  if (!additive) clearSelection(world);
   for (const u of world.units) {
     if (u.team !== 'player') continue;
     if (u.x >= minX && u.x <= maxX && u.y >= minY && u.y <= maxY) {
@@ -143,8 +195,9 @@ export function issueMoveSelected(
 ): void {
   const selected = world.units.filter((u) => u.selected && u.team === 'player');
   selected.forEach((u, i) => {
-    const ox = (i % 5) * 18 - 36;
-    const oy = Math.floor(i / 5) * 18;
+    u.attackTargetId = null;
+    const ox = (i % 5) * 28 - 56;
+    const oy = Math.floor(i / 5) * 28;
     u.moveTarget = {
       x: clamp(x + ox, 20, MAP.width - 20),
       y: clamp(y + oy, 20, MAP.height - 20),
@@ -164,8 +217,8 @@ export function tickBattlefield(world: BattlefieldWorld, dtMs: number): void {
       u.speed,
       dt,
     );
-    u.x = next.x;
-    u.y = next.y;
+    u.x = clamp(next.x, u.radius, MAP.width - u.radius);
+    u.y = clamp(next.y, u.radius, MAP.height - u.radius);
     if (dist(u.x, u.y, u.moveTarget.x, u.moveTarget.y) < 4) {
       u.moveTarget = null;
     }
@@ -174,4 +227,8 @@ export function tickBattlefield(world: BattlefieldWorld, dtMs: number): void {
 
 export function selectedCount(world: BattlefieldWorld): number {
   return world.units.filter((u) => u.selected).length;
+}
+
+export function selectedUnits(world: BattlefieldWorld): BattlefieldUnit[] {
+  return world.units.filter((u) => u.selected && u.team === 'player');
 }

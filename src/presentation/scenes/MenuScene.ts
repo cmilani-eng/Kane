@@ -96,7 +96,7 @@ export class MenuScene extends Phaser.Scene {
       .text(
         width / 2,
         height * 0.86,
-        'Milestone 1: select · multi-select · move  ·  combat/economy later',
+        'Combat: select · move · RMB attack enemy  ·  buildings/economy later',
         {
           fontFamily: 'system-ui, sans-serif',
           fontSize: '12px',
@@ -109,7 +109,7 @@ export class MenuScene extends Phaser.Scene {
       .text(
         width / 2,
         height * 0.92,
-        'LMB select · drag box · RMB move · WASD pan · Q/E zoom',
+        'LMB select · Shift add · drag box · RMB attack/move · WASD pan · Q/E zoom',
         {
           fontFamily: 'system-ui, sans-serif',
           fontSize: '12px',
