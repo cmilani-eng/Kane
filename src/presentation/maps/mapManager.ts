@@ -43,6 +43,7 @@ export function createSkirmishMap(scene: Phaser.Scene): MapHandle {
       let id: number = TILE.grass;
       if (mid) id = TILE.dirt;
       else if (path) id = TILE.path;
+      else if ((tx * 13 + ty * 7) % 17 === 0) id = TILE.crystal;
       else if ((tx * 13 + ty * 7) % 11 === 0) id = TILE.moss;
       layer.putTileAt(id, tx, ty);
     }
