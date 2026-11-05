@@ -7,6 +7,12 @@ import { BRAND } from '../../config/brand';
 import { flags } from '../../config/flags';
 import { RESOURCES } from '../../data/resources';
 import { SPECIES } from '../../data/speciesStub';
+import { getBuildingType } from '../../data/buildings';
+import {
+  buildingBlocks,
+  placeBuilding,
+  tickBuildings,
+} from '../../gameplay/battlefield/battlefieldBuildings';
 import {
   findEnemyAt,
   issueAttackSelected,
@@ -32,13 +38,14 @@ import {
 import { RtsCamera } from '../camera/rtsCamera';
 import { createSkirmishMap } from '../maps/mapManager';
 
-type PointerMode = 'none' | 'select' | 'box' | 'pan';
+type PointerMode = 'none' | 'select' | 'box' | 'pan' | 'place';
 
 export class BattlefieldScene extends Phaser.Scene {
   private world!: BattlefieldWorld;
   private cameraCtl!: RtsCamera;
   private boxGfx!: Phaser.GameObjects.Graphics;
   private unitGfx!: Phaser.GameObjects.Graphics;
+  private ghostGfx!: Phaser.GameObjects.Graphics;
   private mode: PointerMode = 'none';
   private pointerStart = { x: 0, y: 0 };
   private worldStart = { x: 0, y: 0 };
@@ -47,6 +54,9 @@ export class BattlefieldScene extends Phaser.Scene {
   private status!: Phaser.GameObjects.Text;
   private resourceHud!: Phaser.GameObjects.Text;
   private shiftKey: Phaser.Input.Keyboard.Key | null = null;
+  private placeType: 'bonker_hut' = 'bonker_hut';
+  private ghostPos = { x: 0, y: 0 };
+  private ghostValid = false;
 
   constructor() {
     super('Battlefield');
@@ -64,8 +74,10 @@ export class BattlefieldScene extends Phaser.Scene {
     this.boxGfx = this.add.graphics().setDepth(50);
     this.unitGfx = this.add.graphics().setDepth(10);
 
+    this.ghostGfx = this.add.graphics().setDepth(40);
+
     this.add
-      .text(12, 8, `${BRAND.name}  ·  Economy + combat`, {
+      .text(12, 8, `${BRAND.name}  ·  Buildings + economy`, {
         fontFamily: 'Georgia, "Times New Roman", serif',
         fontSize: '18px',
         color: '#f5e6c8',
@@ -77,13 +89,18 @@ export class BattlefieldScene extends Phaser.Scene {
 
     const species = SPECIES[this.world.speciesId];
     this.add
-      .text(12, 42, `Species: ${species.name}  ·  Gather Gold & Magic Crystals`, {
-        fontFamily: 'system-ui, sans-serif',
-        fontSize: '12px',
-        color: '#9eb4c8',
-        backgroundColor: '#0f1a2ecc',
-        padding: { x: 8, y: 4 },
-      })
+      .text(
+        12,
+        42,
+        `Species: ${species.name}  ·  Junkyard drop-off  ·  B = Bonker Hut`,
+        {
+          fontFamily: 'system-ui, sans-serif',
+          fontSize: '12px',
+          color: '#9eb4c8',
+          backgroundColor: '#0f1a2ecc',
+          padding: { x: 8, y: 4 },
+        },
+      )
       .setScrollFactor(0)
       .setDepth(100);
 
@@ -155,7 +172,16 @@ export class BattlefieldScene extends Phaser.Scene {
     this.input.on('pointerdown', this.onDown, this);
     this.input.on('pointermove', this.onMove, this);
     this.input.on('pointerup', this.onUp, this);
-    this.input.keyboard?.on('keydown-ESC', () => clearSelection(this.world));
+    this.input.keyboard?.on('keydown-ESC', () => {
+      if (this.mode === 'place') {
+        this.mode = 'none';
+        this.ghostGfx.clear();
+      } else clearSelection(this.world);
+    });
+    this.input.keyboard?.on('keydown-B', () => {
+      this.mode = this.mode === 'place' ? 'none' : 'place';
+      if (this.mode !== 'place') this.ghostGfx.clear();
+    });
   }
 
   private shiftHeld(): boolean {
@@ -170,11 +196,33 @@ export class BattlefieldScene extends Phaser.Scene {
     this.worldStart = { x: wp.x, y: wp.y };
     this.cameraStart = { ...this.cameraCtl.scroll };
 
+    if (this.mode === 'place' && pointer.leftButtonDown()) {
+      if (this.ghostValid) {
+        const placed = placeBuilding(
+          this.world,
+          'player',
+          this.placeType,
+          this.ghostPos.x,
+          this.ghostPos.y,
+        );
+        if (placed) {
+          this.mode = 'none';
+          this.ghostGfx.clear();
+        }
+      }
+      return;
+    }
+
     if (pointer.middleButtonDown()) {
       this.mode = 'pan';
       return;
     }
     if (pointer.rightButtonDown()) {
+      if (this.mode === 'place') {
+        this.mode = 'none';
+        this.ghostGfx.clear();
+        return;
+      }
       const enemy = findEnemyAt(this.world, wp.x, wp.y, 'player');
       const node = findNodeAt(this.world, wp.x, wp.y);
       if (enemy) issueAttackSelected(this.world, enemy);
@@ -188,6 +236,15 @@ export class BattlefieldScene extends Phaser.Scene {
   }
 
   private onMove(pointer: Phaser.Input.Pointer): void {
+    const wp = this.cameraCtl.worldPoint(pointer.x, pointer.y);
+    if (this.mode === 'place') {
+      const def = getBuildingType(this.placeType);
+      this.ghostPos = { x: wp.x, y: wp.y };
+      this.ghostValid = !buildingBlocks(this.world, wp.x, wp.y, def.radius);
+      this.drawGhost();
+      return;
+    }
+
     if (this.mode === 'none') return;
     const dx = pointer.x - this.pointerStart.x;
     const dy = pointer.y - this.pointerStart.y;
@@ -205,7 +262,6 @@ export class BattlefieldScene extends Phaser.Scene {
     }
 
     if (this.mode === 'box') {
-      const wp = this.cameraCtl.worldPoint(pointer.x, pointer.y);
       this.boxGfx.clear();
       this.boxGfx.lineStyle(2, 0xf0c75e, 0.95);
       this.boxGfx.fillStyle(0xf0c75e, 0.12);
@@ -220,8 +276,8 @@ export class BattlefieldScene extends Phaser.Scene {
 
   private onUp(pointer: Phaser.Input.Pointer): void {
     this.cameraCtl.suppressPan = false;
-    if (this.mode === 'pan') {
-      this.mode = 'none';
+    if (this.mode === 'place' || this.mode === 'pan') {
+      if (this.mode === 'pan') this.mode = 'none';
       return;
     }
     const additive = this.shiftHeld();
@@ -246,10 +302,21 @@ export class BattlefieldScene extends Phaser.Scene {
     this.mode = 'none';
   }
 
+  private drawGhost(): void {
+    const def = getBuildingType(this.placeType);
+    this.ghostGfx.clear();
+    const color = this.ghostValid ? 0x5dce6a : 0xe85a5a;
+    this.ghostGfx.lineStyle(2, color, 0.95);
+    this.ghostGfx.fillStyle(color, 0.25);
+    this.ghostGfx.fillCircle(this.ghostPos.x, this.ghostPos.y, def.radius);
+    this.ghostGfx.strokeCircle(this.ghostPos.x, this.ghostPos.y, def.radius);
+  }
+
   update(_t: number, delta: number): void {
     this.cameraCtl.update(delta);
     tickBattlefield(this.world, delta);
     tickBattlefieldEconomy(this.world);
+    tickBuildings(this.world, delta);
     tickBattlefieldCombat(this.world, delta);
     this.drawWorld();
     this.refreshHud();
@@ -286,7 +353,9 @@ export class BattlefieldScene extends Phaser.Scene {
       );
     }
     this.hint.setText(
-      'LMB select · Shift add · drag box · RMB gather/attack/move · WASD pan · wheel zoom · Esc clear',
+      this.mode === 'place'
+        ? 'Place Bonker Hut (100 Gold) · LMB place · RMB/Esc cancel · green=valid'
+        : 'LMB select · B build hut · RMB gather/attack/move · WASD pan · Esc clear',
     );
   }
 
@@ -294,10 +363,41 @@ export class BattlefieldScene extends Phaser.Scene {
     const g = this.unitGfx;
     g.clear();
 
+    for (const b of this.world.buildings) {
+      const alpha = b.complete ? 1 : 0.45 + 0.4 * b.buildProgress;
+      g.fillStyle(b.color, alpha);
+      g.fillRoundedRect(
+        b.x - b.radius,
+        b.y - b.radius,
+        b.radius * 2,
+        b.radius * 2,
+        6,
+      );
+      g.lineStyle(2, b.accent, 1);
+      g.strokeRoundedRect(
+        b.x - b.radius,
+        b.y - b.radius,
+        b.radius * 2,
+        b.radius * 2,
+        6,
+      );
+      if (!b.complete) {
+        const bw = b.radius * 2;
+        g.fillStyle(0x222222, 0.8);
+        g.fillRect(b.x - b.radius, b.y + b.radius + 4, bw, 5);
+        g.fillStyle(0xf0c75e, 1);
+        g.fillRect(b.x - b.radius, b.y + b.radius + 4, bw * b.buildProgress, 5);
+      }
+      const barW = b.radius * 2;
+      const pct = Math.max(0, b.hp / b.maxHp);
+      g.fillStyle(0x333333, 1);
+      g.fillRect(b.x - b.radius, b.y - b.radius - 10, barW, 4);
+      g.fillStyle(0x5dce6a, 1);
+      g.fillRect(b.x - b.radius, b.y - b.radius - 10, barW * pct, 4);
+    }
+
     for (const s of this.world.stockpiles) {
-      g.fillStyle(s.team === 'player' ? 0x3d5a3a : 0x4a3a5a, 0.55);
-      g.fillCircle(s.x, s.y, s.radius);
-      g.lineStyle(2, s.team === 'player' ? 0xf0c75e : 0xc4a0e0, 0.8);
+      g.lineStyle(1, s.team === 'player' ? 0xf0c75e : 0xc4a0e0, 0.35);
       g.strokeCircle(s.x, s.y, s.radius);
     }
 
