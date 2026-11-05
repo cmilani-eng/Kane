@@ -519,6 +519,10 @@ export class BattlefieldScene extends Phaser.Scene {
 
     for (const b of this.world.buildings) {
       const alpha = b.complete ? 1 : 0.45 + 0.4 * b.buildProgress;
+      const def = getBuildingType(b.typeId);
+      // Soft shadow
+      g.fillStyle(0x000000, 0.28 * alpha);
+      g.fillEllipse(b.x, b.y + b.radius * 0.75, b.radius * 1.5, b.radius * 0.45);
       g.fillStyle(b.color, alpha);
       g.fillRoundedRect(
         b.x - b.radius,
@@ -527,6 +531,20 @@ export class BattlefieldScene extends Phaser.Scene {
         b.radius * 2,
         6,
       );
+      // Accent roof / crystal nub
+      g.fillStyle(b.accent, alpha);
+      if (def.isMainHall) {
+        g.fillTriangle(
+          b.x - b.radius * 0.7,
+          b.y - b.radius * 0.2,
+          b.x + b.radius * 0.7,
+          b.y - b.radius * 0.2,
+          b.x,
+          b.y - b.radius * 1.15,
+        );
+      } else {
+        g.fillCircle(b.x, b.y - b.radius * 0.55, b.radius * 0.28);
+      }
       g.lineStyle(2, b.selected ? 0xf0c75e : b.accent, b.selected ? 1 : 0.9);
       g.strokeRoundedRect(
         b.x - b.radius,
@@ -568,12 +586,36 @@ export class BattlefieldScene extends Phaser.Scene {
       if (n.remaining <= 0) continue;
       const def = RESOURCES[n.resourceId];
       const pct = n.remaining / n.maxAmount;
-      g.fillStyle(def.color, 0.35 + 0.5 * pct);
-      g.fillCircle(n.x, n.y, n.radius);
-      g.lineStyle(2, def.color, 1);
+      g.fillStyle(0x000000, 0.25);
+      g.fillEllipse(n.x, n.y + n.radius * 0.55, n.radius * 1.4, n.radius * 0.45);
+      if (n.resourceId === 'magic_crystals') {
+        g.fillStyle(def.color, 0.4 + 0.5 * pct);
+        g.fillTriangle(
+          n.x,
+          n.y - n.radius,
+          n.x + n.radius * 0.85,
+          n.y + n.radius * 0.7,
+          n.x - n.radius * 0.85,
+          n.y + n.radius * 0.7,
+        );
+        g.fillStyle(0xffffff, 0.55);
+        g.fillTriangle(
+          n.x,
+          n.y - n.radius * 0.45,
+          n.x + n.radius * 0.35,
+          n.y + n.radius * 0.25,
+          n.x - n.radius * 0.35,
+          n.y + n.radius * 0.25,
+        );
+      } else {
+        g.fillStyle(def.color, 0.45 + 0.45 * pct);
+        g.fillCircle(n.x - 4, n.y, n.radius * 0.7);
+        g.fillCircle(n.x + 6, n.y + 2, n.radius * 0.55);
+        g.fillStyle(0xfff0b0, 0.7);
+        g.fillCircle(n.x, n.y - 4, n.radius * 0.35);
+      }
+      g.lineStyle(2, def.color, 0.9);
       g.strokeCircle(n.x, n.y, n.radius);
-      g.fillStyle(0xffffff, 0.85);
-      g.fillCircle(n.x, n.y, 4);
     }
 
     for (const u of this.world.units) {
@@ -638,20 +680,18 @@ export class BattlefieldScene extends Phaser.Scene {
     r: number,
     shape: ReturnType<typeof getUnitType>['shape'],
   ): void {
+    // Contact shadow
+    g.fillStyle(0x000000, 0.28);
+    g.fillEllipse(x, y + r * 0.65, r * 1.35, r * 0.4);
+
     if (shape === 'square') {
       g.fillRect(x - r, y - r, r * 2, r * 2);
-      return;
-    }
-    if (shape === 'diamond') {
+    } else if (shape === 'diamond') {
       g.fillTriangle(x, y - r, x + r, y, x, y + r);
       g.fillTriangle(x, y - r, x - r, y, x, y + r);
-      return;
-    }
-    if (shape === 'triangle') {
+    } else if (shape === 'triangle') {
       g.fillTriangle(x, y - r, x + r, y + r * 0.7, x - r, y + r * 0.7);
-      return;
-    }
-    if (shape === 'hex') {
+    } else if (shape === 'hex') {
       for (let i = 0; i < 6; i++) {
         const a0 = (Math.PI / 3) * i - Math.PI / 6;
         const a1 = (Math.PI / 3) * (i + 1) - Math.PI / 6;
@@ -664,14 +704,22 @@ export class BattlefieldScene extends Phaser.Scene {
           y + Math.sin(a1) * r,
         );
       }
-      return;
-    }
-    if (shape === 'star') {
+    } else if (shape === 'star') {
       g.fillCircle(x, y, r);
-      g.fillStyle(0xffffff, 0.85);
-      g.fillCircle(x, y - r * 0.15, r * 0.35);
-      return;
+      for (let i = 0; i < 5; i++) {
+        const a = (i / 5) * Math.PI * 2 - Math.PI / 2;
+        g.fillCircle(x + Math.cos(a) * r * 0.85, y + Math.sin(a) * r * 0.85, r * 0.22);
+      }
+    } else {
+      g.fillCircle(x, y, r);
     }
-    g.fillCircle(x, y, r);
+
+    // Eyes — readable silhouette detail
+    g.fillStyle(0xfff8e8, 0.95);
+    g.fillCircle(x - r * 0.28, y - r * 0.15, r * 0.22);
+    g.fillCircle(x + r * 0.28, y - r * 0.15, r * 0.22);
+    g.fillStyle(0x0a1220, 0.95);
+    g.fillCircle(x - r * 0.28, y - r * 0.12, r * 0.1);
+    g.fillCircle(x + r * 0.28, y - r * 0.12, r * 0.1);
   }
 }
