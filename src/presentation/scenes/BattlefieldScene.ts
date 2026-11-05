@@ -32,6 +32,7 @@ import {
   toggleMutationSelected,
 } from '../../gameplay/battlefield/battlefieldMutations';
 import { BattlefieldHud } from '../ui/battlefieldHud';
+import { Minimap } from '../ui/minimap';
 import { TutorialCoach } from '../ui/tutorialCoach';
 import {
   createTutorialState,
@@ -94,6 +95,7 @@ export class BattlefieldScene extends Phaser.Scene {
   private worldStart = { x: 0, y: 0 };
   private cameraStart = { x: 0, y: 0 };
   private hud!: BattlefieldHud;
+  private minimap!: Minimap;
   private tutorial!: TutorialState;
   private coach!: TutorialCoach;
   private shiftKey: Phaser.Input.Keyboard.Key | null = null;
@@ -135,12 +137,14 @@ export class BattlefieldScene extends Phaser.Scene {
 
     this.hud = new BattlefieldHud(this, this.world);
     this.hud.menuBtn.on('pointerup', () => this.scene.start('Menu'));
+    this.minimap = new Minimap(this, this.world, this.cameraCtl);
     this.tutorial = createTutorialState();
     this.coach = new TutorialCoach(this, this.tutorial);
     this.splitHudCamera([layer, this.boxGfx, this.unitGfx, this.ghostGfx]);
     const onResize = (): void => {
       this.hud.layout();
       this.coach.layout();
+      this.minimap.layout();
       this.hudCam.setSize(this.scale.width, this.scale.height);
     };
     this.scale.on('resize', onResize);
@@ -405,6 +409,7 @@ export class BattlefieldScene extends Phaser.Scene {
     this.drawWorld();
     this.refreshHud();
     this.coach.refresh();
+    this.minimap.refresh();
   }
 
   private showEndScreen(result: MatchResult): void {

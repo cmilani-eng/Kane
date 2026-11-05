@@ -1,0 +1,148 @@
+/**
+ * Battlefield minimap — unit/building dots + click-to-pan.
+ * Drawn with scrollFactor 0 for the HUD camera.
+ */
+import Phaser from 'phaser';
+import { MAP } from '../../config/balance';
+import type { BattlefieldWorld } from '../../gameplay/battlefield/battlefieldWorld';
+import type { RtsCamera } from '../camera/rtsCamera';
+import { playSfx } from '../audio/sfx';
+
+export class Minimap {
+  private readonly scene: Phaser.Scene;
+  private readonly world: BattlefieldWorld;
+  private readonly cameraCtl: RtsCamera;
+  private readonly gfx: Phaser.GameObjects.Graphics;
+  private readonly hit: Phaser.GameObjects.Rectangle;
+  private readonly frame: Phaser.GameObjects.Rectangle;
+
+  private mapX = 0;
+  private mapY = 0;
+  private mapW = 180;
+  private mapH = 120;
+  private dragging = false;
+
+  constructor(
+    scene: Phaser.Scene,
+    world: BattlefieldWorld,
+    cameraCtl: RtsCamera,
+  ) {
+    this.scene = scene;
+    this.world = world;
+    this.cameraCtl = cameraCtl;
+
+    this.frame = scene.add
+      .rectangle(0, 0, this.mapW + 8, this.mapH + 8, 0x0f1a2e, 0.88)
+      .setStrokeStyle(2, 0xf0c75e, 0.85)
+      .setScrollFactor(0)
+      .setDepth(110)
+      .setOrigin(0, 0);
+
+    this.gfx = scene.add.graphics().setScrollFactor(0).setDepth(111);
+
+    this.hit = scene.add
+      .rectangle(0, 0, this.mapW, this.mapH, 0x000000, 0.001)
+      .setScrollFactor(0)
+      .setDepth(112)
+      .setOrigin(0, 0)
+      .setInteractive({ useHandCursor: true });
+
+    this.hit.on('pointerdown', (p: Phaser.Input.Pointer) => {
+      this.dragging = true;
+      this.panToPointer(p);
+      playSfx('ui');
+    });
+    this.hit.on('pointermove', (p: Phaser.Input.Pointer) => {
+      if (this.dragging && p.isDown) this.panToPointer(p);
+    });
+    this.hit.on('pointerup', () => {
+      this.dragging = false;
+    });
+    this.hit.on('pointerout', () => {
+      this.dragging = false;
+    });
+
+    this.layout();
+    scene.scale.on('resize', () => this.layout());
+  }
+
+  objects(): Phaser.GameObjects.GameObject[] {
+    return [this.frame, this.gfx, this.hit];
+  }
+
+  layout(): void {
+    const sw = this.scene.scale.width;
+    const sh = this.scene.scale.height;
+    const narrow = sw < 720;
+    this.mapW = narrow ? Math.min(140, sw * 0.36) : 180;
+    this.mapH = (this.mapW * MAP.height) / MAP.width;
+    const pad = narrow ? 8 : 12;
+    this.mapX = sw - pad - this.mapW;
+    this.mapY = sh - pad - this.mapH - (narrow ? 70 : 78);
+
+    this.frame
+      .setSize(this.mapW + 8, this.mapH + 8)
+      .setPosition(this.mapX - 4, this.mapY - 4);
+    this.hit.setSize(this.mapW, this.mapH).setPosition(this.mapX, this.mapY);
+  }
+
+  private panToPointer(p: Phaser.Input.Pointer): void {
+    const lx = Phaser.Math.Clamp(p.x - this.mapX, 0, this.mapW);
+    const ly = Phaser.Math.Clamp(p.y - this.mapY, 0, this.mapH);
+    const wx = (lx / this.mapW) * MAP.width;
+    const wy = (ly / this.mapH) * MAP.height;
+    this.cameraCtl.centerOn(wx, wy);
+  }
+
+  refresh(): void {
+    const g = this.gfx;
+    g.clear();
+
+    // Terrain fill
+    g.fillStyle(0x1a2a28, 1);
+    g.fillRect(this.mapX, this.mapY, this.mapW, this.mapH);
+
+    const sx = this.mapW / MAP.width;
+    const sy = this.mapH / MAP.height;
+
+    // Resource nodes (tiny)
+    for (const n of this.world.nodes) {
+      if (n.remaining <= 0) continue;
+      const x = this.mapX + n.x * sx;
+      const y = this.mapY + n.y * sy;
+      g.fillStyle(n.resourceId === 'magic_crystals' ? 0x7ec8ff : 0xf0c75e, 0.85);
+      g.fillCircle(x, y, 2);
+    }
+
+    // Buildings
+    for (const b of this.world.buildings) {
+      if (b.hp <= 0) continue;
+      const x = this.mapX + b.x * sx;
+      const y = this.mapY + b.y * sy;
+      const player = b.team === 'player';
+      g.fillStyle(player ? 0xf0c75e : 0xe87aa8, 1);
+      g.fillRect(x - 3, y - 3, 6, 6);
+    }
+
+    // Units
+    for (const u of this.world.units) {
+      if (u.hp <= 0) continue;
+      const x = this.mapX + u.x * sx;
+      const y = this.mapY + u.y * sy;
+      const player = u.team === 'player';
+      g.fillStyle(player ? 0x5dce6a : 0xe85a5a, 1);
+      g.fillCircle(x, y, u.selected ? 3.2 : 2.2);
+    }
+
+    // Camera viewport
+    const cam = this.scene.cameras.main;
+    const vw = cam.width / cam.zoom;
+    const vh = cam.height / cam.zoom;
+    const vx = this.mapX + cam.scrollX * sx;
+    const vy = this.mapY + cam.scrollY * sy;
+    const vwM = vw * sx;
+    const vhM = vh * sy;
+    g.lineStyle(1, 0xffffff, 0.9);
+    g.strokeRect(vx, vy, vwM, vhM);
+  }
+}

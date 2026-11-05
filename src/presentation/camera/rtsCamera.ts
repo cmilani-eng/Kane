@@ -89,6 +89,11 @@ export class RtsCamera {
     this.cam.setScroll(x, y);
   }
 
+  /** Center the view on a world point (used by minimap click-to-pan). */
+  centerOn(worldX: number, worldY: number): void {
+    this.cam.centerOn(worldX, worldY);
+  }
+
   worldPoint(screenX: number, screenY: number): { x: number; y: number } {
     return this.cam.getWorldPoint(screenX, screenY);
   }
