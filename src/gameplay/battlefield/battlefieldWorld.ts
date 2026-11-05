@@ -1,15 +1,38 @@
 /**
- * Battlefield gameplay world — select/move + combat stats.
- * No buildings / economy / full AI. Presentation stays in scenes.
+ * Battlefield gameplay world — select/move/combat + economy.
+ * Presentation stays in scenes.
  */
 import { MAP } from '../../config/balance';
-import { emptyWallet, type ResourceWallet } from '../../data/resources';
+import {
+  emptyWallet,
+  type ResourceId,
+  type ResourceWallet,
+} from '../../data/resources';
 import { SPECIES, type SpeciesId } from '../../data/speciesStub';
 import { getUnitType, type UnitTypeId } from '../../data/units';
 import { clamp, dist, moveToward } from '../math';
 import type { Vec2 } from '../types';
+import { createDefaultNodes } from './battlefieldEconomy';
 
 export type BattlefieldTeam = 'player' | 'enemy' | 'neutral';
+
+export interface ResourceNode {
+  id: number;
+  x: number;
+  y: number;
+  radius: number;
+  resourceId: ResourceId;
+  remaining: number;
+  maxAmount: number;
+}
+
+export interface Stockpile {
+  id: number;
+  team: BattlefieldTeam;
+  x: number;
+  y: number;
+  radius: number;
+}
 
 export interface BattlefieldUnit {
   id: number;
@@ -29,22 +52,28 @@ export interface BattlefieldUnit {
   attackCooldownMs: number;
   attackCd: number;
   attackTargetId: number | null;
-  /** Brief presentation flash after dealing damage. */
   lastAttackFlashMs: number;
   selected: boolean;
   moveTarget: Vec2 | null;
   color: number;
+  canGather: boolean;
+  carryCapacity: number;
+  carrying: number;
+  carryingResource: ResourceId | null;
+  gatherNodeId: number | null;
 }
 
 export interface BattlefieldWorld {
   nextId: number;
   units: BattlefieldUnit[];
+  nodes: ResourceNode[];
+  stockpiles: Stockpile[];
   wallet: ResourceWallet;
-  /** Player species for this skirmish. */
+  enemyWallet: ResourceWallet;
   speciesId: SpeciesId;
 }
 
-function spawnUnit(
+export function spawnUnit(
   world: BattlefieldWorld,
   opts: {
     team: BattlefieldTeam;
@@ -78,27 +107,61 @@ function spawnUnit(
     selected: false,
     moveTarget: null,
     color: opts.color,
+    canGather: def.canGather,
+    carryCapacity: def.carryCapacity,
+    carrying: 0,
+    carryingResource: null,
+    gatherNodeId: null,
   };
   world.units.push(u);
   return u;
 }
 
-/** Player Brutes vs enemy placeholder grunts — enough for a skirmish. */
 export function createBattlefieldWorld(): BattlefieldWorld {
   const brutes = SPECIES.brutes;
   const world: BattlefieldWorld = {
     nextId: 1,
     units: [],
-    wallet: emptyWallet({ scrap: 0, core: 0 }),
+    nodes: [],
+    stockpiles: [],
+    wallet: emptyWallet({ gold: 100, magic_crystals: 10 }),
+    enemyWallet: emptyWallet({ gold: 80, magic_crystals: 5 }),
     speciesId: 'brutes',
   };
 
   const baseX = 420;
   const baseY = MAP.height - 420;
-  // 8 melee Bonkers + 4 Rock Throwers = 12 friendly
-  for (let i = 0; i < 8; i++) {
-    const row = Math.floor(i / 4);
-    const col = i % 4;
+
+  world.stockpiles.push({
+    id: world.nextId++,
+    team: 'player',
+    x: baseX - 40,
+    y: baseY + 40,
+    radius: 28,
+  });
+  world.stockpiles.push({
+    id: world.nextId++,
+    team: 'enemy',
+    x: MAP.width * 0.55 - 40,
+    y: MAP.height * 0.45 + 40,
+    radius: 28,
+  });
+
+  // Gatherers
+  for (let i = 0; i < 4; i++) {
+    spawnUnit(world, {
+      team: 'player',
+      typeId: 'scavenger',
+      x: baseX + i * 40,
+      y: baseY - 50,
+      color: 0x6a9a4a,
+      speciesId: 'brutes',
+    });
+  }
+  // Military
+  for (let i = 0; i < 6; i++) {
+    const row = Math.floor(i / 3);
+    const col = i % 3;
     spawnUnit(world, {
       team: 'player',
       typeId: 'bonker',
@@ -108,23 +171,32 @@ export function createBattlefieldWorld(): BattlefieldWorld {
       speciesId: 'brutes',
     });
   }
-  for (let i = 0; i < 4; i++) {
+  for (let i = 0; i < 2; i++) {
     spawnUnit(world, {
       team: 'player',
       typeId: 'rock_thrower',
-      x: baseX + i * 48,
-      y: baseY + 110,
+      x: baseX + 160 + i * 48,
+      y: baseY + 20,
       color: brutes.palette.accent,
       speciesId: 'brutes',
     });
   }
 
-  // Enemy cluster toward map center-east
   const ex = MAP.width * 0.55;
   const ey = MAP.height * 0.45;
-  for (let i = 0; i < 8; i++) {
-    const row = Math.floor(i / 4);
-    const col = i % 4;
+  for (let i = 0; i < 2; i++) {
+    spawnUnit(world, {
+      team: 'enemy',
+      typeId: 'rival_scavenger',
+      x: ex + i * 40,
+      y: ey - 50,
+      color: 0xa070b8,
+      speciesId: 'nobles',
+    });
+  }
+  for (let i = 0; i < 6; i++) {
+    const row = Math.floor(i / 3);
+    const col = i % 3;
     spawnUnit(world, {
       team: 'enemy',
       typeId: 'rival_grunt',
@@ -135,6 +207,7 @@ export function createBattlefieldWorld(): BattlefieldWorld {
     });
   }
 
+  createDefaultNodes(world);
   return world;
 }
 
@@ -196,6 +269,7 @@ export function issueMoveSelected(
   const selected = world.units.filter((u) => u.selected && u.team === 'player');
   selected.forEach((u, i) => {
     u.attackTargetId = null;
+    u.gatherNodeId = null;
     const ox = (i % 5) * 28 - 56;
     const oy = Math.floor(i / 5) * 28;
     u.moveTarget = {

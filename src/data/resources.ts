@@ -1,47 +1,62 @@
 /**
- * Data-driven resource IDs (GDD v2).
- * Economy systems later spend/earn by these IDs — not by display names.
- * Milestone 1 does not gather or spend; stubs exist so UI/code never hardcode
- * retired labels (Gold, Magic Crystals, Forage, Aura).
+ * Data-driven resources.
+ * Dev brief canonical: Gold + Magic Crystals.
+ * GDD Scrap / Core map as aliases → same wallet keys.
  */
 
-export type ResourceId = 'scrap' | 'core';
+export type ResourceId = 'gold' | 'magic_crystals';
+
+/** GDD names → brief IDs (for docs / future content). */
+export const RESOURCE_ALIASES = {
+  scrap: 'gold',
+  core: 'magic_crystals',
+} as const satisfies Record<string, ResourceId>;
 
 export interface ResourceDef {
   id: ResourceId;
-  /** Short UI label */
   label: string;
-  /** How the player gets it (design copy; unused in M1). */
+  /** GDD alias label (shown in HUD tip). */
+  gddAlias: string;
   source: string;
-  /** What it typically buys (design copy; unused in M1). */
   spendsOn: string;
+  color: number;
 }
 
 export const RESOURCES: Record<ResourceId, ResourceDef> = {
-  scrap: {
-    id: 'scrap',
-    label: 'Scrap',
-    source: 'Map gather nodes (species-flavored props)',
+  gold: {
+    id: 'gold',
+    label: 'Gold',
+    gddAlias: 'Scrap',
+    source: 'Map gather piles',
     spendsOn: 'Workers, basic units, basic buildings',
+    color: 0xf0c75e,
   },
-  core: {
-    id: 'core',
-    label: 'Core',
-    source: 'Held KANE CORE fragments (passive tick)',
-    spendsOn: 'Advanced units, upgrades, hero recruitment, signatures',
+  magic_crystals: {
+    id: 'magic_crystals',
+    label: 'Magic Crystals',
+    gddAlias: 'Core',
+    source: 'Crystal nodes on the map',
+    spendsOn: 'Advanced units, upgrades, heroes',
+    color: 0x7ec8ff,
   },
 };
 
-/** Match wallet shape for later economy — amounts are placeholders. */
 export type ResourceWallet = Record<ResourceId, number>;
 
 export function emptyWallet(starting: Partial<ResourceWallet> = {}): ResourceWallet {
   return {
-    scrap: starting.scrap ?? 0,
-    core: starting.core ?? 0,
+    gold: starting.gold ?? 0,
+    magic_crystals: starting.magic_crystals ?? 0,
   };
 }
 
 export function listResources(): ResourceDef[] {
   return Object.values(RESOURCES);
+}
+
+export function resolveResourceId(idOrAlias: string): ResourceId {
+  if (idOrAlias === 'gold' || idOrAlias === 'magic_crystals') return idOrAlias;
+  const mapped = RESOURCE_ALIASES[idOrAlias as keyof typeof RESOURCE_ALIASES];
+  if (mapped) return mapped;
+  throw new Error(`Unknown resource id: ${idOrAlias}`);
 }

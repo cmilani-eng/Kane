@@ -1,10 +1,11 @@
 /**
- * Battlefield — select/move + combat (health, attack ranges, RMB attack).
+ * Battlefield — select/move/combat + economy (gather Gold / Magic Crystals).
  * Phaser 4 APIs: https://docs.phaser.io/
  */
 import Phaser from 'phaser';
 import { BRAND } from '../../config/brand';
 import { flags } from '../../config/flags';
+import { RESOURCES } from '../../data/resources';
 import { SPECIES } from '../../data/speciesStub';
 import {
   findEnemyAt,
@@ -12,6 +13,11 @@ import {
   livingByTeam,
   tickBattlefieldCombat,
 } from '../../gameplay/battlefield/battlefieldCombat';
+import {
+  findNodeAt,
+  issueGatherSelected,
+  tickBattlefieldEconomy,
+} from '../../gameplay/battlefield/battlefieldEconomy';
 import {
   clearSelection,
   createBattlefieldWorld,
@@ -39,6 +45,7 @@ export class BattlefieldScene extends Phaser.Scene {
   private cameraStart = { x: 0, y: 0 };
   private hint!: Phaser.GameObjects.Text;
   private status!: Phaser.GameObjects.Text;
+  private resourceHud!: Phaser.GameObjects.Text;
   private shiftKey: Phaser.Input.Keyboard.Key | null = null;
 
   constructor() {
@@ -58,7 +65,7 @@ export class BattlefieldScene extends Phaser.Scene {
     this.unitGfx = this.add.graphics().setDepth(10);
 
     this.add
-      .text(12, 8, `${BRAND.name}  ·  Combat skirmish`, {
+      .text(12, 8, `${BRAND.name}  ·  Economy + combat`, {
         fontFamily: 'Georgia, "Times New Roman", serif',
         fontSize: '18px',
         color: '#f5e6c8',
@@ -70,26 +77,32 @@ export class BattlefieldScene extends Phaser.Scene {
 
     const species = SPECIES[this.world.speciesId];
     this.add
-      .text(
-        12,
-        42,
-        `Species: ${species.name}  ·  Enemy: placeholders  ·  ${species.uniqueMechanic} later`,
-        {
-          fontFamily: 'system-ui, sans-serif',
-          fontSize: '12px',
-          color: '#9eb4c8',
-          backgroundColor: '#0f1a2ecc',
-          padding: { x: 8, y: 4 },
-        },
-      )
+      .text(12, 42, `Species: ${species.name}  ·  Gather Gold & Magic Crystals`, {
+        fontFamily: 'system-ui, sans-serif',
+        fontSize: '12px',
+        color: '#9eb4c8',
+        backgroundColor: '#0f1a2ecc',
+        padding: { x: 8, y: 4 },
+      })
+      .setScrollFactor(0)
+      .setDepth(100);
+
+    this.resourceHud = this.add
+      .text(12, 68, '', {
+        fontFamily: 'system-ui, sans-serif',
+        fontSize: '14px',
+        color: '#f5e6c8',
+        backgroundColor: '#0f1a2ecc',
+        padding: { x: 8, y: 6 },
+      })
       .setScrollFactor(0)
       .setDepth(100);
 
     this.status = this.add
-      .text(12, 68, '', {
+      .text(12, 100, '', {
         fontFamily: 'system-ui, sans-serif',
         fontSize: '13px',
-        color: '#f5e6c8',
+        color: '#d7e6f2',
         backgroundColor: '#0f1a2ecc',
         padding: { x: 8, y: 6 },
       })
@@ -133,7 +146,7 @@ export class BattlefieldScene extends Phaser.Scene {
 
     this.bindInput();
     if (flags.adsEnabled) {
-      console.warn(`[${BRAND.name}] ads should stay off for this milestone`);
+      console.warn(`[${BRAND.name}] ads should stay off`);
     }
   }
 
@@ -163,7 +176,9 @@ export class BattlefieldScene extends Phaser.Scene {
     }
     if (pointer.rightButtonDown()) {
       const enemy = findEnemyAt(this.world, wp.x, wp.y, 'player');
+      const node = findNodeAt(this.world, wp.x, wp.y);
       if (enemy) issueAttackSelected(this.world, enemy);
+      else if (node) issueGatherSelected(this.world, node);
       else issueMoveSelected(this.world, wp.x, wp.y);
       this.mode = 'none';
       return;
@@ -234,42 +249,71 @@ export class BattlefieldScene extends Phaser.Scene {
   update(_t: number, delta: number): void {
     this.cameraCtl.update(delta);
     tickBattlefield(this.world, delta);
+    tickBattlefieldEconomy(this.world);
     tickBattlefieldCombat(this.world, delta);
-    this.drawUnits();
+    this.drawWorld();
     this.refreshHud();
   }
 
   private refreshHud(): void {
+    const w = this.world.wallet;
+    this.resourceHud.setText(
+      `Gold ${Math.floor(w.gold)}   ·   Magic Crystals ${Math.floor(w.magic_crystals)}   (GDD: Scrap/Core)`,
+    );
+
     const n = selectedCount(this.world);
     const sel = selectedUnits(this.world);
     const friends = livingByTeam(this.world, 'player');
     const foes = livingByTeam(this.world, 'enemy');
     if (n === 0) {
       this.status.setText(
-        `Alive ${friends} vs ${foes}  ·  Select Brutes · RMB enemy to attack · RMB ground to move`,
+        `Alive ${friends} vs ${foes}  ·  RMB node=gather · enemy=attack · ground=move`,
       );
     } else if (n === 1) {
       const u = sel[0]!;
+      const carry =
+        u.carrying > 0
+          ? ` · carrying ${u.carrying} ${u.carryingResource ?? ''}`
+          : u.canGather
+            ? ' · scavenger'
+            : '';
       this.status.setText(
-        `1 selected — ${u.name}  HP ${Math.ceil(u.hp)}/${u.maxHp}  dmg ${u.dmg}  range ${u.range}  ·  team player`,
+        `1 selected — ${u.name}  HP ${Math.ceil(u.hp)}/${u.maxHp}${carry}`,
       );
     } else {
-      const hp = sel.reduce((s, u) => s + u.hp, 0);
-      const max = sel.reduce((s, u) => s + u.maxHp, 0);
       this.status.setText(
-        `${n} selected — avg HP ${Math.ceil(hp / n)}  total ${Math.ceil(hp)}/${Math.ceil(max)}  ·  RMB enemy = attack`,
+        `${n} selected  ·  RMB resource / enemy / ground`,
       );
     }
     this.hint.setText(
-      'LMB select · Shift add  ·  drag box  ·  RMB attack/move  ·  WASD pan  ·  wheel/QE zoom  ·  Esc clear',
+      'LMB select · Shift add · drag box · RMB gather/attack/move · WASD pan · wheel zoom · Esc clear',
     );
   }
 
-  private drawUnits(): void {
+  private drawWorld(): void {
     const g = this.unitGfx;
     g.clear();
+
+    for (const s of this.world.stockpiles) {
+      g.fillStyle(s.team === 'player' ? 0x3d5a3a : 0x4a3a5a, 0.55);
+      g.fillCircle(s.x, s.y, s.radius);
+      g.lineStyle(2, s.team === 'player' ? 0xf0c75e : 0xc4a0e0, 0.8);
+      g.strokeCircle(s.x, s.y, s.radius);
+    }
+
+    for (const n of this.world.nodes) {
+      if (n.remaining <= 0) continue;
+      const def = RESOURCES[n.resourceId];
+      const pct = n.remaining / n.maxAmount;
+      g.fillStyle(def.color, 0.35 + 0.5 * pct);
+      g.fillCircle(n.x, n.y, n.radius);
+      g.lineStyle(2, def.color, 1);
+      g.strokeCircle(n.x, n.y, n.radius);
+      g.fillStyle(0xffffff, 0.85);
+      g.fillCircle(n.x, n.y, 4);
+    }
+
     for (const u of this.world.units) {
-      // Attack range ring when selected
       if (u.selected) {
         g.lineStyle(1, 0xf0c75e, 0.35);
         g.strokeCircle(u.x, u.y, u.range);
@@ -277,15 +321,17 @@ export class BattlefieldScene extends Phaser.Scene {
         g.strokeCircle(u.x, u.y, u.radius + 6);
       }
 
-      // Body
       const flash = u.lastAttackFlashMs > 0;
       g.fillStyle(flash ? 0xffffff : u.color, 1);
       g.fillCircle(u.x, u.y, u.radius);
-      // Team marker (dot): gold = player, purple outline already enemy color
       g.fillStyle(u.team === 'player' ? 0xf0c75e : 0xe8a0ff, 0.95);
       g.fillCircle(u.x, u.y - 5, 3.5);
 
-      // Health bar
+      if (u.carrying > 0 && u.carryingResource) {
+        g.fillStyle(RESOURCES[u.carryingResource].color, 1);
+        g.fillCircle(u.x + 8, u.y - 8, 5);
+      }
+
       const barW = 28;
       const barH = 4;
       const bx = u.x - barW / 2;
