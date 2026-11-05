@@ -19,6 +19,8 @@ export interface Unit {
   maxHp: number;
   targetId: EntityId | null;
   moveTarget: Vec2 | null;
+  /** Remaining waypoints from pathfinding (deterministic). */
+  path: Vec2[];
   gatherNodeId: EntityId | null;
   carrying: number;
   attackCd: number;

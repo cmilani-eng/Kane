@@ -2,7 +2,7 @@
   "name": "kane",
   "private": true,
   "version": "0.1.0",
-  "description": "Kane — mobile-web fantasy RTS vertical slice (local-first, Phaser 4)",
+  "description": "KANE — BUILD. COMMAND. CONQUER. Fantasy RTS vertical slice (Phaser 4, local-first)",
   "type": "module",
   "scripts": {
     "dev": "vite --host",

@@ -1,8 +1,13 @@
-# Kane
+# KANE
 
-Mobile-web fantasy RTS vertical slice — classic top-down select/build with **Wardstones**, **Sunkeep Kin**, and solo vs AI.
+**BUILD. COMMAND. CONQUER.**  
+Fantasy Real-Time Strategy Game
 
-Built with **[Phaser 4](https://phaser.io/phaser4)** (`phaser@^4.2.1`) + Vite + TypeScript.
+Mobile-web vertical slice — classic top-down select/build with **Wardstones**, **Sunkeep Kin**, and solo vs AI.
+
+Built with **[Phaser 4](https://phaser.io/phaser4)** (`phaser@^4.2.1`) + TypeScript + Vite.  
+Engine APIs: [docs.phaser.io](https://docs.phaser.io/) (do not assume Phaser 3).  
+Locked engine requirements: see project doc `kane-engine-requirements.md`. Brand: `kane-brand.md`.
 
 > **Local-first:** develop and play on localhost. Firebase Hosting comes later, after this slice is fun and stable. Do not deploy Firebase for this PR.
 
@@ -21,40 +26,58 @@ Open the URL Vite prints (default `http://localhost:5173`). On a phone, use your
 | `npm run build` | Typecheck + production bundle to `dist/` |
 | `npm run preview` | Serve the production build locally |
 
+## Architecture (`src/`)
+
+Gameplay logic is separate from presentation. Modules match the locked engine list:
+
+| Module | Path |
+|--------|------|
+| Game initialization | `game/init.ts` |
+| Camera controls | `camera/rtsCamera.ts` |
+| Map / tilemap | `map/mapManager.ts`, `map/tilesetAssets.ts` |
+| Unit selection | `selection/selectionSystem.ts` |
+| Unit movement | `movement/movementSystem.ts` |
+| Pathfinding | `pathfinding/pathfinding.ts` |
+| Combat | `combat/combatSystem.ts` |
+| Resources | `resources/resourceSystem.ts` |
+| Construction | `construction/constructionSystem.ts` |
+| Production | `production/productionSystem.ts` |
+| AI | `ai/aiOpponent.ts` |
+| UI | `ui/domHud.ts` + scene HUD |
+| Audio / animations | `audio/audioAnims.ts` |
+| Multiplayer networking | `networking/multiplayerStub.ts` (**stub only**) |
+| Sim facade | `sim/world.ts`, `sim/types.ts` |
+| Presentation | `presentation/entityViews.ts` |
+
 ## What’s in this slice
 
-- **One map**, five capturable **Wardstones**, forage nodes, two Keeps
-- **One faction:** Sunkeep Kin (player) vs a simple rival AI (Mossclan-colored stand-in)
-- **Build:** Keep (starting) + Barracks
-- **Units:** Lantern Scout (gather), Kin Blade (melee), Bolt Archer (ranged)
-- **Economy:** Forage (food) from berries; Aura (magic) from held Wardstones
-- **Win:** hold **3 of 5** Wardstones for ~2 minutes, **or** destroy the enemy Keep
-- **Touch-first:** tap select, drag-from-unit box select, drag-empty pan, pinch/wheel zoom, large command bar
-- **Feature flag:** `adsEnabled = false` in `src/config/flags.ts` — **no ads SDK**
+- **One map** (Phaser tilemap + placeholder tileset sheet), five **Wardstones**, forage nodes, two Keeps
+- **One faction:** Sunkeep Kin (player) vs a simple rival AI
+- **Build:** Keep (starting) + Barracks · **Units:** Scout / Blade / Archer (sprite-sheet walk anims)
+- **Economy:** Forage + Aura · **Win:** hold 3/5 Wardstones or destroy Keep
+- **Input:** touch + **mouse/keyboard** (WASD/arrows pan, Q/E zoom, Shift box-select, 1/2/3 select kinds, B build)
+- **Feature flag:** `adsEnabled = false` — **no ads SDK**
+- Multiplayer: **stub only** — no online match complexity
 
-## What’s out of this slice
+## What’s out / gaps vs milestone
 
 - Firebase Auth / Hosting / RTDB / Firestore / Functions
-- Online multiplayer / friend lobbies
-- Second playable faction kit (Mossclan full roster)
-- Fog of war polish, full tutorial campaign, cosmetics
-- Ads, analytics, admin dashboard
-- Production art / animation pass
+- Online multiplayer / friend lobbies (stub only)
+- Full Mossclan faction kit, fog of war polish, cosmetics, ads, admin
+- Production art / SFX packs (placeholder sheets in use)
+- Full grid A* (current pathfinding is deterministic waypoint + soft avoid)
 
-## Controls (phone)
+## Controls
 
-1. Tap your blue units to select (or drag a box starting on a unit).
-2. Tap berries to gather · tap a Wardstone to move onto it · tap enemies to attack.
-3. **Build Barracks** → tap the map to place (100 forage).
-4. **Train** Blade / Archer / Scout from the bottom bar.
-5. Drag empty ground to pan · pinch (or mouse wheel) to zoom.
+**Touch:** tap select · drag-from-unit / Shift box · drag-empty pan · pinch zoom · DOM command bar  
 
-## Project notes
+**Desktop:** left-click select/command · Shift+drag or right-drag box · middle-drag or WASD/arrows pan · wheel or Q/E zoom · `1`/`2`/`3` select Scout/Blade/Archer · `B` build · `Esc` clear
 
-- Engine: **Vite + TypeScript + [Phaser 4](https://phaser.io/phaser4)** (`phaser@^4.2.1`)
-- Ship name: **Kane** (Cursor Project may still be called Gane)
-- Audience framing: kid-friendly **13+** (not under-13 / COPPA)
-- Monetization posture: cosmetics later; ads later behind `adsEnabled`
+## Brand
+
+- Product name: **KANE**
+- Tagline: **BUILD. COMMAND. CONQUER.**
+- Genre: Fantasy Real-Time Strategy Game
 
 ## Firebase later
 

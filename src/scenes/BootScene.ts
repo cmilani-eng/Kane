@@ -1,5 +1,10 @@
 import Phaser from 'phaser';
-import { generateTextures } from '../render/textures';
+import { registerUnitAnims } from '../audio/audioAnims';
+import {
+  generatePropTextures,
+  generateTilesetTexture,
+  generateUnitSpriteSheets,
+} from '../map/tilesetAssets';
 
 export class BootScene extends Phaser.Scene {
   constructor() {
@@ -7,7 +12,10 @@ export class BootScene extends Phaser.Scene {
   }
 
   create(): void {
-    generateTextures(this);
+    generateTilesetTexture(this);
+    generateUnitSpriteSheets(this);
+    generatePropTextures(this);
+    registerUnitAnims(this);
     this.scene.start('Menu');
   }
 }
