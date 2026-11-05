@@ -1,19 +1,23 @@
 /**
- * Game initialization — Phaser 4 boot config for KANE.
- * Docs: https://docs.phaser.io/
+ * KANE GAME CLIENT bootstrap — Phaser 4 + TypeScript.
+ * Wires presentation scenes; gameplay stays import-only from scenes.
  */
 import Phaser from 'phaser';
 import { flags } from '../config/flags';
 import { BRAND } from '../config/brand';
-import { BootScene } from '../scenes/BootScene';
-import { GameScene } from '../scenes/GameScene';
-import { MenuScene } from '../scenes/MenuScene';
-import { createLocalSession } from '../networking/multiplayerStub';
+import { BootScene } from '../presentation/scenes/BootScene';
+import { GameScene } from '../presentation/scenes/GameScene';
+import { MenuScene } from '../presentation/scenes/MenuScene';
+import { createOfflineConnection } from '../networking/connectionStub';
+import { createMatchServerStub } from '../server/matchServerStub';
+import { createDatabaseStub } from '../database/persistenceStub';
 
 export function createKaneGame(parent: HTMLElement): Phaser.Game {
-  const session = createLocalSession();
+  const connection = createOfflineConnection();
+  const server = createMatchServerStub();
+  const db = createDatabaseStub();
   console.info(
-    `[${BRAND.name}] Phaser ${Phaser.VERSION} · session=${session.mode} · adsEnabled=${flags.adsEnabled}`,
+    `[${BRAND.name}] Phaser ${Phaser.VERSION} · net=${connection.status} · server=${server.enabled} · db=${db.enabled} · ads=${flags.adsEnabled}`,
   );
 
   if (flags.adsEnabled) {

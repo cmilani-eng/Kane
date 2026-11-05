@@ -7,7 +7,7 @@ Mobile-web vertical slice — classic top-down select/build with **Wardstones**,
 
 Built with **[Phaser 4](https://phaser.io/phaser4)** (`phaser@^4.2.1`) + TypeScript + Vite.  
 Engine APIs: [docs.phaser.io](https://docs.phaser.io/) (do not assume Phaser 3).  
-Locked engine requirements: see project doc `kane-engine-requirements.md`. Brand: `kane-brand.md`.
+Locked engine requirements: project doc `kane-engine-requirements.md`. Brand: `kane-brand.md`.
 
 > **Local-first:** develop and play on localhost. Firebase Hosting comes later, after this slice is fun and stable. Do not deploy Firebase for this PR.
 
@@ -26,28 +26,36 @@ Open the URL Vite prints (default `http://localhost:5173`). On a phone, use your
 | `npm run build` | Typecheck + production bundle to `dist/` |
 | `npm run preview` | Serve the production build locally |
 
-## Architecture (`src/`)
+## Architecture
 
-Gameplay logic is separate from presentation. Modules match the locked engine list:
+Target structure (Cassio):
 
-| Module | Path |
-|--------|------|
-| Game initialization | `game/init.ts` |
-| Camera controls | `camera/rtsCamera.ts` |
-| Map / tilemap | `map/mapManager.ts`, `map/tilesetAssets.ts` |
-| Unit selection | `selection/selectionSystem.ts` |
-| Unit movement | `movement/movementSystem.ts` |
-| Pathfinding | `pathfinding/pathfinding.ts` |
-| Combat | `combat/combatSystem.ts` |
-| Resources | `resources/resourceSystem.ts` |
-| Construction | `construction/constructionSystem.ts` |
-| Production | `production/productionSystem.ts` |
-| AI | `ai/aiOpponent.ts` |
-| UI | `ui/domHud.ts` + scene HUD |
-| Audio / animations | `audio/audioAnims.ts` |
-| Multiplayer networking | `networking/multiplayerStub.ts` (**stub only**) |
-| Sim facade | `sim/world.ts`, `sim/types.ts` |
-| Presentation | `presentation/entityViews.ts` |
+![How KANE should be structured](docs/kane-architecture.png)
+
+| Layer | Role in this prototype |
+|-------|------------------------|
+| **KANE GAME CLIENT** (Phaser 4 + TypeScript) | Implemented |
+| → **Gameplay Module** | `src/gameplay/` — units, buildings, combat, resources, AI |
+| → **Presentation Module** | `src/presentation/` — maps, animations, effects, UI, audio (+ camera, scenes, views) |
+| **Online multiplayer connection** | `src/networking/` — **stub** |
+| **MULTIPLAYER SERVER** (match state, sync, validation) | `src/server/` — **stub** |
+| **DATABASE** (accounts, progression, cosmetics, stats) | `src/database/` — **stub** |
+
+```
+src/
+  game/init.ts                 # client bootstrap
+  config/                      # brand, balance, flags
+  gameplay/                    # GAMEPLAY MODULE
+    units/   buildings/ combat/ resources/ ai/
+    world.ts types.ts math.ts
+  presentation/                # PRESENTATION MODULE
+    maps/ animations/ effects/ ui/ audio/ camera/ views/ scenes/
+  networking/                  # online connection stub
+  server/                      # multiplayer server stub
+  database/                    # persistence stub
+```
+
+Gameplay never imports presentation. Scenes may call into gameplay; networking/server/DB stay disabled for SP vs AI.
 
 ## What’s in this slice
 
@@ -57,15 +65,15 @@ Gameplay logic is separate from presentation. Modules match the locked engine li
 - **Economy:** Forage + Aura · **Win:** hold 3/5 Wardstones or destroy Keep
 - **Input:** touch + **mouse/keyboard** (WASD/arrows pan, Q/E zoom, Shift box-select, 1/2/3 select kinds, B build)
 - **Feature flag:** `adsEnabled = false` — **no ads SDK**
-- Multiplayer: **stub only** — no online match complexity
+- Multiplayer / server / DB: **stubs only**
 
 ## What’s out / gaps vs milestone
 
+- Live online multiplayer, match server, accounts DB
 - Firebase Auth / Hosting / RTDB / Firestore / Functions
-- Online multiplayer / friend lobbies (stub only)
-- Full Mossclan faction kit, fog of war polish, cosmetics, ads, admin
+- Full Mossclan faction kit, fog polish, cosmetics, ads, admin
 - Production art / SFX packs (placeholder sheets in use)
-- Full grid A* (current pathfinding is deterministic waypoint + soft avoid)
+- Full grid A* (waypoint + soft avoid for now)
 
 ## Controls
 
