@@ -84,10 +84,16 @@ import {
   type BattlefieldBuilding,
   type BattlefieldWorld,
 } from '../../gameplay/battlefield/battlefieldWorld';
+import {
+  enemyRevealed,
+  isExplored,
+  tickFog,
+} from '../../gameplay/battlefield/battlefieldFog';
 import { recordMatchResult } from '../../database/localStats';
 import { playSfx } from '../audio/sfx';
 import { RtsCamera } from '../camera/rtsCamera';
 import { createSkirmishMap } from '../maps/mapManager';
+import { FogOverlay } from '../ui/fogOverlay';
 
 type PointerMode = 'none' | 'select' | 'box' | 'pan' | 'place' | 'attackMove';
 
@@ -98,6 +104,7 @@ export class BattlefieldScene extends Phaser.Scene {
   private boxGfx!: Phaser.GameObjects.Graphics;
   private unitGfx!: Phaser.GameObjects.Graphics;
   private ghostGfx!: Phaser.GameObjects.Graphics;
+  private fogOverlay!: FogOverlay;
   private mode: PointerMode = 'none';
   private pointerStart = { x: 0, y: 0 };
   private worldStart = { x: 0, y: 0 };
@@ -144,13 +151,22 @@ export class BattlefieldScene extends Phaser.Scene {
     this.unitGfx = this.add.graphics().setDepth(10);
 
     this.ghostGfx = this.add.graphics().setDepth(40);
+    this.fogOverlay = new FogOverlay(this);
+    tickFog(this.world, this.world.fog);
+    this.fogOverlay.refresh(this.world.fog);
 
     this.hud = new BattlefieldHud(this, this.world);
     this.hud.menuBtn.on('pointerup', () => this.scene.start('Menu'));
     this.minimap = new Minimap(this, this.world, this.cameraCtl);
     this.tutorial = createTutorialState();
     this.coach = new TutorialCoach(this, this.tutorial);
-    this.splitHudCamera([layer, this.boxGfx, this.unitGfx, this.ghostGfx]);
+    this.splitHudCamera([
+      layer,
+      this.boxGfx,
+      this.unitGfx,
+      this.ghostGfx,
+      this.fogOverlay.gfx,
+    ]);
     const onResize = (): void => {
       this.hud.layout();
       this.coach.layout();
@@ -464,6 +480,7 @@ export class BattlefieldScene extends Phaser.Scene {
       tickMutations(this.world, delta);
       tickHeroes(this.world, delta);
       tickBattlefieldAi(this.world, this.ai, delta);
+      tickFog(this.world, this.world.fog);
       tickBattlefieldCombat(this.world, delta);
       tickTutorial(this.world, this.tutorial, delta);
       const result = evaluateMatch(this.world);
@@ -476,6 +493,7 @@ export class BattlefieldScene extends Phaser.Scene {
       this.selectedBuilding = null;
     }
     this.drawWorld();
+    this.fogOverlay.refresh(this.world.fog);
     this.refreshHud();
     this.coach.refresh();
     this.minimap.refresh();
@@ -617,6 +635,9 @@ export class BattlefieldScene extends Phaser.Scene {
     }
 
     for (const b of this.world.buildings) {
+      if (b.team === 'enemy' && !enemyRevealed(this.world.fog, b.x, b.y)) {
+        continue;
+      }
       const alpha = b.complete ? 1 : 0.45 + 0.4 * b.buildProgress;
       const def = getBuildingType(b.typeId);
       // Soft shadow
@@ -677,12 +698,16 @@ export class BattlefieldScene extends Phaser.Scene {
     }
 
     for (const s of this.world.stockpiles) {
+      if (s.team === 'enemy' && !enemyRevealed(this.world.fog, s.x, s.y)) {
+        continue;
+      }
       g.lineStyle(1, s.team === 'player' ? 0xf0c75e : 0xc4a0e0, 0.35);
       g.strokeCircle(s.x, s.y, s.radius);
     }
 
     for (const n of this.world.nodes) {
       if (n.remaining <= 0) continue;
+      if (!isExplored(this.world.fog, n.x, n.y)) continue;
       const def = RESOURCES[n.resourceId];
       const pct = n.remaining / n.maxAmount;
       g.fillStyle(0x000000, 0.25);
@@ -718,6 +743,9 @@ export class BattlefieldScene extends Phaser.Scene {
     }
 
     for (const u of this.world.units) {
+      if (u.team === 'enemy' && !enemyRevealed(this.world.fog, u.x, u.y)) {
+        continue;
+      }
       if (u.selected) {
         g.lineStyle(1, 0xf0c75e, 0.35);
         g.strokeCircle(u.x, u.y, u.range);
