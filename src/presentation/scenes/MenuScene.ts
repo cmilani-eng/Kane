@@ -91,8 +91,7 @@ export class MenuScene extends Phaser.Scene {
       })
       .setOrigin(0.5);
 
-    const gap = Math.min(200, width * 0.28);
-    const cardY = height * 0.52;
+    const narrow = width < 700;
     const cards: {
       id: SpeciesId;
       fill: number;
@@ -102,19 +101,40 @@ export class MenuScene extends Phaser.Scene {
       { id: 'nobles', fill: 0x3d7ea6, stroke: 0xf0c75e },
       { id: 'weirdos', fill: 0x7a4aa8, stroke: 0x6ecfbf },
     ];
-    cards.forEach((c, i) => {
-      const s = SPECIES[c.id];
-      this.makeSpeciesCard(
-        width / 2 + (i - 1) * gap,
-        cardY,
-        s.name,
-        s.motto,
-        s.uniqueMechanic,
-        c.fill,
-        c.stroke,
-        () => this.startMatch(c.id),
-      );
-    });
+    if (narrow) {
+      const startY = height * 0.38;
+      cards.forEach((c, i) => {
+        const s = SPECIES[c.id];
+        this.makeSpeciesCard(
+          width / 2,
+          startY + i * 118,
+          s.name,
+          s.motto,
+          s.uniqueMechanic,
+          c.fill,
+          c.stroke,
+          () => this.startMatch(c.id),
+          Math.min(300, width * 0.88),
+          100,
+        );
+      });
+    } else {
+      const gap = Math.min(200, width * 0.28);
+      const cardY = height * 0.52;
+      cards.forEach((c, i) => {
+        const s = SPECIES[c.id];
+        this.makeSpeciesCard(
+          width / 2 + (i - 1) * gap,
+          cardY,
+          s.name,
+          s.motto,
+          s.uniqueMechanic,
+          c.fill,
+          c.stroke,
+          () => this.startMatch(c.id),
+        );
+      });
+    }
 
     this.add
       .text(
@@ -156,9 +176,11 @@ export class MenuScene extends Phaser.Scene {
     fill: number,
     stroke: number,
     onClick: () => void,
+    cardW?: number,
+    cardH?: number,
   ): void {
-    const w = Math.min(190, this.scale.width * 0.28);
-    const h = 150;
+    const w = cardW ?? Math.min(190, this.scale.width * 0.28);
+    const h = cardH ?? 150;
     const bg = this.add
       .rectangle(x, y, w, h, fill, 1)
       .setStrokeStyle(3, stroke)
