@@ -32,6 +32,12 @@ import {
   toggleMutationSelected,
 } from '../../gameplay/battlefield/battlefieldMutations';
 import { BattlefieldHud } from '../ui/battlefieldHud';
+import { TutorialCoach } from '../ui/tutorialCoach';
+import {
+  createTutorialState,
+  tickTutorial,
+  type TutorialState,
+} from '../../gameplay/battlefield/battlefieldTutorial';
 import {
   buildingBlocks,
   findBuildingAt,
@@ -86,6 +92,8 @@ export class BattlefieldScene extends Phaser.Scene {
   private worldStart = { x: 0, y: 0 };
   private cameraStart = { x: 0, y: 0 };
   private hud!: BattlefieldHud;
+  private tutorial!: TutorialState;
+  private coach!: TutorialCoach;
   private shiftKey: Phaser.Input.Keyboard.Key | null = null;
   private placeables: BuildingTypeId[] = [];
   private placeIndex = 0;
@@ -125,9 +133,12 @@ export class BattlefieldScene extends Phaser.Scene {
 
     this.hud = new BattlefieldHud(this, this.world);
     this.hud.menuBtn.on('pointerup', () => this.scene.start('Menu'));
+    this.tutorial = createTutorialState();
+    this.coach = new TutorialCoach(this, this.tutorial);
     this.splitHudCamera([layer, this.boxGfx, this.unitGfx, this.ghostGfx]);
     const onResize = (): void => {
       this.hud.layout();
+      this.coach.layout();
       this.hudCam.setSize(this.scale.width, this.scale.height);
     };
     this.scale.on('resize', onResize);
@@ -372,6 +383,7 @@ export class BattlefieldScene extends Phaser.Scene {
       tickHeroes(this.world, delta);
       tickBattlefieldAi(this.world, this.ai, delta);
       tickBattlefieldCombat(this.world, delta);
+      tickTutorial(this.world, this.tutorial, delta);
       const result = evaluateMatch(this.world);
       if (result !== 'ongoing') this.showEndScreen(result);
     }
@@ -383,6 +395,7 @@ export class BattlefieldScene extends Phaser.Scene {
     }
     this.drawWorld();
     this.refreshHud();
+    this.coach.refresh();
   }
 
   private showEndScreen(result: MatchResult): void {
