@@ -5,6 +5,7 @@
 import Phaser from 'phaser';
 import { heroForSpecies, type HeroAbilitySlot } from '../../data/heroes';
 import { SPECIES, type SpeciesId } from '../../data/speciesStub';
+import { getAiDifficulty } from '../../gameplay/battlefield/aiDifficulty';
 import {
   castHeroAbility,
   heroHudLine,
@@ -66,6 +67,7 @@ export class BattlefieldHud {
       .setDepth(100);
 
     const enemy = SPECIES[world.enemySpeciesId];
+    const diff = getAiDifficulty(world.aiDifficulty);
     const mech =
       this.speciesId === 'nobles'
         ? 'FORMATIONS · F'
@@ -73,13 +75,18 @@ export class BattlefieldHud {
           ? 'MUTATION · M'
           : 'SWARM';
     this.matchLine = scene.add
-      .text(12, 42, `vs ${enemy.name}  ·  ${mech}`, {
-        fontFamily: 'system-ui, sans-serif',
-        fontSize: '12px',
-        color: '#9eb4c8',
-        backgroundColor: '#0f1a2ecc',
-        padding: { x: 8, y: 4 },
-      })
+      .text(
+        12,
+        42,
+        `vs ${enemy.name}  ·  ${diff.label}  ·  ${mech}`,
+        {
+          fontFamily: 'system-ui, sans-serif',
+          fontSize: '12px',
+          color: '#9eb4c8',
+          backgroundColor: '#0f1a2ecc',
+          padding: { x: 8, y: 4 },
+        },
+      )
       .setScrollFactor(0)
       .setDepth(100);
 

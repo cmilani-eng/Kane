@@ -1,5 +1,5 @@
 /**
- * Simple skirmish AI — gather, build, train, attack (species-aware).
+ * Simple skirmish AI — gather, build, train, attack (species-aware + difficulty).
  */
 import { placeableBuildings } from '../../data/buildings';
 import { buildingBlocks, placeBuilding } from './battlefieldBuildings';
@@ -8,14 +8,27 @@ import { queueTrain } from './battlefieldProduction';
 import type { BattlefieldWorld } from './battlefieldWorld';
 import { dist } from '../math';
 import { getBuildingType } from '../../data/buildings';
+import {
+  getAiDifficulty,
+  type AiDifficultyId,
+  type AiDifficultyProfile,
+} from './aiDifficulty';
 
 export interface AiState {
   thinkCd: number;
   phase: 'eco' | 'army' | 'attack';
+  difficulty: AiDifficultyId;
+  profile: AiDifficultyProfile;
 }
 
-export function createAiState(): AiState {
-  return { thinkCd: 800, phase: 'eco' };
+export function createAiState(difficulty: AiDifficultyId = 'normal'): AiState {
+  const profile = getAiDifficulty(difficulty);
+  return {
+    thinkCd: profile.thinkMs * 0.9,
+    phase: 'eco',
+    difficulty: profile.id,
+    profile,
+  };
 }
 
 export function tickBattlefieldAi(
@@ -23,9 +36,10 @@ export function tickBattlefieldAi(
   ai: AiState,
   dtMs: number,
 ): void {
+  const p = ai.profile;
   ai.thinkCd -= dtMs;
   if (ai.thinkCd > 0) return;
-  ai.thinkCd = 900;
+  ai.thinkCd = p.thinkMs;
 
   const species = world.enemySpeciesId;
   const wallet = walletOf(world, 'enemy');
@@ -85,28 +99,33 @@ export function tickBattlefieldAi(
       { x: keep.x + 90, y: keep.y + 90 },
     ];
     const radius = getBuildingType(needType).radius;
-    for (const p of spots) {
-      if (buildingBlocks(world, p.x, p.y, radius)) continue;
-      if (placeBuilding(world, 'enemy', needType, p.x, p.y)) break;
+    for (const spot of spots) {
+      if (buildingBlocks(world, spot.x, spot.y, radius)) continue;
+      if (placeBuilding(world, 'enemy', needType, spot.x, spot.y)) break;
     }
   }
 
-  if (keep && scavengers.length < 4) {
+  if (keep && scavengers.length < p.workerTarget) {
     const worker = getBuildingType(keep.typeId).trains[0];
     if (worker) queueTrain(world, keep, worker);
   }
   for (const b of prodBuildings) {
-    if (army.length >= 10) break;
+    if (army.length >= p.armyCap) break;
     const trains = getBuildingType(b.typeId).trains;
     const pick = trains[0];
     if (pick) queueTrain(world, b, pick);
   }
 
-  if (army.length >= 5) ai.phase = 'attack';
-  else if (army.length >= 3) ai.phase = 'army';
+  if (army.length >= p.attackArmyMin) ai.phase = 'attack';
+  else if (army.length >= p.armyPhaseMin) ai.phase = 'army';
   else ai.phase = 'eco';
 
-  if (ai.phase === 'attack') {
+  const poke =
+    ai.phase === 'army' &&
+    p.pokeChance > 0 &&
+    Math.random() < p.pokeChance;
+
+  if (ai.phase === 'attack' || poke) {
     const targetKeep = world.buildings.find(
       (b) => b.team === 'player' && getBuildingType(b.typeId).isMainHall,
     );
