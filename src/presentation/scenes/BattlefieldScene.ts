@@ -791,7 +791,16 @@ export class BattlefieldScene extends Phaser.Scene {
 
       if (u.moveTarget && !u.attackTargetId) {
         g.lineStyle(1, 0xf0c75e, 0.45);
-        g.lineBetween(u.x, u.y, u.moveTarget.x, u.moveTarget.y);
+        let px = u.x;
+        let py = u.y;
+        g.lineBetween(px, py, u.moveTarget.x, u.moveTarget.y);
+        px = u.moveTarget.x;
+        py = u.moveTarget.y;
+        for (const wp of u.path) {
+          g.lineBetween(px, py, wp.x, wp.y);
+          px = wp.x;
+          py = wp.y;
+        }
       }
       if (u.attackTargetId != null) {
         const t =

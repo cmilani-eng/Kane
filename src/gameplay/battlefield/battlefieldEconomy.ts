@@ -6,6 +6,7 @@ import { MAP } from '../../config/balance';
 import type { ResourceId } from '../../data/resources';
 import { dist } from '../math';
 import { getAiDifficulty } from './aiDifficulty';
+import { setUnitPath } from './battlefieldPathfinding';
 import type {
   BattlefieldTeam,
   BattlefieldUnit,
@@ -59,12 +60,17 @@ export function issueGatherSelected(
     u.attackTargetId = null;
     u.attackMove = false;
     u.gatherNodeId = node.id;
-    u.moveTarget = { x: node.x, y: node.y };
+    setUnitPath(world, u, { x: node.x, y: node.y });
   }
 }
 
-function setGoal(u: BattlefieldUnit, x: number, y: number): void {
-  u.moveTarget = { x, y };
+function setGoal(
+  world: BattlefieldWorld,
+  u: BattlefieldUnit,
+  x: number,
+  y: number,
+): void {
+  setUnitPath(world, u, { x, y });
 }
 
 export function tickBattlefieldEconomy(world: BattlefieldWorld): void {
@@ -87,14 +93,15 @@ export function tickBattlefieldEconomy(world: BattlefieldWorld): void {
         if (u.gatherNodeId != null) {
           const node = world.nodes.find((n) => n.id === u.gatherNodeId);
           if (node && node.remaining > 0) {
-            setGoal(u, node.x, node.y);
+            setGoal(world, u, node.x, node.y);
           } else {
             u.gatherNodeId = null;
+            u.path = [];
             u.moveTarget = null;
           }
         }
-      } else if (!u.moveTarget) {
-        setGoal(u, pile.x, pile.y);
+      } else if (!u.moveTarget && u.path.length === 0) {
+        setGoal(world, u, pile.x, pile.y);
       }
       continue;
     }
@@ -104,6 +111,7 @@ export function tickBattlefieldEconomy(world: BattlefieldWorld): void {
       const node = world.nodes.find((n) => n.id === u.gatherNodeId);
       if (!node || node.remaining <= 0) {
         u.gatherNodeId = null;
+        u.path = [];
         u.moveTarget = null;
         continue;
       }
@@ -117,12 +125,13 @@ export function tickBattlefieldEconomy(world: BattlefieldWorld): void {
           node.remaining -= take;
           u.carrying += take;
           u.carryingResource = node.resourceId;
+          u.path = [];
           u.moveTarget = null;
           const pile = stockpileOf(world, u.team);
-          if (pile) setGoal(u, pile.x, pile.y);
+          if (pile) setGoal(world, u, pile.x, pile.y);
         }
-      } else if (!u.moveTarget) {
-        setGoal(u, node.x, node.y);
+      } else if (!u.moveTarget && u.path.length === 0) {
+        setGoal(world, u, node.x, node.y);
       }
     }
   }

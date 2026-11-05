@@ -3,6 +3,7 @@
  */
 import { MAP } from '../../config/balance';
 import { clamp } from '../math';
+import { clearUnitPath, setUnitPath } from './battlefieldPathfinding';
 import type { BattlefieldWorld } from './battlefieldWorld';
 import { clearSelection, selectedUnits } from './battlefieldWorld';
 
@@ -59,7 +60,7 @@ export function recallControlGroup(
 export function stopSelected(world: BattlefieldWorld): number {
   let n = 0;
   for (const u of selectedUnits(world)) {
-    u.moveTarget = null;
+    clearUnitPath(u);
     u.attackTargetId = null;
     u.gatherNodeId = null;
     u.attackMove = false;
@@ -84,10 +85,10 @@ export function issueAttackMoveSelected(
     u.attackMove = true;
     const ox = (i % 5) * 28 - 56;
     const oy = Math.floor(i / 5) * 28;
-    u.moveTarget = {
+    setUnitPath(world, u, {
       x: clamp(x + ox, 20, MAP.width - 20),
       y: clamp(y + oy, 20, MAP.height - 20),
-    };
+    });
   });
   return selected.length;
 }
