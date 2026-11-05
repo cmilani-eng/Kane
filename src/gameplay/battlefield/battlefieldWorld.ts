@@ -79,6 +79,8 @@ export interface BattlefieldUnit {
   lastAttackFlashMs: number;
   selected: boolean;
   moveTarget: Vec2 | null;
+  /** When true, auto-acquire enemies while marching (attack-move). */
+  attackMove: boolean;
   color: number;
   canGather: boolean;
   carryCapacity: number;
@@ -181,6 +183,7 @@ export function spawnUnit(
     lastAttackFlashMs: 0,
     selected: false,
     moveTarget: null,
+    attackMove: false,
     color: opts.color,
     canGather: def.canGather,
     carryCapacity: def.carryCapacity,
@@ -442,6 +445,7 @@ export function issueMoveSelected(
   selected.forEach((u, i) => {
     u.attackTargetId = null;
     u.gatherNodeId = null;
+    u.attackMove = false;
     const ox = (i % 5) * 28 - 56;
     const oy = Math.floor(i / 5) * 28;
     u.moveTarget = {

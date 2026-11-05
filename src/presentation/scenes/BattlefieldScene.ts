@@ -65,6 +65,14 @@ import {
   type MatchResult,
 } from '../../gameplay/battlefield/battlefieldVictory';
 import {
+  assignControlGroup,
+  createControlGroups,
+  issueAttackMoveSelected,
+  recallControlGroup,
+  stopSelected,
+  type ControlGroups,
+} from '../../gameplay/battlefield/battlefieldOrders';
+import {
   clearSelection,
   createBattlefieldWorld,
   issueMoveSelected,
@@ -81,7 +89,7 @@ import { playSfx } from '../audio/sfx';
 import { RtsCamera } from '../camera/rtsCamera';
 import { createSkirmishMap } from '../maps/mapManager';
 
-type PointerMode = 'none' | 'select' | 'box' | 'pan' | 'place';
+type PointerMode = 'none' | 'select' | 'box' | 'pan' | 'place' | 'attackMove';
 
 export class BattlefieldScene extends Phaser.Scene {
   private world!: BattlefieldWorld;
@@ -99,6 +107,8 @@ export class BattlefieldScene extends Phaser.Scene {
   private tutorial!: TutorialState;
   private coach!: TutorialCoach;
   private shiftKey: Phaser.Input.Keyboard.Key | null = null;
+  private ctrlKey: Phaser.Input.Keyboard.Key | null = null;
+  private controlGroups!: ControlGroups;
   private placeables: BuildingTypeId[] = [];
   private placeIndex = 0;
   private placeType: BuildingTypeId = 'bonker_hut';
@@ -154,6 +164,9 @@ export class BattlefieldScene extends Phaser.Scene {
 
     this.shiftKey =
       this.input.keyboard?.addKey(Phaser.Input.Keyboard.KeyCodes.SHIFT) ?? null;
+    this.ctrlKey =
+      this.input.keyboard?.addKey(Phaser.Input.Keyboard.KeyCodes.CTRL) ?? null;
+    this.controlGroups = createControlGroups();
 
     this.bindInput();
     if (flags.adsEnabled) {
@@ -179,7 +192,7 @@ export class BattlefieldScene extends Phaser.Scene {
     this.input.on('pointermove', this.onMove, this);
     this.input.on('pointerup', this.onUp, this);
     this.input.keyboard?.on('keydown-ESC', () => {
-      if (this.mode === 'place') {
+      if (this.mode === 'place' || this.mode === 'attackMove') {
         this.mode = 'none';
         this.ghostGfx.clear();
       } else {
@@ -222,15 +235,61 @@ export class BattlefieldScene extends Phaser.Scene {
     this.input.keyboard?.on('keydown-E', () => {
       if (castHeroAbility(this.world, 'ultimate', 'player')) playSfx('ability');
     });
-    this.input.keyboard?.on('keydown-ONE', () => {
-      if (trainHotkey(this.world, this.selectedBuilding, 0)) playSfx('train');
+    this.input.keyboard?.on('keydown-S', () => {
+      if (stopSelected(this.world) > 0) playSfx('ui');
     });
-    this.input.keyboard?.on('keydown-TWO', () => {
-      if (trainHotkey(this.world, this.selectedBuilding, 1)) playSfx('train');
+    this.input.keyboard?.on('keydown-A', () => {
+      if (selectedCount(this.world) > 0) {
+        this.mode = 'attackMove';
+        playSfx('ui');
+      }
     });
-    this.input.keyboard?.on('keydown-THREE', () => {
-      if (trainHotkey(this.world, this.selectedBuilding, 2)) playSfx('train');
+
+    const digitEvents = [
+      'ZERO',
+      'ONE',
+      'TWO',
+      'THREE',
+      'FOUR',
+      'FIVE',
+      'SIX',
+      'SEVEN',
+      'EIGHT',
+      'NINE',
+    ] as const;
+    digitEvents.forEach((name, slot) => {
+      this.input.keyboard?.on(`keydown-${name}`, () => this.onDigitHotkey(slot));
     });
+  }
+
+  private onDigitHotkey(slot: number): void {
+    if (this.ctrlHeld()) {
+      if (assignControlGroup(this.world, this.controlGroups, slot)) {
+        playSfx('select');
+      }
+      return;
+    }
+    // Production building still uses 1–3 to train when selected.
+    if (
+      this.selectedBuilding &&
+      slot >= 1 &&
+      slot <= 3 &&
+      trainHotkey(this.world, this.selectedBuilding, slot - 1)
+    ) {
+      playSfx('train');
+      return;
+    }
+    this.clearBuildingSelection();
+    if (
+      recallControlGroup(
+        this.world,
+        this.controlGroups,
+        slot,
+        this.shiftHeld(),
+      ) > 0
+    ) {
+      playSfx('select');
+    }
   }
 
   private clearBuildingSelection(): void {
@@ -242,6 +301,10 @@ export class BattlefieldScene extends Phaser.Scene {
     return !!this.shiftKey?.isDown;
   }
 
+  private ctrlHeld(): boolean {
+    return !!this.ctrlKey?.isDown;
+  }
+
   private onDown(pointer: Phaser.Input.Pointer): void {
     if (this.matchResult !== 'ongoing') return;
     if (pointer.y < 40 && pointer.x > this.scale.width - 80) return;
@@ -250,6 +313,12 @@ export class BattlefieldScene extends Phaser.Scene {
     const wp = this.cameraCtl.worldPoint(pointer.x, pointer.y);
     this.worldStart = { x: wp.x, y: wp.y };
     this.cameraStart = { ...this.cameraCtl.scroll };
+
+    if (this.mode === 'attackMove' && pointer.leftButtonDown()) {
+      if (issueAttackMoveSelected(this.world, wp.x, wp.y) > 0) playSfx('attack');
+      this.mode = 'none';
+      return;
+    }
 
     if (this.mode === 'place' && pointer.leftButtonDown()) {
       if (this.ghostValid) {
@@ -274,7 +343,7 @@ export class BattlefieldScene extends Phaser.Scene {
       return;
     }
     if (pointer.rightButtonDown()) {
-      if (this.mode === 'place') {
+      if (this.mode === 'place' || this.mode === 'attackMove') {
         this.mode = 'none';
         this.ghostGfx.clear();
         return;
@@ -530,6 +599,7 @@ export class BattlefieldScene extends Phaser.Scene {
       placing,
       def?.name,
       def?.cost.gold ?? 0,
+      this.mode === 'attackMove',
     );
     this.hud.refresh(status, hint);
   }

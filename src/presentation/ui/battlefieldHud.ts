@@ -387,21 +387,25 @@ export class BattlefieldHud {
     }
   }
 
-  controlHint(placing: boolean, placeName?: string, placeCost?: number): string {
+  controlHint(
+    placing: boolean,
+    placeName?: string,
+    placeCost?: number,
+    attackMove = false,
+  ): string {
+    if (attackMove) {
+      return 'Attack-move: click ground to march & fight · Esc/RMB cancel';
+    }
     if (placing) {
       return `Place ${placeName ?? 'building'} (${placeCost ?? 0}g) · tap map · B cycle · Esc cancel`;
     }
     if (this.narrow) {
-      return this.speciesId === 'nobles'
-        ? 'Tap select · pads: H/Q/W/E · F formation · B build'
-        : this.speciesId === 'weirdos'
-          ? 'Tap select · pads: H/Q/W/E · M mutate · B build'
-          : 'Tap select · pads: H/Q/W/E · B build · long-press pan';
+      return 'Ctrl+1-0 groups · S stop · A attack-move · pads H/Q/W/E';
     }
     return this.speciesId === 'nobles'
-      ? 'H recruit · Q/W/E abilities · F formation · B build · RMB orders'
+      ? 'Ctrl+1-0 groups · 1-0 recall · S stop · A attack-move · F · H/Q/W/E'
       : this.speciesId === 'weirdos'
-        ? 'H ZOGGLE · Q/W/E · M mutation · B build · RMB orders'
-        : 'H GRUK · Q/W/E abilities · B build · RMB gather/attack · Esc';
+        ? 'Ctrl+1-0 groups · S stop · A attack-move · M · H/Q/W/E'
+        : 'Ctrl+1-0 groups · S stop · A attack-move · B build · H/Q/W/E';
   }
 }
