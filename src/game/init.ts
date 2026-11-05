@@ -44,5 +44,8 @@ export function createKaneGame(parent: HTMLElement): Phaser.Game {
     scene: [BootScene, MenuScene, BattlefieldScene],
   };
 
-  return new Phaser.Game(config);
+  const game = new Phaser.Game(config);
+  // Dev/test hook — not a public API.
+  (globalThis as unknown as { __KANE_GAME?: Phaser.Game }).__KANE_GAME = game;
+  return game;
 }

@@ -147,6 +147,7 @@ export class BattlefieldScene extends Phaser.Scene {
     }
     // Left: start select / possible box
     this.mode = 'select';
+    this.cameraCtl.suppressPan = true;
   }
 
   private onMove(pointer: Phaser.Input.Pointer): void {
@@ -181,6 +182,7 @@ export class BattlefieldScene extends Phaser.Scene {
   }
 
   private onUp(pointer: Phaser.Input.Pointer): void {
+    this.cameraCtl.suppressPan = false;
     if (this.mode === 'pan') {
       this.mode = 'none';
       return;

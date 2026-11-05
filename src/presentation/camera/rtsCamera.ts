@@ -92,19 +92,24 @@ export class RtsCamera {
     return this.cam.getWorldPoint(screenX, screenY);
   }
 
+  /** Pause edge/WASD pan while boxing so selection stays accurate. */
+  suppressPan = false;
+
   update(delta: number): void {
-    this.keyControl?.update(delta);
-    if (this.arrowKeys) {
+    if (!this.suppressPan) {
+      this.keyControl?.update(delta);
+      if (this.arrowKeys) {
+        const s = this.edgeSpeed * delta;
+        if (this.arrowKeys.left.isDown) this.cam.scrollX -= s;
+        if (this.arrowKeys.right.isDown) this.cam.scrollX += s;
+        if (this.arrowKeys.up.isDown) this.cam.scrollY -= s;
+        if (this.arrowKeys.down.isDown) this.cam.scrollY += s;
+      }
       const s = this.edgeSpeed * delta;
-      if (this.arrowKeys.left.isDown) this.cam.scrollX -= s;
-      if (this.arrowKeys.right.isDown) this.cam.scrollX += s;
-      if (this.arrowKeys.up.isDown) this.cam.scrollY -= s;
-      if (this.arrowKeys.down.isDown) this.cam.scrollY += s;
+      if (this.edgePan.l) this.cam.scrollX -= s;
+      if (this.edgePan.r) this.cam.scrollX += s;
+      if (this.edgePan.u) this.cam.scrollY -= s;
+      if (this.edgePan.d) this.cam.scrollY += s;
     }
-    const s = this.edgeSpeed * delta;
-    if (this.edgePan.l) this.cam.scrollX -= s;
-    if (this.edgePan.r) this.cam.scrollX += s;
-    if (this.edgePan.u) this.cam.scrollY -= s;
-    if (this.edgePan.d) this.cam.scrollY += s;
   }
 }
