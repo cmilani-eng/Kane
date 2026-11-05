@@ -11,6 +11,7 @@ import {
   recruitHero,
 } from '../../gameplay/battlefield/battlefieldHeroes';
 import type { BattlefieldWorld } from '../../gameplay/battlefield/battlefieldWorld';
+import { isSfxMuted, playSfx, setSfxMuted } from '../audio/sfx';
 
 type AbilityBtn = {
   slot: HeroAbilitySlot | 'recruit';
@@ -33,6 +34,7 @@ export class BattlefieldHud {
   readonly heroLine!: Phaser.GameObjects.Text;
   readonly hint!: Phaser.GameObjects.Text;
   readonly menuBtn!: Phaser.GameObjects.Text;
+  readonly muteBtn!: Phaser.GameObjects.Text;
 
   private goldDot!: Phaser.GameObjects.Arc;
   private crystalDot!: Phaser.GameObjects.Arc;
@@ -167,6 +169,24 @@ export class BattlefieldHud {
       .setDepth(101)
       .setInteractive({ useHandCursor: true });
 
+    this.muteBtn = scene.add
+      .text(scene.scale.width - 12, 52, isSfxMuted() ? 'Sound: Off' : 'Sound: On', {
+        fontFamily: 'system-ui, sans-serif',
+        fontSize: '13px',
+        color: '#fff8e8',
+        backgroundColor: '#2a3545',
+        padding: { x: 12, y: 8 },
+      })
+      .setOrigin(1, 0)
+      .setScrollFactor(0)
+      .setDepth(101)
+      .setInteractive({ useHandCursor: true })
+      .on('pointerup', () => {
+        setSfxMuted(!isSfxMuted());
+        this.muteBtn.setText(isSfxMuted() ? 'Sound: Off' : 'Sound: On');
+        if (!isSfxMuted()) playSfx('ui');
+      });
+
     this.buildAbilityPad(accent);
     this.layout();
     scene.scale.on('resize', () => this.layout());
@@ -225,8 +245,11 @@ export class BattlefieldHud {
         .setDepth(103);
 
       bg.on('pointerup', () => {
-        if (e.slot === 'recruit') recruitHero(this.world, 'player');
-        else castHeroAbility(this.world, e.slot, 'player');
+        if (e.slot === 'recruit') {
+          if (recruitHero(this.world, 'player')) playSfx('hero');
+        } else if (castHeroAbility(this.world, e.slot, 'player')) {
+          playSfx('ability');
+        }
       });
       bg.on('pointerover', () => bg.setFillStyle(0x2a3a4a, 0.95));
       bg.on('pointerout', () => bg.setFillStyle(0x1a2838, 0.92));
@@ -246,6 +269,7 @@ export class BattlefieldHud {
       this.heroLine,
       this.hint,
       this.menuBtn,
+      this.muteBtn,
       this.goldDot,
       this.crystalDot,
       this.resourcePanel,
@@ -295,6 +319,10 @@ export class BattlefieldHud {
       .setFontSize(this.narrow ? '11px' : '12px');
 
     this.menuBtn.setPosition(w - pad, pad).setFontSize(this.narrow ? '13px' : '14px');
+    this.muteBtn
+      .setPosition(w - pad, pad + (this.narrow ? 36 : 42))
+      .setFontSize(this.narrow ? '12px' : '13px')
+      .setText(isSfxMuted() ? 'Sound: Off' : 'Sound: On');
 
     const btnW = this.narrow ? Math.min(78, (w - pad * 2 - 18) / 4) : 92;
     const btnH = this.narrow ? 52 : 58;

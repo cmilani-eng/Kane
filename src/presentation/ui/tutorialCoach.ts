@@ -9,6 +9,7 @@ import {
   tutorialTip,
   type TutorialState,
 } from '../../gameplay/battlefield/battlefieldTutorial';
+import { playSfx } from '../audio/sfx';
 
 export class TutorialCoach {
   private readonly panel: Phaser.GameObjects.Rectangle;
@@ -61,7 +62,10 @@ export class TutorialCoach {
       .setScrollFactor(0)
       .setDepth(122)
       .setInteractive({ useHandCursor: true })
-      .on('pointerup', () => advanceTutorial(this.state));
+      .on('pointerup', () => {
+        playSfx('ui');
+        advanceTutorial(this.state);
+      });
 
     this.skipBtn = scene.add
       .text(0, 0, 'Got it', {
@@ -74,7 +78,10 @@ export class TutorialCoach {
       .setScrollFactor(0)
       .setDepth(122)
       .setInteractive({ useHandCursor: true })
-      .on('pointerup', () => dismissTutorial(this.state));
+      .on('pointerup', () => {
+        playSfx('ui');
+        dismissTutorial(this.state);
+      });
 
     this.layout();
     scene.scale.on('resize', () => this.layout());
