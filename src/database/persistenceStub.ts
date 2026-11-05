@@ -1,8 +1,15 @@
 /**
  * DATABASE — STUB.
- * Future: accounts, progression, cosmetics, statistics.
- * Local SP prototype uses in-memory / no persistence beyond the match.
+ * Future: Firebase Auth + cloud progression.
+ * Local SP already persists match counters via `localStats.ts` (localStorage).
  */
+
+import {
+  loadLocalStats,
+  recordMatchResult,
+  type LocalStats,
+} from './localStats';
+import type { SpeciesId } from '../data/speciesStub';
 
 export interface PlayerProfileStub {
   displayName: string;
@@ -15,13 +22,22 @@ export function createDatabaseStub() {
     enabled: false as const,
     stores: ['accounts', 'progression', 'cosmetics', 'statistics'] as const,
     async getProfile(_uid: string): Promise<PlayerProfileStub | null> {
-      return null;
+      const local = loadLocalStats();
+      return {
+        displayName: 'Local Commander',
+        cosmetics: [],
+        stats: { wins: local.wins, losses: local.losses },
+      };
     },
-    async saveMatchResult(_result: {
+    async saveMatchResult(result: {
       won: boolean;
       reason: string;
+      species?: SpeciesId;
     }): Promise<void> {
-      // no-op
+      if (result.species) recordMatchResult(result.species, result.won);
+    },
+    peekLocalStats(): LocalStats {
+      return loadLocalStats();
     },
   };
 }

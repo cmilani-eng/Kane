@@ -1,28 +1,47 @@
 import Phaser from 'phaser';
 import { BRAND } from '../../config/brand';
 import { flags } from '../../config/flags';
+import { recordGameStarted, wantsAdminPanel } from '../../database/localStats';
 import { SPECIES, type SpeciesId } from '../../data/speciesStub';
+import { playSfx } from '../audio/sfx';
 import { hideDomHud } from '../ui/domHud';
+import { showStatsPanel } from '../ui/statsPanel';
 
 export class MenuScene extends Phaser.Scene {
+  private statsOpen = false;
+
   constructor() {
     super('Menu');
   }
 
   create(): void {
     hideDomHud();
+    this.statsOpen = false;
     this.buildLayout(true);
     this.scale.on('resize', this.onResize, this);
     this.events.once(Phaser.Scenes.Events.SHUTDOWN, () =>
       this.scale.off('resize', this.onResize, this),
     );
+    if (wantsAdminPanel()) {
+      this.openStats();
+    }
   }
 
   /** Everything is positioned from the canvas size, so rebuild when it changes. */
   private onResize(): void {
+    if (this.statsOpen) return;
     this.tweens.killAll();
     this.children.removeAll(true);
     this.buildLayout(false);
+  }
+
+  private openStats(): void {
+    if (this.statsOpen) return;
+    this.statsOpen = true;
+    playSfx('ui');
+    showStatsPanel(this, () => {
+      this.statsOpen = false;
+    });
   }
 
   private buildLayout(intro: boolean): void {
@@ -139,7 +158,7 @@ export class MenuScene extends Phaser.Scene {
     this.add
       .text(
         width / 2,
-        height * 0.82,
+        height * 0.8,
         `Ages ${flags.ageGateMinYears}+  ·  Ads ${flags.adsEnabled ? 'on' : 'off'}  ·  Local-first`,
         {
           fontFamily: 'system-ui, sans-serif',
@@ -149,10 +168,23 @@ export class MenuScene extends Phaser.Scene {
       )
       .setOrigin(0.5);
 
+    const statsBtn = this.add
+      .text(width / 2, height * 0.86, 'Stats  ·  #/admin', {
+        fontFamily: 'system-ui, sans-serif',
+        fontSize: '14px',
+        color: '#fff8e8',
+        backgroundColor: '#3a4555',
+        padding: { x: 16, y: 8 },
+      })
+      .setOrigin(0.5)
+      .setInteractive({ useHandCursor: true })
+      .on('pointerup', () => this.openStats());
+    void statsBtn;
+
     this.add
       .text(
         width / 2,
-        height * 0.9,
+        height * 0.94,
         'FORMATIONS (F) · MUTATION (M) · Heroes (H, Q/W/E) · opponent rotates species',
         {
           fontFamily: 'system-ui, sans-serif',
@@ -164,6 +196,8 @@ export class MenuScene extends Phaser.Scene {
   }
 
   private startMatch(species: SpeciesId): void {
+    recordGameStarted(species);
+    playSfx('ui');
     this.scene.start('Battlefield', { species });
   }
 

@@ -75,6 +75,7 @@ import {
   type BattlefieldBuilding,
   type BattlefieldWorld,
 } from '../../gameplay/battlefield/battlefieldWorld';
+import { recordMatchResult } from '../../database/localStats';
 import { playSfx } from '../audio/sfx';
 import { RtsCamera } from '../camera/rtsCamera';
 import { createSkirmishMap } from '../maps/mapManager';
@@ -413,6 +414,7 @@ export class BattlefieldScene extends Phaser.Scene {
     this.ghostGfx.clear();
     this.cameraCtl.suppressPan = true;
     playSfx(result === 'victory' ? 'victory' : 'defeat');
+    recordMatchResult(this.world.speciesId, result === 'victory');
 
     const { width, height } = this.scale;
     const win = result === 'victory';
