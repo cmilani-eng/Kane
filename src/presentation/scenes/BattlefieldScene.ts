@@ -182,11 +182,17 @@ export class BattlefieldScene extends Phaser.Scene {
       .setScrollFactor(0)
       .setDepth(100);
 
+    const heroHudColor =
+      playerSpecies === 'weirdos'
+        ? '#6ecfbf'
+        : playerSpecies === 'nobles'
+          ? '#f0c75e'
+          : '#d4782e';
     this.heroHud = this.add
       .text(12, 132, '', {
         fontFamily: 'system-ui, sans-serif',
         fontSize: '12px',
-        color: '#f0c75e',
+        color: heroHudColor,
         backgroundColor: '#0f1a2ecc',
         padding: { x: 8, y: 6 },
       })
