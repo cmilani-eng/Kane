@@ -15,9 +15,12 @@ import {
 import { RESOURCES } from '../../data/resources';
 import { SPECIES_MATCHUP_TIP, type SpeciesId } from '../../data/speciesStub';
 import { getLocale, speciesCopy, speciesName, t } from '../../i18n';
-import { unitArmorClass } from '../../data/unitArmorClass';
 import { getUnitType, type UnitTypeId } from '../../data/units';
 import { buildingArmorClassLabel } from './buildingArmorClass';
+import {
+  sharedUnitArmorClassTipLabel,
+  unitArmorClassTipLabel,
+} from './unitArmorClassTip';
 import { buildingBuildCostLabel } from './buildingBuildCost';
 import { buildingBuildTimeLabel } from './buildingBuildTime';
 import { buildingHpMaxLabel } from './buildingHpMax';
@@ -82,25 +85,13 @@ function matchupLine(id: SpeciesId): string {
 
 /** Localized armor / role class for a unit type (HUD label only). */
 export function armorClassLabel(typeId: UnitTypeId): string {
-  const role = unitArmorClass(typeId);
-  return t('sel.armorClass', { role: t(`sel.armor.${role}`) });
+  return unitArmorClassTipLabel(typeId);
 }
 
 /** Set-rally / armed button copy with tile distance (panel echo of world flag). */
 export function rallyButtonLabel(armed: boolean, tiles: number): string {
   const base = armed ? t('sel.rallyArmed') : t('sel.setRally');
   return `${base} · ${t('hud.rallyDist', { n: tiles })}`;
-}
-
-function sharedArmorClassLabel(
-  units: BattlefieldUnit[],
-): string | null {
-  if (units.length === 0) return null;
-  const first = unitArmorClass(units[0]!.typeId);
-  for (let i = 1; i < units.length; i++) {
-    if (unitArmorClass(units[i]!.typeId) !== first) return null;
-  }
-  return armorClassLabel(units[0]!.typeId);
 }
 import {
   GATHER,
@@ -716,7 +707,7 @@ export function buildSelectionView(
     maxHp,
     dmg,
     range,
-    armorClass: sharedArmorClassLabel(alive),
+    armorClass: sharedUnitArmorClassTipLabel(alive.map((u) => u.typeId)),
     dpsTip: sharedUnitDpsLabel(alive.map((u) => u.typeId)),
     dmgTip: sharedUnitDamageLabel(alive.map((u) => u.typeId)),
     speedTip: sharedUnitMoveSpeedLabel(alive.map((u) => u.typeId)),
