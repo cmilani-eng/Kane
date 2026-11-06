@@ -23,6 +23,7 @@ import {
 } from './unitArmorClassTip';
 import { buildingBuildCostLabel } from './buildingBuildCost';
 import { buildingBuildTimeLabel } from './buildingBuildTime';
+import { buildingFootprintLabel } from './buildingFootprint';
 import { buildingHpMaxLabel } from './buildingHpMax';
 import {
   sharedUnitAttackCooldownLabel,
@@ -263,6 +264,8 @@ export type SelectionPanelView =
       buildCostTip: string | null;
       /** Catalog full build-time tip (omitted when buildMs is 0). */
       buildTimeTip: string | null;
+      /** Tile cols×rows footprint tip (same as placement ghost). */
+      footprintTip: string | null;
       /** Building finished construction (can start training). */
       ready: boolean;
       /** 0–1 construction progress while incomplete. */
@@ -578,6 +581,7 @@ export function buildSelectionView(
       armorClass: buildingArmorClassLabel(b.typeId),
       buildCostTip: buildingBuildCostLabel(b.typeId),
       buildTimeTip: buildingBuildTimeLabel(b.typeId),
+      footprintTip: buildingFootprintLabel(b.typeId),
       ready,
       buildPct,
       buildRemainSec: buildRemain,
@@ -1051,6 +1055,7 @@ function structureSignature(view: SelectionPanelView): string {
     view.armorClass ?? '',
     view.buildCostTip ?? '',
     view.buildTimeTip ?? '',
+    view.footprintTip ?? '',
     view.trains
       .map((t) => `${t.typeId}:${t.canPay ? 1 : 0}:${t.affordable ? 1 : 0}`)
       .join(','),
@@ -1666,6 +1671,9 @@ export function renderSelectionPanel(view: SelectionPanelView): boolean {
         if (view.buildTimeTip) {
           bits.push(`<span>${escapeHtml(view.buildTimeTip)}</span>`);
         }
+        if (view.footprintTip) {
+          bits.push(`<span>${escapeHtml(view.footprintTip)}</span>`);
+        }
         if (view.trains.length) bits.push(`<span>${t('sel.production')}</span>`);
         if (view.places.length) bits.push(`<span>${t('sel.build')}</span>`);
         if (bits.length === 0) bits.push(`<span>${t('sel.noProductionStat')}</span>`);
@@ -1750,6 +1758,9 @@ export function renderSelectionPanel(view: SelectionPanelView): boolean {
             view.buildTimeTip
               ? `<span>${escapeHtml(view.buildTimeTip)}</span>`
               : '',
+            view.footprintTip
+              ? `<span>${escapeHtml(view.footprintTip)}</span>`
+              : '',
           ].join('');
           stats.innerHTML = `<span>${t('sel.hpStat', {
             hp: Math.ceil(view.hp),
@@ -1787,6 +1798,10 @@ export function renderSelectionPanel(view: SelectionPanelView): boolean {
           }
           if (spans[tipIdx] && view.buildTimeTip) {
             spans[tipIdx].textContent = view.buildTimeTip;
+            tipIdx += 1;
+          }
+          if (spans[tipIdx] && view.footprintTip) {
+            spans[tipIdx].textContent = view.footprintTip;
           }
         }
       } else if (view.trains.length === 0) {
