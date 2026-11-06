@@ -11,8 +11,13 @@ export interface KaneAuthUser {
   provider: AuthProviderKind;
 }
 
+/** First-run boot gate outcome — stored locally. */
+export type AgeGateStatus = 'pending' | 'ok' | 'blocked';
+
 export interface AgeGateState {
-  /** Player confirmed 13+ for online features. */
+  /** pending = first run; ok = 13+ confirmed; blocked = under-13. */
+  status: AgeGateStatus;
+  /** True when status === 'ok' (13+). */
   ok: boolean;
   confirmedAtMs: number | null;
 }

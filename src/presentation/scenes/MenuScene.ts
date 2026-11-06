@@ -2,6 +2,7 @@ import Phaser from 'phaser';
 import { BRAND } from '../../config/brand';
 import { flags } from '../../config/flags';
 import { recordGameStarted, wantsAdminPanel } from '../../database/localStats';
+import { canEnterGame, loadAgeGate } from '../../firebase/ageGate';
 import { SPECIES, type SpeciesId } from '../../data/speciesStub';
 import {
   AI_DIFFICULTIES,
@@ -25,6 +26,10 @@ export class MenuScene extends Phaser.Scene {
 
   create(): void {
     hideDomHud();
+    if (!canEnterGame(loadAgeGate())) {
+      this.scene.start('AgeGate');
+      return;
+    }
     this.statsOpen = false;
     this.previewSlots = [];
     this.buildLayout(true);
@@ -197,7 +202,7 @@ export class MenuScene extends Phaser.Scene {
       .text(
         width / 2,
         height * 0.8,
-        `Ages ${flags.ageGateMinYears}+  ·  Ads ${flags.adsEnabled ? 'on' : 'off'}  ·  Local-first  ·  Firebase stubs`,
+        `Ages ${flags.ageGateMinYears}+ confirmed  ·  Ads ${flags.adsEnabled ? 'on' : 'off'}  ·  Local-first`,
         {
           fontFamily: 'system-ui, sans-serif',
           fontSize: '12px',

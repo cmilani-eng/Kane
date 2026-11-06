@@ -49,4 +49,4 @@ firebase deploy --only hosting
 - `flags.adsEnabled === false` — no ad SDK
 - `flags.firebaseFoundation` — stub bootstrap / console describe only
 - `flags.firebaseEmulators` — off by default so phones on LAN Vite stay simple
-- Age gate (`src/firebase/ageGate.ts`) gates **online** lobby stubs only; SP rematch ignores it
+- Age gate (`src/firebase/ageGate.ts` + `AgeGateScene`) — first-run boot confirm; under-13 blocked; 13+ unlocks Menu/SP; choice stored in `localStorage` (`kane.ageGate.v2`)
