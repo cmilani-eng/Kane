@@ -22,6 +22,7 @@ import { createDefaultNodes } from './battlefieldEconomy';
 import { createFogState } from './battlefieldFog';
 import { setUnitPath } from './battlefieldPathfinding';
 import { mutationSpeedMult } from './battlefieldMutations';
+import { rageSpeedMult } from './battlefieldRage';
 
 export type BattlefieldTeam = 'player' | 'enemy' | 'neutral';
 
@@ -103,6 +104,10 @@ export interface BattlefieldUnit {
   /** Weirdos MUTATION state. */
   mutated: boolean;
   mutationLocked: boolean;
+  /** Brutes RAGE state. */
+  enraged: boolean;
+  rageLocked: boolean;
+  rageCombatMs: number;
 }
 
 export interface BattlefieldWorld {
@@ -215,6 +220,9 @@ export function spawnUnit(
     formationStillMs: 0,
     mutated: false,
     mutationLocked: false,
+    enraged: false,
+    rageLocked: false,
+    rageCombatMs: 0,
   };
   world.units.push(u);
   return u;
@@ -494,7 +502,7 @@ export function tickBattlefield(world: BattlefieldWorld, dtMs: number): void {
       if (u.path.length > 0) u.moveTarget = u.path.shift()!;
       else continue;
     }
-    const spd = u.speed * mutationSpeedMult(u);
+    const spd = u.speed * mutationSpeedMult(u) * rageSpeedMult(u);
     const next = moveToward(
       u.x,
       u.y,

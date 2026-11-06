@@ -49,6 +49,8 @@ export interface UnitTypeDef {
   usesFormation?: boolean;
   /** Participates in MUTATION when Weirdos. */
   canMutate?: boolean;
+  /** Participates in RAGE when Brutes. */
+  canRage?: boolean;
   isHero?: boolean;
   /** Shape hint for presentation placeholders. */
   shape?: 'circle' | 'square' | 'diamond' | 'triangle' | 'hex' | 'star';
@@ -89,6 +91,7 @@ export const UNIT_TYPES: Record<UnitTypeId, UnitTypeDef> = {
     costGold: 55,
     costCrystals: 0,
     trainMs: 2800,
+    canRage: true,
     shape: 'circle',
   },
   rock_thrower: {
@@ -107,6 +110,7 @@ export const UNIT_TYPES: Record<UnitTypeId, UnitTypeDef> = {
     costGold: 60,
     costCrystals: 5,
     trainMs: 3200,
+    canRage: true,
     shape: 'triangle',
   },
   serf: {
@@ -260,6 +264,7 @@ export const UNIT_TYPES: Record<UnitTypeId, UnitTypeDef> = {
     costCrystals: 40,
     trainMs: 1000,
     isHero: true,
+    canRage: true,
     shape: 'star',
   },
   boniface: {

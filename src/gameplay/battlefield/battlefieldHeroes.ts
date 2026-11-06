@@ -231,6 +231,9 @@ function applyAbility(
       u.attackCd = Math.max(u.attackCd, 1400);
       u.inFormation = false;
       u.formationLocked = false;
+      u.enraged = false;
+      u.rageLocked = false;
+      u.rageCombatMs = 0;
       if (u.hp <= 0) u.hp = 0;
     }
   }
@@ -245,6 +248,9 @@ function applyAbility(
       u.formationLocked = false;
       u.mutated = false;
       u.mutationLocked = false;
+      u.enraged = false;
+      u.rageLocked = false;
+      u.rageCombatMs = 0;
       u.attackTargetId = null;
       if (u.hp <= 0) u.hp = 0;
     }

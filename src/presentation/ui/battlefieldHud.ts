@@ -73,7 +73,7 @@ export class BattlefieldHud {
         ? 'FORMATIONS · F'
         : this.speciesId === 'weirdos'
           ? 'MUTATION · M'
-          : 'SWARM';
+          : 'RAGE · R';
     this.matchLine = scene.add
       .text(
         12,
@@ -361,6 +361,21 @@ export class BattlefieldHud {
     this.heroLine.setText(heroHudLine(this.world));
     this.hint.setText(hintText);
 
+    // Brutes: live Rage count on match line
+    if (this.speciesId === 'brutes') {
+      const enemy = SPECIES[this.world.enemySpeciesId];
+      const diff = getAiDifficulty(this.world.aiDifficulty);
+      const hot = this.world.units.filter(
+        (u) => u.team === 'player' && u.enraged && u.hp > 0,
+      ).length;
+      const locked = this.world.units.filter(
+        (u) => u.team === 'player' && u.rageLocked && u.hp > 0,
+      ).length;
+      this.matchLine.setText(
+        `vs ${enemy.name}  ·  ${diff.label}  ·  RAGE · R  ·  ${hot} hot${locked ? ` (${locked} lock)` : ''}`,
+      );
+    }
+
     const rt = this.world.heroRuntime;
     for (const b of this.abilityBtns) {
       if (b.slot === 'recruit') {
@@ -413,6 +428,6 @@ export class BattlefieldHud {
       ? 'Ctrl+1-0 groups · 1-0 recall · S stop · A attack-move · F · H/Q/W/E'
       : this.speciesId === 'weirdos'
         ? 'Ctrl+1-0 groups · S stop · A attack-move · M · H/Q/W/E'
-        : 'Ctrl+1-0 groups · S stop · A attack-move · B build · H/Q/W/E';
+        : 'Ctrl+1-0 groups · S stop · A attack-move · R rage · B build · H/Q/W/E';
   }
 }

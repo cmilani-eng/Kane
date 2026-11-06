@@ -223,7 +223,7 @@ export class MenuScene extends Phaser.Scene {
       .text(
         width / 2,
         height * 0.94,
-        'FORMATIONS (F) · MUTATION (M) · Heroes (H, Q/W/E) · opponent rotates species',
+        'RAGE (R) · FORMATIONS (F) · MUTATION (M) · Heroes (H, Q/W/E)',
         {
           fontFamily: 'system-ui, sans-serif',
           fontSize: '12px',
