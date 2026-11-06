@@ -90,14 +90,47 @@ const rpsPanel = document.getElementById('rps-panel');
 const endPanel = document.getElementById('end-panel');
 const rpsResult = document.getElementById('rps-result');
 
+function makeRainbowTexture() {
+  const canvas = document.createElement('canvas');
+  canvas.width = 256; canvas.height = 256;
+  const ctx = canvas.getContext('2d');
+  const stops = [
+    [0,'#ff1a1a'],[1/6,'#ff8a1a'],[2/6,'#ffe01a'],
+    [3/6,'#2adf4a'],[4/6,'#1a8cff'],[5/6,'#7a3dff'],[1,'#ff1ad6']
+  ];
+  const g = ctx.createLinearGradient(0, 0, 256, 0);
+  stops.forEach(([t,c])=>g.addColorStop(t,c));
+  ctx.fillStyle = g;
+  ctx.fillRect(0, 0, 256, 256);
+  const v = ctx.createLinearGradient(0, 0, 0, 256);
+  v.addColorStop(0, 'rgba(255,255,255,.22)');
+  v.addColorStop(.5, 'rgba(255,255,255,0)');
+  v.addColorStop(1, 'rgba(0,0,0,.18)');
+  ctx.fillStyle = v;
+  ctx.fillRect(0, 0, 256, 256);
+  const tex = new THREE.CanvasTexture(canvas);
+  tex.colorSpace = THREE.SRGBColorSpace;
+  tex.wrapS = THREE.RepeatWrapping;
+  tex.wrapT = THREE.ClampToEdgeWrapping;
+  return tex;
+}
+
 function makeBlob(stage, isPlayer=false) {
   const group = new THREE.Group();
   const data = STAGES[stage];
-  const material = new THREE.MeshStandardMaterial({ color:data.color, roughness:.34, metalness:stage===3?.22:0, emissive:stage===4?0x38204c:0x000000, emissiveIntensity:.45 });
+  let material;
+  if (stage === 4) {
+    const rainbowMap = makeRainbowTexture();
+    material = new THREE.MeshStandardMaterial({
+      map: rainbowMap, color:0xffffff, roughness:.28, metalness:.08,
+      emissive:0xffffff, emissiveMap: rainbowMap, emissiveIntensity:.55
+    });
+  } else {
+    material = new THREE.MeshStandardMaterial({ color:data.color, roughness:.34, metalness:stage===3?.22:0, emissive:0x000000, emissiveIntensity:.45 });
+  }
   let body;
   if (stage === 3) {
-    body = new THREE.Mesh(new THREE.DodecahedronGeometry(1,1), material);
-    body.scale.set(1, .88, 1);
+    body = new THREE.Mesh(new THREE.BoxGeometry(1.55, 1.35, 1.55), material);
   } else {
     body = new THREE.Mesh(new THREE.SphereGeometry(1,32,24), material);
     body.scale.set(1, .82, 1);
@@ -114,10 +147,10 @@ function makeBlob(stage, isPlayer=false) {
     shine.position.set(x-.018,.205,.93); group.add(shine);
   }
   if (stage === 4) {
-    const ringColors=[0xff4545,0xffa52f,0xffe34d,0x42df76,0x38bfff,0x9871ff];
+    const ringColors=[0xff1a1a,0xff8a1a,0xffe01a,0x2adf4a,0x1a8cff,0x7a3dff,0xff1ad6];
     ringColors.forEach((c,i)=>{
-      const ring=new THREE.Mesh(new THREE.TorusGeometry(.91+i*.018,.055,8,48),new THREE.MeshStandardMaterial({color:c,emissive:c,emissiveIntensity:.18,roughness:.35}));
-      ring.rotation.x=Math.PI/2 + i*.13; ring.rotation.y=i*.42; ring.position.y=.02; group.add(ring);
+      const ring=new THREE.Mesh(new THREE.TorusGeometry(.88+i*.04,.06,8,48),new THREE.MeshStandardMaterial({color:c,emissive:c,emissiveIntensity:.35,roughness:.3}));
+      ring.rotation.x=Math.PI/2 + i*.11; ring.rotation.y=i*.38; ring.position.y=.02; group.add(ring);
     });
   }
   if (stage === 5) {
@@ -193,8 +226,11 @@ function spawnGame(){
   clearEntities();
   player={stage:1,x:0,z:0,radius:STAGES[1].radius,speed:STAGES[1].speed,facing:0,vx:0,vz:0};
   playerGroup=makeBlob(1,true); scene.add(playerGroup);
-  const stages=[0,0,0,0,0,0,0,0,0,0,0,0, 1,1,1,1,1,1,1,1,1,1,1,1, 2,2,2,2,2,2,2,2,2, 3,3,3,3,3,3, 4,4,4];
-  while(stages.length<BOT_COUNT) stages.push(Math.floor(Math.random()*4));
+  const purpleCount = Math.floor(BOT_COUNT / 2);
+  const stages = [
+    ...Array(purpleCount).fill(0),
+    ...Array(BOT_COUNT - purpleCount).fill(1)
+  ];
   stages.sort(()=>Math.random()-.5);
   stages.forEach(stage=>{
     let x,z; do{x=(Math.random()-.5)*ARENA*1.75;z=(Math.random()-.5)*ARENA*1.75;}while(Math.hypot(x,z)<5);
