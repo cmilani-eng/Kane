@@ -1,0 +1,44 @@
+# Auto-deploy Firebase Hosting when `dev` is updated (incl. PR merges into `dev`).
+# Requires GitHub secret FIREBASE_SERVICE_ACCOUNT_KANE_RTS_STUB — see docs/firebase-hosting.md.
+name: Deploy Hosting (dev)
+
+on:
+  push:
+    branches:
+      - dev
+
+concurrency:
+  group: deploy-hosting-dev
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+
+      - name: Install
+        run: npm ci
+
+      - name: Build (tsc + Vite → dist/)
+        run: npm run build
+
+      - name: Authenticate to Google Cloud
+        uses: google-github-actions/auth@v2
+        with:
+          credentials_json: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_KANE_RTS_STUB }}
+
+      - name: Deploy Firebase Hosting (kane-web)
+        # Matches `npm run hosting:deploy` target; project from `.firebaserc`.
+        run: npx --yes firebase-tools@13 deploy --only hosting:kane-web --non-interactive --project kane-rts-stub

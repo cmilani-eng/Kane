@@ -68,6 +68,39 @@ Channel id / expiry defaults live in `hosting/preview-channel.stub.json` and `HO
 
 Emulator UI: `http://127.0.0.1:4000` · Auth `9099` · RTDB `9000` · Firestore `8080`.
 
+## GitHub Actions — auto-deploy on `dev`
+
+Workflow: `.github/workflows/deploy-hosting-dev.yml`  
+Trigger: **push to `dev`** (covers merging a PR into `dev`).  
+Steps: `npm ci` → `npm run build` → `firebase deploy --only hosting:kane-web` (project `kane-rts-stub`, target `kane-web`).
+
+Local Vite (`npm run dev`) stays the day-to-day playtest path. This pipeline only publishes the Vite `dist/` bundle to Hosting.
+
+### One-time setup (Cassio)
+
+1. **Create the `dev` branch** if it does not exist yet (workflow targets `dev` only; it does not create the branch):
+   ```bash
+   git fetch origin
+   git checkout main
+   git pull
+   git checkout -b dev
+   git push -u origin dev
+   ```
+2. **GitHub → Settings → Secrets and variables → Actions → New repository secret**
+   | Secret name | Value |
+   |-------------|--------|
+   | `FIREBASE_SERVICE_ACCOUNT_KANE_RTS_STUB` | Full JSON key of a Google service account that can deploy Hosting to project `kane-rts-stub` |
+3. **Firebase / GCP IAM** for that service account (minimum):
+   - Role **Firebase Hosting Admin** (`roles/firebasehosting.admin`) on project `kane-rts-stub`, **or**
+   - Broader **Firebase Admin** if you prefer one role for Hosting + related tools
+   - The SA also needs permission to create/upload Hosting releases (Hosting Admin covers this)
+4. **Create the key** (Console → IAM → service account → Keys → Add key → JSON), paste the entire JSON into the GitHub secret. **Do not commit the JSON.**
+5. Push or merge something into `dev` and confirm the **Deploy Hosting (dev)** Action succeeds.
+
+If the live Firebase project id is **not** `kane-rts-stub`, update `.firebaserc`, this workflow’s `--project` / secret name, and `.env.example` together before relying on CI.
+
+Optional alternative (not used by the workflow): a CI token from `firebase login:ci` as `FIREBASE_TOKEN`. Prefer the service-account JSON + `google-github-actions/auth` path above.
+
 ## Soft-launch guards
 
 - `flags.adsEnabled === false` — no ad SDK / zero ad traffic on preview
