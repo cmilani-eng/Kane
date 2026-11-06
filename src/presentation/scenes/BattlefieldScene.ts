@@ -311,6 +311,9 @@ export class BattlefieldScene extends Phaser.Scene {
         this.cameraCtl.centerOn(result.focus.x, result.focus.y);
       }
     };
+    this.hud.onUnderAttackJump = (x, y) => {
+      this.cameraCtl.centerOn(x, y);
+    };
     this.controlsHelp = createControlsHelpPanel({});
     mountSelectionPanel({
       stop: () => this.issueStopCommand(),
@@ -987,6 +990,7 @@ export class BattlefieldScene extends Phaser.Scene {
       this.scale.height,
       alert.lifeMs,
       alert.maxLifeMs,
+      alert.severity === 'critical',
     );
   }
 
@@ -1037,7 +1041,12 @@ export class BattlefieldScene extends Phaser.Scene {
       if (alert?.pulse) {
         alert.pulse = false;
         playSfx('alert');
-        this.cameraCtl.softNudgeToward(alert.x, alert.y);
+        const critical = alert.severity === 'critical';
+        this.cameraCtl.softNudgeToward(
+          alert.x,
+          alert.y,
+          critical ? 0.38 : 0.22,
+        );
       }
       tickTutorial(this.world, this.tutorial, delta);
       const result = evaluateMatch(this.world);

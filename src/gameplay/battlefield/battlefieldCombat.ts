@@ -207,7 +207,11 @@ export function tickBattlefieldCombat(
         damageBuilding(world, b, raw);
         spawnBuildingHitFx(world, b.x, b.y, b.radius);
         if (b.team === 'player' && u.team === 'enemy') {
-          notifyUnderAttack(world, b.x, b.y);
+          const keep = !!getBuildingType(b.typeId).isMainHall;
+          notifyUnderAttack(world, b.x, b.y, {
+            severity: keep ? 'critical' : 'normal',
+            kind: keep ? 'keep' : 'unit',
+          });
         }
       } else {
         const victim = t as BattlefieldUnit;
@@ -219,7 +223,11 @@ export function tickBattlefieldCombat(
         if (victim.hp <= 0) victim.hp = 0;
         spawnHitFx(world, victim.x, victim.y, victim.radius, victim.color);
         if (victim.team === 'player' && u.team === 'enemy') {
-          notifyUnderAttack(world, victim.x, victim.y);
+          const hero = !!getUnitType(victim.typeId).isHero;
+          notifyUnderAttack(world, victim.x, victim.y, {
+            severity: hero ? 'critical' : 'normal',
+            kind: hero ? 'hero' : 'unit',
+          });
         }
       }
       u.attackCd = u.attackCooldownMs;
