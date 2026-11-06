@@ -6,7 +6,13 @@
 import Phaser from 'phaser';
 import { BRAND } from '../../config/brand';
 import { isReduceMotion, setReduceMotion } from '../../database/motionPrefs';
-import { difficultyCopy, mapCopy, speciesName, subscribeLocale, t } from '../../i18n';
+import {
+  difficultyCopy,
+  mapCopy,
+  speciesName,
+  subscribeLocale,
+  t,
+} from '../../i18n';
 import type { SkirmishMapId } from '../../data/skirmishMaps';
 import type { SpeciesId } from '../../data/speciesStub';
 import type { AiDifficultyId } from '../../gameplay/battlefield/aiDifficulty';
@@ -14,6 +20,7 @@ import { isSfxMuted, playSfx, setSfxMuted } from '../audio/sfx';
 import { formatMatchClock } from './battlefieldHud';
 import { addLocalePicker } from './localePicker';
 import { pauseMapTipLine } from './pauseMapTip';
+import { pauseSpeciesMottoTipLine } from './pauseSpeciesMottoTip';
 import {
   SUPPLY_TONE_COLOR,
   formatSupplyLine,
@@ -155,6 +162,7 @@ export class PauseMenu {
     const clock = formatMatchClock(this.snapshot.elapsedMs);
     const elapsedLine = t('pause.elapsed', { clock });
     const mapTip = pauseMapTipLine(this.snapshot.mapId);
+    const mottoTip = pauseSpeciesMottoTipLine(this.snapshot.speciesId);
     const setupLine = t('pause.setup', {
       species: speciesName(this.snapshot.speciesId),
       map: mapCopy(this.snapshot.mapId).label,
@@ -168,10 +176,11 @@ export class PauseMenu {
       this.snapshot.supplyCurrent,
       this.snapshot.supplyCap,
     );
-    const yElapsed = short ? top + 64 : cy - panelH * 0.32;
-    const yMap = short ? top + 84 : cy - panelH * 0.26;
-    const ySetup = short ? top + 102 : cy - panelH * 0.2;
-    const ySupply = short ? top + 120 : cy - panelH * 0.14;
+    const yElapsed = short ? top + 58 : cy - panelH * 0.34;
+    const yMap = short ? top + 76 : cy - panelH * 0.28;
+    const yMotto = short ? top + 94 : cy - panelH * 0.23;
+    const ySetup = short ? top + 112 : cy - panelH * 0.18;
+    const ySupply = short ? top + 128 : cy - panelH * 0.12;
     const elapsed = this.scene.add
       .text(cx, yElapsed, elapsedLine, {
         fontFamily: 'system-ui, sans-serif',
@@ -188,6 +197,17 @@ export class PauseMenu {
         fontSize: '13px',
         color: '#c8d8e8',
         align: 'center',
+      })
+      .setOrigin(0.5)
+      .setScrollFactor(0)
+      .setDepth(222);
+    const motto = this.scene.add
+      .text(cx, yMotto, mottoTip, {
+        fontFamily: 'system-ui, sans-serif',
+        fontSize: short ? '11px' : '12px',
+        color: '#a8b8c8',
+        align: 'center',
+        wordWrap: { width: panelW - 40 },
       })
       .setOrigin(0.5)
       .setScrollFactor(0)
@@ -212,10 +232,10 @@ export class PauseMenu {
       .setOrigin(0.5)
       .setScrollFactor(0)
       .setDepth(222);
-    this.root.push(title, brand, elapsed, mapLine, setup, supplyText);
+    this.root.push(title, brand, elapsed, mapLine, motto, setup, supplyText);
 
-    // Short layout: elapsed + map + setup + supply need a little more room before Resume.
-    const btnY0 = short ? top + 148 : cy - panelH * 0.04;
+    // Short layout: elapsed + map + motto + setup + supply need room before Resume.
+    const btnY0 = short ? top + 156 : cy - panelH * 0.02;
     const gap = short ? 36 : Math.min(44, panelH * 0.11);
     this.root.push(
       this.makeBtn(cx, btnY0, t('pause.resume'), () => {
