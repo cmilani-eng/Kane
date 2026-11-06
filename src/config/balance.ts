@@ -16,7 +16,7 @@ export const FACTION = {
   id: 'brutes',
   name: 'The Brutes',
   blurb:
-    'Smash-first goblins and beasts. Combat milestone: select, move, attack. Buildings/economy later.',
+    'Smash-first goblins and beasts. Bonkers, riders, and scrap siege.',
   color: 0x4a7a3a,
   colorAlt: 0xd4782e,
   enemyColor: 0x8a4a9a,

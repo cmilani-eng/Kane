@@ -9,6 +9,8 @@ export type BuildingTypeId =
   // Brutes
   | 'junkyard'
   | 'bonker_hut'
+  | 'beast_pen'
+  | 'scrap_works'
   | 'big_boss_den'
   // Nobles
   | 'royal_keep'
@@ -72,6 +74,34 @@ export const BUILDING_TYPES: Record<BuildingTypeId, BuildingTypeDef> = {
     trains: ['bonker', 'rock_thrower'],
     color: 0x3d6a32,
     accent: 0xf0c75e,
+  },
+  beast_pen: {
+    id: 'beast_pen',
+    name: 'Beast Pen',
+    speciesId: 'brutes',
+    maxHp: 500,
+    radius: 28,
+    buildMs: 4800,
+    cost: { gold: 120 },
+    isDropOff: false,
+    isMainHall: false,
+    trains: ['wolf_rider', 'big_bonker'],
+    color: 0x5a4a28,
+    accent: 0xd4782e,
+  },
+  scrap_works: {
+    id: 'scrap_works',
+    name: 'Scrap Works',
+    speciesId: 'brutes',
+    maxHp: 520,
+    radius: 30,
+    buildMs: 5500,
+    cost: { gold: 140, magic_crystals: 15 },
+    isDropOff: false,
+    isMainHall: false,
+    trains: ['stomper', 'boom_goblin'],
+    color: 0x4a4038,
+    accent: 0xc4a06a,
   },
   big_boss_den: {
     id: 'big_boss_den',

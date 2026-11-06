@@ -1,7 +1,6 @@
 /**
- * Data-driven species registry — STUB aligned to GDD v2.
- * Full rosters / mechanics land in later milestones.
- * Prototype order: Nobles → Brutes → Weirdos.
+ * Species registry. Every `unitIds` entry is a trainable unit in `src/data/units.ts`.
+ * Workers and heroes are trained from the main hall and hero building.
  */
 
 export type SpeciesId = 'brutes' | 'nobles' | 'weirdos';
@@ -14,7 +13,7 @@ export interface SpeciesDef {
   name: string;
   motto: string;
   uniqueMechanic: string;
-  /** Unit keys — data tables fill these later. */
+  /** Combat roster. Each id exists in `UNIT_TYPES`. */
   unitIds: string[];
   /** Main hall building key (GDD). */
   mainHallId: string;
