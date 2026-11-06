@@ -20,6 +20,11 @@ import {
   getAdminAccessMode,
   localAdminCandidateId,
 } from '../../database/adminAllowlist';
+import {
+  formatModerationLog,
+  recordModerationEvent,
+  resetModerationLog,
+} from '../../database/moderationStub';
 import { playSfx } from '../audio/sfx';
 
 function adminBodyText(): string {
@@ -29,6 +34,8 @@ function adminBodyText(): string {
     formatMatchSummaries(loadMatchSummaries(), 6),
     '',
     formatAdminAllowlist(),
+    '',
+    formatModerationLog(),
   ].join('\n');
 }
 
@@ -178,12 +185,12 @@ export function showStatsPanel(scene: Phaser.Scene, onClose: () => void): void {
   nodes.push(closeBtn);
 
   const resetBtn = scene.add
-    .text(width / 2, height / 2 + panelH / 2 - 36, 'Reset local stats', {
+    .text(width / 2 - 100, height / 2 + panelH / 2 - 36, 'Reset stats', {
       fontFamily: 'system-ui, sans-serif',
-      fontSize: '14px',
+      fontSize: '13px',
       color: '#fff8e8',
       backgroundColor: '#5a3a3a',
-      padding: { x: 14, y: 8 },
+      padding: { x: 12, y: 8 },
     })
     .setOrigin(0.5)
     .setDepth(303)
@@ -198,9 +205,28 @@ export function showStatsPanel(scene: Phaser.Scene, onClose: () => void): void {
       }
       resetLocalStats();
       resetMatchSummaries();
+      resetModerationLog();
       refreshBody();
     });
   nodes.push(resetBtn);
+
+  const noteBtn = scene.add
+    .text(width / 2 + 100, height / 2 + panelH / 2 - 36, 'Stub report', {
+      fontFamily: 'system-ui, sans-serif',
+      fontSize: '13px',
+      color: '#fff8e8',
+      backgroundColor: '#3a4555',
+      padding: { x: 12, y: 8 },
+    })
+    .setOrigin(0.5)
+    .setDepth(303)
+    .setInteractive({ useHandCursor: true })
+    .on('pointerup', () => {
+      playSfx('ui');
+      recordModerationEvent('report', 'peer-stub', 'Phase 7 moderation stub');
+      refreshBody();
+    });
+  nodes.push(noteBtn);
 
   const destroy = (): void => {
     for (const n of nodes) n.destroy();
