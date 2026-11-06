@@ -712,8 +712,10 @@ export function selectionPanelInsetPx(visible: boolean): number {
   if (!visible) return 0;
   const narrow =
     typeof window !== 'undefined' ? window.innerWidth < 720 : false;
-  // Slightly taller: train cost rows + always-on queue strip for producers.
-  // Hero ability row adds a second action line on narrow.
+  const short =
+    typeof window !== 'undefined' ? window.innerHeight < 500 : false;
+  // iPhone 17 landscape is only ~402px tall, so the panel stays shorter.
+  if (short) return 120;
   return narrow ? 188 : 172;
 }
 
