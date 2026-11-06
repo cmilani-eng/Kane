@@ -13,6 +13,9 @@ export const FOG_CELL = 80;
 export const FOG_COLS = Math.ceil(MAP.width / FOG_CELL);
 export const FOG_ROWS = Math.ceil(MAP.height / FOG_CELL);
 
+/** Cap newly-explored cell samples recorded per fog tick (pulse FX). */
+const NEW_EXPLORE_CAP = 48;
+
 export interface FogState {
   /** 1 = ever seen by the player. */
   explored: Uint8Array;
@@ -24,6 +27,9 @@ export interface FogState {
   version: number;
   /** True when explored grew this tick (forces redraw). */
   exploredDirty: boolean;
+  /** Compact cell indices newly explored this tick (for scout pulses). */
+  newExploreIdx: Uint16Array;
+  newExploreCount: number;
 }
 
 export function createFogState(): FogState {
@@ -34,6 +40,8 @@ export function createFogState(): FogState {
     prevVisible: new Uint8Array(n),
     version: 0,
     exploredDirty: false,
+    newExploreIdx: new Uint16Array(NEW_EXPLORE_CAP),
+    newExploreCount: 0,
   };
 }
 
@@ -82,6 +90,9 @@ function paintVision(
       if (fog.explored[i] === 0) {
         fog.explored[i] = 1;
         fog.exploredDirty = true;
+        if (fog.newExploreCount < fog.newExploreIdx.length) {
+          fog.newExploreIdx[fog.newExploreCount++] = i;
+        }
       }
     }
   }
@@ -90,6 +101,7 @@ function paintVision(
 /** Rebuild current vision from player units + completed buildings. */
 export function tickFog(world: BattlefieldWorld, fog: FogState): void {
   fog.exploredDirty = false;
+  fog.newExploreCount = 0;
   fog.visible.fill(0);
   for (const u of world.units) {
     if (u.team !== 'player' || u.hp <= 0) continue;
