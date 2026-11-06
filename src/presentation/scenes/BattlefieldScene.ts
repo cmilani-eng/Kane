@@ -92,9 +92,9 @@ import {
 } from '../../gameplay/battlefield/battlefieldOrders';
 import {
   groupCenter,
-  isGroupDoubleTap,
-  type GroupTap,
+  GroupTapTracker,
 } from '../../gameplay/battlefield/battlefieldGroupFocus';
+import { selectsWholeType } from '../../gameplay/battlefield/battlefieldSelectClick';
 import {
   spawnControlGroupAssignFx,
   spawnControlGroupRecallFx,
@@ -224,8 +224,8 @@ export class BattlefieldScene extends Phaser.Scene {
   private ctrlKey: Phaser.Input.Keyboard.Key | null = null;
   private altKey: Phaser.Input.Keyboard.Key | null = null;
   private controlGroups!: ControlGroups;
-  /** Last group-key press, to spot a double-tap that centres the camera. */
-  private lastGroupTap: GroupTap | null = null;
+  /** Spots a double-tap on a group key, which centres the camera. */
+  private groupTaps = new GroupTapTracker();
   private placeables: BuildingTypeId[] = [];
   private placeIndex = 0;
   private placeType: BuildingTypeId = 'bonker_hut';
@@ -366,7 +366,7 @@ export class BattlefieldScene extends Phaser.Scene {
       this.input.keyboard?.addKey(Phaser.Input.Keyboard.KeyCodes.ALT) ?? null;
     this.controlGroups = createControlGroups();
     // Phaser reuses this scene object between matches.
-    this.lastGroupTap = null;
+    this.groupTaps.reset();
 
     this.bindInput();
     ensureAmbientBgm();
@@ -494,7 +494,7 @@ export class BattlefieldScene extends Phaser.Scene {
     ] as const;
     digitEvents.forEach((name, slot) => {
       this.input.keyboard?.on(`keydown-${name}`, (e: KeyboardEvent) =>
-        this.onDigitHotkey(slot, e.timeStamp),
+        this.onDigitHotkey(slot, e.timeStamp, e.repeat),
       );
     });
   }
@@ -558,13 +558,17 @@ export class BattlefieldScene extends Phaser.Scene {
     }
   }
 
-  /** `now` is the key event's DOM timestamp (ms), used to spot a double-tap. */
-  private onDigitHotkey(slot: number, now: number): void {
+  /**
+   * `now` is the key event's DOM timestamp (ms), used to spot a double-tap.
+   * `repeat` marks OS auto-repeat while the key is held; it must not recall a
+   * group again or count as a double-tap (holding 1-3 still keeps training).
+   */
+  private onDigitHotkey(slot: number, now: number, repeat: boolean): void {
     if (this.paused || this.matchResult !== 'ongoing') return;
     // Alt+N is a fallback: browsers can reserve Ctrl+digit for tab switching.
     if (this.ctrlHeld() || this.altHeld()) {
-      this.lastGroupTap = null;
-      if (assignControlGroup(this.world, this.controlGroups, slot)) {
+      this.groupTaps.reset();
+      if (!repeat && assignControlGroup(this.world, this.controlGroups, slot)) {
         spawnControlGroupAssignFx(this.world, slot);
         this.hud.flashControlGroup(slot, 'assign');
         playSfx('select');
@@ -578,10 +582,11 @@ export class BattlefieldScene extends Phaser.Scene {
       slot <= 3 &&
       trainHotkey(this.world, this.selectedBuilding, slot - 1)
     ) {
-      this.lastGroupTap = null;
+      this.groupTaps.reset();
       playSfx('train');
       return;
     }
+    if (repeat) return;
     this.clearBuildingSelection();
     if (
       recallControlGroup(
@@ -595,13 +600,12 @@ export class BattlefieldScene extends Phaser.Scene {
       this.hud.flashControlGroup(slot, 'recall');
       playSfx('select');
       // Pressing the same group key twice jumps the camera to it, as in StarCraft.
-      if (isGroupDoubleTap(this.lastGroupTap, slot, now)) {
+      if (this.groupTaps.press(slot, now)) {
         const center = groupCenter(this.world, this.controlGroups.get(slot) ?? []);
         if (center) this.cameraCtl.centerOn(center.x, center.y);
       }
-      this.lastGroupTap = { slot, time: now };
     } else {
-      this.lastGroupTap = null;
+      this.groupTaps.reset();
     }
   }
 
@@ -800,12 +804,14 @@ export class BattlefieldScene extends Phaser.Scene {
         const hit = findPlayerUnitAt(this.world, wp.x, wp.y);
         // Ctrl/Cmd+click picks every unit of the type at once (macOS reports
         // Ctrl+click as a right-click, so Cmd+click is the Mac route).
-        const modifierClick =
-          pointer.event.ctrlKey || pointer.event.metaKey;
         if (
           hit &&
-          !additive &&
-          (modifierClick || this.isDoubleSelectTap(pointer, hit.id))
+          selectsWholeType({
+            additive,
+            ctrlKey: pointer.event.ctrlKey,
+            metaKey: pointer.event.metaKey,
+            doubleTap: this.isDoubleSelectTap(pointer, hit.id),
+          })
         ) {
           const n = selectAllVisibleSameType(this.world, hit.typeId);
           if (n > 0) playSfx('select');
@@ -1150,7 +1156,7 @@ export class BattlefieldScene extends Phaser.Scene {
     } else if (n === 1) {
       status = `${sel[0]!.name} selected · orders below`;
     } else {
-      status = `${n} selected · orders below · RMB / long-press`;
+      status = `${n} selected · orders below · RMB`;
     }
 
     const placing = this.mode === 'place';

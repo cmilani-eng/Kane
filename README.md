@@ -23,7 +23,7 @@ Checks: `npm run lint` (ESLint), `npm test` (Vitest), `npm run build` (type-chec
 
 Playable **battlefield** (select / move / attack):
 
-- Camera: **WASD** / arrows, **edge scroll**, **Q/E** + wheel zoom
+- Camera: **WASD** / arrows, **edge scroll**, wheel or **`[` `]`** zoom
 - **Player Brutes** (Bonkers + Rock Throwers) vs **enemy** placeholders
 - **LMB** select · **Shift** add/toggle · **drag** box · **RMB** attack enemy or move
 - Health bars, attack range when selected, death removal, no friendly fire

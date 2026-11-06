@@ -479,6 +479,11 @@ export function selectAt(
   return false;
 }
 
+/** A living unit on the player's team. */
+export function isLivingPlayerUnit(u: BattlefieldUnit): boolean {
+  return u.team === 'player' && u.hp > 0;
+}
+
 /** Nearest player unit under a world point (for click / double-tap). */
 export function findPlayerUnitAt(
   world: BattlefieldWorld,
@@ -488,7 +493,7 @@ export function findPlayerUnitAt(
   let best: BattlefieldUnit | null = null;
   let bestD = Infinity;
   for (const u of world.units) {
-    if (u.team !== 'player' || u.hp <= 0) continue;
+    if (!isLivingPlayerUnit(u)) continue;
     const d = dist(u.x, u.y, x, y);
     if (d <= u.radius + 12 && d < bestD) {
       best = u;
@@ -508,7 +513,7 @@ export function selectAllVisibleSameType(
   clearSelection(world);
   let n = 0;
   for (const u of world.units) {
-    if (u.team !== 'player' || u.hp <= 0) continue;
+    if (!isLivingPlayerUnit(u)) continue;
     if (u.typeId !== typeId) continue;
     if (!isVisible(world.fog, u.x, u.y)) continue;
     u.selected = true;
