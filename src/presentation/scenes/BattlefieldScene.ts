@@ -181,7 +181,10 @@ import {
   noteEnemyBuildingVisible,
   pruneBuildingGhosts,
 } from '../fx/buildingLastSeenGhost';
-import { drawPlacementGhost } from '../buildings/placementGhost';
+import {
+  drawPlacementGhost,
+  placementFootprintSize,
+} from '../buildings/placementGhost';
 import { drawProductionQueueFeedback } from '../buildings/productionQueueFeedback';
 import { drawResourceNodeSilhouette } from '../resources/resourceNodeSilhouette';
 import { drawCombatFxList } from '../fx/combatFxDraw';
@@ -1542,11 +1545,14 @@ export class BattlefieldScene extends Phaser.Scene {
       const gold = def.cost.gold ?? 0;
       const crystals = def.cost.magic_crystals ?? 0;
       const canPay = canAfford(walletOf(this.world, 'player'), def.cost);
+      const foot = placementFootprintSize(this.placeType);
       this.hud.setPlacementCost({
         name: def.name,
         gold,
         crystals,
         canPay,
+        cols: foot.cols,
+        rows: foot.rows,
       });
     } else {
       this.hud.setPlacementCost(null);

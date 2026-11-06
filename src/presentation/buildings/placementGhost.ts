@@ -29,7 +29,7 @@ export interface PlacementGhostOpts {
 }
 
 /** Tile-aligned AABB covering a circular building radius. */
-function footprintCells(
+export function footprintCells(
   x: number,
   y: number,
   radius: number,
@@ -49,6 +49,16 @@ function footprintCells(
     cols: Math.max(1, c1 - c0 + 1),
     rows: Math.max(1, r1 - r0 + 1),
   };
+}
+
+/** Tile cols×rows for a building type (placement HUD / ghost). */
+export function placementFootprintSize(typeId: BuildingTypeId): {
+  cols: number;
+  rows: number;
+} {
+  const r = getBuildingType(typeId).radius;
+  const fp = footprintCells(0, 0, r);
+  return { cols: fp.cols, rows: fp.rows };
 }
 
 /** Draw placement ghost at an already-snapped world point. */
