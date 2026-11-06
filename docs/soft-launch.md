@@ -20,7 +20,7 @@ This doc is the honest gate before any public preview URL.
 | PWA manifest + icons | **OK** — Add to Home Screen stubs; **no** offline service worker yet | `public/manifest.webmanifest`, `public/icons/`, `docs/pwa.md` |
 | Master volume | **OK** — mute-aware slider on menu + pause; persists `kane.masterVolume.v1` | `audioContext`, `volumeSlider`, pause/menu |
 | Reduce motion | **OK** — pause toggle disables under-attack camera nudge; persists `kane.reduceMotion.v1` | `motionPrefs`, `pauseMenu`, `BattlefieldScene` |
-| Attention ping | **OK** — hold minimap to drop a temporary look-here mark (world + minimap); no chat | `battlefieldAttentionPing`, `minimap`, help |
+| Attention ping | **OK** — hold minimap to drop a temporary look-here mark (world + minimap); fades clearly over lifetime; no chat | `battlefieldAttentionPing`, `minimap`, help |
 | End-screen recap | **OK** — standing units/buildings from match-summary `*Left` counts (no invented deaths) | `endScreen`, `end.recap` |
 | Worker carry | **OK** — selection panel shows live carry `n/capacity` + resource label when workers haul | `selectionPanel`, `sel.cargo` |
 | Fog last-seen | **OK** — brief fade silhouette for enemy buildings after leaving vision (~1s) | `buildingLastSeenGhost`, drawWorld |

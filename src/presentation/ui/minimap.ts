@@ -9,7 +9,10 @@ import {
   enemyRevealed,
   isExplored,
 } from '../../gameplay/battlefield/battlefieldFog';
-import { spawnAttentionPing } from '../../gameplay/battlefield/battlefieldAttentionPing';
+import {
+  attentionPingFade,
+  spawnAttentionPing,
+} from '../../gameplay/battlefield/battlefieldAttentionPing';
 import {
   MINIMAP_DOUBLE_TAP_MS,
   selectionOrOrderFocus,
@@ -359,17 +362,20 @@ export class Minimap {
       }
     }
 
-    // Attention pings — chat-free look-here marks
-    const attnPulse = 0.5 + 0.4 * Math.sin(this.pulseMs / 140);
+    // Attention pings — chat-free look-here marks (fade with remaining life)
     for (const m of this.world.attentionPings ?? []) {
+      const life = attentionPingFade(m.lifeMs, m.maxLifeMs);
+      if (life < 0.02) continue;
       const x = this.mapX + m.x * sx;
       const y = this.mapY + m.y * sy;
-      const life = Math.max(0.12, m.lifeMs / m.maxLifeMs);
+      // Pulse damps with life so the expiry reads as a fade, not a hard pop.
+      const attnPulse = 0.55 + 0.35 * Math.sin(this.pulseMs / 140) * life;
       const a = attnPulse * life;
+      const r = 7.5 + (1 - life) * 2.5;
       g.lineStyle(2.25, 0xb8e8ff, a);
-      g.strokeCircle(x, y, 7.5);
+      g.strokeCircle(x, y, r);
       g.fillStyle(0xfff8e8, a * 0.9);
-      g.fillCircle(x, y, 2.6);
+      g.fillCircle(x, y, 2.6 * Math.max(0.35, life));
     }
 
     // Camera viewport — gold frame + soft fill so it reads at a glance
