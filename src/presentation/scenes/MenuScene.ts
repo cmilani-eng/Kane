@@ -280,13 +280,15 @@ export class MenuScene extends Phaser.Scene {
 
     this.drawDifficultyRow(width, height * 0.29);
 
-    // One quiet line only while Easy or Hard is selected — no tip clutter on Normal.
+    // One quiet line while Practice, Easy, or Hard is selected — no tip on Normal.
     const diffTip =
-      this.difficulty === 'easy'
-        ? t('menu.easyTip')
-        : this.difficulty === 'hard'
-          ? t('menu.hardTip')
-          : null;
+      this.difficulty === 'practice'
+        ? t('menu.practiceTip')
+        : this.difficulty === 'easy'
+          ? t('menu.easyTip')
+          : this.difficulty === 'hard'
+            ? t('menu.hardTip')
+            : null;
     if (diffTip) {
       this.add
         .text(width / 2, height * 0.325, diffTip, {
@@ -484,13 +486,15 @@ export class MenuScene extends Phaser.Scene {
   }
 
   private drawDifficultyRow(width: number, y: number): void {
-    const gap = Math.min(118, width * 0.28);
+    const count = AI_DIFFICULTY_ORDER.length;
+    const gap = Math.min(108, (width - 16) / count);
+    const buttonW = Math.min(100, gap - 8);
     AI_DIFFICULTY_ORDER.forEach((id, i) => {
       const d = difficultyCopy(id);
       const selected = this.difficulty === id;
-      const x = width / 2 + (i - 1) * gap;
+      const x = width / 2 + (i - (count - 1) / 2) * gap;
       const bg = this.add
-        .rectangle(x, y, Math.min(108, gap - 8), 44, selected ? 0x2a3a28 : 0x1a2433, 0.95)
+        .rectangle(x, y, buttonW, 44, selected ? 0x2a3a28 : 0x1a2433, 0.95)
         .setStrokeStyle(2, selected ? 0xf0c75e : 0x3a4555)
         .setInteractive({ useHandCursor: true });
       this.add
@@ -506,7 +510,7 @@ export class MenuScene extends Phaser.Scene {
           fontSize: '9px',
           color: '#9eb4c8',
           align: 'center',
-          wordWrap: { width: Math.min(100, gap - 12) },
+          wordWrap: { width: Math.max(64, buttonW - 8) },
         })
         .setOrigin(0.5);
       bg.on('pointerup', () => {

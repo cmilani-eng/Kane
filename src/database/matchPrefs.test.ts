@@ -29,6 +29,11 @@ afterEach(() => {
 });
 
 describe('match prefs rematch restore', () => {
+  it('keeps Practice for rematch', () => {
+    rememberMatchPrefs('brutes', 'practice', 'crossing');
+    expect(loadMatchPrefs().difficulty).toBe('practice');
+  });
+
   it('persists species, difficulty, and map for rematch / menu restore', () => {
     rememberMatchPrefs('weirdos', 'hard', 'ridge');
     const prefs = loadMatchPrefs();

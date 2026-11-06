@@ -1,10 +1,10 @@
 /**
- * Skirmish AI difficulty — Easy / Normal / Hard.
+ * Skirmish AI difficulty — Practice / Easy / Normal / Hard.
  * Tunables: economy rate + aggression (attack thresholds / think speed).
- * Easy adds a newcomer player cushion; Normal/Hard stay near parity.
+ * Practice builds and gathers but never marches. Easy adds a newcomer cushion.
  */
 
-export type AiDifficultyId = 'easy' | 'normal' | 'hard';
+export type AiDifficultyId = 'practice' | 'easy' | 'normal' | 'hard';
 
 export interface AiDifficultyProfile {
   id: AiDifficultyId;
@@ -32,9 +32,28 @@ export interface AiDifficultyProfile {
   armyCap: number;
   /** Chance 0..1 to push an attack even below attackArmyMin when armyPhase. */
   pokeChance: number;
+  /** When false, the commander never marches. Units stay near their hall. */
+  attacks: boolean;
 }
 
 export const AI_DIFFICULTIES: Record<AiDifficultyId, AiDifficultyProfile> = {
+  practice: {
+    id: 'practice',
+    label: 'Practice',
+    blurb: 'Builds · never attacks',
+    economyRate: 0.55,
+    startGoldBonus: -60,
+    startCrystalBonus: -15,
+    playerStartGoldBonus: 80,
+    playerStartCrystalBonus: 15,
+    thinkMs: 1800,
+    attackArmyMin: 99,
+    armyPhaseMin: 6,
+    workerTarget: 2,
+    armyCap: 4,
+    pokeChance: 0,
+    attacks: false,
+  },
   easy: {
     id: 'easy',
     label: 'Easy',
@@ -50,6 +69,7 @@ export const AI_DIFFICULTIES: Record<AiDifficultyId, AiDifficultyProfile> = {
     workerTarget: 2,
     armyCap: 7,
     pokeChance: 0,
+    attacks: true,
   },
   normal: {
     id: 'normal',
@@ -66,6 +86,7 @@ export const AI_DIFFICULTIES: Record<AiDifficultyId, AiDifficultyProfile> = {
     workerTarget: 4,
     armyCap: 10,
     pokeChance: 0.15,
+    attacks: true,
   },
   hard: {
     id: 'hard',
@@ -82,10 +103,16 @@ export const AI_DIFFICULTIES: Record<AiDifficultyId, AiDifficultyProfile> = {
     workerTarget: 5,
     armyCap: 14,
     pokeChance: 0.45,
+    attacks: true,
   },
 };
 
-export const AI_DIFFICULTY_ORDER: AiDifficultyId[] = ['easy', 'normal', 'hard'];
+export const AI_DIFFICULTY_ORDER: AiDifficultyId[] = [
+  'practice',
+  'easy',
+  'normal',
+  'hard',
+];
 
 export function getAiDifficulty(
   id: AiDifficultyId | undefined | null,

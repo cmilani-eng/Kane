@@ -79,4 +79,4 @@ Full list, and how each key maps to StarCraft, Age of Empires and C&C: [docs/hot
 
 ## What’s next
 
-Phase 6 (Firebase emulators + live friend lobby) stays parked. Match writes are still client-trusted. The coach teaches Crossing and Ridge, and Rematch keeps the map. Next content slice is a practice arena. Ads stay off.
+Phase 6 (Firebase emulators + live friend lobby) stays parked. Match writes are still client-trusted. Practice is on the difficulty row: the enemy builds and gathers, but never attacks, and Rematch keeps it. Ads stay off.

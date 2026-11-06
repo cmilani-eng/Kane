@@ -21,7 +21,7 @@ export const LOCALE_CHOICES: { id: LocaleId; short: string; label: string }[] = 
 
 type Vars = Record<string, string | number>;
 type SpeciesId = 'brutes' | 'nobles' | 'weirdos';
-type DifficultyId = 'easy' | 'normal' | 'hard';
+type DifficultyId = 'practice' | 'easy' | 'normal' | 'hard';
 type MapId = 'crossing' | 'ridge';
 
 const listeners = new Set<() => void>();
@@ -121,6 +121,11 @@ export function speciesName(id: SpeciesId): string {
 
 export function difficultyCopy(id: DifficultyId): { label: string; blurb: string } {
   switch (id) {
+    case 'practice':
+      return {
+        label: t('difficulty.practice.label'),
+        blurb: t('difficulty.practice.blurb'),
+      };
     case 'easy':
       return { label: t('difficulty.easy.label'), blurb: t('difficulty.easy.blurb') };
     case 'normal':
