@@ -20,6 +20,7 @@ import {
   spawnHitFx,
   tickCombatFx,
 } from './battlefieldCombatFx';
+import { notifyUnderAttack, tickUnderAttackAlert } from './battlefieldUnderAttack';
 import { setUnitPath } from './battlefieldPathfinding';
 import type {
   BattlefieldBuilding,
@@ -205,6 +206,9 @@ export function tickBattlefieldCombat(
         const b = t as BattlefieldBuilding;
         damageBuilding(world, b, raw);
         spawnBuildingHitFx(world, b.x, b.y, b.radius);
+        if (b.team === 'player' && u.team === 'enemy') {
+          notifyUnderAttack(world, b.x, b.y);
+        }
       } else {
         const victim = t as BattlefieldUnit;
         victim.hp -=
@@ -214,6 +218,9 @@ export function tickBattlefieldCombat(
           rageIncomingMult(victim);
         if (victim.hp <= 0) victim.hp = 0;
         spawnHitFx(world, victim.x, victim.y, victim.radius, victim.color);
+        if (victim.team === 'player' && u.team === 'enemy') {
+          notifyUnderAttack(world, victim.x, victim.y);
+        }
       }
       u.attackCd = u.attackCooldownMs;
       u.lastAttackFlashMs = 120;
@@ -229,6 +236,7 @@ export function tickBattlefieldCombat(
 
   removeDead(world);
   tickCombatFx(world, dtMs);
+  tickUnderAttackAlert(world, dtMs);
 }
 
 export function livingByTeam(

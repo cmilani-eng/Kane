@@ -94,6 +94,20 @@ export class RtsCamera {
     this.cam.centerOn(worldX, worldY);
   }
 
+  /**
+   * Soft nudge toward a world point — under-attack attention, not a hard snap.
+   * Caps travel so mid-fight spam stays touch-friendly.
+   */
+  softNudgeToward(worldX: number, worldY: number, strength = 0.22): void {
+    const mid = this.cam.midPoint;
+    const dx = worldX - mid.x;
+    const dy = worldY - mid.y;
+    const max = 110;
+    const nx = Phaser.Math.Clamp(dx * strength, -max, max);
+    const ny = Phaser.Math.Clamp(dy * strength, -max, max);
+    this.cam.setScroll(this.cam.scrollX + nx, this.cam.scrollY + ny);
+  }
+
   worldPoint(screenX: number, screenY: number): { x: number; y: number } {
     return this.cam.getWorldPoint(screenX, screenY);
   }

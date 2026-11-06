@@ -140,6 +140,7 @@ import {
   drawAttackMoveScreenTint,
   setAttackMoveCursor,
 } from '../fx/attackMoveFeedback';
+import { drawUnderAttackEdgeFlash } from '../fx/underAttackAlert';
 import { drawHeroAbilityVfxList } from '../fx/heroAbilityVfx';
 import { drawMutationVisuals } from '../fx/mutationVisual';
 import { drawRageVisuals } from '../fx/rageVisual';
@@ -168,6 +169,7 @@ export class BattlefieldScene extends Phaser.Scene {
   private ghostGfx!: Phaser.GameObjects.Graphics;
   private amoveTintGfx!: Phaser.GameObjects.Graphics;
   private amoveReticleGfx!: Phaser.GameObjects.Graphics;
+  private underAttackGfx!: Phaser.GameObjects.Graphics;
   private fogOverlay!: FogOverlay;
   private mode: PointerMode = 'none';
   private pointerStart = { x: 0, y: 0 };
@@ -237,6 +239,10 @@ export class BattlefieldScene extends Phaser.Scene {
       .graphics()
       .setScrollFactor(0)
       .setDepth(90);
+    this.underAttackGfx = this.add
+      .graphics()
+      .setScrollFactor(0)
+      .setDepth(88);
     this.fogOverlay = new FogOverlay(this);
     tickFog(this.world, this.world.fog);
     this.fogOverlay.refresh(this.world.fog);
@@ -765,6 +771,22 @@ export class BattlefieldScene extends Phaser.Scene {
     );
   }
 
+  /** Brief screen-edge flash while friendlies are under enemy fire. */
+  private drawUnderAttackFeedback(): void {
+    const alert = this.world.underAttackAlert;
+    if (!alert || alert.lifeMs <= 0) {
+      this.underAttackGfx.clear();
+      return;
+    }
+    drawUnderAttackEdgeFlash(
+      this.underAttackGfx,
+      this.scale.width,
+      this.scale.height,
+      alert.lifeMs,
+      alert.maxLifeMs,
+    );
+  }
+
   update(_t: number, delta: number): void {
     if (!this.paused) {
       this.animTimeMs += delta;
@@ -803,6 +825,13 @@ export class BattlefieldScene extends Phaser.Scene {
       if (this.world.coreClaimFlashMs > 180) {
         playSfx('ability');
       }
+      // Under-attack pulse — mute-aware alert + soft camera nudge (rate-limited).
+      const alert = this.world.underAttackAlert;
+      if (alert?.pulse) {
+        alert.pulse = false;
+        playSfx('alert');
+        this.cameraCtl.softNudgeToward(alert.x, alert.y);
+      }
       tickTutorial(this.world, this.tutorial, delta);
       const result = evaluateMatch(this.world);
       if (result !== 'ongoing') this.showEndScreen(result);
@@ -823,6 +852,11 @@ export class BattlefieldScene extends Phaser.Scene {
     this.drawWorld();
     if (this.mode === 'place') this.refreshPlacementGhost();
     if (this.mode === 'attackMove') this.drawAttackMoveFeedback();
+    if (this.paused || this.matchResult !== 'ongoing') {
+      this.underAttackGfx.clear();
+    } else {
+      this.drawUnderAttackFeedback();
+    }
     this.fogOverlay.refresh(this.world.fog, cam);
     this.refreshHud(delta);
     this.coach.refresh();
