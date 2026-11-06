@@ -176,6 +176,7 @@ import { drawRageVisuals } from '../fx/rageVisual';
 import { drawControlGroupFxList } from '../fx/controlGroupFeedback';
 import { drawStopFxList } from '../fx/stopCommandFeedback';
 import { drawWaypointMarkers } from '../fx/waypointMarkersDraw';
+import { ControlGroupBadgeLayer } from '../fx/controlGroupBadges';
 import { drawBuildingRallyMarkers } from '../fx/rallyMarkerDraw';
 import { drawGatherTargetHighlights } from '../fx/gatherTargetHighlight';
 import { drawScoutPulseList } from '../fx/scoutPulseDraw';
@@ -227,6 +228,7 @@ export class BattlefieldScene extends Phaser.Scene {
   private tutorial!: TutorialState;
   private coach!: TutorialCoach;
   private coreBanner!: CoreVictoryBanner;
+  private groupBadges!: ControlGroupBadgeLayer;
   private shiftKey: Phaser.Input.Keyboard.Key | null = null;
   private ctrlKey: Phaser.Input.Keyboard.Key | null = null;
   private altKey: Phaser.Input.Keyboard.Key | null = null;
@@ -364,6 +366,13 @@ export class BattlefieldScene extends Phaser.Scene {
       this.amoveReticleGfx,
       this.fogOverlay.gfx,
     ]);
+    this.groupBadges = new ControlGroupBadgeLayer(this, this.hudCam);
+    this.events.once(Phaser.Scenes.Events.SHUTDOWN, () =>
+      this.groupBadges.destroy(),
+    );
+    this.events.once(Phaser.Scenes.Events.DESTROY, () =>
+      this.groupBadges.destroy(),
+    );
     const onResize = (): void => {
       this.hud.layout();
       this.coach.layout();
@@ -1412,6 +1421,7 @@ export class BattlefieldScene extends Phaser.Scene {
     }
 
     drawGatherTargetHighlights(g, this.world, this.animTimeMs, view);
+    this.groupBadges.sync(this.world, this.controlGroups, view);
   }
 
 }
