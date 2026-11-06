@@ -101,6 +101,7 @@ import { FogOverlay } from '../ui/fogOverlay';
 import { showKaneEndScreen } from '../ui/endScreen';
 import { drawCombatFxList } from '../fx/combatFxDraw';
 import { drawFormationVisuals } from '../fx/formationVisual';
+import { drawMutationVisuals } from '../fx/mutationVisual';
 import {
   drawUnitSilhouette,
   resolveUnitAnimPhase,
@@ -572,19 +573,28 @@ export class BattlefieldScene extends Phaser.Scene {
           ? ' · FORMATION (locked · F)'
           : ' · FORMATION'
         : '';
-      const mut = u.mutated ? ' · MUTATED' : '';
+      const mut = u.mutated
+        ? u.mutationLocked
+          ? ' · MUTATED (locked · M)'
+          : ' · MUTATED'
+        : '';
       status = `1 selected — ${u.name}  HP ${Math.ceil(u.hp)}/${u.maxHp}${carry}${form}${mut}`;
     } else {
       const formed = sel.filter((u) => u.inFormation).length;
       const locked = sel.filter((u) => u.formationLocked).length;
       const mutated = sel.filter((u) => u.mutated).length;
+      const mutLocked = sel.filter((u) => u.mutationLocked).length;
       const extra = [
         formed
           ? locked
             ? `${formed} formed (${locked} locked)`
             : `${formed} in formation`
           : '',
-        mutated ? `${mutated} mutated` : '',
+        mutated
+          ? mutLocked
+            ? `${mutated} mutated (${mutLocked} locked)`
+            : `${mutated} mutated`
+          : '',
       ]
         .filter(Boolean)
         .join(' · ');
@@ -616,6 +626,7 @@ export class BattlefieldScene extends Phaser.Scene {
 
     drawCombatFxList(g, this.world.combatFx);
     drawFormationVisuals(g, this.world, this.animTimeMs);
+    drawMutationVisuals(g, this.world, this.animTimeMs);
 
     for (const b of this.world.buildings) {
       if (b.team === 'enemy' && !enemyRevealed(this.world.fog, b.x, b.y)) {
