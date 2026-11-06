@@ -908,6 +908,9 @@ export function carryLineFor(
   );
   if (carriers.length === 0) return { line: null, crystal: false };
   const total = carriers.reduce((s, u) => s + u.carrying, 0);
+  const cap = carriers.reduce((s, u) => s + (u.carryCapacity || 0), 0);
+  const n = Math.floor(total);
+  const capN = Math.max(n, Math.floor(cap));
   const resources = new Set(
     carriers.map((u) => u.carryingResource).filter(Boolean),
   );
@@ -915,14 +918,15 @@ export function carryLineFor(
     const id = carriers[0]!.carryingResource!;
     return {
       line: t('sel.cargo', {
-        n: Math.floor(total),
+        n,
+        cap: capN,
         resource: RESOURCES[id].label,
       }),
       crystal: id === 'magic_crystals',
     };
   }
   return {
-    line: t('sel.cargoMixed', { n: Math.floor(total) }),
+    line: t('sel.cargoMixed', { n, cap: capN }),
     crystal: false,
   };
 }
