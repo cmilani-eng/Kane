@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import {
   MINIMAP_FOCUS_FLASH_MS,
   minimapFocusFlashAlpha,
-} from './minimap';
+} from './minimapFocusFlash';
 
 describe('minimap double-tap focus flash', () => {
   it('fades from 1 to 0 over the flash window', () => {
