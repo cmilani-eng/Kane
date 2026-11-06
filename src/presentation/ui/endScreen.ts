@@ -12,6 +12,7 @@ import { offerPracticeStepUp } from '../../gameplay/battlefield/practiceStepUp';
 import { difficultyCopy, mapCopy, speciesName, t } from '../../i18n';
 import { playEndFanfare, playSfx } from '../audio/sfx';
 import { endDurationTipLine } from './endDurationTip';
+import { endMapPlayedTipLine } from './endMapPlayedTip';
 import { endSpeciesPlayedTipLine } from './endSpeciesPlayedTip';
 import { formatMatchClock } from './matchClock';
 import { copyEndShareLine, formatEndShareLine } from './endShareLine';
@@ -89,7 +90,7 @@ export function showKaneEndScreen(opts: EndScreenOpts): void {
   const panelW = short ? Math.min(720, width - 24) : Math.min(440, width - 32);
   const panelH = short
     ? height - 16
-    : Math.min(stepUp ? 556 : 496, height * (stepUp ? 0.86 : 0.78));
+    : Math.min(stepUp ? 576 : 516, height * (stepUp ? 0.88 : 0.8));
   const cy = short ? height / 2 : height * 0.48;
   const top = cy - panelH / 2;
   const yBrand = short ? top + 18 : cy - panelH * 0.4;
@@ -99,10 +100,11 @@ export function showKaneEndScreen(opts: EndScreenOpts): void {
   const yMeta = short ? top + 128 : cy + panelH * 0.17;
   const yDuration = short ? top + 146 : cy + panelH * 0.22;
   const ySpecies = short ? top + 160 : cy + panelH * 0.27;
-  const yRecap = short ? top + 174 : cy + panelH * 0.32;
-  const yKill = short ? top + 188 : cy + panelH * 0.37;
-  const yGathered = short ? top + 202 : cy + panelH * 0.42;
-  const yShare = short ? top + (stepUp ? 196 : 214) : cy + panelH * 0.45;
+  const yMap = short ? top + 174 : cy + panelH * 0.32;
+  const yRecap = short ? top + 188 : cy + panelH * 0.37;
+  const yKill = short ? top + 202 : cy + panelH * 0.42;
+  const yGathered = short ? top + 216 : cy + panelH * 0.47;
+  const yShare = short ? top + (stepUp ? 210 : 228) : cy + panelH * 0.5;
   const yStep = short ? top + panelH - 72 : cy + panelH * 0.48;
   const yActions = top + panelH - (short ? 28 : 36);
   const yRematch = short ? yActions : cy + panelH * (stepUp ? 0.58 : 0.52);
@@ -270,6 +272,21 @@ export function showKaneEndScreen(opts: EndScreenOpts): void {
     .setAlpha(0)
     .setVisible(!!speciesTip);
   root.push(species);
+
+  const mapTip = mapId ? endMapPlayedTipLine(mapId) : '';
+  const mapTipText = scene.add
+    .text(width / 2, yMap, mapTip, {
+      fontFamily: 'system-ui, sans-serif',
+      fontSize: '13px',
+      color: '#c8d8e8',
+      align: 'center',
+    })
+    .setOrigin(0.5)
+    .setScrollFactor(0)
+    .setDepth(202)
+    .setAlpha(0)
+    .setVisible(!!mapTip);
+  root.push(mapTipText);
 
   const hasRecap =
     playerUnitsLeft != null && playerBuildingsLeft != null;
@@ -481,6 +498,7 @@ export function showKaneEndScreen(opts: EndScreenOpts): void {
       meta,
       duration,
       species,
+      mapTipText,
       recap,
       killRatio,
       gathered,
