@@ -23,6 +23,7 @@ import {
   sharedUnitMoveSpeedLabel,
   unitMoveSpeedLabel,
 } from './unitMoveSpeed';
+import { sharedUnitVisionLabel, unitVisionLabel } from './unitVision';
 import type {
   BattlefieldBuilding,
   BattlefieldUnit,
@@ -166,6 +167,8 @@ export type SelectionPanelView =
       dpsTip: string | null;
       /** Catalog move-speed tip when selection shares one unit type. */
       speedTip: string | null;
+      /** Catalog vision-radius tip when selection shares one unit type. */
+      visionTip: string | null;
       tags: string[];
       attackMoveArmed: boolean;
       /** Present when a single player hero is selected. */
@@ -579,6 +582,7 @@ export function buildSelectionView(
       armorClass: armorClassLabel(u.typeId),
       dpsTip: unitDpsLabel(u.typeId),
       speedTip: unitMoveSpeedLabel(u.typeId),
+      visionTip: unitVisionLabel(u.typeId),
       tags,
       attackMoveArmed,
       abilities: heroAbilityViews(world, u),
@@ -635,6 +639,7 @@ export function buildSelectionView(
     armorClass: sharedArmorClassLabel(alive),
     dpsTip: sharedUnitDpsLabel(alive.map((u) => u.typeId)),
     speedTip: sharedUnitMoveSpeedLabel(alive.map((u) => u.typeId)),
+    visionTip: sharedUnitVisionLabel(alive.map((u) => u.typeId)),
     tags,
     attackMoveArmed,
     abilities: null,
@@ -903,6 +908,7 @@ function structureSignature(view: SelectionPanelView): string {
       view.armorClass ?? '',
       view.dpsTip ?? '',
       view.speedTip ?? '',
+      view.visionTip ?? '',
       view.tags.join(','),
       view.attackMoveArmed ? 1 : 0,
       abs,
@@ -1416,6 +1422,9 @@ export function renderSelectionPanel(view: SelectionPanelView): boolean {
         }
         if (view.speedTip) {
           bits.push(`<span>${escapeHtml(view.speedTip)}</span>`);
+        }
+        if (view.visionTip) {
+          bits.push(`<span>${escapeHtml(view.visionTip)}</span>`);
         }
         if (view.armorClass) {
           bits.push(`<span>${escapeHtml(view.armorClass)}</span>`);
