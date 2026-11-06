@@ -212,6 +212,11 @@ export class MenuScene extends Phaser.Scene {
 
   private buildLayout(intro: boolean): void {
     const { width, height } = this.scale;
+    // iPhone 17 landscape is wide (~874) and short (~402). Percentage rows overlap.
+    if (height < 500) {
+      this.buildShortLayout(intro, width, height);
+      return;
+    }
     this.previewSlots = [];
     const bg = this.add.graphics();
     bg.fillGradientStyle(0x0f1a2e, 0x0f1a2e, 0x1a3a4a, 0x243a28, 1);
@@ -485,7 +490,154 @@ export class MenuScene extends Phaser.Scene {
     });
   }
 
-  private drawDifficultyRow(width: number, y: number): void {
+  /**
+   * Landscape phone menu. Fixed bands so difficulty, maps, species cards,
+   * and the footer each get their own row inside ~402px.
+   */
+  private buildShortLayout(intro: boolean, width: number, height: number): void {
+    this.previewSlots = [];
+    const bg = this.add.graphics();
+    bg.fillGradientStyle(0x0f1a2e, 0x0f1a2e, 0x1a3a4a, 0x243a28, 1);
+    bg.fillRect(0, 0, width, height);
+    this.previewGfx = this.add.graphics().setDepth(20);
+
+    const title = this.add
+      .text(width / 2, 16, BRAND.name, {
+        fontFamily: 'Georgia, "Times New Roman", serif',
+        fontSize: '28px',
+        color: '#f5e6c8',
+        stroke: '#1a2a4a',
+        strokeThickness: 6,
+      })
+      .setOrigin(0.5);
+    if (intro) {
+      title.setAlpha(0);
+      this.tweens.add({ targets: title, alpha: 1, duration: 400 });
+    }
+
+    this.add
+      .text(width / 2, 40, BRAND.tagline, {
+        fontFamily: 'system-ui, sans-serif',
+        fontSize: '11px',
+        color: '#f0c75e',
+        fontStyle: 'bold',
+      })
+      .setOrigin(0.5);
+
+    addLocalePicker({
+      scene: this,
+      x: width - 128,
+      y: 42,
+      depth: 40,
+    });
+
+    this.drawDifficultyRow(width, 78, true);
+    this.drawMapRow(width, 116, true);
+
+    const cards: {
+      id: SpeciesId;
+      fill: number;
+      stroke: number;
+    }[] = [
+      { id: 'brutes', fill: 0x4a7a3a, stroke: 0xd4782e },
+      { id: 'nobles', fill: 0x3d7ea6, stroke: 0xf0c75e },
+      { id: 'weirdos', fill: 0x7a4aa8, stroke: 0x6ecfbf },
+    ];
+    const cardH = 96;
+    const cardW = Math.min(210, (width - 56) / 3);
+    const step = cardW + 12;
+    const cardY = 116 + 16 + 8 + cardH / 2;
+    cards.forEach((c, i) => {
+      const s = speciesCopy(c.id);
+      this.makeSpeciesCard(
+        c.id,
+        width / 2 + (i - 1) * step,
+        cardY,
+        s.name,
+        s.motto,
+        s.mechanic,
+        c.fill,
+        c.stroke,
+        () => this.startMatch(c.id),
+        cardW,
+        cardH,
+        c.id === this.lastSpecies,
+      );
+    });
+
+    const volumeY = Math.max(cardY + cardH / 2 + 30, height - 118);
+    createVolumeSlider({
+      scene: this,
+      x: width / 2,
+      y: volumeY,
+      width: Math.min(240, width * 0.5),
+      depth: 30,
+    });
+
+    const linkY = Math.max(volumeY + 40, height - 76);
+    const gap = Math.min(88, width * 0.2);
+    const link = (
+      x: number,
+      label: string,
+      bgColor: string,
+      onClick: () => void,
+    ): Phaser.GameObjects.Text =>
+      this.add
+        .text(x, linkY, label, {
+          fontFamily: 'system-ui, sans-serif',
+          fontSize: '12px',
+          color: '#fff8e8',
+          backgroundColor: bgColor,
+          padding: { x: 10, y: 6 },
+        })
+        .setOrigin(0.5)
+        .setInteractive({ useHandCursor: true })
+        .on('pointerup', onClick);
+
+    link(width / 2 - gap * 1.5, t('menu.friends'), '#2a3a50', () => this.openLobby());
+    link(width / 2 - gap * 0.5, t('menu.cosmetics'), '#3a4a2a', () => this.openCosmetics());
+    this.accountLabel = link(width / 2 + gap * 0.5, t('menu.account'), '#3a2a4a', () =>
+      this.openAccount(),
+    );
+    this.refreshAccountChip();
+    link(width / 2 + gap * 1.5, t('menu.stats'), '#3a4555', () => this.openStats());
+
+    this.add
+      .text(width / 2, Math.min(height - 34, linkY + 30), softLaunchStatusStrip(), {
+        fontFamily: 'system-ui, sans-serif',
+        fontSize: '10px',
+        color: '#7a8fa3',
+      })
+      .setOrigin(0.5);
+
+    const legalY = height - 14;
+    const privacy = this.add
+      .text(width / 2 - 70, legalY, t('menu.privacy'), {
+        fontFamily: 'system-ui, sans-serif',
+        fontSize: '11px',
+        color: '#7ec8ff',
+      })
+      .setOrigin(0.5)
+      .setInteractive({ useHandCursor: true });
+    privacy.on('pointerup', () => {
+      playSfx('ui');
+      if (typeof window !== 'undefined') window.open('/privacy.html', '_blank');
+    });
+    const terms = this.add
+      .text(width / 2 + 70, legalY, t('menu.terms'), {
+        fontFamily: 'system-ui, sans-serif',
+        fontSize: '11px',
+        color: '#7ec8ff',
+      })
+      .setOrigin(0.5)
+      .setInteractive({ useHandCursor: true });
+    terms.on('pointerup', () => {
+      playSfx('ui');
+      if (typeof window !== 'undefined') window.open('/terms.html', '_blank');
+    });
+  }
+
+  private drawDifficultyRow(width: number, y: number, compact = false): void {
     const count = AI_DIFFICULTY_ORDER.length;
     const gap = Math.min(108, (width - 16) / count);
     const buttonW = Math.min(100, gap - 8);
@@ -494,17 +646,17 @@ export class MenuScene extends Phaser.Scene {
       const selected = this.difficulty === id;
       const x = width / 2 + (i - (count - 1) / 2) * gap;
       const bg = this.add
-        .rectangle(x, y, buttonW, 44, selected ? 0x2a3a28 : 0x1a2433, 0.95)
+        .rectangle(x, y, buttonW, compact ? 32 : 44, selected ? 0x2a3a28 : 0x1a2433, 0.95)
         .setStrokeStyle(2, selected ? 0xf0c75e : 0x3a4555)
         .setInteractive({ useHandCursor: true });
       this.add
-        .text(x, y - 8, d.label, {
+        .text(x, compact ? y : y - 8, d.label, {
           fontFamily: 'Georgia, "Times New Roman", serif',
           fontSize: '15px',
           color: selected ? '#f0c75e' : '#fff8e8',
         })
         .setOrigin(0.5);
-      this.add
+      if (!compact) this.add
         .text(x, y + 12, d.blurb, {
           fontFamily: 'system-ui, sans-serif',
           fontSize: '9px',
@@ -527,24 +679,24 @@ export class MenuScene extends Phaser.Scene {
     });
   }
 
-  private drawMapRow(width: number, y: number): void {
+  private drawMapRow(width: number, y: number, compact = false): void {
     const gap = Math.min(150, width * 0.4);
     SKIRMISH_MAP_ORDER.forEach((id, i) => {
       const m = mapCopy(id);
       const selected = this.mapId === id;
       const x = width / 2 + (i - 0.5) * gap;
       const bg = this.add
-        .rectangle(x, y, Math.min(140, gap - 10), 44, selected ? 0x2a2838 : 0x1a2433, 0.95)
+        .rectangle(x, y, Math.min(140, gap - 10), compact ? 32 : 44, selected ? 0x2a2838 : 0x1a2433, 0.95)
         .setStrokeStyle(2, selected ? 0x6ecfbf : 0x3a4555)
         .setInteractive({ useHandCursor: true });
       this.add
-        .text(x, y - 8, m.label, {
+        .text(x, compact ? y : y - 8, m.label, {
           fontFamily: 'Georgia, "Times New Roman", serif',
           fontSize: '15px',
           color: selected ? '#6ecfbf' : '#fff8e8',
         })
         .setOrigin(0.5);
-      this.add
+      if (!compact) this.add
         .text(x, y + 12, m.blurb, {
           fontFamily: 'system-ui, sans-serif',
           fontSize: '9px',

@@ -148,14 +148,15 @@ export class Minimap {
     const sw = this.scene.scale.width;
     const sh = this.scene.scale.height;
     const narrow = sw < 720;
-    // Slightly larger on mobile for clarity + finger targets.
-    this.mapW = narrow ? Math.min(168, sw * 0.42) : 196;
+    const short = sh < 500;
+    // Landscape phones keep the map small so it stays off the ability pads.
+    this.mapW = short ? Math.min(120, sw * 0.22) : narrow ? Math.min(168, sw * 0.42) : 196;
     this.mapH = (this.mapW * MAP.height) / MAP.width;
-    this.hitPad = narrow ? 14 : 10;
-    const pad = narrow ? 8 : 12;
+    this.hitPad = narrow || short ? 14 : 10;
+    const pad = narrow || short ? 8 : 12;
     this.mapX = sw - pad - this.mapW;
     this.mapY =
-      sh - pad - this.mapH - (narrow ? 70 : 78) - this.bottomInset;
+      sh - pad - this.mapH - (short ? 52 : narrow ? 70 : 78) - this.bottomInset;
 
     this.frame
       .setSize(this.mapW + 10, this.mapH + 10)

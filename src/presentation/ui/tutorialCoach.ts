@@ -101,23 +101,30 @@ export class TutorialCoach {
     const sw = this.scene.scale.width;
     const sh = this.scene.scale.height;
     const narrow = sw < 720;
-    const w = Math.min(narrow ? sw - 20 : 560, sw - 24);
+    const short = sh < 500;
+    const w = Math.min(short ? 300 : narrow ? sw - 20 : 560, sw - 24);
     this.body.setStyle({
-      wordWrap: { width: w - 36 },
-      fontSize: narrow ? '12px' : '13px',
+      wordWrap: { width: w - (short ? 24 : 36) },
+      fontSize: narrow || short ? '12px' : '13px',
     });
-    const h = Math.max(narrow ? 120 : 108, Math.ceil(this.body.height) + 72);
-    const x = sw / 2;
-    const top = narrow ? sh * 0.3 - 60 : 166;
+    const h = short
+      ? Math.min(110, Math.max(78, Math.ceil(this.body.height) + 56))
+      : Math.max(narrow ? 120 : 108, Math.ceil(this.body.height) + 72);
+    // Landscape phones tuck the coach under the top-right controls.
+    const x = short ? sw - 16 - w / 2 : sw / 2;
+    const top = short ? 128 : narrow ? sh * 0.3 - 60 : 166;
     const y = top + h / 2;
 
     this.panel.setSize(w, h).setPosition(x, y);
-    this.label.setPosition(x - w / 2 + 14, y - h / 2 + 10);
-    this.body.setPosition(x - w / 2 + 14, y - h / 2 + 28);
+    this.label.setPosition(x - w / 2 + 14, y - h / 2 + (short ? 8 : 10));
+    this.body.setPosition(x - w / 2 + 14, y - h / 2 + (short ? 24 : 28));
+    this.nextBtn.setOrigin(0, 0);
+    this.skipBtn.setOrigin(0, 0);
     const right = x + w / 2 - 14;
     const nextW = this.nextBtn.width;
-    this.nextBtn.setPosition(right - nextW, y + h / 2 - 32);
-    this.skipBtn.setPosition(right - nextW - 8 - this.skipBtn.width, y + h / 2 - 32);
+    const btnY = y + h / 2 - (short ? 28 : 32);
+    this.nextBtn.setPosition(right - nextW, btnY);
+    this.skipBtn.setPosition(right - nextW - 8 - this.skipBtn.width, btnY);
   }
 
   refresh(): void {

@@ -706,15 +706,33 @@ export class BattlefieldHud {
       .setFontSize(this.narrow ? '12px' : '13px')
       .setText(this.narrow ? t('hud.help') : t('hud.helpKey'));
 
-    const btnW = this.narrow ? Math.min(78, (w - pad * 2 - 18) / 4) : 92;
-    const btnH = this.narrow ? 52 : 58;
-    const gap = this.narrow ? 6 : 10;
+    const short = h < 500;
+    if (short) {
+      // Wide landscape phones have no vertical room for a right-hand stack.
+      // Short labels keep the row clear of the match timer.
+      this.menuBtn.setText(t('hud.menu'));
+      this.pauseBtn.setText(t('hud.pause'));
+      this.baseBtn.setText(t('hud.base'));
+      this.helpBtn.setText(t('hud.help'));
+      const rail = [this.helpBtn, this.baseBtn, this.pauseBtn, this.muteBtn, this.menuBtn];
+      let rx = w - pad;
+      for (const b of rail) {
+        b.setFontSize('12px').setPosition(rx, pad);
+        rx -= b.width + 6;
+      }
+      const titleRight = pad + this.title.width;
+      this.timerText.setPosition((titleRight + rx) / 2, pad);
+    }
+
+    const btnW = this.narrow || short ? Math.min(78, (w - pad * 2 - 18) / 4) : 92;
+    const btnH = short ? 44 : this.narrow ? 52 : 58;
+    const gap = this.narrow || short ? 6 : 10;
     const total = this.abilityBtns.length * btnW + (this.abilityBtns.length - 1) * gap;
     let x = (w - total) / 2 + btnW / 2;
     // When selection panel is open, tuck hero pads above it; order buttons hide
     // (panel owns Stop / Atk-move) so we still keep Army reachable on the left.
     const y =
-      h - pad - btnH / 2 - (this.narrow ? 36 : 28) - inset;
+      h - pad - btnH / 2 - (short ? 48 : this.narrow ? 36 : 28) - inset;
     for (const b of this.abilityBtns) {
       b.bg.setSize(btnW, btnH).setPosition(x, y);
       b.label.setPosition(x, y - 2).setFontSize(this.narrow ? '14px' : '16px');
@@ -1026,6 +1044,7 @@ export class BattlefieldHud {
       const cost = c > 0 ? `${g}g / ${c}c` : `${g}g`;
       return t('hud.hintPlace', { name: placeName ?? 'building', cost });
     }
+    if (this.scene.scale.height < 500) return '';
     if (this.narrow) return t('hud.hintNarrow');
     return this.speciesId === 'nobles'
       ? t('hud.hintNobles')
@@ -1039,7 +1058,9 @@ export class BattlefieldHud {
   }
 
   private armyLabel(n: number): string {
-    if (this.narrow) return n > 0 ? t('hud.armyCount', { n }) : t('hud.army');
+    if (this.narrow || this.scene.scale.height < 500) {
+      return n > 0 ? t('hud.armyCount', { n }) : t('hud.army');
+    }
     return n > 0 ? t('hud.armyKeyCount', { n }) : t('hud.armyKey');
   }
 
