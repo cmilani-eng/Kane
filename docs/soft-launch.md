@@ -86,7 +86,7 @@ This doc is the honest gate before any public preview URL.
 | Legal hub-back | **OK** — Privacy / Terms use `← Games` `#hub-back` to `/` (Blob parity) | `games/privacy.html`, `games/terms.html` |
 | Kane → hub back | **OK** — soft-launch strip shows `hub /`; menu ← Games returns to the picker | `softLaunchStatusStrip`, `MenuScene` `menu.games` |
 | Menu Games aria | **OK** — menu mounts `#kane-menu-games` with localized `aria-label` (Back to Games hub) | `menuGamesLink`, `menu.gamesAria` |
-| Blob → hub back | **OK** — Blob Evolution keeps a fixed ← Games link to `/` | `games/blob-evolution/index.html` `#hub-back` |
+| Blob → hub back | **OK** — Blob Evolution keeps a fixed ← Games link to `/` with `aria-label` (Back to Games hub) | `games/blob-evolution/index.html` `#hub-back` |
 | Hub status badges | **OK** — every hub card shows Live or Soft launch from `games.json` status | `hub.ts` `statusPill`, `hub.live` / `hub.experimental` |
 | Hub card focus | **OK** — keyboard focus-visible ring on `.hub-card` (accent outline + soft glow) | `games/hub/hub.css` |
 | Hub card Enter | **OK** — picker subtitle + card `aria-label` note Tab · Enter opens | `hub.subtitle`, `hub.cardOpen`, `hub.ts` |
