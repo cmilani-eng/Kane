@@ -1,0 +1,364 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no" />
+<title>Blob Evolution 3D</title>
+<style>
+  :root { color-scheme: dark; font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; }
+  * { box-sizing: border-box; }
+  html, body { margin:0; width:100%; height:100%; overflow:hidden; background:#07111d; }
+  #world, #phaser-ui { position:fixed; inset:0; }
+  #world { z-index:1; }
+  #phaser-ui { z-index:3; pointer-events:none; }
+  #phaser-ui canvas { display:block; }
+  #overlay { position:fixed; z-index:5; inset:0; display:flex; align-items:center; justify-content:center; padding:20px; background:rgba(3,10,20,.48); backdrop-filter:blur(7px); }
+  .panel { width:min(520px, 100%); border:1px solid rgba(255,255,255,.16); border-radius:24px; padding:26px; color:#f5f8ff; text-align:center; background:linear-gradient(145deg,rgba(18,37,60,.96),rgba(8,18,33,.96)); box-shadow:0 24px 80px rgba(0,0,0,.45); }
+  .panel h1 { margin:0 0 8px; font-size:clamp(28px,6vw,44px); letter-spacing:-1.5px; }
+  .panel p { color:#bdcce0; line-height:1.5; margin:8px 0 18px; }
+  .pill { display:inline-block; padding:6px 11px; border-radius:99px; background:rgba(120,180,255,.13); color:#b9d8ff; font-size:12px; font-weight:800; letter-spacing:.08em; text-transform:uppercase; }
+  .btnrow { display:flex; gap:10px; justify-content:center; flex-wrap:wrap; margin-top:16px; }
+  button { border:0; border-radius:14px; padding:13px 19px; background:#7be0ff; color:#06121f; font-weight:900; font-size:15px; cursor:pointer; box-shadow:0 5px 0 #328da8; }
+  button:hover { filter:brightness(1.08); transform:translateY(-1px); }
+  button:active { transform:translateY(2px); box-shadow:0 2px 0 #328da8; }
+  button.secondary { color:#eaf3ff; background:#243a55; box-shadow:0 5px 0 #14263b; }
+  .choices button { min-width:105px; font-size:18px; padding:16px 14px; }
+  .small { font-size:12px!important; color:#8fa7c2!important; margin-bottom:0!important; }
+  #rps-result { min-height:25px; font-weight:800; color:#ffe28a; }
+  #touch-help { position:fixed; z-index:4; right:16px; bottom:14px; color:rgba(230,241,255,.48); font-size:11px; pointer-events:none; text-align:right; }
+  @media (max-width:600px) { .panel { padding:21px 17px; } #touch-help { bottom:8px; right:9px; } }
+</style>
+<script src="https://cdn.jsdelivr.net/npm/phaser@4.1.0/dist/phaser.min.js"></script>
+<script type="importmap">
+{ "imports": { "three": "https://cdn.jsdelivr.net/npm/three@0.180.0/build/three.module.js" } }
+</script>
+</head>
+<body>
+<div id="world"></div>
+<div id="phaser-ui"></div>
+<div id="touch-help">MOVE: WASD / ARROW KEYS &nbsp; • &nbsp; EAT: TOUCH</div>
+<div id="overlay">
+  <div class="panel" id="start-panel">
+    <span class="pill">3D blob survival</span>
+    <h1>Blob Evolution</h1>
+    <p>Start as a tiny blue blob. Eat your way through the evolution chain, grow bigger and faster, and become the one-and-only Angel.</p>
+    <p><b>Blue → Green → Rock → Rainbow → Angel</b></p>
+    <p class="small">Use W A S D or the arrow keys to move. You can only eat the stage below you — unless you're Rainbow!</p>
+    <div class="btnrow"><button id="start-btn">START GAME</button></div>
+  </div>
+  <div class="panel" id="rps-panel" hidden>
+    <span class="pill">Rainbow showdown</span>
+    <h1>Rock Paper Scissors</h1>
+    <p>Another Rainbow blob! Choose secretly. Your opponent has already made its hidden choice.</p>
+    <div class="btnrow choices">
+      <button data-choice="rock">✊ Rock</button>
+      <button data-choice="paper">✋ Paper</button>
+      <button data-choice="scissors">✌️ Scissors</button>
+    </div>
+    <p id="rps-result"></p>
+    <p class="small">A tie means you both choose again. Lose and you're eaten!</p>
+  </div>
+  <div class="panel" id="end-panel" hidden>
+    <span class="pill" id="end-pill">Game over</span>
+    <h1 id="end-title">You were eaten!</h1>
+    <p id="end-copy">The arena has a new champion.</p>
+    <div class="btnrow"><button id="restart-btn">PLAY AGAIN</button></div>
+  </div>
+</div>
+<script type="module">
+import * as THREE from 'three';
+
+const STAGES = [
+  { name:'Purple', color:0x9b63df, radius:.42, speed:2.35 },
+  { name:'Blue', color:0x269bff, radius:.58, speed:3.05 },
+  { name:'Green', color:0x39d98a, radius:.77, speed:3.85 },
+  { name:'Rock', color:0x8d9aa9, radius:.98, speed:4.55 },
+  { name:'Rainbow', color:0xffffff, radius:1.18, speed:5.35 },
+  { name:'Angel', color:0xfff2b2, radius:1.35, speed:5.9 }
+];
+const ARENA = 34;
+const BOT_COUNT = 42;
+let scene, camera, renderer, clock;
+let player, bots = [], running = false, duelBot = null, duelBusy = false;
+let phaserGame, phaserScene;
+let playerGroup, playerAura;
+let lastHud = 0;
+
+const overlay = document.getElementById('overlay');
+const startPanel = document.getElementById('start-panel');
+const rpsPanel = document.getElementById('rps-panel');
+const endPanel = document.getElementById('end-panel');
+const rpsResult = document.getElementById('rps-result');
+
+function makeBlob(stage, isPlayer=false) {
+  const group = new THREE.Group();
+  const data = STAGES[stage];
+  const material = new THREE.MeshStandardMaterial({ color:data.color, roughness:.34, metalness:stage===3?.22:0, emissive:stage===4?0x38204c:0x000000, emissiveIntensity:.45 });
+  let body;
+  if (stage === 3) {
+    body = new THREE.Mesh(new THREE.DodecahedronGeometry(1,1), material);
+    body.scale.set(1, .88, 1);
+  } else {
+    body = new THREE.Mesh(new THREE.SphereGeometry(1,32,24), material);
+    body.scale.set(1, .82, 1);
+  }
+  body.castShadow = true; body.receiveShadow = true; group.add(body);
+  const eyeWhite = new THREE.MeshStandardMaterial({color:0xffffff, roughness:.3});
+  const pupilMat = new THREE.MeshStandardMaterial({color:0x102033, roughness:.25});
+  for (const x of [-.28,.28]) {
+    const eye = new THREE.Mesh(new THREE.SphereGeometry(.135,16,12), eyeWhite);
+    eye.position.set(x,.17,.82); eye.scale.set(1,1.12,.5); group.add(eye);
+    const pupil = new THREE.Mesh(new THREE.SphereGeometry(.065,12,10), pupilMat);
+    pupil.position.set(x+.018,.16,.89); group.add(pupil);
+    const shine = new THREE.Mesh(new THREE.SphereGeometry(.022,8,8), new THREE.MeshBasicMaterial({color:0xffffff}));
+    shine.position.set(x-.018,.205,.93); group.add(shine);
+  }
+  if (stage === 4) {
+    const ringColors=[0xff4545,0xffa52f,0xffe34d,0x42df76,0x38bfff,0x9871ff];
+    ringColors.forEach((c,i)=>{
+      const ring=new THREE.Mesh(new THREE.TorusGeometry(.91+i*.018,.055,8,48),new THREE.MeshStandardMaterial({color:c,emissive:c,emissiveIntensity:.18,roughness:.35}));
+      ring.rotation.x=Math.PI/2 + i*.13; ring.rotation.y=i*.42; ring.position.y=.02; group.add(ring);
+    });
+  }
+  if (stage === 5) {
+    const halo = new THREE.Mesh(new THREE.TorusGeometry(.65,.075,10,48), new THREE.MeshStandardMaterial({color:0xffd95c,emissive:0xffc629,emissiveIntensity:.65}));
+    halo.position.y=1.25; halo.rotation.x=Math.PI/2; group.add(halo);
+    for (const side of [-1,1]) {
+      const wing=new THREE.Mesh(new THREE.SphereGeometry(.48,20,14),new THREE.MeshStandardMaterial({color:0xffffff,roughness:.55}));
+      wing.scale.set(.42,.18,1.05); wing.position.set(side*.92,.25,-.05); wing.rotation.z=side*.35; group.add(wing);
+    }
+  }
+  group.userData = { body, stage, isPlayer };
+  return group;
+}
+
+function initThree() {
+  scene = new THREE.Scene();
+  scene.background = new THREE.Color(0x071321);
+  scene.fog = new THREE.Fog(0x071321, 35, 90);
+  camera = new THREE.PerspectiveCamera(52, innerWidth/innerHeight, .1, 180);
+  camera.position.set(0,17,20);
+  renderer = new THREE.WebGLRenderer({antialias:true, alpha:false});
+  renderer.setPixelRatio(Math.min(devicePixelRatio,2));
+  renderer.setSize(innerWidth,innerHeight);
+  renderer.shadowMap.enabled=true;
+  renderer.shadowMap.type=THREE.PCFSoftShadowMap;
+  renderer.outputColorSpace=THREE.SRGBColorSpace;
+  document.getElementById('world').appendChild(renderer.domElement);
+  clock = new THREE.Clock();
+
+  const hemi = new THREE.HemisphereLight(0xb8dcff,0x1a2938,2.0); scene.add(hemi);
+  const sun = new THREE.DirectionalLight(0xffffff,3.0); sun.position.set(-12,24,10); sun.castShadow=true; sun.shadow.mapSize.set(2048,2048); sun.shadow.camera.left=-45; sun.shadow.camera.right=45; sun.shadow.camera.top=45; sun.shadow.camera.bottom=-45; scene.add(sun);
+  const fill = new THREE.PointLight(0x3a9cff,35,55); fill.position.set(15,9,-12); scene.add(fill);
+
+  const floor = new THREE.Mesh(new THREE.PlaneGeometry(100,100),new THREE.MeshStandardMaterial({color:0x10263a,roughness:.92,metalness:.05}));
+  floor.rotation.x=-Math.PI/2; floor.position.y=-.16; floor.receiveShadow=true; scene.add(floor);
+  const grid = new THREE.GridHelper(ARENA*2,34,0x2a5974,0x1b3a50); grid.position.y=-.145; scene.add(grid);
+  const boundary = new THREE.Mesh(new THREE.TorusGeometry(ARENA,.16,10,160),new THREE.MeshStandardMaterial({color:0x47b8d7,emissive:0x14546a,emissiveIntensity:.65}));
+  boundary.rotation.x=Math.PI/2; boundary.position.y=-.08; scene.add(boundary);
+  for(let i=0;i<70;i++){
+    const star=new THREE.Mesh(new THREE.SphereGeometry(.035+Math.random()*.045,6,6),new THREE.MeshBasicMaterial({color:0x8ccfff,transparent:true,opacity:.45}));
+    star.position.set((Math.random()-.5)*95,2+Math.random()*17,(Math.random()-.5)*95); scene.add(star);
+  }
+  window.addEventListener('resize',onResize);
+  renderer.setAnimationLoop(renderThree);
+}
+function onResize(){ if(!camera||!renderer)return; camera.aspect=innerWidth/innerHeight; camera.updateProjectionMatrix(); renderer.setSize(innerWidth,innerHeight); }
+function renderThree(){
+  if(!renderer)return;
+  const t=clock.getElapsedTime();
+  if(player && playerGroup){
+    playerGroup.position.set(player.x,player.radius*.77+Math.sin(t*5)*.055,player.z);
+    playerGroup.rotation.y=player.facing;
+    const squash=1+Math.sin(t*7)*.025; playerGroup.scale.set(player.radius*squash,player.radius*(1/squash),player.radius*squash);
+  }
+  for(const b of bots){ if(!b.alive)continue; b.group.position.set(b.x,b.radius*.77+Math.sin(t*4+b.phase)*.045,b.z); b.group.rotation.y=b.facing; const s=1+Math.sin(t*5+b.phase)*.025; b.group.scale.set(b.radius*s,b.radius/s,b.radius*s); }
+  if(player){
+    const target=new THREE.Vector3(player.x,0,player.z);
+    const desired=new THREE.Vector3(player.x+1.5,15.5,player.z+19.5);
+    camera.position.lerp(desired,.075); camera.lookAt(target);
+  }
+  renderer.render(scene,camera);
+}
+function makeEntity(stage,x,z,isPlayer=false){
+  const group=makeBlob(stage,isPlayer); scene.add(group);
+  return {stage,x,z,radius:STAGES[stage].radius,speed:STAGES[stage].speed,group,alive:true,facing:0,vx:0,vz:0,phase:Math.random()*Math.PI*2,think:0,tx:x,tz:z};
+}
+function clearEntities(){
+  if(playerGroup){scene.remove(playerGroup);disposeGroup(playerGroup);playerGroup=null;}
+  bots.forEach(b=>{scene.remove(b.group);disposeGroup(b.group);}); bots=[];
+}
+function disposeGroup(g){g.traverse(o=>{if(o.geometry)o.geometry.dispose(); if(o.material){if(Array.isArray(o.material))o.material.forEach(m=>m.dispose());else o.material.dispose();}});}
+function spawnGame(){
+  clearEntities();
+  player={stage:1,x:0,z:0,radius:STAGES[1].radius,speed:STAGES[1].speed,facing:0,vx:0,vz:0};
+  playerGroup=makeBlob(1,true); scene.add(playerGroup);
+  const stages=[0,0,0,0,0,0,0,0,0,0,0,0, 1,1,1,1,1,1,1,1,1,1,1,1, 2,2,2,2,2,2,2,2,2, 3,3,3,3,3,3, 4,4,4];
+  while(stages.length<BOT_COUNT) stages.push(Math.floor(Math.random()*4));
+  stages.sort(()=>Math.random()-.5);
+  stages.forEach(stage=>{
+    let x,z; do{x=(Math.random()-.5)*ARENA*1.75;z=(Math.random()-.5)*ARENA*1.75;}while(Math.hypot(x,z)<5);
+    bots.push(makeEntity(stage,x,z));
+  });
+  running=true; duelBot=null; duelBusy=false;
+  updateHud(true);
+}
+function evolvePlayer(stage){
+  player.stage=stage; player.radius=STAGES[stage].radius; player.speed=STAGES[stage].speed;
+  const old=playerGroup; scene.remove(old); disposeGroup(old);
+  playerGroup=makeBlob(stage,true); scene.add(playerGroup);
+  updateHud(true);
+}
+function canEat(predatorStage,preyStage){
+  if(predatorStage===4) return preyStage<4;
+  return predatorStage>0 && preyStage===predatorStage-1;
+}
+function removeBot(bot){
+  if(!bot.alive)return;
+  bot.alive=false; scene.remove(bot.group); disposeGroup(bot.group);
+}
+function playerEat(bot){
+  removeBot(bot);
+  if(player.stage<4) evolvePlayer(player.stage+1);
+  checkVictory();
+}
+function loseGame(reason='You were eaten!'){
+  if(!running)return;
+  running=false; showEnd(false,reason,'Your blob was captured. Try a different route through the arena!');
+}
+function winGame(){
+  if(!running)return;
+  running=false; evolvePlayer(5);
+  showEnd(true,'You became an Angel!','You ate every other blob in the arena. You are the champion!');
+}
+function checkVictory(){ if(bots.every(b=>!b.alive)) winGame(); }
+function showEnd(won,title,copy){
+  overlay.style.display='flex'; startPanel.hidden=true; rpsPanel.hidden=true; endPanel.hidden=false;
+  document.getElementById('end-pill').textContent=won?'Ultimate evolution':'Game over';
+  document.getElementById('end-title').textContent=title;
+  document.getElementById('end-copy').textContent=copy;
+}
+function showRPS(bot){
+  if(duelBusy||!running)return;
+  duelBusy=true; duelBot=bot; running=false;
+  overlay.style.display='flex'; startPanel.hidden=true; endPanel.hidden=true; rpsPanel.hidden=false;
+  rpsResult.textContent='';
+}
+const beats={rock:'scissors',paper:'rock',scissors:'paper'};
+function chooseRPS(choice){
+  if(!duelBusy||!duelBot||!duelBot.alive)return;
+  const botChoice=['rock','paper','scissors'][Math.floor(Math.random()*3)];
+  const labels={rock:'✊ Rock',paper:'✋ Paper',scissors:'✌️ Scissors'};
+  if(choice===botChoice){ rpsResult.textContent=`Both chose ${labels[choice]}. It's a tie — choose again!`; return; }
+  if(beats[choice]===botChoice){
+    rpsResult.textContent=`You chose ${labels[choice]}; the bot chose ${labels[botChoice]}. You win!`;
+    setTimeout(()=>{ if(!duelBot)return; removeBot(duelBot); duelBot=null; duelBusy=false; rpsPanel.hidden=true; overlay.style.display='none'; running=true; checkVictory(); },900);
+  }else{
+    rpsResult.textContent=`You chose ${labels[choice]}; the bot chose ${labels[botChoice]}. You lose!`;
+    setTimeout(()=>{ duelBot=null; duelBusy=false; loseGame('The other Rainbow blob won!'); },1100);
+  }
+}
+function distance(a,b){return Math.hypot(a.x-b.x,a.z-b.z);}
+function updatePlayer(dt){
+  const keys=phaserScene?.keys; if(!keys)return;
+  let dx=(keys.d.isDown||keys.right.isDown?1:0)-(keys.a.isDown||keys.left.isDown?1:0);
+  let dz=(keys.s.isDown||keys.down.isDown?1:0)-(keys.w.isDown||keys.up.isDown?1:0);
+  const len=Math.hypot(dx,dz); if(len>0){dx/=len;dz/=len; player.facing=Math.atan2(dx,dz);}
+  const accel=player.speed;
+  player.vx+=(dx*accel-player.vx)*Math.min(1,dt*7);
+  player.vz+=(dz*accel-player.vz)*Math.min(1,dt*7);
+  player.x+=player.vx*dt; player.z+=player.vz*dt;
+  const limit=ARENA-player.radius*.8;
+  player.x=THREE.MathUtils.clamp(player.x,-limit,limit); player.z=THREE.MathUtils.clamp(player.z,-limit,limit);
+}
+function botCanEatPlayer(bot){return canEat(bot.stage,player.stage);}
+function updateBots(dt){
+  for(const b of bots){
+    if(!b.alive)continue;
+    b.think-=dt;
+    if(b.think<=0){
+      b.think=.25+Math.random()*.45;
+      let target=null, best=Infinity;
+      const consider=(obj,dist)=>{ if(dist<best){best=dist;target=obj;} };
+      if(botCanEatPlayer(b)) consider(player,distance(b,player));
+      for(const other of bots){ if(other===b||!other.alive)continue; if(canEat(b.stage,other.stage) || (b.stage===4&&other.stage===4)) {const d=distance(b,other); if(d<best)consider(other,d);} }
+      if(target && best<13){b.tx=target.x;b.tz=target.z;}
+      else if(Math.random()<.72){b.tx=THREE.MathUtils.clamp(b.x+(Math.random()-.5)*15,-ARENA+2,ARENA-2);b.tz=THREE.MathUtils.clamp(b.z+(Math.random()-.5)*15,-ARENA+2,ARENA-2);}
+    }
+    let dx=b.tx-b.x,dz=b.tz-b.z,dist=Math.hypot(dx,dz);
+    if(dist>.2){dx/=dist;dz/=dist;b.facing=Math.atan2(dx,dz);}else{dx=0;dz=0;}
+    b.vx+=(dx*b.speed-b.vx)*Math.min(1,dt*2.4); b.vz+=(dz*b.speed-b.vz)*Math.min(1,dt*2.4);
+    b.x+=b.vx*dt;b.z+=b.vz*dt;
+    const lim=ARENA-b.radius*.8;
+    if(b.x>lim||b.x< -lim){b.vx*=-.7;b.tx=-b.tx*.8;b.x=THREE.MathUtils.clamp(b.x,-lim,lim);}
+    if(b.z>lim||b.z< -lim){b.vz*=-.7;b.tz=-b.tz*.8;b.z=THREE.MathUtils.clamp(b.z,-lim,lim);}
+  }
+}
+function botEat(bot,prey){
+  if(!bot.alive||!prey.alive)return;
+  const old=bot.stage;
+  removeBot(prey);
+  if(bot.stage<4){bot.stage++;bot.radius=STAGES[bot.stage].radius;bot.speed=STAGES[bot.stage].speed;scene.remove(bot.group);disposeGroup(bot.group);bot.group=makeBlob(bot.stage);scene.add(bot.group);}
+}
+function resolveCollisions(){
+  if(!running)return;
+  for(const b of bots){
+    if(!b.alive)continue;
+    const d=distance(player,b);
+    if(d < player.radius+b.radius*.78){
+      if(player.stage===4 && b.stage===4){showRPS(b);return;}
+      if(canEat(player.stage,b.stage)){playerEat(b);if(!running)return;}
+      else if(canEat(b.stage,player.stage)){loseGame();return;}
+    }
+  }
+  for(let i=0;i<bots.length;i++){
+    const a=bots[i]; if(!a.alive)continue;
+    for(let j=i+1;j<bots.length;j++){
+      const b=bots[j];if(!b.alive)continue;
+      if(distance(a,b)<(a.radius+b.radius)*.78){
+        if(a.stage===4&&b.stage===4){ if(Math.random()<.5)botEat(a,b);else botEat(b,a); }
+        else if(canEat(a.stage,b.stage))botEat(a,b);
+        else if(canEat(b.stage,a.stage))botEat(b,a);
+      }
+    }
+  }
+  checkVictory();
+}
+function updateHud(force=false){
+  if(!phaserScene||!phaserScene.hud||!player)return;
+  const now=performance.now(); if(!force&&now-lastHud<100)return;lastHud=now;
+  const remaining=bots.filter(b=>b.alive).length;
+  phaserScene.hud.setText(`BLOB EVOLUTION\n${STAGES[player.stage].name.toUpperCase()}  •  SIZE ${player.radius.toFixed(1)}  •  SPEED ${player.speed.toFixed(1)}\nOPPONENTS LEFT: ${remaining}`);
+  phaserScene.hud.setColor(player.stage===4?'#ffdb72':player.stage===3?'#e1e8f0':player.stage===2?'#8df4bc':'#b8e3ff');
+}
+
+class OverlayScene extends Phaser.Scene {
+  constructor(){super({key:'OverlayScene'});}
+  create(){
+    phaserScene=this;
+    this.keys=this.input.keyboard.addKeys({w:'W',a:'A',s:'S',d:'D',up:'UP',down:'DOWN',left:'LEFT',right:'RIGHT'});
+    this.hud=this.add.text(22,20,'BLOB EVOLUTION',{fontFamily:'Arial, sans-serif',fontSize:'15px',fontStyle:'bold',color:'#b8e3ff',lineSpacing:5,stroke:'#071321',strokeThickness:4}).setScrollFactor(0);
+    this.hud.setDepth(20);
+    this.add.text(22,innerHeight-28,'WASD / ARROWS  •  TOUCH A SMALLER BLOB TO EAT IT',{fontFamily:'Arial, sans-serif',fontSize:'10px',color:'#91a9c1',stroke:'#071321',strokeThickness:3}).setScrollFactor(0).setDepth(20);
+    this.scale.on('resize',size=>{ this.children.list[2]?.setY(size.height-28); });
+  }
+  update(time,delta){
+    if(!running||!player)return;
+    const dt=Math.min(delta/1000,.04);
+    updatePlayer(dt);updateBots(dt);resolveCollisions();updateHud();
+  }
+}
+
+function startGame(){
+  overlay.style.display='none';startPanel.hidden=true;rpsPanel.hidden=true;endPanel.hidden=true;
+  spawnGame();
+}
+document.getElementById('start-btn').addEventListener('click',startGame);
+document.getElementById('restart-btn').addEventListener('click',startGame);
+document.querySelectorAll('[data-choice]').forEach(btn=>btn.addEventListener('click',()=>chooseRPS(btn.dataset.choice)));
+
+initThree();
+phaserGame=new Phaser.Game({type:Phaser.AUTO,parent:'phaser-ui',width:innerWidth,height:innerHeight,transparent:true,backgroundColor:'rgba(0,0,0,0)',scene:[OverlayScene],scale:{mode:Phaser.Scale.RESIZE},render:{transparent:true,antialias:true}});
+</script>
+</body>
+</html>
