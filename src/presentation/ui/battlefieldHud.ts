@@ -48,12 +48,16 @@ export class BattlefieldHud {
   readonly idlePingBtn!: Phaser.GameObjects.Text;
   /** Recenter camera on player keep / hall. */
   readonly baseBtn!: Phaser.GameObjects.Text;
+  /** Mobile/desktop open in-match pause overlay. */
+  readonly pauseBtn!: Phaser.GameObjects.Text;
   /** Scene wires this to toggle A-move mode. */
   onArmAttackMove: (() => void) | null = null;
   /** Scene wires this to issue stop + pulse. */
   onStopSelected: (() => void) | null = null;
   /** Scene wires this to snap camera to base. */
   onRecenterBase: (() => void) | null = null;
+  /** Scene wires this to open/toggle pause menu. */
+  onPause: (() => void) | null = null;
 
   private goldDot!: Phaser.GameObjects.Arc;
   private crystalDot!: Phaser.GameObjects.Arc;
@@ -217,8 +221,30 @@ export class BattlefieldHud {
         if (!isSfxMuted()) playSfx('ui');
       });
 
+    this.pauseBtn = scene.add
+      .text(scene.scale.width - 12, 92, 'Pause', {
+        fontFamily: 'system-ui, sans-serif',
+        fontSize: '13px',
+        color: '#fff8e8',
+        backgroundColor: '#2a4050',
+        padding: { x: 12, y: 8 },
+      })
+      .setOrigin(1, 0)
+      .setScrollFactor(0)
+      .setDepth(101)
+      .setInteractive({ useHandCursor: true })
+      .on('pointerup', () => {
+        this.onPause?.();
+      })
+      .on('pointerover', () =>
+        this.pauseBtn.setStyle({ backgroundColor: '#3a5565' }),
+      )
+      .on('pointerout', () =>
+        this.pauseBtn.setStyle({ backgroundColor: '#2a4050' }),
+      );
+
     this.baseBtn = scene.add
-      .text(scene.scale.width - 12, 92, 'Base', {
+      .text(scene.scale.width - 12, 132, 'Base', {
         fontFamily: 'system-ui, sans-serif',
         fontSize: '13px',
         color: '#fff8e8',
@@ -376,6 +402,7 @@ export class BattlefieldHud {
       this.hint,
       this.menuBtn,
       this.muteBtn,
+      this.pauseBtn,
       this.baseBtn,
       this.attackMoveBtn,
       this.stopBtn,
@@ -437,8 +464,12 @@ export class BattlefieldHud {
       .setPosition(w - pad, pad + (this.narrow ? 36 : 42))
       .setFontSize(this.narrow ? '12px' : '13px')
       .setText(isSfxMuted() ? 'Sound: Off' : 'Sound: On');
-    this.baseBtn
+    this.pauseBtn
       .setPosition(w - pad, pad + (this.narrow ? 70 : 80))
+      .setFontSize(this.narrow ? '12px' : '13px')
+      .setText(this.narrow ? 'Pause' : 'Esc · Pause');
+    this.baseBtn
+      .setPosition(w - pad, pad + (this.narrow ? 104 : 118))
       .setFontSize(this.narrow ? '12px' : '13px')
       .setText(this.narrow ? 'Base' : 'Home · Base');
 
@@ -500,6 +531,11 @@ export class BattlefieldHud {
     this.attackMoveArmed = armed;
     this.applyAttackMoveBtnStyle();
     this.hint.setColor(armed ? '#ffb8b8' : '#b8c9d9');
+  }
+
+  /** Keep HUD mute chip in sync when pause overlay toggles audio. */
+  syncMuteLabel(): void {
+    this.muteBtn.setText(isSfxMuted() ? 'Sound: Off' : 'Sound: On');
   }
 
   private applyAttackMoveBtnStyle(): void {
