@@ -389,7 +389,10 @@ export function createBattlefieldWorld(
     buildings: [],
     nodes: [],
     stockpiles: [],
-    wallet: emptyWallet({ gold: 220, magic_crystals: 40 }),
+    wallet: emptyWallet({
+      gold: Math.max(80, 220 + ai.playerStartGoldBonus),
+      magic_crystals: Math.max(0, 40 + ai.playerStartCrystalBonus),
+    }),
     enemyWallet: emptyWallet({
       gold: Math.max(40, 200 + ai.startGoldBonus),
       magic_crystals: Math.max(0, 30 + ai.startCrystalBonus),
