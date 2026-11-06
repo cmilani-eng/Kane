@@ -196,6 +196,7 @@ import { drawAttentionPingList } from '../fx/attentionPingDraw';
 import { drawScoutPulseList } from '../fx/scoutPulseDraw';
 import {
   buildingCanRally,
+  clearBuildingRally,
   setBuildingRally,
 } from '../../gameplay/battlefield/battlefieldRally';
 import {
@@ -356,6 +357,13 @@ export class BattlefieldScene extends Phaser.Scene {
       stop: () => this.issueStopCommand(),
       attackMove: () => this.toggleAttackMoveMode(),
       rally: () => this.toggleRallyMode(),
+      clearRally: () => {
+        const b = this.selectedBuilding;
+        if (!b || b.team !== 'player' || !buildingCanRally(b)) return;
+        clearBuildingRally(b);
+        this.clearRallyMode();
+        playSfx('ui');
+      },
       cancelQueue: (index) => {
         const b = this.selectedBuilding;
         if (!b || b.team !== 'player') return;
