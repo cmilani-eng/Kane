@@ -133,6 +133,21 @@ export class Minimap {
       g.fillCircle(x, y, 2);
     }
 
+    // CORE fragments
+    for (const f of this.world.coreFragments ?? []) {
+      if (!isExplored(fog, f.x, f.y)) continue;
+      const x = this.mapX + f.x * sx;
+      const y = this.mapY + f.y * sy;
+      const col =
+        f.owner === 'player'
+          ? 0x7ec8ff
+          : f.owner === 'enemy'
+            ? 0xe87aa8
+            : 0xb8c9d9;
+      g.fillStyle(col, 1);
+      g.fillCircle(x, y, 3);
+    }
+
     // Buildings
     for (const b of this.world.buildings) {
       if (b.hp <= 0) continue;

@@ -17,6 +17,7 @@ import {
   getAiDifficulty,
   type AiDifficultyId,
 } from './aiDifficulty';
+import { seedCoreFragments } from './battlefieldCoreFragments';
 import { createDefaultNodes } from './battlefieldEconomy';
 import { createFogState } from './battlefieldFog';
 import { setUnitPath } from './battlefieldPathfinding';
@@ -122,6 +123,10 @@ export interface BattlefieldWorld {
   vfx: import('./battlefieldHeroes').HeroVfx[];
   /** Short combat hit / death pops (presentation). */
   combatFx: import('./battlefieldCombatFx').CombatFx[];
+  /** Capturable CORE fragments (shattered KANE CORE). */
+  coreFragments: import('./battlefieldCoreFragments').CoreFragment[];
+  /** Presentation cue — claim SFX window. */
+  coreClaimFlashMs: number;
   /** Player fog of war (explored / visible). */
   fog: import('./battlefieldFog').FogState;
   /** Skirmish AI difficulty for this match. */
@@ -378,6 +383,8 @@ export function createBattlefieldWorld(
     enemyHeroRuntime: null,
     vfx: [],
     combatFx: [],
+    coreFragments: [],
+    coreClaimFlashMs: 0,
     fog: createFogState(),
     aiDifficulty: ai.id,
   };
@@ -406,6 +413,7 @@ export function createBattlefieldWorld(
   seedArmy(world, 'enemy', enemySpecies, ex, ey);
 
   createDefaultNodes(world);
+  seedCoreFragments(world);
   return world;
 }
 
