@@ -13,6 +13,13 @@ export interface AttentionPing {
 
 const MAX_PINGS = 4;
 const LIFE_MS = 3200;
+/** Quiet gap between hold-to-ping drops (minimap spam guard). */
+export const ATTENTION_PING_COOLDOWN_MS = 1400;
+
+/** True while the hold-to-ping control should refuse a new mark. */
+export function attentionPingOnCooldown(remainMs: number): boolean {
+  return remainMs > 0;
+}
 
 export function ensureAttentionPings(world: BattlefieldWorld): void {
   if (!world.attentionPings) world.attentionPings = [];

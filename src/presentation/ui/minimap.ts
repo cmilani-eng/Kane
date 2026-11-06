@@ -11,6 +11,7 @@ import {
 } from '../../gameplay/battlefield/battlefieldFog';
 import {
   attentionPingFade,
+  attentionPingOnCooldown,
   spawnAttentionPing,
 } from '../../gameplay/battlefield/battlefieldAttentionPing';
 import {
@@ -35,6 +36,11 @@ import {
   MINIMAP_FOCUS_FLASH_MS,
   minimapFocusFlashAlpha,
 } from './minimapFocusFlash';
+import {
+  ATTENTION_PING_COOLDOWN_MS,
+  MINIMAP_PING_DENY_FLASH_MS,
+  minimapPingDenyFlashAlpha,
+} from './minimapPingCooldown';
 
 export class Minimap {
   private readonly scene: Phaser.Scene;
@@ -63,6 +69,10 @@ export class Minimap {
   private holdStartY = 0;
   /** Remaining ms of double-tap recenter flash. */
   private focusFlashMs = 0;
+  /** Remaining ms before another hold-to-ping is allowed. */
+  private pingCooldownMs = 0;
+  /** Remaining ms of ice flash when ping is refused on cooldown. */
+  private pingDenyFlashMs = 0;
 
   constructor(
     scene: Phaser.Scene,
@@ -206,11 +216,17 @@ export class Minimap {
       if (touchLongPressAction(TOUCH_LONG_PRESS_MS, moved) !== 'order') {
         return;
       }
+      if (attentionPingOnCooldown(this.pingCooldownMs)) {
+        this.pingDenyFlashMs = MINIMAP_PING_DENY_FLASH_MS;
+        playSfx('ui');
+        return;
+      }
       const { wx, wy } = this.worldFromPointer({
         x: px,
         y: py,
       } as Phaser.Input.Pointer);
       spawnAttentionPing(this.world, wx, wy);
+      this.pingCooldownMs = ATTENTION_PING_COOLDOWN_MS;
       playSfx('ui');
     });
   }
@@ -229,9 +245,16 @@ export class Minimap {
   ): void {
     this.selectedBuilding = selectedBuilding;
     this.pulseMs += dtMs;
+    if (this.pingCooldownMs > 0) {
+      this.pingCooldownMs = Math.max(0, this.pingCooldownMs - dtMs);
+    }
     if (this.focusFlashMs > 0) {
       this.focusFlashMs = Math.max(0, this.focusFlashMs - dtMs);
       // Keep redrawing while the flash fades.
+      this.refreshAcc = MOBILE_PERF.minimapMs;
+    }
+    if (this.pingDenyFlashMs > 0) {
+      this.pingDenyFlashMs = Math.max(0, this.pingDenyFlashMs - dtMs);
       this.refreshAcc = MOBILE_PERF.minimapMs;
     }
     this.refreshAcc += dtMs;
@@ -245,9 +268,10 @@ export class Minimap {
     g.clear();
 
     const flash = minimapFocusFlashAlpha(this.focusFlashMs);
+    const deny = minimapPingDenyFlashAlpha(this.pingDenyFlashMs);
     this.frame.setStrokeStyle(
-      flash > 0 ? 2.75 : 2,
-      flash > 0 ? 0xfff8e8 : 0xf0c75e,
+      flash > 0 || deny > 0 ? 2.75 : 2,
+      deny > 0 ? 0x7ec8ff : flash > 0 ? 0xfff8e8 : 0xf0c75e,
       flash > 0 ? 0.55 + 0.45 * flash : 0.9,
     );
 
