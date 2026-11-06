@@ -4,7 +4,6 @@
  * Firebase foundation is stub-only — local SP Vite path needs no emulators.
  */
 import Phaser from 'phaser';
-import { flags } from '../config/flags';
 import { BRAND } from '../config/brand';
 import { AgeGateScene } from '../presentation/scenes/AgeGateScene';
 import { BootScene } from '../presentation/scenes/BootScene';
@@ -15,6 +14,7 @@ import { getLobbyStub } from '../networking/lobbySingleton';
 import { createMatchServerStub } from '../server/matchServerStub';
 import { createDatabaseStub } from '../database/persistenceStub';
 import { createFirebaseFoundation } from '../firebase/foundation';
+import { adsStubStatusLine, initAdsSdkStub } from '../ads/adsSdkStub';
 
 export function createKaneGame(parent: HTMLElement): Phaser.Game {
   const connection = createOfflineConnection();
@@ -24,14 +24,11 @@ export function createKaneGame(parent: HTMLElement): Phaser.Game {
   const lobby = getLobbyStub();
   // Touch sync stub once so the desync-hash path is wired without enabling MP.
   const bootSnap = server.startMatch('boot');
+  initAdsSdkStub();
   console.info(
-    `[${BRAND.name}] Phaser ${Phaser.VERSION} · milestone=sp-rematch · net=${connection.status} · server=${server.enabled} · syncHash=${bootSnap.hash} · db=${db.enabled} · lobby=${lobby.enabled} · ads=${flags.adsEnabled}`,
+    `[${BRAND.name}] Phaser ${Phaser.VERSION} · milestone=sp-rematch · net=${connection.status} · server=${server.enabled} · syncHash=${bootSnap.hash} · db=${db.enabled} · lobby=${lobby.enabled} · ${adsStubStatusLine()}`,
   );
   console.info(`[${BRAND.name}] ${firebase.describe()}`);
-
-  if (flags.adsEnabled) {
-    console.warn(`[${BRAND.name}] adsEnabled=true but no ad SDK is bundled.`);
-  }
 
   const config: Phaser.Types.Core.GameConfig = {
     type: Phaser.AUTO,

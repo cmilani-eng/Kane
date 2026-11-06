@@ -3,6 +3,7 @@
  * Procedural Phaser shapes + short tweens; mobile-friendly.
  */
 import Phaser from 'phaser';
+import { showPostMatchInterstitialStub } from '../../ads/adsSdkStub';
 import { BRAND } from '../../config/brand';
 import { SPECIES, type SpeciesId } from '../../data/speciesStub';
 
@@ -148,6 +149,9 @@ export function showKaneEndScreen(opts: EndScreenOpts): void {
   root.push(btn);
 
   ignoreOnMain(root);
+
+  // Soft-launch: no-op while adsEnabled=false — never blocks Return to Menu.
+  showPostMatchInterstitialStub();
 
   scene.tweens.add({
     targets: dim,

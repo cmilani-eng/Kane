@@ -3,7 +3,10 @@
  * Ads stay off through soft launch; no ad SDK is loaded while this is false.
  */
 export const flags = {
-  /** Soft-launch: ads disabled. Do not load any ad network SDK. */
+  /**
+   * Soft-launch: ads disabled. Do not load any ad network SDK.
+   * Menu/post-match hooks live in `src/ads/adsSdkStub.ts` — see `docs/ads-sdk.md` to flip later.
+   */
   adsEnabled: false as const,
   /** Age positioning: kid-friendly 13+ (not under-13 / COPPA). */
   ageGateMinYears: 13 as const,
