@@ -600,10 +600,10 @@ function injectStyles(): void {
       margin-top: 6px;
       padding: 5px 8px;
       border-radius: 3px;
-      border: 1px solid #5a4a78;
-      background: rgba(40, 28, 64, 0.65);
+      border: 1px solid #3a5565;
+      background: rgba(18, 28, 40, 0.75);
       font-size: 11px;
-      color: #c8b8e8;
+      color: #b8c9d9;
       line-height: 1.3;
     }
     #kane-selection-panel button:disabled {
@@ -949,17 +949,35 @@ function controlHintFor(units: BattlefieldUnit[]): string | null {
   const player = units.filter((u) => u.team === 'player' && u.hp > 0);
   if (player.length === 0) return null;
   const hasGrabber = player.some((u) => u.typeId === 'grabber');
-  const hasWeirdHero = player.some(
-    (u) => u.speciesId === 'weirdos' && !!getUnitType(u.typeId).isHero,
-  );
-  if (hasWeirdHero && hasGrabber) {
-    return 'ZOGGLE · Q/W/E abilities · Grabber · M Mutation role · cluster for auto Mut';
-  }
-  if (hasWeirdHero) {
-    return 'ZOGGLE · Q Brain Zap · W Portal Trick · E Chaos · M Mutation role';
+  const hero = player.find((u) => !!getUnitType(u.typeId).isHero);
+  if (hero) {
+    const def = heroForSpecies(hero.speciesId);
+    if (def) {
+      const q = def.abilities.ability1;
+      const w = def.abilities.ability2;
+      const e = def.abilities.ultimate;
+      let tip = t('sel.heroHotkeys', {
+        q: q.hotkey,
+        qName: q.name,
+        w: w.hotkey,
+        wName: w.name,
+        e: e.hotkey,
+        eName: e.name,
+      });
+      if (hero.speciesId === 'weirdos' && hasGrabber) {
+        tip = `${tip} · ${t('sel.grabberMutTip')}`;
+      } else if (hero.speciesId === 'weirdos') {
+        tip = `${tip} · ${t('sel.mutationTip')}`;
+      } else if (hero.speciesId === 'nobles') {
+        tip = `${tip} · ${t('sel.formationTip')}`;
+      } else if (hero.speciesId === 'brutes') {
+        tip = `${tip} · ${t('sel.rageTip')}`;
+      }
+      return tip;
+    }
   }
   if (hasGrabber) {
-    return 'Grabber · tanky melee · M locks Mutation · cluster allies for auto Mut';
+    return t('sel.grabberTip');
   }
   return null;
 }
