@@ -161,6 +161,10 @@ export interface BattlefieldWorld {
   enemyCoreHoldMs: number;
   /** Player under-attack edge alert (enemy damage on friendlies). */
   underAttackAlert: import('./battlefieldUnderAttack').UnderAttackAlert;
+  /** Enemy units removed this match (player kills). */
+  playerUnitKills: number;
+  /** Player units removed this match (losses). */
+  playerUnitLosses: number;
   /** Player fog of war (explored / visible). */
   fog: import('./battlefieldFog').FogState;
   /** Skirmish AI difficulty for this match. */
@@ -439,6 +443,8 @@ export function createBattlefieldWorld(
     coreClaimFlashMs: 0,
     playerCoreHoldMs: 0,
     enemyCoreHoldMs: 0,
+    playerUnitKills: 0,
+    playerUnitLosses: 0,
     underAttackAlert: {
       lifeMs: 0,
       maxLifeMs: 520,
