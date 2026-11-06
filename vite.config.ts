@@ -83,6 +83,8 @@ export default defineConfig({
     rollupOptions: {
       input: {
         hub: resolve(gamesDir, 'index.html'),
+        privacy: resolve(gamesDir, 'privacy.html'),
+        terms: resolve(gamesDir, 'terms.html'),
         ...Object.fromEntries(
           GAMES.filter((game) => game.build === 'vite').map(({ id }) => [
             id,

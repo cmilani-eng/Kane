@@ -8,6 +8,8 @@ export type EndShareInput = {
   win: boolean;
   speciesName: string;
   mapLabel: string;
+  /** Localized difficulty label (optional). */
+  difficultyLabel?: string;
   clock: string;
   units?: number;
   buildings?: number;
@@ -17,6 +19,7 @@ export function formatEndShareLine(input: EndShareInput): string {
   const result = input.win ? t('end.victory') : t('end.defeat');
   const bits = ['KANE', result, input.speciesName];
   if (input.mapLabel) bits.push(input.mapLabel);
+  if (input.difficultyLabel) bits.push(input.difficultyLabel);
   if (input.clock) bits.push(input.clock);
   if (input.units != null && input.buildings != null) {
     bits.push(

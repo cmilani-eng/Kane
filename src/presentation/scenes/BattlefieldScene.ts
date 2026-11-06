@@ -720,6 +720,7 @@ export class BattlefieldScene extends Phaser.Scene {
       supplyCurrent: livingByTeam(this.world, 'player'),
       supplyCap: flags.unitCap,
       mapId: this.world.mapId,
+      difficulty: this.world.aiDifficulty,
     };
   }
 
