@@ -248,6 +248,7 @@ export function showKaneEndScreen(opts: EndScreenOpts): void {
     win,
     speciesName: name,
     mapLabel,
+    difficultyLabel,
     clock,
     units: playerUnitsLeft,
     buildings: playerBuildingsLeft,
