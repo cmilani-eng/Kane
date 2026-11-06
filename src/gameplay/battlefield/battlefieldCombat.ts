@@ -126,6 +126,8 @@ function removeDead(world: BattlefieldWorld): void {
   for (let i = world.units.length - 1; i >= 0; i--) {
     const u = world.units[i]!;
     if (u.hp > 0) continue;
+    if (u.team === 'enemy') world.playerUnitKills += 1;
+    else if (u.team === 'player') world.playerUnitLosses += 1;
     spawnDeathFx(world, u.x, u.y, u.radius, u.color);
     world.units.splice(i, 1);
   }

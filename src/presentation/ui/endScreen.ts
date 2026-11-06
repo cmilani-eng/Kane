@@ -26,6 +26,10 @@ export interface EndScreenOpts {
   playerUnitsLeft?: number;
   /** Surviving player buildings at end (same as match summary). */
   playerBuildingsLeft?: number;
+  /** Enemy units killed this match (tallied on remove). */
+  playerUnitKills?: number;
+  /** Player units lost this match (tallied on remove). */
+  playerUnitLosses?: number;
   onMenu: () => void;
   /** Restart skirmish with the same species + difficulty. */
   onRematch: () => void;
@@ -48,6 +52,8 @@ export function showKaneEndScreen(opts: EndScreenOpts): void {
     durationMs,
     playerUnitsLeft,
     playerBuildingsLeft,
+    playerUnitKills,
+    playerUnitLosses,
     onMenu,
     onRematch,
     ignoreOnMain,
@@ -75,7 +81,7 @@ export function showKaneEndScreen(opts: EndScreenOpts): void {
   const panelW = short ? Math.min(720, width - 24) : Math.min(440, width - 32);
   const panelH = short
     ? height - 16
-    : Math.min(stepUp ? 520 : 460, height * (stepUp ? 0.82 : 0.74));
+    : Math.min(stepUp ? 540 : 480, height * (stepUp ? 0.84 : 0.76));
   const cy = short ? height / 2 : height * 0.48;
   const top = cy - panelH / 2;
   const yBrand = short ? top + 18 : cy - panelH * 0.4;
@@ -83,8 +89,9 @@ export function showKaneEndScreen(opts: EndScreenOpts): void {
   const yTag = short ? top + 90 : cy + panelH * 0.02;
   const ySub = short ? top + 112 : cy + panelH * 0.12;
   const yMeta = short ? top + 134 : cy + panelH * 0.2;
-  const yRecap = short ? top + 154 : cy + panelH * 0.28;
-  const yShare = short ? top + (stepUp ? 158 : 176) : cy + panelH * 0.34;
+  const yRecap = short ? top + 154 : cy + panelH * 0.27;
+  const yKill = short ? top + 168 : cy + panelH * 0.32;
+  const yShare = short ? top + (stepUp ? 170 : 188) : cy + panelH * 0.38;
   const yStep = short ? top + panelH - 72 : cy + panelH * 0.44;
   const yActions = top + panelH - (short ? 28 : 36);
   const yRematch = short ? yActions : cy + panelH * (stepUp ? 0.56 : 0.48);
@@ -244,6 +251,28 @@ export function showKaneEndScreen(opts: EndScreenOpts): void {
     .setVisible(hasRecap);
   root.push(recap);
 
+  const hasKillRatio =
+    playerUnitKills != null && playerUnitLosses != null;
+  const killText = hasKillRatio
+    ? t('end.killRatio', {
+        kills: playerUnitKills,
+        losses: playerUnitLosses,
+      })
+    : '';
+  const killRatio = scene.add
+    .text(width / 2, yKill, killText, {
+      fontFamily: 'system-ui, sans-serif',
+      fontSize: '13px',
+      color: '#a8bdd0',
+      align: 'center',
+    })
+    .setOrigin(0.5)
+    .setScrollFactor(0)
+    .setDepth(202)
+    .setAlpha(0)
+    .setVisible(hasKillRatio);
+  root.push(killRatio);
+
   const shareLine = formatEndShareLine({
     win,
     speciesName: name,
@@ -387,6 +416,7 @@ export function showKaneEndScreen(opts: EndScreenOpts): void {
       sub,
       meta,
       recap,
+      killRatio,
       shareBtn,
       ...(stepBtn ? [stepBtn] : []),
       rematchBtn,

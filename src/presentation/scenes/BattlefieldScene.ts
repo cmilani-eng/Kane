@@ -1413,6 +1413,8 @@ export class BattlefieldScene extends Phaser.Scene {
       durationMs: Math.max(0, Math.floor(this.matchElapsedMs)),
       playerUnitsLeft,
       playerBuildingsLeft,
+      playerUnitKills: this.world.playerUnitKills,
+      playerUnitLosses: this.world.playerUnitLosses,
       reason: matchEndReason(this.world, result),
       onMenu: () => this.scene.start('Menu'),
       onRematch: () => this.rematchSameSkirmish(),

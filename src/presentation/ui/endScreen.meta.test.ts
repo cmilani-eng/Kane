@@ -22,4 +22,10 @@ describe('end screen map + duration meta', () => {
     expect(line).toContain('4');
     expect(line).toContain('2');
   });
+
+  it('formats kill / loss ratio from combat tallies', () => {
+    const line = t('end.killRatio', { kills: 7, losses: 3 });
+    expect(line).toContain('7');
+    expect(line).toContain('3');
+  });
 });
