@@ -8,7 +8,7 @@ import {
   t,
 } from '../../src/i18n';
 import { GAMES, type GameEntry } from '../registry';
-import { hubBlurb, hubChrome, hubKanePathTip } from './hubCopy';
+import { hubBlurb, hubBlobPathTip, hubChrome, hubKanePathTip } from './hubCopy';
 import { gamePlayHref, hubLegalHref } from './hubLinks';
 
 const PILL =
@@ -69,15 +69,20 @@ function gameCard(
   description.className = 'mt-2 mb-2 leading-normal text-muted';
   description.textContent = hubBlurb(game.id, game.description);
 
-  const pathTip =
+  const pathTipText =
     game.id === 'kane'
-      ? (() => {
-          const tip = document.createElement('p');
-          tip.className = 'mb-[18px] text-xs font-semibold tracking-wide text-gold';
-          tip.textContent = hubKanePathTip();
-          return tip;
-        })()
-      : null;
+      ? hubKanePathTip()
+      : game.id === 'blob-evolution'
+        ? hubBlobPathTip()
+        : null;
+  const pathTip = pathTipText
+    ? (() => {
+        const tip = document.createElement('p');
+        tip.className = 'mb-[18px] text-xs font-semibold tracking-wide text-gold';
+        tip.textContent = pathTipText;
+        return tip;
+      })()
+    : null;
   if (!pathTip) description.classList.add('mb-[18px]');
 
   const play = document.createElement('span');

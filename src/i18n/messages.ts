@@ -144,6 +144,7 @@ export const enGB = {
   'hub.kane.blurb':
     'Fantasy real-time strategy. Pick a species, build a base and crush the enemy.',
   'hub.kanePathTip': 'Soft-launch path · {path}',
+  'hub.blobPathTip': 'Soft-launch path · {path}',
   'hub.blob.blurb':
     'Start as a tiny blob and eat your way up the chain to become the Angel.',
   'auth.age': '13+ framing · no in-game age gate',
@@ -660,6 +661,7 @@ export const ptBR = {
   'hub.kane.blurb':
     'Estratégia em tempo real de fantasia. Escolha uma espécie, construa uma base e esmague o inimigo.',
   'hub.kanePathTip': 'Caminho soft-launch · {path}',
+  'hub.blobPathTip': 'Caminho soft-launch · {path}',
   'hub.blob.blurb':
     'Comece como uma bolha minúscula e coma até o topo para virar o Anjo.',
   'auth.age': 'Enquadramento 13+ · sem verificação de idade no jogo',
@@ -1172,6 +1174,7 @@ export const es = {
   'hub.kane.blurb':
     'Estrategia en tiempo real de fantasía. Elige una especie, construye una base y aplasta al enemigo.',
   'hub.kanePathTip': 'Ruta soft-launch · {path}',
+  'hub.blobPathTip': 'Ruta soft-launch · {path}',
   'hub.blob.blurb':
     'Empieza como una masa diminuta y come hasta la cima para convertirte en el Ángel.',
   'auth.age': 'Marco 13+ · sin verificación de edad en el juego',
