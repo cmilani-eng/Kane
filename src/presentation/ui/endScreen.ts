@@ -14,6 +14,7 @@ import { playEndFanfare, playSfx } from '../audio/sfx';
 import { endDifficultyPlayedTipLine } from './endDifficultyPlayedTip';
 import { endDurationTipLine } from './endDurationTip';
 import { endMapPlayedTipLine } from './endMapPlayedTip';
+import { endObjectiveResultTipLine } from './endObjectiveResultTip';
 import { endSpeciesPlayedTipLine } from './endSpeciesPlayedTip';
 import { formatMatchClock } from './matchClock';
 import { copyEndShareLine, formatEndShareLine } from './endShareLine';
@@ -91,7 +92,7 @@ export function showKaneEndScreen(opts: EndScreenOpts): void {
   const panelW = short ? Math.min(720, width - 24) : Math.min(440, width - 32);
   const panelH = short
     ? height - 16
-    : Math.min(stepUp ? 596 : 536, height * (stepUp ? 0.88 : 0.8));
+    : Math.min(stepUp ? 616 : 556, height * (stepUp ? 0.9 : 0.82));
   const cy = short ? height / 2 : height * 0.48;
   const top = cy - panelH / 2;
   const yBrand = short ? top + 18 : cy - panelH * 0.4;
@@ -103,14 +104,15 @@ export function showKaneEndScreen(opts: EndScreenOpts): void {
   const ySpecies = short ? top + 160 : cy + panelH * 0.27;
   const yMap = short ? top + 174 : cy + panelH * 0.32;
   const yDifficulty = short ? top + 188 : cy + panelH * 0.37;
-  const yRecap = short ? top + 202 : cy + panelH * 0.42;
-  const yKill = short ? top + 216 : cy + panelH * 0.47;
-  const yGathered = short ? top + 230 : cy + panelH * 0.52;
-  const yShare = short ? top + (stepUp ? 224 : 242) : cy + panelH * 0.55;
-  const yStep = short ? top + panelH - 72 : cy + panelH * 0.53;
+  const yObjective = short ? top + 202 : cy + panelH * 0.42;
+  const yRecap = short ? top + 216 : cy + panelH * 0.47;
+  const yKill = short ? top + 230 : cy + panelH * 0.52;
+  const yGathered = short ? top + 244 : cy + panelH * 0.57;
+  const yShare = short ? top + (stepUp ? 238 : 256) : cy + panelH * 0.6;
+  const yStep = short ? top + panelH - 72 : cy + panelH * 0.58;
   const yActions = top + panelH - (short ? 28 : 36);
-  const yRematch = short ? yActions : cy + panelH * (stepUp ? 0.63 : 0.57);
-  const yMenu = short ? yActions : cy + panelH * (stepUp ? 0.75 : 0.69);
+  const yRematch = short ? yActions : cy + panelH * (stepUp ? 0.68 : 0.62);
+  const yMenu = short ? yActions : cy + panelH * (stepUp ? 0.8 : 0.74);
   const xRematch = short ? width / 2 - 110 : width / 2;
   const xMenu = short ? width / 2 + 110 : width / 2;
   const panel = scene.add
@@ -306,6 +308,21 @@ export function showKaneEndScreen(opts: EndScreenOpts): void {
     .setAlpha(0)
     .setVisible(!!difficultyTip);
   root.push(difficultyTipText);
+
+  const objectiveTip = endObjectiveResultTipLine(win, reason) ?? '';
+  const objectiveTipText = scene.add
+    .text(width / 2, yObjective, objectiveTip, {
+      fontFamily: 'system-ui, sans-serif',
+      fontSize: '13px',
+      color: '#c8d8e8',
+      align: 'center',
+    })
+    .setOrigin(0.5)
+    .setScrollFactor(0)
+    .setDepth(202)
+    .setAlpha(0)
+    .setVisible(!!objectiveTip);
+  root.push(objectiveTipText);
 
   const hasRecap =
     playerUnitsLeft != null && playerBuildingsLeft != null;
@@ -519,6 +536,7 @@ export function showKaneEndScreen(opts: EndScreenOpts): void {
       species,
       mapTipText,
       difficultyTipText,
+      objectiveTipText,
       recap,
       killRatio,
       gathered,

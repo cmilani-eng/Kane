@@ -111,6 +111,7 @@ This doc is the honest gate before any public preview URL.
 | End species tip | **OK** — end screen shows dedicated Played · faction tip under duration | `endSpeciesPlayedTipLine`, `end.speciesTip` |
 | End map tip | **OK** — end screen shows dedicated Map · name tip under species (distinct from meta line) | `endMapPlayedTipLine`, `end.mapTip` |
 | End difficulty tip | **OK** — end screen shows dedicated Difficulty · label tip under map (distinct from meta line) | `endDifficultyPlayedTipLine`, `end.difficultyTip` |
+| End objective result tip | **OK** — end screen shows Objective · Won/Lost framing from match end reason | `endObjectiveResultTipLine`, `end.objectiveTip` |
 | Easy AI cushion | **OK** — Easy gives player start gold/crystal cushion + slower AI eco; menu shows a short tip only while Easy is selected | `aiDifficulty`, `MenuScene`, `createBattlefieldWorld` |
 | Hard lean tip | **OK** — Hard shows a quiet leaner-start tip (same pattern as Easy); Normal stays tip-free; short/landscape menu shows the tip too | `MenuScene`, `menu.hardTip` |
 | In-match tips | **OK** — coach copy covers Pause/Esc, Home, Army, Idle chip, Rematch | `battlefieldTutorial`, `tutorialCoach` |
