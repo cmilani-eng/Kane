@@ -66,6 +66,7 @@ describe('games registry', () => {
   it('loads Kane from an entry inside the Vite root', () => {
     const page = readFileSync(resolve(gamesDir, 'kane/index.html'), 'utf8');
     expect(page).toContain('src="./main.ts"');
+    expect(page).toContain('<title>KANE · BUILD. COMMAND. CONQUER.</title>');
     const entry = readFileSync(resolve(gamesDir, 'kane/main.ts'), 'utf8');
     expect(entry).toContain("import '../../src/main.ts'");
   });

@@ -6,3 +6,8 @@ export const BRAND = {
   tagline: 'BUILD. COMMAND. CONQUER.',
   genre: 'Fantasy Real-Time Strategy Game',
 } as const;
+
+/** Browser / install tab title: name · tagline. */
+export function brandDocumentTitle(): string {
+  return `${BRAND.name} · ${BRAND.tagline}`;
+}
