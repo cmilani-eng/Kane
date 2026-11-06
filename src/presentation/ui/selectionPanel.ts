@@ -21,6 +21,8 @@ export type SelectionPanelHandlers = {
   stop: () => void;
   attackMove: () => void;
   train: (typeId: UnitTypeId) => void;
+  /** Arm rally-set mode for the selected production building. */
+  rally: () => void;
 };
 
 export type SelectionPanelView =
@@ -58,6 +60,8 @@ export type SelectionPanelView =
       queue: UnitTypeId[];
       progressPct: number;
       headName: string | null;
+      rallyArmed: boolean;
+      hasRally: boolean;
     };
 
 let handlers: SelectionPanelHandlers | null = null;
@@ -113,6 +117,7 @@ export function ensureSelectionPanel(): HTMLElement {
     const act = btn.dataset.act;
     if (act === 'stop') handlers.stop();
     else if (act === 'attackMove') handlers.attackMove();
+    else if (act === 'rally') handlers.rally();
     else if (act === 'train' && btn.dataset.typeId) {
       handlers.train(btn.dataset.typeId as UnitTypeId);
     }
@@ -287,6 +292,14 @@ function injectStyles(): void {
       border-color: #ffb8b8;
       color: #ffe0e0;
     }
+    #kane-selection-panel button.is-rally {
+      background: #3a5530;
+    }
+    #kane-selection-panel button.is-rally.is-armed {
+      background: #5a7030;
+      border-color: #f0c75e;
+      color: #fff8e8;
+    }
     #kane-selection-panel button.is-train {
       background: #3d7ea6;
       flex: 1 1 100px;
@@ -449,6 +462,7 @@ export function buildSelectionView(
   selectedBuilding: BattlefieldBuilding | null,
   units: BattlefieldUnit[],
   attackMoveArmed: boolean,
+  rallyArmed = false,
 ): SelectionPanelView {
   if (selectedBuilding && selectedBuilding.hp > 0) {
     const b = selectedBuilding;
@@ -485,6 +499,8 @@ export function buildSelectionView(
       queue: [...b.trainQueue],
       progressPct,
       headName: head?.name ?? null,
+      rallyArmed,
+      hasRally: trains.length > 0,
     };
   }
 
@@ -573,6 +589,8 @@ function structureSignature(view: SelectionPanelView): string {
     'b',
     view.title,
     view.ready ? 1 : 0,
+    view.hasRally ? 1 : 0,
+    view.rallyArmed ? 1 : 0,
     view.trains
       .map((t) => `${t.typeId}:${t.canPay ? 1 : 0}:${t.affordable ? 1 : 0}`)
       .join(','),
@@ -717,13 +735,24 @@ export function renderSelectionPanel(view: SelectionPanelView): boolean {
       stats.innerHTML = view.trains.length
         ? '<span>Production</span>'
         : '<span>No production</span>';
-      actions.innerHTML = view.trains.map(trainButtonHtml).join('');
+      const rallyBtn = view.hasRally
+        ? `<button type="button" class="is-rally${view.rallyArmed ? ' is-armed' : ''}" data-act="rally">${view.rallyArmed ? 'Rally · Tap map' : 'Set rally'}</button>`
+        : '';
+      actions.innerHTML =
+        rallyBtn + view.trains.map(trainButtonHtml).join('');
     } else {
       for (const t of view.trains) {
         const btn = actions.querySelector(
           `button[data-type-id="${t.typeId}"]`,
         ) as HTMLButtonElement | null;
         if (btn) applyTrainAffordability(btn, t);
+      }
+      const rally = actions.querySelector(
+        '[data-act="rally"]',
+      ) as HTMLButtonElement | null;
+      if (rally) {
+        rally.classList.toggle('is-armed', view.rallyArmed);
+        rally.textContent = view.rallyArmed ? 'Rally · Tap map' : 'Set rally';
       }
     }
 

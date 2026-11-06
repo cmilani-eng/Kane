@@ -9,6 +9,7 @@ import {
 import type { ResourceWallet } from '../../data/resources';
 import { dist } from '../math';
 import { spawnDeathFx } from './battlefieldCombatFx';
+import { defaultRallyFor } from './battlefieldRally';
 import type {
   BattlefieldBuilding,
   BattlefieldTeam,
@@ -115,6 +116,7 @@ export function placeBuilding(
     accent: def.accent,
     trainQueue: [],
     trainProgressMs: 0,
+    ...defaultRallyFor({ x, y, radius: def.radius }),
   };
   world.buildings.push(b);
   syncStockpilesFromBuildings(world);

@@ -6,10 +6,12 @@ import { getUnitType, type UnitTypeId } from '../../data/units';
 import { SPECIES } from '../../data/speciesStub';
 import { canAfford, pay } from './battlefieldBuildings';
 import { walletOf } from './battlefieldEconomy';
+import { setUnitPath } from './battlefieldPathfinding';
 import {
   spawnUnit,
   type BattlefieldBuilding,
   type BattlefieldTeam,
+  type BattlefieldUnit,
   type BattlefieldWorld,
 } from './battlefieldWorld';
 
@@ -60,7 +62,7 @@ function spawnNear(
       : { primary: 0x8a4a9a, accent: 0xc4a0e0 });
   const angle = Math.random() * Math.PI * 2;
   const dist = b.radius + 24;
-  spawnUnit(world, {
+  const u: BattlefieldUnit = spawnUnit(world, {
     team: b.team as BattlefieldTeam,
     typeId,
     x: b.x + Math.cos(angle) * dist,
@@ -68,6 +70,15 @@ function spawnNear(
     color: def.canGather ? palette.accent : palette.primary,
     speciesId: def.speciesId,
   });
+  // March newly trained units to the building rally point.
+  const dx = b.rallyX - u.x;
+  const dy = b.rallyY - u.y;
+  if (dx * dx + dy * dy > 36) {
+    u.attackTargetId = null;
+    u.gatherNodeId = null;
+    u.attackMove = false;
+    setUnitPath(world, u, { x: b.rallyX, y: b.rallyY });
+  }
 }
 
 /** Hotkeys for selected player building. */
