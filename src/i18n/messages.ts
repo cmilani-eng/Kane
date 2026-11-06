@@ -431,7 +431,8 @@ export const enGB = {
   'sel.gatherTip': '{n} per trip · select workers, then tap this node',
   'sel.gatherTipActive': '{count} gathering · {n} per trip',
   'sel.emptyTitle': 'Nothing selected',
-  'sel.emptyTip': 'Tap a unit, building, or resource — or Army / Idle / Home',
+  'sel.emptyTip':
+    'Tap a unit, building, or resource — or Army / Idle / Home · Tab cycles types',
   'sel.matchup': 'Strong vs {strong} · Weak vs {weak}',
   'sel.goldCost': 'Gold {n}',
   'sel.crystalCost': 'Crystal {n}',
@@ -918,7 +919,8 @@ export const ptBR = {
   'sel.gatherTip': '{n} por viagem · selecione trabalhadores e toque neste nó',
   'sel.gatherTipActive': '{count} coletando · {n} por viagem',
   'sel.emptyTitle': 'Nada selecionado',
-  'sel.emptyTip': 'Toque uma unidade, prédio ou recurso — ou Tropa / Ociosos / Home',
+  'sel.emptyTip':
+    'Toque uma unidade, prédio ou recurso — ou Tropa / Ociosos / Home · Tab troca tipos',
   'sel.matchup': 'Forte contra {strong} · Fraco contra {weak}',
   'sel.goldCost': 'Ouro {n}',
   'sel.crystalCost': 'Cristal {n}',
@@ -1401,7 +1403,8 @@ export const es = {
   'sel.gatherTip': '{n} por viaje · selecciona trabajadores y toca este nodo',
   'sel.gatherTipActive': '{count} recolectando · {n} por viaje',
   'sel.emptyTitle': 'Nada seleccionado',
-  'sel.emptyTip': 'Toca una unidad, edificio o recurso — o Tropa / Inactivos / Home',
+  'sel.emptyTip':
+    'Toca una unidad, edificio o recurso — o Tropa / Inactivos / Home · Tab cicla tipos',
   'sel.matchup': 'Fuerte contra {strong} · Débil contra {weak}',
   'sel.goldCost': 'Oro {n}',
   'sel.crystalCost': 'Cristal {n}',

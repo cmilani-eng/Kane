@@ -53,7 +53,7 @@ This doc is the honest gate before any public preview URL.
 | Stance hotkey echo | **OK** — F / R / M flashes the matching stance button on the selection panel | `flashStanceHotkey` |
 | Idle gather target | **OK** — idle worker chip hints nearest Gold/Crystals gather target | `nearestIdleGatherResource`, `hud.idleGather` |
 | End share line | **OK** — end screen Copy result pastes one-line KANE summary (result/species/map/difficulty/clock/standing) | `endShareLine`, `end.share*` |
-| Empty selection tip | **OK** — bottom panel shows brief select tip (Army / Idle / Home) when nothing is selected | `selectionPanel` `kind: empty`, `sel.empty*` |
+| Empty selection tip | **OK** — bottom panel shows brief select tip (Army / Idle / Home · Tab cycles types) when nothing is selected | `selectionPanel` `kind: empty`, `sel.empty*` |
 | Placement Esc hint | **OK** — place-mode cost strip + armed title mention Esc to cancel | `hud.place`, `sel.placeArmedTitle`, `hud.hintPlace` |
 | Placement footprint | **OK** — place strip shows tile footprint size (cols×rows) with the ghost wash | `placementFootprintSize`, `hud.placeFoot` |
 | Critical alert chip | **OK** — Keep/hero under-attack chip auto-dismisses ~3.2s (does not refresh every hit) | `battlefieldUnderAttack` `chipLifeMs` |
