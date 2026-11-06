@@ -17,6 +17,7 @@ This doc is the honest gate before any public preview URL.
 | Legal stubs | **OK** — Privacy / Terms placeholders linked from menu | `public/privacy.html`, `public/terms.html` |
 | RTDB / Firestore rules drafts | **OK** — deny-by-default drafts documented | `database.rules.json`, `firestore.rules` |
 | SP rematch loop | **OK** — three species, AI difficulties, end screen → menu | Battlefield + Menu |
+| PWA manifest + icons | **OK** — Add to Home Screen stubs; **no** offline service worker yet | `public/manifest.webmanifest`, `public/icons/`, `docs/pwa.md` |
 
 ## Remaining gaps (honest)
 
@@ -30,6 +31,7 @@ This doc is the honest gate before any public preview URL.
 8. **Content depth** — Phase 8 maps / deeper tutorial / practice arena not started.
 9. **No CI workflows** on the repo — “merge when green” has meant empty check rollups.
 10. **Cosmetics shop** — explicitly out; free unlocks only.
+11. **No offline service worker** — installability stubs exist; full offline PWA is later (`docs/pwa.md`).
 
 ## Soft-launch “go” bar (minimum)
 
