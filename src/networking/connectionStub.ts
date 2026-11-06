@@ -1,7 +1,7 @@
 /**
  * Online multiplayer connection — STUB.
  * Diagram layer between KANE GAME CLIENT and MULTIPLAYER SERVER.
- * Do not introduce real netcode in the SP vs AI prototype.
+ * Phase 6: foundation stubs only — no live MP / command sync yet.
  */
 
 export interface OnlineConnection {
@@ -14,6 +14,8 @@ export function createOfflineConnection(): OnlineConnection {
 }
 
 export function connectToMatch(_matchId: string): OnlineConnection {
-  console.info('[KANE] networking stub — online connection deferred');
+  console.info(
+    '[KANE] networking stub — online connection deferred (emulator lobby later)',
+  );
   return createOfflineConnection();
 }
