@@ -90,6 +90,7 @@ import {
   type MatchResult,
 } from '../../gameplay/battlefield/battlefieldVictory';
 import {
+  addToControlGroup,
   assignControlGroup,
   createControlGroups,
   issueAttackMoveSelected,
@@ -97,6 +98,10 @@ import {
   stopSelected,
   type ControlGroups,
 } from '../../gameplay/battlefield/battlefieldOrders';
+import {
+  stepSubgroup,
+  type SubgroupCycle,
+} from '../../gameplay/battlefield/battlefieldSubgroups';
 import {
   groupCenter,
   GroupTapTracker,
@@ -251,6 +256,8 @@ export class BattlefieldScene extends Phaser.Scene {
   private controlGroups!: ControlGroups;
   /** Spots a double-tap on a group key, which centres the camera. */
   private groupTaps = new GroupTapTracker();
+  /** Where Tab is in its walk through the unit types of the selection. */
+  private subgroupCycle: SubgroupCycle | null = null;
   /** Finger-down that may become a move / attack / gather order. */
   private touchOrderPress: {
     pointerId: number;
@@ -489,6 +496,7 @@ export class BattlefieldScene extends Phaser.Scene {
     this.controlGroups = createControlGroups();
     // Phaser reuses this scene object between matches.
     this.groupTaps.reset();
+    this.subgroupCycle = null;
     this.touchOrderPress = null;
 
     this.bindInput();
@@ -620,6 +628,37 @@ export class BattlefieldScene extends Phaser.Scene {
         this.onDigitHotkey(slot, e.timeStamp, e.repeat),
       );
     });
+
+    // Tab is a plain window listener, not a Phaser key capture: Phaser queues
+    // key events, so it would preventDefault too late, and a capture would
+    // outlive this scene and break Tab in the login and lobby forms.
+    const onTab = (e: KeyboardEvent): void => {
+      if (e.key !== 'Tab' || e.ctrlKey || e.altKey || e.metaKey) return;
+      if (this.paused || this.matchResult !== 'ongoing') return;
+      if (this.controlsHelp.isOpen()) return;
+      const el = e.target instanceof Element ? e.target : null;
+      if (el?.closest('input, textarea, select, [contenteditable]')) return;
+      e.preventDefault();
+      if (!e.repeat) this.cycleSubgroup(e.shiftKey ? -1 : 1);
+    };
+    window.addEventListener('keydown', onTab);
+    this.events.once(Phaser.Scenes.Events.SHUTDOWN, () =>
+      window.removeEventListener('keydown', onTab),
+    );
+  }
+
+  /** Tab / Shift+Tab: step through the unit types in the selection. */
+  private cycleSubgroup(dir: 1 | -1): void {
+    const step = stepSubgroup(this.world, this.subgroupCycle, dir);
+    if (!step) {
+      playSfx('ui');
+      return;
+    }
+    this.subgroupCycle = step.cycle;
+    this.clearBuildingSelection();
+    const wanted = new Set(step.ids);
+    for (const u of this.world.units) u.selected = wanted.has(u.id);
+    playSfx('select');
   }
 
   /** Esc: close help, cancel place/A-move, else toggle pause (resume when open). */
@@ -703,7 +742,9 @@ export class BattlefieldScene extends Phaser.Scene {
     // Alt+N is a fallback: browsers can reserve Ctrl+digit for tab switching.
     if (this.ctrlHeld() || this.altHeld()) {
       this.groupTaps.reset();
-      if (countKey && assignControlGroup(this.world, this.controlGroups, slot)) {
+      // With Shift the selection is added to the group instead of replacing it.
+      const save = this.shiftHeld() ? addToControlGroup : assignControlGroup;
+      if (countKey && save(this.world, this.controlGroups, slot)) {
         spawnControlGroupAssignFx(this.world, slot);
         this.hud.flashControlGroup(slot, 'assign');
         playSfx('select');
