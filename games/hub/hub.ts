@@ -40,9 +40,8 @@ function gameCard(
   const item = document.createElement('li');
   const link = document.createElement('a');
   link.className = [
-    'group flex h-full flex-col items-center rounded-3xl border border-white/16 p-[26px]',
+    'hub-card group flex h-full flex-col items-center rounded-3xl border border-white/16 p-[26px]',
     'bg-linear-145 from-panel-from to-panel-to text-center text-ink no-underline shadow-panel',
-    'focus-visible:outline-2 focus-visible:outline-offset-3 focus-visible:outline-accent',
   ].join(' ');
   link.href = gamePlayHref(game.id);
 
