@@ -49,7 +49,7 @@ This doc is the honest gate before any public preview URL.
 | Minimap double-tap flash | **OK** — brief gold wash when double-tap recenters on selection/order | `minimap`, `MINIMAP_FOCUS_FLASH_MS` |
 | Minimap select blips | **OK** — selected units draw gold/cream blips above camera/order layers | `minimapSelectedUnitBlip`, `minimap` |
 | Help species hotkeys | **OK** — Controls help lists Formation/Mutation/Rage only for the current species | `controlsHelpPanel`, `help.formation` / `mutation` / `rage` |
-| Help Tab cycle tip | **OK** — Controls help notes Tab/Shift+Tab walks all → one type → all in the selection | `help.cycle`, `help.cycleKeys` |
+| Help Tab cycle tip | **OK** — Controls help notes Tab/Shift+Tab walks all → one type → all (locked en/pt-BR/es) | `help.cycle`, `help.cycleKeys`, `controlsHelpPanel` |
 | Help minimap ping tip | **OK** — Controls help lists Attention mark · hold minimap (cooldown) · double-tap recenter | `help.ping`, `help.pingKeys`, `controlsHelpPanel` |
 | Formation count tip | **OK** — Nobles selection hint shows F + formed/eligible count | `selectionPanel` `formationCountTip` |
 | Stance hotkey echo | **OK** — F / R / M flashes the matching stance button on the selection panel | `flashStanceHotkey` |

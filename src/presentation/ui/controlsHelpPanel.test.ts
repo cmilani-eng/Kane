@@ -60,11 +60,21 @@ describe('controls help copy', () => {
     expect(weirdos.body).not.toContain('>R<');
   });
 
-  it('lists the Tab cycle tip for mixed selections', () => {
-    const copy = controlsHelpCopy('brutes');
-    expect(copy.body).toContain('Tab');
-    expect(copy.body).toContain('Shift+Tab');
-    expect(copy.body).toMatch(/all → one type → all|todos →/);
+  it('lists the Tab cycle tip for mixed selections in every locale', () => {
+    setLocale('en-GB');
+    const en = controlsHelpCopy('brutes');
+    expect(en.body).toContain('Tab-cycle unit types');
+    expect(en.body).toContain('Tab · Shift+Tab · all → one type → all');
+
+    setLocale('pt-BR');
+    const pt = controlsHelpCopy('brutes');
+    expect(pt.body).toContain('Tab: tipos na seleção');
+    expect(pt.body).toContain('Tab · Shift+Tab · todos → um tipo → todos');
+
+    setLocale('es');
+    const es = controlsHelpCopy('brutes');
+    expect(es.body).toContain('Tab: tipos en la selección');
+    expect(es.body).toContain('Tab · Shift+Tab · todos → un tipo → todos');
   });
 
   it('lists the minimap attention-ping tip under touch controls', () => {
