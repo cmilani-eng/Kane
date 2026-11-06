@@ -126,6 +126,7 @@ export const enGB = {
   'account.recentEmpty':
     'Recent matches\nNo cloud matches yet — finish a skirmish while signed in.',
   'hub.title': 'Games',
+  'hub.documentTitle': 'KANE · Game picker',
   'hub.subtitle': 'Pick a game to play.',
   'hub.meta': 'KANE and friends: pick a game to play.',
   'hub.play': 'Play',
@@ -580,6 +581,7 @@ export const ptBR = {
   'account.recentEmpty':
     'Partidas recentes\nAinda não há partidas na nuvem — termine uma escaramuça conectado.',
   'hub.title': 'Jogos',
+  'hub.documentTitle': 'KANE · Seletor de jogos',
   'hub.subtitle': 'Escolha um jogo.',
   'hub.meta': 'KANE e companhia: escolha um jogo.',
   'hub.play': 'Jogar',
@@ -1030,6 +1032,7 @@ export const es = {
   'account.recentEmpty':
     'Partidas recientes\nAún no hay partidas en la nube — termina una escaramuza con la sesión iniciada.',
   'hub.title': 'Juegos',
+  'hub.documentTitle': 'KANE · Selector de juegos',
   'hub.subtitle': 'Elige un juego.',
   'hub.meta': 'KANE y compañía: elige un juego.',
   'hub.play': 'Jugar',

@@ -57,6 +57,7 @@ This doc is the honest gate before any public preview URL.
 | Blob → hub back | **OK** — Blob Evolution keeps a fixed ← Games link to `/` | `games/blob-evolution/index.html` `#hub-back` |
 | Hub status badges | **OK** — every hub card shows Live or Soft launch from `games.json` status | `hub.ts` `statusPill`, `hub.live` / `hub.experimental` |
 | Hub card focus | **OK** — keyboard focus-visible ring on `.hub-card` (accent outline + soft glow) | `games/hub/hub.css` |
+| Hub document title | **OK** — picker tab title is `KANE · Game picker` (localized) | `hub.documentTitle`, `games/index.html` |
 
 ## Remaining gaps (honest)
 

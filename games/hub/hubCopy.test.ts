@@ -33,6 +33,7 @@ describe('hub copy', () => {
     setLocale('es');
     const chrome = hubChrome();
     expect(chrome.title).toBe('Juegos');
+    expect(chrome.documentTitle).toBe('KANE · Selector de juegos');
     expect(chrome.play).toBe('Jugar');
     expect(chrome.live).toBe('En vivo');
     expect(chrome.experimental).toBe('Prelanzamiento');

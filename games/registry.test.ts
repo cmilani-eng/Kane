@@ -100,6 +100,13 @@ describe('games registry', () => {
     expect(css).toContain('outline: 3px solid var(--color-accent)');
   });
 
+  it('sets a clear document title on the hub picker page', () => {
+    const page = readFileSync(resolve(gamesDir, 'index.html'), 'utf8');
+    expect(page).toContain('<title>KANE · Game picker</title>');
+    const hub = readFileSync(resolve(gamesDir, 'hub/hub.ts'), 'utf8');
+    expect(hub).toContain('chrome.documentTitle');
+  });
+
   it('keeps Privacy and Terms pages under games/ for hub footer links', () => {
     const privacy = readFileSync(resolve(gamesDir, 'privacy.html'), 'utf8');
     const terms = readFileSync(resolve(gamesDir, 'terms.html'), 'utf8');
