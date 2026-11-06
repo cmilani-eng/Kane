@@ -6,7 +6,7 @@
  */
 import Phaser from 'phaser';
 import { BRAND } from '../../config/brand';
-import { SPECIES, type SpeciesId } from '../../data/speciesStub';
+import type { SpeciesId } from '../../data/speciesStub';
 import { loadMatchPrefs } from '../../database/matchPrefs';
 import { loadCosmeticsLoadout } from '../../database/cosmeticsLoadout';
 import {
@@ -20,43 +20,118 @@ import { bootstrapCloudAccount } from '../../firebase/cloudProgression';
 import { listRecentMatches } from '../../firebase/firestore/matches';
 import { getStatsOverview } from '../../firebase/firestore/stats';
 import { getUserProfile } from '../../firebase/firestore/users';
-import { emptyStatsOverview, type StatsOverviewDoc } from '../../firebase/types';
-import { AI_DIFFICULTIES } from '../../gameplay/battlefield/aiDifficulty';
+import {
+  emptyStatsOverview,
+  type StatsOverviewDoc,
+  type UserMatchDoc,
+} from '../../firebase/types';
+import type { AiDifficultyId } from '../../gameplay/battlefield/aiDifficulty';
+import { difficultyCopy, speciesName, t } from '../../i18n';
 import { playSfx } from '../audio/sfx';
 import { showAuthPanel } from './authPanel';
 
-function formatOverview(stats: StatsOverviewDoc): string {
+const ENGLISH_NAME_FALLBACK = new Set(['Guest', 'Commander']);
+
+type AccountMatch = Pick<
+  UserMatchDoc,
+  'won' | 'species' | 'difficulty' | 'durationMs'
+>;
+
+export function accountShownName(
+  name: string | null | undefined,
+  anonymous: boolean,
+): string {
+  const raw = name?.trim();
+  if (raw && !ENGLISH_NAME_FALLBACK.has(raw)) return raw;
+  return anonymous ? t('account.guestAnon') : t('auth.displayPlaceholder');
+}
+
+export function accountOverviewText(stats: StatsOverviewDoc): string {
   const lines = [
-    `Games played   ${stats.gamesStarted}`,
-    `Wins  ${stats.wins}     Losses  ${stats.losses}`,
+    t('stats.played', { n: stats.gamesStarted }),
+    t('stats.record', { wins: stats.wins, losses: stats.losses }),
     '',
-    'By species',
+    t('stats.bySpecies'),
   ];
   for (const id of ['brutes', 'nobles', 'weirdos'] as SpeciesId[]) {
-    const r = stats.bySpecies[id];
+    const row = stats.bySpecies[id];
     lines.push(
-      `${SPECIES[id].name}  ·  ${r.started} played  ·  ${r.wins}W / ${r.losses}L`,
+      t('stats.speciesLine', {
+        name: speciesName(id),
+        played: row.started,
+        wins: row.wins,
+        losses: row.losses,
+      }),
     );
   }
   return lines.join('\n');
 }
 
-function formatMatches(
-  rows: Awaited<ReturnType<typeof listRecentMatches>>,
-): string {
-  if (rows.length === 0) {
-    return 'Recent matches\nNo cloud matches yet — finish a skirmish while signed in.';
-  }
-  const lines = [`Recent matches  ·  last ${rows.length}`];
-  for (const s of rows) {
-    const mins = Math.max(0, Math.round(s.durationMs / 60000));
-    const secs = Math.max(0, Math.round((s.durationMs % 60000) / 1000));
-    const species = SPECIES[s.species]?.name ?? s.species;
+export function accountMatchesText(rows: AccountMatch[]): string {
+  if (rows.length === 0) return t('account.recentEmpty');
+  const lines = [t('stats.recentHead', { n: rows.length })];
+  for (const row of rows) {
+    const mins = Math.max(0, Math.round(row.durationMs / 60000));
+    const secs = Math.max(0, Math.round((row.durationMs % 60000) / 1000));
     lines.push(
-      `${s.won ? 'Win' : 'Loss'}  ·  ${species} / ${s.difficulty}  ·  ${mins}m ${secs}s`,
+      t('stats.matchLine', {
+        result: row.won ? t('stats.win') : t('stats.loss'),
+        species: speciesName(row.species),
+        difficulty: difficultyCopy(row.difficulty).label,
+        mins,
+        secs,
+      }),
     );
   }
   return lines.join('\n');
+}
+
+export function accountProfileText(opts: {
+  name: string | null | undefined;
+  anonymous: boolean;
+  email: string | null | undefined;
+  species: SpeciesId;
+  difficulty: AiDifficultyId;
+  skins: { brutes: string; nobles: string; weirdos: string };
+}): string {
+  const accountKind = opts.anonymous
+    ? t('account.guestAnon')
+    : opts.email?.trim() || t('account.signedIn');
+  return [
+    t('account.commander', {
+      name: accountShownName(opts.name, opts.anonymous),
+    }),
+    accountKind,
+    '',
+    t('account.prefs', {
+      species: speciesName(opts.species),
+      difficulty: difficultyCopy(opts.difficulty).label,
+    }),
+    t('account.skins', {
+      brutes: shortSkin(opts.skins.brutes),
+      nobles: shortSkin(opts.skins.nobles),
+      weirdos: shortSkin(opts.skins.weirdos),
+    }),
+  ].join('\n');
+}
+
+export function accountLoadErrorText(opts: {
+  name: string | null | undefined;
+  anonymous: boolean;
+  email: string | null | undefined;
+}): string {
+  const accountKind = opts.anonymous
+    ? t('account.guestAnon')
+    : opts.email?.trim() || t('account.signedIn');
+  return [
+    t('account.commander', {
+      name: accountShownName(opts.name, opts.anonymous),
+    }),
+    accountKind,
+    '',
+    t('account.loadFailed'),
+    t('account.localStill'),
+  ].join('\n');
 }
 
 function shortSkin(id: string): string {
@@ -87,7 +162,7 @@ export function showDashboardPanel(
 
   const short = height < 500;
   const panelW = short ? Math.min(760, width - 24) : Math.min(460, width - 28);
-  const panelH = short ? height - 16 : Math.min(460, height - 28);
+  const panelH = short ? height - 16 : Math.min(520, height - 28);
   const cx = width / 2;
   const cy = height / 2;
   const top = cy - panelH / 2;
@@ -114,7 +189,7 @@ export function showDashboardPanel(
     .setDepth(302);
 
   const title = scene.add
-    .text(cx, top + 52, 'Account', {
+    .text(cx, top + 52, t('menu.account'), {
       fontFamily: 'Georgia, "Times New Roman", serif',
       fontSize: '26px',
       color: '#f5e6c8',
@@ -123,10 +198,12 @@ export function showDashboardPanel(
     .setDepth(302);
 
   const subtitle = scene.add
-    .text(cx, top + 80, 'Your cloud profile on this device', {
+    .text(cx, top + 80, t('account.subtitle'), {
       fontFamily: 'system-ui, sans-serif',
       fontSize: '13px',
       color: '#9eb4c8',
+      align: 'center',
+      wordWrap: { width: panelW - 40 },
     })
     .setOrigin(0.5)
     .setDepth(302);
@@ -134,7 +211,7 @@ export function showDashboardPanel(
   const bodyWrap = panelW - 48;
 
   const profileBody = scene.add
-    .text(left, top + 108, 'Loading…', {
+    .text(left, top + 108, t('account.loading'), {
       fontFamily: 'system-ui, sans-serif',
       fontSize: '14px',
       color: '#d7e6f2',
@@ -200,17 +277,31 @@ export function showDashboardPanel(
   nodes.push(closeBtn);
 
   const guest = isAnonymousGuest(user);
-  const btnY = short ? bottom - 36 : bottom - 52;
+  const quietNote = scene.add
+    .text(
+      cx,
+      bottom - 8,
+      guest ? t('account.guestNote') : t('account.cloudNote'),
+      {
+        fontFamily: 'system-ui, sans-serif',
+        fontSize: '11px',
+        color: '#6a7f94',
+        align: 'center',
+        wordWrap: { width: panelW - 40 },
+      },
+    )
+    .setOrigin(0.5, 1)
+    .setDepth(302);
+  nodes.push(quietNote);
 
   const mkBtn = (
-    x: number,
     label: string,
     bg: string,
     color: string,
     fn: () => void,
-  ): void => {
+  ): Phaser.GameObjects.Text => {
     const btn = scene.add
-      .text(x, btnY, label, {
+      .text(0, 0, label, {
         fontFamily: 'system-ui, sans-serif',
         fontSize: '13px',
         color,
@@ -225,60 +316,57 @@ export function showDashboardPanel(
         fn();
       });
     nodes.push(btn);
+    return btn;
   };
 
+  const row: Phaser.GameObjects.Text[] = [];
   if (guest) {
-    mkBtn(cx - 120, 'Create account', '#3a5530', '#f0c75e', () => {
-      destroy();
-      showAuthPanel({
-        mode: 'signup',
-        onAuthed: (u) => {
-          void bootstrapCloudAccount(u).finally(() => {
+    row.push(
+      mkBtn(t('auth.signup'), '#3a5530', '#f0c75e', () => {
+        destroy();
+        showAuthPanel({
+          mode: 'signup',
+          onAuthed: (signedUp) => {
+            void bootstrapCloudAccount(signedUp).finally(() => {
+              showDashboardPanel(scene, onClose);
+            });
+          },
+          onClose: () => {
             showDashboardPanel(scene, onClose);
-          });
-        },
-        onClose: () => {
-          showDashboardPanel(scene, onClose);
-        },
-      });
-    });
-    mkBtn(cx + 20, 'Log out', '#5a3a3a', '#fff8e8', () => {
-      void signOutAccount().then(() => {
-        destroy();
-        onClose();
-      });
-    });
-    mkBtn(cx + 130, 'Refresh', '#2a4a38', '#fff8e8', () => {
-      void loadBody();
-    });
-  } else {
-    mkBtn(cx - 80, 'Log out', '#5a3a3a', '#fff8e8', () => {
-      void signOutAccount().then(() => {
-        destroy();
-        onClose();
-      });
-    });
-    mkBtn(cx + 80, 'Refresh', '#2a4a38', '#fff8e8', () => {
-      void loadBody();
-    });
+          },
+        });
+      }),
+    );
   }
+  row.push(
+    mkBtn(t('account.logout'), '#5a3a3a', '#fff8e8', () => {
+      void signOutAccount().then(() => {
+        destroy();
+        onClose();
+      });
+    }),
+  );
+  row.push(
+    mkBtn(t('account.refresh'), '#2a4a38', '#fff8e8', () => {
+      void loadBody();
+    }),
+  );
 
-  const quietNote = scene.add
-    .text(
-      cx,
-      short ? bottom - 68 : bottom - 18,
-      guest
-        ? 'Guest · create an account to keep progress if you clear data'
-        : 'Cloud profile · empty until you finish a signed-in skirmish',
-      {
-        fontFamily: 'system-ui, sans-serif',
-        fontSize: '11px',
-        color: '#6a7f94',
-      },
-    )
-    .setOrigin(0.5)
-    .setDepth(302);
-  nodes.push(quietNote);
+  const gap = 12;
+  const btnY = quietNote.y - quietNote.height - 26;
+  const rowWidth =
+    row.reduce((sum, btn) => sum + btn.width, 0) + gap * (row.length - 1);
+  if (rowWidth <= panelW - 24) {
+    let x = cx - rowWidth / 2;
+    for (const btn of row) {
+      btn.setPosition(x + btn.width / 2, btnY);
+      x += btn.width + gap;
+    }
+  } else {
+    for (let i = row.length - 1; i >= 0; i -= 1) {
+      row[i]!.setPosition(cx, btnY - (row.length - 1 - i) * 44);
+    }
+  }
 
   const placeColumns = (): void => {
     if (!short) {
@@ -305,68 +393,62 @@ export function showDashboardPanel(
   };
 
   const loadBody = async (): Promise<void> => {
-    const u = getCurrentAuthUser();
-    if (!isCloudAccount(u) || !u) {
-      profileBody.setText('Signed out.');
+    const current = getCurrentAuthUser();
+    if (!isCloudAccount(current) || !current) {
+      profileBody.setText(t('account.signedOut'));
       statsBody.setText('');
       matchesBody.setText('');
       return;
     }
-    profileBody.setText('Loading profile…');
+    profileBody.setText(t('account.loadingProfile'));
     statsBody.setText('');
     matchesBody.setText('');
     try {
       const [profile, stats, matches] = await Promise.all([
-        getUserProfile(u.uid),
-        getStatsOverview(u.uid),
-        listRecentMatches(u.uid, 5),
+        getUserProfile(current.uid),
+        getStatsOverview(current.uid),
+        listRecentMatches(current.uid, 5),
       ]);
       const prefs = profile?.prefs ?? loadMatchPrefs();
-      const cos =
+      const skins =
         profile?.cosmetics?.equipped ?? loadCosmeticsLoadout().equipped;
       const overview = stats ?? emptyStatsOverview();
       const emptyHint =
         overview.gamesStarted === 0 &&
         overview.wins === 0 &&
         overview.losses === 0
-          ? '\n(No cloud matches yet — play a skirmish while signed in.)'
+          ? `\n${t('account.emptyHint')}`
           : '';
-      const accountKind = u.isAnonymous
-        ? 'Guest (anonymous)'
-        : u.email ?? 'Signed in';
-      const commander = profile?.displayName ?? u.displayName;
-
       profileBody.setText(
-        [
-          `Commander  ·  ${commander}`,
-          accountKind,
-          '',
-          `Prefs  ·  ${SPECIES[prefs.species].name} / ${AI_DIFFICULTIES[prefs.difficulty].label}`,
-          `Skins  ·  B ${shortSkin(cos.brutes)}  ·  N ${shortSkin(cos.nobles)}  ·  W ${shortSkin(cos.weirdos)}`,
-        ].join('\n'),
+        accountProfileText({
+          name: profile?.displayName ?? current.displayName,
+          anonymous: current.isAnonymous,
+          email: current.email,
+          species: prefs.species,
+          difficulty: prefs.difficulty,
+          skins,
+        }),
       );
-      statsBody.setText(formatOverview(overview) + emptyHint);
-      matchesBody.setText(formatMatches(matches));
+      statsBody.setText(accountOverviewText(overview) + emptyHint);
+      matchesBody.setText(accountMatchesText(matches));
       placeColumns();
     } catch (err) {
       console.warn('[KANE] dashboard load failed', err);
       profileBody.setText(
-        [
-          `Commander  ·  ${u.displayName}`,
-          u.isAnonymous ? 'Guest (anonymous)' : (u.email ?? 'Signed in'),
-          '',
-          'Could not load cloud stats.',
-          'Local play still works — no fabricated numbers.',
-        ].join('\n'),
+        accountLoadErrorText({
+          name: current.displayName,
+          anonymous: current.isAnonymous,
+          email: current.email,
+        }),
       );
-      statsBody.setText(formatOverview(emptyStatsOverview()));
-      matchesBody.setText(formatMatches([]));
+      statsBody.setText(accountOverviewText(emptyStatsOverview()));
+      matchesBody.setText(accountMatchesText([]));
       placeColumns();
     }
   };
 
-  unsub = subscribeAuth((u) => {
-    if (!isCloudAccount(u)) {
+  unsub = subscribeAuth((next) => {
+    if (!isCloudAccount(next)) {
       destroy();
       onClose();
     }
