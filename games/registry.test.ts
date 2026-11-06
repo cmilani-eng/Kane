@@ -81,6 +81,10 @@ describe('games registry', () => {
     expect(page).toContain(
       '<title>Blob Evolution 3D · Eat. Evolve. Ascend.</title>',
     );
+    expect(page).toContain('id="blob-meta"');
+    expect(page).toContain(
+      'Blob Evolution 3D · Eat. Evolve. Ascend. — Start as a tiny blob and eat your way up the chain to become the Angel.',
+    );
     expect(GAMES.find((game) => game.id === 'blob-evolution')?.build).toBe('vite');
   });
 
