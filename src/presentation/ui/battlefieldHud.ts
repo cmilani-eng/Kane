@@ -40,6 +40,7 @@ import {
 import type { BattlefieldWorld } from '../../gameplay/battlefield/battlefieldWorld';
 import { isSfxMuted, playSfx, setSfxMuted } from '../audio/sfx';
 import { formatMatchClock } from './matchClock';
+import { attackDirectionArrow } from '../../gameplay/battlefield/attackDirection';
 
 export { formatMatchClock } from './matchClock';
 
@@ -1026,16 +1027,23 @@ export class BattlefieldHud {
       (alert.chipLifeMs ?? 0) > 0;
     if (showAttack && alert) {
       const pulse = 0.7 + 0.3 * Math.sin(this.attackPulseMs / 220);
-      const label =
+      const cam = this.scene.cameras.main;
+      const dir = attackDirectionArrow(
+        cam.midPoint.x,
+        cam.midPoint.y,
+        alert.x,
+        alert.y,
+      );
+      const key =
         alert.kind === 'keep'
-          ? t('hud.attackKeep')
+          ? 'hud.attackKeep'
           : alert.kind === 'hero'
-            ? t('hud.attackHero')
-            : t('hud.attackBase');
+            ? 'hud.attackHero'
+            : 'hud.attackBase';
       this.attackPingBtn
         .setVisible(true)
         .setAlpha(pulse)
-        .setText(label);
+        .setText(t(key, { dir }));
     } else {
       this.attackPingBtn.setVisible(false).setAlpha(1);
     }
