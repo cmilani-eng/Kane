@@ -6,7 +6,7 @@ Fantasy Real-Time Strategy Game
 Built with **[Phaser 4](https://phaser.io/phaser4)** (`phaser@^4.2.1`) + TypeScript + Vite.  
 APIs: [docs.phaser.io](https://docs.phaser.io/) — do not assume Phaser 3.
 
-> **Local-first.** Ads off (`adsEnabled=false`). Vite (`npm run dev`) is primary. Firebase Hosting preview is optional — see `docs/firebase-hosting.md`. Push/merge to **`dev`** auto-deploys Hosting via GitHub Actions once the `FIREBASE_SERVICE_ACCOUNT_KANE_RTS_STUB` secret is set (same doc).
+> **Local-first.** Ads off (`adsEnabled=false`). Vite (`npm run dev`) is primary. Firebase Hosting preview is optional — see `docs/firebase-hosting.md`. Push/merge to **`dev`** auto-deploys Hosting via GitHub Actions (`FIREBASE_SERVICE_ACCOUNT_KANE_RTS_GAME`, via Firebase Hosting GitHub integration).
 
 ## Quick start
 

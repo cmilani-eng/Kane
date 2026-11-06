@@ -1,6 +1,6 @@
 # Auto-deploy Firebase Hosting when `dev` is updated (incl. PR merges into `dev`).
-# Requires GitHub secret FIREBASE_SERVICE_ACCOUNT_KANE_RTS_GAME — see docs/firebase-hosting.md.
-# (Previous stub project used FIREBASE_SERVICE_ACCOUNT_KANE_RTS_STUB — rename/recreate for kane-rts-game.)
+# Uses secret FIREBASE_SERVICE_ACCOUNT_KANE_RTS_GAME (provisioned by Firebase Hosting GitHub integration).
+# See docs/firebase-hosting.md. Does not deploy Firestore rules.
 name: Deploy Hosting (dev)
 
 on:

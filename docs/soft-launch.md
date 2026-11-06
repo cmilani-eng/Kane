@@ -24,8 +24,8 @@ This doc is the honest gate before any public preview URL.
 
 ## Remaining gaps (honest)
 
-1. **Hosting** — live site https://kane-rts-game.web.app (`kane-rts-game`). GHA deploy on `dev` needs secret `FIREBASE_SERVICE_ACCOUNT_KANE_RTS_GAME` (see `docs/firebase-hosting.md`).
-2. **Firebase Auth / player dashboard** — email/password + Firestore `users/{uid}` path in client; requires Console Email/Password + **rules deploy** (draft only in repo until Cassio asks). Guest SP still works offline.
+1. **Hosting** — live site https://kane-rts-game.web.app (`kane-rts-game`). GHA deploy on `dev` uses `FIREBASE_SERVICE_ACCOUNT_KANE_RTS_GAME` (Firebase Hosting GitHub integration — see `docs/firebase-hosting.md`).
+2. **Firebase Auth / player dashboard** — email/password + Firestore `users/{uid}` path in client; requires Console Email/Password, **rules deploy** (draft only in repo until Cassio asks), and `VITE_FIREBASE_*` in the Hosting build env. Guest SP still works offline.
 3. **No live multiplayer** — lobby codes and command-sync spike are local/transport stubs only.
 4. **Ads SDK not bundled** — flipping `adsEnabled` still shows stub logs only (`docs/ads-sdk.md`).
 5. **Admin allowlist is soft** — default `open` for local-dev; no Custom Claims / server enforcement. Admin **Stats** is separate from player **Account**.

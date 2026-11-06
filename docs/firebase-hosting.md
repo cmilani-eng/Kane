@@ -86,20 +86,11 @@ Local Vite (`npm run dev`) stays the day-to-day playtest path. This pipeline onl
    git checkout -b dev
    git push -u origin dev
    ```
-2. **GitHub → Settings → Secrets and variables → Actions → New repository secret**
-   | Secret name | Value |
-   |-------------|--------|
-   | `FIREBASE_SERVICE_ACCOUNT_KANE_RTS_GAME` | Full JSON key of a Google service account that can deploy Hosting to project `kane-rts-game` |
+2. **Hosting deploy credentials** — GitHub Actions secret `FIREBASE_SERVICE_ACCOUNT_KANE_RTS_GAME` is already provisioned via **Firebase Hosting ↔ GitHub** (`firebase hosting:github`). No manual service-account JSON paste is required for Hosting deploys on this repo. (Older stub-project name `FIREBASE_SERVICE_ACCOUNT_KANE_RTS_STUB` is obsolete.)
+3. Push or merge something into `dev` and confirm the **Deploy Hosting (dev)** Action succeeds.
 
-   **Note:** Older docs/PRs used `FIREBASE_SERVICE_ACCOUNT_KANE_RTS_STUB` for project `kane-rts-stub`. After the retarget, create/rename the secret for **`kane-rts-game`** and remove the stub secret when unused.
-3. **Firebase / GCP IAM** for that service account (minimum):
-   - Role **Firebase Hosting Admin** (`roles/firebasehosting.admin`) on project `kane-rts-game`, **or**
-   - Broader **Firebase Admin** if you prefer one role for Hosting + related tools
-   - The SA also needs permission to create/upload Hosting releases (Hosting Admin covers this)
-4. **Create the key** (Console → IAM → service account → Keys → Add key → JSON), paste the entire JSON into the GitHub secret. **Do not commit the JSON.**
-5. Push or merge something into `dev` and confirm the **Deploy Hosting (dev)** Action succeeds.
-
-Optional alternative (not used by the workflow): a CI token from `firebase login:ci` as `FIREBASE_TOKEN`. Prefer the service-account JSON + `google-github-actions/auth` path above.
+**Auth / Firestore client config (separate from Hosting deploy):** live email Auth needs `VITE_FIREBASE_*` available to the Vite build (GitHub Actions secrets or variables). Names only — set values in the repo/CI settings, never commit them:
+`VITE_FIREBASE_API_KEY`, `VITE_FIREBASE_AUTH_DOMAIN`, `VITE_FIREBASE_PROJECT_ID`, `VITE_FIREBASE_DATABASE_URL`, `VITE_FIREBASE_STORAGE_BUCKET`, `VITE_FIREBASE_MESSAGING_SENDER_ID`, `VITE_FIREBASE_APP_ID`, optional `VITE_FIREBASE_USE_EMULATORS`.
 
 ## Soft-launch guards
 
