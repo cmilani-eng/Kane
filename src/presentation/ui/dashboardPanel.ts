@@ -27,7 +27,13 @@ import {
 } from '../../firebase/types';
 import type { SkirmishMapId } from '../../data/skirmishMaps';
 import type { AiDifficultyId } from '../../gameplay/battlefield/aiDifficulty';
-import { difficultyCopy, mapCopy, speciesName, t } from '../../i18n';
+import {
+  difficultyCopy,
+  mapCopy,
+  speciesCopy,
+  speciesName,
+  t,
+} from '../../i18n';
 import { playSfx } from '../audio/sfx';
 import { showAuthPanel } from './authPanel';
 import { formatMatchClock } from './matchClock';
@@ -98,6 +104,7 @@ export function accountProfileText(opts: {
     ? t('account.guestAnon')
     : opts.email?.trim() || t('account.signedIn');
   const map = mapCopy(opts.mapId);
+  const faction = speciesCopy(opts.species);
   return [
     t('account.commander', {
       name: accountShownName(opts.name, opts.anonymous),
@@ -109,6 +116,7 @@ export function accountProfileText(opts: {
       difficulty: difficultyCopy(opts.difficulty).label,
       map: map.label,
     }),
+    t('lobby.factionTip', { name: faction.name, blurb: faction.motto }),
     t('menu.mapTip', { label: map.label, blurb: map.blurb }),
     t('account.skins', {
       brutes: shortSkin(opts.skins.brutes),

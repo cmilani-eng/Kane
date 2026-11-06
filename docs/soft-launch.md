@@ -63,6 +63,7 @@ This doc is the honest gate before any public preview URL.
 | Menu map tip | **OK** — selected skirmish map shows a one-line flavor blurb under the map row (tall + short menus) | `MenuScene`, `menu.mapTip` |
 | Account match clock | **OK** — dashboard (and Stats) recent matches show duration as mm:ss | `dashboardPanel`, `formatMatchClock`, `stats.matchLine` |
 | Account prefs map tip | **OK** — account prefs block echoes last/selected map flavor (`menu.mapTip`) | `accountProfileText`, `menu.mapTip` |
+| Account prefs faction tip | **OK** — account prefs block echoes last/selected faction name · motto (`lobby.factionTip`) | `accountProfileText`, `lobby.factionTip` |
 | Pause map name | **OK** — pause overlay shows dedicated `Map · {name}` tip plus setup line with clock + supply | `pauseMapTipLine`, `pause.map`, `pause.setup` |
 | Pause species motto | **OK** — pause overlay shows species name · motto tip under the map tip | `pauseSpeciesMottoTipLine`, `pause.speciesMotto` |
 | Pause elapsed | **OK** — pause shows dedicated Elapsed mm:ss (neutral, not supply-tint) | `pause.elapsed`, `pauseMenu` |
