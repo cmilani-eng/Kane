@@ -881,6 +881,8 @@ export class BattlefieldHud {
       canPay: boolean;
       cols: number;
       rows: number;
+      /** Whole seconds to finish construction (omit / 0 when instant). */
+      buildSec?: number;
     } | null,
   ): void {
     if (!info) {
@@ -891,6 +893,9 @@ export class BattlefieldHud {
       info.crystals > 0 ? t('hud.placeCrystal', { n: info.crystals }) : '';
     const payBit = info.canPay ? '' : t('hud.placeNeed');
     const foot = t('hud.placeFoot', { cols: info.cols, rows: info.rows });
+    const buildSec = info.buildSec ?? 0;
+    const buildBit =
+      buildSec > 0 ? t('hud.placeBuild', { sec: buildSec }) : '';
     this.placeCostStrip
       .setVisible(true)
       .setText(
@@ -900,6 +905,7 @@ export class BattlefieldHud {
           crystal: crystalBit,
           pay: payBit,
           foot,
+          build: buildBit,
         }),
       )
       .setColor(info.canPay ? '#fff8e8' : '#ffb8b8')

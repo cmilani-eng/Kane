@@ -57,6 +57,7 @@ This doc is the honest gate before any public preview URL.
 | Train queue ETA | **OK** — selection train line shows remaining seconds beside % | `trainRemainSec`, `sel.training*` |
 | Unit armor class | **OK** — selection stats show GDD role as Armor · class (HUD label only) | `unitArmorClass`, `sel.armorClass` |
 | Build remain secs | **OK** — incomplete building selection shows construction seconds beside % | `buildRemainSec`, `sel.buildingPct` |
+| Place build secs | **OK** — place-mode cost strip shows full construction seconds when buildMs > 0 | `hud.placeBuild`, `setPlacementCost` |
 | Stock supply tone | **OK** — DOM stock strip uses the same near-cap/full supply tones as HUD/pause | `stockStrip`, `supplyTone` |
 | End meta difficulty | **OK** — end screen meta line shows map · difficulty · mm:ss | `endScreen`, `end.meta` |
 | Easy AI cushion | **OK** — Easy gives player start gold/crystal cushion + slower AI eco; menu shows a short tip only while Easy is selected | `aiDifficulty`, `MenuScene`, `createBattlefieldWorld` |
