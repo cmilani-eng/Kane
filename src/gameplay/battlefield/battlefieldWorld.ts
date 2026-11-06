@@ -145,6 +145,8 @@ export interface BattlefieldWorld {
   controlGroupFx: import('./battlefieldControlGroupFx').ControlGroupFx[];
   /** Fog scout reveal pulses (new explored cells). */
   scoutPulses: import('./battlefieldScoutPulse').ScoutPulse[];
+  /** Brief HUD sector label after a scout pulse. */
+  scoutSectorHint: import('./battlefieldScoutPulse').ScoutSectorHint | null;
   /** Move / attack-move ground waypoints. */
   waypointMarkers: import('./battlefieldWaypointMarkers').WaypointMarker[];
   /** Chat-free attention pings (look-here marks). */
@@ -430,6 +432,7 @@ export function createBattlefieldWorld(
     stopFx: [],
     controlGroupFx: [],
     scoutPulses: [],
+    scoutSectorHint: null,
     waypointMarkers: [],
     attentionPings: [],
     coreFragments: [],

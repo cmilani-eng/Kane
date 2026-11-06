@@ -20,6 +20,7 @@ This doc is the honest gate before any public preview URL.
 | PWA manifest + icons | **OK** — Add to Home Screen stubs; **no** offline service worker yet | `public/manifest.webmanifest`, `public/icons/`, `docs/pwa.md` |
 | Master volume | **OK** — mute-aware slider on menu + pause; persists `kane.masterVolume.v1` | `audioContext`, `volumeSlider`, pause/menu |
 | Reduce motion | **OK** — pause toggle disables under-attack camera nudge + quiets fog scout pulses; persists `kane.reduceMotion.v1` | `motionPrefs`, `pauseMenu`, `scoutPulseDraw`, `BattlefieldScene` |
+| Scout sector label | **OK** — fog scout pulse sets a brief HUD chip with 3×3 sector (NW…SE) | `mapSectorAt`, `scoutSectorHint`, `hud.scoutSector` |
 | Attention ping | **OK** — hold minimap to drop a temporary look-here mark (world + minimap); short cooldown + ice deny flash; help notes double-tap recenter; no chat | `battlefieldAttentionPing`, `minimapPingCooldown`, help |
 | End-screen recap | **OK** — standing units/buildings from match-summary `*Left` counts (no invented deaths) | `endScreen`, `end.recap` |
 | Worker carry | **OK** — selection panel shows live carry `n/capacity` + resource label when workers haul | `selectionPanel`, `sel.cargo` |
