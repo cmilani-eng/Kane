@@ -75,16 +75,19 @@
     <div class="btnrow"><button id="start-btn">START GAME</button></div>
   </div>
   <div class="panel" id="rps-panel" hidden>
-    <span class="pill">Rainbow showdown</span>
-    <h1>Rock Paper Scissors</h1>
-    <p>Another Rainbow blob! Choose secretly. Your opponent has already made its hidden choice.</p>
-    <div class="btnrow choices">
+    <span class="pill" id="rps-pill">Rainbow showdown</span>
+    <h1 id="rps-title">Rock Paper Scissors</h1>
+    <p id="rps-copy">Another Rainbow blob! Choose secretly. Your opponent has already made its hidden choice.</p>
+    <div class="btnrow choices" id="rps-choices">
       <button data-choice="rock">✊ Rock</button>
       <button data-choice="paper">✋ Paper</button>
       <button data-choice="scissors">✌️ Scissors</button>
     </div>
     <p id="rps-result"></p>
-    <p class="small">A tie means you both choose again. Lose and you're eaten!</p>
+    <p class="small" id="rps-hint">A tie means you both choose again. Lose and you're eaten!</p>
+    <div class="btnrow" id="rps-lose-actions" hidden>
+      <button id="rps-restart-btn">RESTART</button>
+    </div>
   </div>
   <div class="panel" id="end-panel" hidden>
     <span class="pill" id="end-pill">Game over</span>
@@ -288,9 +291,9 @@ function playerEat(bot){
   if(player.stage<4) evolvePlayer(player.stage+1);
   checkVictory();
 }
-function loseGame(reason='You were eaten!'){
-  if(!running)return;
-  running=false; showEnd(false,reason,'Your blob was captured. Try a different route through the arena!');
+function loseGame(reason='You were eaten!', copy='Your blob was captured. Try a different route through the arena!'){
+  if(endPanel && !endPanel.hidden && overlay.style.display==='flex' && startPanel.hidden && rpsPanel.hidden)return;
+  running=false; showEnd(false,reason,copy);
 }
 function winGame(){
   if(!running)return;
@@ -305,11 +308,32 @@ function showEnd(won,title,copy){
   document.getElementById('end-copy').textContent=copy;
   refreshStick();
 }
+function resetRpsPanel(){
+  document.getElementById('rps-pill').textContent='Rainbow showdown';
+  document.getElementById('rps-title').textContent='Rock Paper Scissors';
+  document.getElementById('rps-copy').textContent='Another Rainbow blob! Choose secretly. Your opponent has already made its hidden choice.';
+  document.getElementById('rps-choices').hidden=false;
+  document.getElementById('rps-hint').hidden=false;
+  document.getElementById('rps-lose-actions').hidden=true;
+  rpsResult.textContent='';
+}
+function showRpsLose(detail){
+  duelBot=null; duelBusy=false; running=false;
+  document.getElementById('rps-pill').textContent='Game over';
+  document.getElementById('rps-title').textContent='You lose!';
+  document.getElementById('rps-copy').textContent=detail || 'The other Rainbow blob won Rock Paper Scissors.';
+  document.getElementById('rps-choices').hidden=true;
+  document.getElementById('rps-hint').hidden=true;
+  document.getElementById('rps-lose-actions').hidden=false;
+  rpsResult.textContent='';
+  overlay.style.display='flex'; startPanel.hidden=true; endPanel.hidden=true; rpsPanel.hidden=false;
+  refreshStick();
+}
 function showRPS(bot){
   if(duelBusy||!running)return;
   duelBusy=true; duelBot=bot; running=false;
+  resetRpsPanel();
   overlay.style.display='flex'; startPanel.hidden=true; endPanel.hidden=true; rpsPanel.hidden=false;
-  rpsResult.textContent='';
   refreshStick();
 }
 const beats={rock:'scissors',paper:'rock',scissors:'paper'};
@@ -322,8 +346,7 @@ function chooseRPS(choice){
     rpsResult.textContent=`You chose ${labels[choice]}; the bot chose ${labels[botChoice]}. You win!`;
     setTimeout(()=>{ if(!duelBot)return; removeBot(duelBot); duelBot=null; duelBusy=false; rpsPanel.hidden=true; overlay.style.display='none'; running=true; refreshStick(); checkVictory(); },900);
   }else{
-    rpsResult.textContent=`You chose ${labels[choice]}; the bot chose ${labels[botChoice]}. You lose!`;
-    setTimeout(()=>{ duelBot=null; duelBusy=false; loseGame('The other Rainbow blob won!'); },1100);
+    showRpsLose(`You chose ${labels[choice]}; the bot chose ${labels[botChoice]}. You lose!`);
   }
 }
 function distance(a,b){return Math.hypot(a.x-b.x,a.z-b.z);}
@@ -468,12 +491,15 @@ class OverlayScene extends Phaser.Scene {
 }
 
 function startGame(){
+  duelBot=null; duelBusy=false;
+  resetRpsPanel();
   overlay.style.display='none';startPanel.hidden=true;rpsPanel.hidden=true;endPanel.hidden=true;
   spawnGame();
   refreshStick();
 }
 document.getElementById('start-btn').addEventListener('click',startGame);
 document.getElementById('restart-btn').addEventListener('click',startGame);
+document.getElementById('rps-restart-btn').addEventListener('click',startGame);
 document.querySelectorAll('[data-choice]').forEach(btn=>btn.addEventListener('click',()=>chooseRPS(btn.dataset.choice)));
 
 initThree();
