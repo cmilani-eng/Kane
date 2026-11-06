@@ -205,6 +205,7 @@ import { drawControlGroupFxList } from '../fx/controlGroupFeedback';
 import { drawStopFxList } from '../fx/stopCommandFeedback';
 import { drawWaypointMarkers } from '../fx/waypointMarkersDraw';
 import { ControlGroupBadgeLayer } from '../fx/controlGroupBadges';
+import { RallyDistanceLabel } from '../fx/rallyDistanceLabel';
 import { drawBuildingRallyMarkers } from '../fx/rallyMarkerDraw';
 import { drawGatherTargetHighlights } from '../fx/gatherTargetHighlight';
 import { drawAttentionPingList } from '../fx/attentionPingDraw';
@@ -260,6 +261,7 @@ export class BattlefieldScene extends Phaser.Scene {
   private coach!: TutorialCoach;
   private coreBanner!: CoreVictoryBanner;
   private groupBadges!: ControlGroupBadgeLayer;
+  private rallyDistLabel!: RallyDistanceLabel;
   private shiftKey: Phaser.Input.Keyboard.Key | null = null;
   private ctrlKey: Phaser.Input.Keyboard.Key | null = null;
   private altKey: Phaser.Input.Keyboard.Key | null = null;
@@ -481,12 +483,15 @@ export class BattlefieldScene extends Phaser.Scene {
       this.fogOverlay.gfx,
     ]);
     this.groupBadges = new ControlGroupBadgeLayer(this, this.hudCam);
-    this.events.once(Phaser.Scenes.Events.SHUTDOWN, () =>
-      this.groupBadges.destroy(),
-    );
-    this.events.once(Phaser.Scenes.Events.DESTROY, () =>
-      this.groupBadges.destroy(),
-    );
+    this.rallyDistLabel = new RallyDistanceLabel(this, this.hudCam);
+    this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => {
+      this.groupBadges.destroy();
+      this.rallyDistLabel.destroy();
+    });
+    this.events.once(Phaser.Scenes.Events.DESTROY, () => {
+      this.groupBadges.destroy();
+      this.rallyDistLabel.destroy();
+    });
     const onResize = (): void => {
       this.hud.layout();
       layoutStockStrip(this.scale.width, this.scale.height);
@@ -1778,6 +1783,7 @@ export class BattlefieldScene extends Phaser.Scene {
 
     drawGatherTargetHighlights(g, this.world, this.animTimeMs, view);
     this.groupBadges.sync(this.world, this.controlGroups, view);
+    this.rallyDistLabel.sync(this.selectedBuilding, view);
   }
 
 }
