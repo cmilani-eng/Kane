@@ -22,6 +22,7 @@ import {
 import {
   countIdleMilitary,
   isIdleMilitary,
+  nearestIdleArmyThreatArrow,
   selectOrCycleIdleMilitary,
   type IdleMilitaryChipResult,
 } from '../../gameplay/battlefield/idleMilitary';
@@ -1010,10 +1011,14 @@ export class BattlefieldHud {
         (u) => u.selected && isIdleMilitary(u),
       );
       const action = t(cycling ? 'hud.idleCycle' : 'hud.idleTap');
+      const threat = nearestIdleArmyThreatArrow(this.world);
+      const idleArmyText = threat
+        ? t('hud.idleArmyThreat', { n: idleMilN, action, dir: threat })
+        : t('hud.idleArmy', { n: idleMilN, action });
       this.idleMilPingBtn
         .setVisible(true)
         .setAlpha(pulse)
-        .setText(t('hud.idleArmy', { n: idleMilN, action }));
+        .setText(idleArmyText);
     } else {
       this.idleMilPingBtn.setVisible(false).setAlpha(1);
     }
