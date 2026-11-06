@@ -15,6 +15,10 @@ import {
   countIdleWorkers,
   selectIdleWorkers,
 } from '../../gameplay/battlefield/idleWorkers';
+import {
+  countVisibleMilitary,
+  selectAllVisibleMilitary,
+} from '../../gameplay/battlefield/selectMilitary';
 import type { BattlefieldWorld } from '../../gameplay/battlefield/battlefieldWorld';
 import { isSfxMuted, playSfx, setSfxMuted } from '../audio/sfx';
 
@@ -44,6 +48,8 @@ export class BattlefieldHud {
   readonly attackMoveBtn!: Phaser.GameObjects.Text;
   /** Mobile/desktop Stop (S) — clear label for touch. */
   readonly stopBtn!: Phaser.GameObjects.Text;
+  /** Select all fog-visible combat units (Ctrl+A). */
+  readonly armyBtn!: Phaser.GameObjects.Text;
   /** Subtle idle-worker attention chip (hidden when 0). */
   readonly idlePingBtn!: Phaser.GameObjects.Text;
   /** Recenter camera on player keep / hall. */
@@ -58,6 +64,8 @@ export class BattlefieldHud {
   onRecenterBase: (() => void) | null = null;
   /** Scene wires this to open/toggle pause menu. */
   onPause: (() => void) | null = null;
+  /** Scene wires this after army select (clears building focus). */
+  onSelectArmy: (() => void) | null = null;
 
   private goldDot!: Phaser.GameObjects.Arc;
   private crystalDot!: Phaser.GameObjects.Arc;
@@ -303,6 +311,28 @@ export class BattlefieldHud {
         this.stopBtn.setStyle({ backgroundColor: '#3a4555' }),
       );
 
+    this.armyBtn = scene.add
+      .text(200, scene.scale.height - 48, 'Army', {
+        fontFamily: 'system-ui, sans-serif',
+        fontSize: '14px',
+        color: '#fff8e8',
+        backgroundColor: '#354555',
+        padding: { x: 14, y: 10 },
+      })
+      .setOrigin(0, 1)
+      .setScrollFactor(0)
+      .setDepth(101)
+      .setInteractive({ useHandCursor: true })
+      .on('pointerup', () => {
+        this.pickArmy();
+      })
+      .on('pointerover', () =>
+        this.armyBtn.setStyle({ backgroundColor: '#455565' }),
+      )
+      .on('pointerout', () =>
+        this.armyBtn.setStyle({ backgroundColor: '#354555' }),
+      );
+
     this.idlePingBtn = scene.add
       .text(12, 110, '', {
         fontFamily: 'system-ui, sans-serif',
@@ -406,6 +436,7 @@ export class BattlefieldHud {
       this.baseBtn,
       this.attackMoveBtn,
       this.stopBtn,
+      this.armyBtn,
       this.idlePingBtn,
       this.goldDot,
       this.crystalDot,
@@ -501,12 +532,37 @@ export class BattlefieldHud {
       .setFontSize(orderFont)
       .setOrigin(0, 1);
     this.applyAttackMoveBtnStyle();
+    const atkW = this.attackMoveBtn.width;
+    const armyN = countVisibleMilitary(this.world);
+    this.armyBtn
+      .setPosition(pad + stopW + 8 + atkW + 8, h - pad)
+      .setFontSize(orderFont)
+      .setOrigin(0, 1)
+      .setText(
+        this.narrow
+          ? armyN > 0
+            ? `Army ${armyN}`
+            : 'Army'
+          : armyN > 0
+            ? `Ctrl+A · Army ${armyN}`
+            : 'Ctrl+A · Army',
+      );
 
     this.hint
       .setPosition(w / 2, y - btnH / 2 - 10)
       .setFontSize(this.narrow ? '11px' : '12px')
       .setStyle({ wordWrap: { width: Math.min(w - 24, 640) } })
       .setColor(this.attackMoveArmed ? '#ffb8b8' : '#b8c9d9');
+  }
+
+  /** HUD / Ctrl+A — select fog-visible combat units (not workers). */
+  pickArmy(): number {
+    const n = selectAllVisibleMilitary(this.world);
+    if (n > 0) {
+      playSfx('select');
+      this.onSelectArmy?.();
+    }
+    return n;
   }
 
   /** Brief highlight when Stop is issued (mobile clarity). */
@@ -554,6 +610,16 @@ export class BattlefieldHud {
     this.crystalText.setText(`Crystals  ${Math.floor(w.magic_crystals)}`);
     this.status.setText(statusText);
     this.heroLine.setText(heroHudLine(this.world));
+    const armyN = countVisibleMilitary(this.world);
+    this.armyBtn.setText(
+      this.narrow
+        ? armyN > 0
+          ? `Army ${armyN}`
+          : 'Army'
+        : armyN > 0
+          ? `Ctrl+A · Army ${armyN}`
+          : 'Ctrl+A · Army',
+    );
     if (this.groupFlashText && this.scene.time.now < this.groupFlashUntil) {
       this.hint.setText(this.groupFlashText).setColor(this.groupFlashColor);
     } else {
@@ -652,12 +718,12 @@ export class BattlefieldHud {
       return `Place ${placeName ?? 'building'} (${placeCost ?? 0}g) · tap map · B cycle · Esc cancel`;
     }
     if (this.narrow) {
-      return 'Home base · S stop · A attack-move · pads H/Q/W/E';
+      return 'Home · S stop · A atk-move · Army · pads H/Q/W/E';
     }
     return this.speciesId === 'nobles'
-      ? 'Home base · Ctrl+1-0 · S stop · A attack-move · F · H/Q/W/E'
+      ? 'Home · Ctrl+1-0 · Ctrl+A army · S stop · A attack-move · F · H/Q/W/E'
       : this.speciesId === 'weirdos'
-        ? 'Home base · Ctrl+1-0 · S stop · A attack-move · M · H/Q/W/E'
-        : 'Home base · Ctrl+1-0 · S stop · A attack-move · R · B · H/Q/W/E';
+        ? 'Home · Ctrl+1-0 · Ctrl+A army · S stop · A attack-move · M · H/Q/W/E'
+        : 'Home · Ctrl+1-0 · Ctrl+A army · S stop · A attack-move · R · B · H/Q/W/E';
   }
 }

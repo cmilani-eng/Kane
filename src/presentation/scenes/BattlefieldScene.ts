@@ -244,6 +244,7 @@ export class BattlefieldScene extends Phaser.Scene {
     this.hud.onStopSelected = () => this.issueStopCommand();
     this.hud.onRecenterBase = () => this.recenterOnPlayerBase();
     this.hud.onPause = () => this.togglePause();
+    this.hud.onSelectArmy = () => this.clearBuildingSelection();
     this.pauseMenu = new PauseMenu({
       scene: this,
       onResume: () => this.setPaused(false),
@@ -366,6 +367,10 @@ export class BattlefieldScene extends Phaser.Scene {
     });
     this.input.keyboard?.on('keydown-A', () => {
       if (this.paused || this.matchResult !== 'ongoing') return;
+      if (this.ctrlHeld()) {
+        this.selectAllMilitary();
+        return;
+      }
       this.toggleAttackMoveMode();
     });
     this.input.keyboard?.on('keydown-HOME', () => {
@@ -699,6 +704,12 @@ export class BattlefieldScene extends Phaser.Scene {
     if (!pt) return;
     this.cameraCtl.centerOn(pt.x, pt.y);
     playSfx('ui');
+  }
+
+  /** Ctrl+A / Army HUD — fog-visible combat units only (not workers). */
+  private selectAllMilitary(): void {
+    this.clearBuildingSelection();
+    this.hud.pickArmy();
   }
 
   private toggleAttackMoveMode(): void {
