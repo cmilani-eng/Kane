@@ -37,6 +37,7 @@ This doc is the honest gate before any public preview URL.
 | Idle army count | **OK** — Idle army chip leads with idle combat unit count | `battlefieldHud`, `hud.idleArmy`, `countIdleMilitary` |
 | Minimap double-tap flash | **OK** — brief gold wash when double-tap recenters on selection/order | `minimap`, `MINIMAP_FOCUS_FLASH_MS` |
 | Help species hotkeys | **OK** — Controls help lists Formation/Mutation/Rage only for the current species | `controlsHelpPanel`, `help.formation` / `mutation` / `rage` |
+| End share line | **OK** — end screen Copy result pastes one-line KANE summary (result/species/map/clock/standing) | `endShareLine`, `end.share*` |
 | Easy AI cushion | **OK** — Easy gives player start gold/crystal cushion + slower AI eco; menu shows a short tip only while Easy is selected | `aiDifficulty`, `MenuScene`, `createBattlefieldWorld` |
 | Hard lean tip | **OK** — Hard shows a quiet leaner-start tip (same pattern as Easy); Normal stays tip-free | `MenuScene`, `menu.hardTip` |
 | In-match tips | **OK** — coach copy covers Pause/Esc, Home, Army, Idle chip, Rematch | `battlefieldTutorial`, `tutorialCoach` |
