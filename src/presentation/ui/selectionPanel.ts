@@ -36,6 +36,10 @@ import {
 import { sharedUnitDamageLabel, unitDamageLabel } from './unitDamage';
 import { sharedUnitDpsLabel, unitDpsLabel } from './unitDps';
 import {
+  sharedUnitMoveCadenceLabel,
+  unitMoveCadenceLabel,
+} from './unitMoveCadence';
+import {
   sharedUnitMoveSpeedLabel,
   unitMoveSpeedLabel,
 } from './unitMoveSpeed';
@@ -204,6 +208,8 @@ export type SelectionPanelView =
       atkTypeTip: string | null;
       /** Catalog move-speed tip when selection shares one unit type. */
       speedTip: string | null;
+      /** Seconds-per-tile pace tip when selection shares one unit type. */
+      moveCadenceTip: string | null;
       /** Catalog vision-radius tip when selection shares one unit type. */
       visionTip: string | null;
       /** Catalog max-HP tip when selection shares one unit type. */
@@ -651,6 +657,7 @@ export function buildSelectionView(
       dmgTip: unitDamageLabel(u.typeId),
       atkTypeTip: unitAttackTypeLabel(u.typeId),
       speedTip: unitMoveSpeedLabel(u.typeId),
+      moveCadenceTip: unitMoveCadenceLabel(u.typeId),
       visionTip: unitVisionLabel(u.typeId),
       hpMaxTip: unitHpMaxLabel(u.typeId),
       atkCdTip: unitAttackCooldownLabel(u.typeId),
@@ -719,6 +726,7 @@ export function buildSelectionView(
     dmgTip: sharedUnitDamageLabel(alive.map((u) => u.typeId)),
     atkTypeTip: sharedUnitAttackTypeLabel(alive.map((u) => u.typeId)),
     speedTip: sharedUnitMoveSpeedLabel(alive.map((u) => u.typeId)),
+    moveCadenceTip: sharedUnitMoveCadenceLabel(alive.map((u) => u.typeId)),
     visionTip: sharedUnitVisionLabel(alive.map((u) => u.typeId)),
     hpMaxTip: sharedUnitHpMaxLabel(alive.map((u) => u.typeId)),
     atkCdTip: sharedUnitAttackCooldownLabel(alive.map((u) => u.typeId)),
@@ -999,6 +1007,7 @@ function structureSignature(view: SelectionPanelView): string {
       view.dmgTip ?? '',
       view.atkTypeTip ?? '',
       view.speedTip ?? '',
+      view.moveCadenceTip ?? '',
       view.visionTip ?? '',
       view.hpMaxTip ?? '',
       view.atkCdTip ?? '',
@@ -1532,6 +1541,9 @@ export function renderSelectionPanel(view: SelectionPanelView): boolean {
         }
         if (view.speedTip) {
           bits.push(`<span>${escapeHtml(view.speedTip)}</span>`);
+        }
+        if (view.moveCadenceTip) {
+          bits.push(`<span>${escapeHtml(view.moveCadenceTip)}</span>`);
         }
         if (view.visionTip) {
           bits.push(`<span>${escapeHtml(view.visionTip)}</span>`);
