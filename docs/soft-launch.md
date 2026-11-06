@@ -95,6 +95,7 @@ This doc is the honest gate before any public preview URL.
 | Lobby difficulty tip | **OK** — lobby shows selected difficulty label · blurb from match prefs | `lobbyDifficultyTipLine`, `lobby.difficultyTip` |
 | Lobby match length | **OK** — lobby shows ~min estimate from recent local summaries (default ~10 min) | `lobbyMatchLengthTipLine`, `lobby.matchLength*` |
 | Hub → Kane path | **OK** — picker cards link `./kane/`; hash forward + manifest start_url match `games/PATHS.md` | `hub.gamePlayHref`, `games/registry.test.ts` |
+| Hub Kane path tip | **OK** — Kane hub card shows Soft-launch path · /kane tip | `hubKanePathTip`, `hub.kanePathTip` |
 | Hub → Blob path | **OK** — picker cards link `./blob-evolution/`; Vite entry `main.js` guarded in registry tests | `hubLinks`, `games/PATHS.md` |
 | Soft-launch Blob path | **OK** — menu soft-launch strip lists `/blob-evolution` beside hub / `/kane` | `softLaunchStatusStrip` |
 | Hub legal footer | **OK** — Privacy / Terms footer hrefs stay `/privacy.html` and `/terms.html` after the games/ move | `hubLegalHref`, `games/privacy.html` |

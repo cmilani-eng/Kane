@@ -43,3 +43,8 @@ export function hubBlurb(id: string, fallback: string): string {
   const key = HUB_BLURB[id];
   return key ? t(key) : fallback;
 }
+
+/** Soft-launch play path tip for the Kane hub card (`/kane`). */
+export function hubKanePathTip(path = '/kane'): string {
+  return t('hub.kanePathTip', { path });
+}

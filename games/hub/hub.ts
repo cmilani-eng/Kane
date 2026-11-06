@@ -8,7 +8,7 @@ import {
   t,
 } from '../../src/i18n';
 import { GAMES, type GameEntry } from '../registry';
-import { hubBlurb, hubChrome } from './hubCopy';
+import { hubBlurb, hubChrome, hubKanePathTip } from './hubCopy';
 import { gamePlayHref, hubLegalHref } from './hubLinks';
 
 const PILL =
@@ -66,8 +66,19 @@ function gameCard(
   title.textContent = game.title;
 
   const description = document.createElement('p');
-  description.className = 'mt-2 mb-[18px] leading-normal text-muted';
+  description.className = 'mt-2 mb-2 leading-normal text-muted';
   description.textContent = hubBlurb(game.id, game.description);
+
+  const pathTip =
+    game.id === 'kane'
+      ? (() => {
+          const tip = document.createElement('p');
+          tip.className = 'mb-[18px] text-xs font-semibold tracking-wide text-gold';
+          tip.textContent = hubKanePathTip();
+          return tip;
+        })()
+      : null;
+  if (!pathTip) description.classList.add('mb-[18px]');
 
   const play = document.createElement('span');
   play.className = [
@@ -78,7 +89,9 @@ function gameCard(
   ].join(' ');
   play.textContent = playLabel;
 
-  link.append(pills, title, description, play);
+  link.append(pills, title, description);
+  if (pathTip) link.append(pathTip);
+  link.append(play);
   item.append(link);
   return item;
 }
