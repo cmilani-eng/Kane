@@ -1,7 +1,16 @@
 import { beforeEach, describe, expect, it } from 'vitest';
 import { rememberMatchPrefs } from '../../database/matchPrefs';
+import {
+  resetMatchSummaries,
+  writeMatchSummary,
+} from '../../database/matchSummary';
 import { resetLocaleForTests, setLocale } from '../../i18n';
-import { lobbyMapTipLine, lobbySetupLine, lobbyStatusLine } from './lobbyPanel';
+import {
+  lobbyMapTipLine,
+  lobbyMatchLengthTipLine,
+  lobbySetupLine,
+  lobbyStatusLine,
+} from './lobbyPanel';
 
 function memoryStorage(): Storage {
   const data = new Map<string, string>();
@@ -54,4 +63,42 @@ describe('lobby status copy', () => {
     setLocale('en-GB');
     expect(lobbySetupLine()).toBe('The Brutes  ·  Gap  ·  Hard');
   });
+
+  it('estimates match length from recent summaries, else a default tip', () => {
+    setLocale('en-GB');
+    resetMatchSummaries();
+    expect(lobbyMatchLengthTipLine()).toContain('10');
+    writeMatchSummary({
+      id: 'm-a',
+      version: 1,
+      endedAtMs: 1,
+      durationMs: 8 * 60_000,
+      result: 'victory',
+      won: true,
+      species: 'brutes',
+      difficulty: 'normal',
+      playerUnitsLeft: 1,
+      enemyUnitsLeft: 0,
+      playerBuildingsLeft: 1,
+      enemyBuildingsLeft: 0,
+      sink: 'localStorage',
+    });
+    writeMatchSummary({
+      id: 'm-b',
+      version: 1,
+      endedAtMs: 2,
+      durationMs: 12 * 60_000,
+      result: 'defeat',
+      won: false,
+      species: 'brutes',
+      difficulty: 'normal',
+      playerUnitsLeft: 0,
+      enemyUnitsLeft: 1,
+      playerBuildingsLeft: 0,
+      enemyBuildingsLeft: 1,
+      sink: 'localStorage',
+    });
+    expect(lobbyMatchLengthTipLine()).toContain('10');
+  });
 });
+
