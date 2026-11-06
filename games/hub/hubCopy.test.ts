@@ -67,10 +67,10 @@ describe('hub copy', () => {
   it('labels the Kane soft-launch play path on the hub card', () => {
     setLocale('en-GB');
     expect(hubKanePathTip()).toBe(
-      t('hub.kanePathTip', { path: '/kane' }),
+      t('hub.kanePathTip', { path: '/kane/' }),
     );
-    expect(hubKanePathTip()).toContain('/kane');
+    expect(hubKanePathTip()).toContain('/kane/');
     setLocale('pt-BR');
-    expect(hubKanePathTip()).toContain('/kane');
+    expect(hubKanePathTip()).toContain('/kane/');
   });
 });
