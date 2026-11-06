@@ -768,11 +768,15 @@ export class BattlefieldHud {
     const coreText = coreHudSummary(this.world);
     const wasCore = this.coreLine.visible;
     this.coreLine.setText(coreText).setVisible(!!coreText);
-    if (coreText.includes('Capturing')) {
+    if (coreText.includes('Win hold')) {
+      this.coreLine.setColor('#f0c75e');
+    } else if (coreText.includes('Enemy win')) {
+      this.coreLine.setColor('#e87aa8');
+    } else if (coreText.includes('Capturing')) {
       this.coreLine.setColor('#7ec8ff');
     } else if (coreText.includes('Contested')) {
       this.coreLine.setColor('#f0c75e');
-    } else if (coreText.includes('Enemy hold')) {
+    } else if (coreText.includes('Enemy capture')) {
       this.coreLine.setColor('#e87aa8');
     } else {
       this.coreLine.setColor('#c8e4ff');

@@ -17,10 +17,13 @@ export interface EndScreenOpts {
   onRematch: () => void;
   /** Ignore these objects on the zoomed main camera. */
   ignoreOnMain: (objs: Phaser.GameObjects.GameObject[]) => void;
+  /** Optional end reason for subtitle copy. */
+  reason?: 'keep' | 'wipe' | 'core_hold' | null;
 }
 
 export function showKaneEndScreen(opts: EndScreenOpts): void {
-  const { scene, win, speciesId, onMenu, onRematch, ignoreOnMain } = opts;
+  const { scene, win, speciesId, onMenu, onRematch, ignoreOnMain, reason } =
+    opts;
   const { width, height } = scene.scale;
   const species = SPECIES[speciesId];
   const accent = win ? 0xf0c75e : 0xe85a5a;
@@ -112,13 +115,20 @@ export function showKaneEndScreen(opts: EndScreenOpts): void {
     .setAlpha(0);
   root.push(tag);
 
+  const subtitle =
+    reason === 'core_hold'
+      ? win
+        ? `CORE held — ${species.name} secure the field.`
+        : `Enemy held the CORE — ${species.name} need a rematch.`
+      : win
+        ? `Enemy hall destroyed — ${species.name} claim the field.`
+        : `Your hall fell — ${species.name} need a rematch.`;
+
   const sub = scene.add
     .text(
       width / 2,
       height * 0.48 + panelH * 0.22,
-      win
-        ? `Enemy hall destroyed — ${species.name} claim the field.`
-        : `Your hall fell — ${species.name} need a rematch.`,
+      subtitle,
       {
         fontFamily: 'system-ui, sans-serif',
         fontSize: '15px',

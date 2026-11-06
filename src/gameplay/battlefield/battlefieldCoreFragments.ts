@@ -13,6 +13,10 @@ export const CORE_FRAGMENT = {
   captureMs: 2800,
   radius: 22,
   claimCrystals: 8,
+  /** Own this many fragments to start the victory hold clock. */
+  holdNeeded: 2,
+  /** Hold duration to win once threshold is met (Wardstone analog). */
+  holdWinMs: 60_000,
 } as const;
 
 export interface CoreFragment {
@@ -57,6 +61,92 @@ export function teamPresent(
   return { player, enemy };
 }
 
+export function countOwnedCores(
+  world: BattlefieldWorld,
+  team: BattlefieldTeam,
+): number {
+  let n = 0;
+  for (const f of world.coreFragments ?? []) {
+    if (f.owner === team) n++;
+  }
+  return n;
+}
+
+/** Tick victory-hold clocks (Wardstone-style accumulate / 2× decay). */
+export function tickCoreHoldTimers(world: BattlefieldWorld, dtMs: number): void {
+  if (world.playerCoreHoldMs == null) world.playerCoreHoldMs = 0;
+  if (world.enemyCoreHoldMs == null) world.enemyCoreHoldMs = 0;
+  const needed = CORE_FRAGMENT.holdNeeded;
+  for (const team of ['player', 'enemy'] as const) {
+    const owned = countOwnedCores(world, team);
+    if (owned >= needed) {
+      if (team === 'player') world.playerCoreHoldMs += dtMs;
+      else world.enemyCoreHoldMs += dtMs;
+    } else if (team === 'player') {
+      world.playerCoreHoldMs = Math.max(0, world.playerCoreHoldMs - dtMs * 2);
+    } else {
+      world.enemyCoreHoldMs = Math.max(0, world.enemyCoreHoldMs - dtMs * 2);
+    }
+  }
+}
+
+export type CoreHoldBannerState = {
+  visible: boolean;
+  /** Whose hold clock is the threat/win being shown. */
+  side: 'player' | 'enemy' | null;
+  owned: number;
+  needed: number;
+  /** ms remaining until that side wins. */
+  remainMs: number;
+  totalMs: number;
+};
+
+/** Glanceable victory-hold banner payload (only while a side is at threshold). */
+export function coreHoldBannerState(world: BattlefieldWorld): CoreHoldBannerState {
+  const needed = CORE_FRAGMENT.holdNeeded;
+  const totalMs = CORE_FRAGMENT.holdWinMs;
+  const playerOwned = countOwnedCores(world, 'player');
+  const enemyOwned = countOwnedCores(world, 'enemy');
+  const playerMs = world.playerCoreHoldMs ?? 0;
+  const enemyMs = world.enemyCoreHoldMs ?? 0;
+
+  if (playerOwned >= needed) {
+    return {
+      visible: true,
+      side: 'player',
+      owned: playerOwned,
+      needed,
+      remainMs: Math.max(0, totalMs - playerMs),
+      totalMs,
+    };
+  }
+  if (enemyOwned >= needed) {
+    return {
+      visible: true,
+      side: 'enemy',
+      owned: enemyOwned,
+      needed,
+      remainMs: Math.max(0, totalMs - enemyMs),
+      totalMs,
+    };
+  }
+  return {
+    visible: false,
+    side: null,
+    owned: 0,
+    needed,
+    remainMs: totalMs,
+    totalMs,
+  };
+}
+
+function formatHoldClock(ms: number): string {
+  const totalSec = Math.max(0, Math.ceil(ms / 1000));
+  const m = Math.floor(totalSec / 60);
+  const s = totalSec % 60;
+  return `${m}:${s.toString().padStart(2, '0')}`;
+}
+
 /** Compact HUD line for CORE ownership + active hold/contest. */
 export function coreHudSummary(world: BattlefieldWorld): string {
   const list = world.coreFragments ?? [];
@@ -88,9 +178,22 @@ export function coreHudSummary(world: BattlefieldWorld): string {
     }
     if (f.captureTeam === 'enemy' && f.captureProgress > 0.02) {
       const pct = Math.floor(f.captureProgress * 100);
-      const text = `Enemy hold ${pct}%`;
+      const text = `Enemy capture ${pct}%`;
       if (!best || best.priority < 1) best = { priority: 1, text };
     }
+  }
+
+  const banner = coreHoldBannerState(world);
+  if (banner.visible && banner.side === 'player') {
+    best = {
+      priority: 4,
+      text: `Win hold ${banner.owned}/${banner.needed} · ${formatHoldClock(banner.remainMs)}`,
+    };
+  } else if (banner.visible && banner.side === 'enemy') {
+    best = {
+      priority: 4,
+      text: `Enemy win ${banner.owned}/${banner.needed} · ${formatHoldClock(banner.remainMs)}`,
+    };
   }
 
   const ownership = `You ${ours} · Enemy ${theirs}${open > 0 ? ` · ${open} open` : ''}`;
@@ -160,4 +263,6 @@ export function tickCoreFragments(world: BattlefieldWorld, dtMs: number): void {
       );
     }
   }
+
+  tickCoreHoldTimers(world, dtMs);
 }
