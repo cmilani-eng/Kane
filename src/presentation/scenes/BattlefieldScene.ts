@@ -1591,6 +1591,7 @@ export class BattlefieldScene extends Phaser.Scene {
       crystals: wallet.magic_crystals,
       supply: livingByTeam(this.world, 'player'),
       supplyCap: flags.unitCap,
+      nowMs: this.matchElapsedMs,
     });
   }
 
