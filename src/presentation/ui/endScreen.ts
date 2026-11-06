@@ -5,14 +5,20 @@
 import Phaser from 'phaser';
 import { showPostMatchInterstitialStub } from '../../ads/adsSdkStub';
 import { BRAND } from '../../config/brand';
+import type { SkirmishMapId } from '../../data/skirmishMaps';
 import type { SpeciesId } from '../../data/speciesStub';
-import { speciesName, t } from '../../i18n';
+import { mapCopy, speciesName, t } from '../../i18n';
 import { playEndFanfare, playSfx } from '../audio/sfx';
+import { formatMatchClock } from './matchClock';
 
 export interface EndScreenOpts {
   scene: Phaser.Scene;
   win: boolean;
   speciesId: SpeciesId;
+  /** Skirmish map played (shown with match duration). */
+  mapId?: SkirmishMapId;
+  /** Match elapsed ms → mm:ss on the panel. */
+  durationMs?: number;
   onMenu: () => void;
   /** Restart skirmish with the same species + difficulty. */
   onRematch: () => void;
@@ -23,8 +29,17 @@ export interface EndScreenOpts {
 }
 
 export function showKaneEndScreen(opts: EndScreenOpts): void {
-  const { scene, win, speciesId, onMenu, onRematch, ignoreOnMain, reason } =
-    opts;
+  const {
+    scene,
+    win,
+    speciesId,
+    mapId,
+    durationMs,
+    onMenu,
+    onRematch,
+    ignoreOnMain,
+    reason,
+  } = opts;
   const { width, height } = scene.scale;
   const accent = win ? 0xf0c75e : 0xe85a5a;
   const accentHex = win ? '#f0c75e' : '#e87a7a';
@@ -40,7 +55,7 @@ export function showKaneEndScreen(opts: EndScreenOpts): void {
   root.push(dim);
 
   const panelW = Math.min(440, width - 32);
-  const panelH = Math.min(360, height * 0.62);
+  const panelH = Math.min(380, height * 0.66);
   const panel = scene.add
     .rectangle(width / 2, height * 0.48, panelW, panelH, wash, 0.92)
     .setStrokeStyle(2, accent, 0.85)
@@ -128,7 +143,7 @@ export function showKaneEndScreen(opts: EndScreenOpts): void {
   const sub = scene.add
     .text(
       width / 2,
-      height * 0.48 + panelH * 0.22,
+      height * 0.48 + panelH * 0.18,
       subtitle,
       {
         fontFamily: 'system-ui, sans-serif',
@@ -144,8 +159,29 @@ export function showKaneEndScreen(opts: EndScreenOpts): void {
     .setAlpha(0);
   root.push(sub);
 
+  const mapLabel = mapId ? mapCopy(mapId).label : '';
+  const clock =
+    durationMs != null ? formatMatchClock(durationMs) : '';
+  const metaText =
+    mapLabel && clock
+      ? t('end.meta', { map: mapLabel, clock })
+      : mapLabel || clock;
+  const meta = scene.add
+    .text(width / 2, height * 0.48 + panelH * 0.3, metaText, {
+      fontFamily: 'system-ui, sans-serif',
+      fontSize: '13px',
+      color: '#9eb4c8',
+      align: 'center',
+    })
+    .setOrigin(0.5)
+    .setScrollFactor(0)
+    .setDepth(202)
+    .setAlpha(0)
+    .setVisible(!!metaText);
+  root.push(meta);
+
   const rematchBtn = scene.add
-    .text(width / 2, height * 0.48 + panelH * 0.34, t('end.rematch'), {
+    .text(width / 2, height * 0.48 + panelH * 0.4, t('end.rematch'), {
       fontFamily: 'Georgia, "Times New Roman", serif',
       fontSize: '18px',
       color: '#fff8e8',
@@ -166,7 +202,7 @@ export function showKaneEndScreen(opts: EndScreenOpts): void {
   root.push(rematchBtn);
 
   const menuBtn = scene.add
-    .text(width / 2, height * 0.48 + panelH * 0.48, t('end.menu'), {
+    .text(width / 2, height * 0.48 + panelH * 0.54, t('end.menu'), {
       fontFamily: 'Georgia, "Times New Roman", serif',
       fontSize: '16px',
       color: '#fff8e8',
@@ -208,7 +244,7 @@ export function showKaneEndScreen(opts: EndScreenOpts): void {
     ease: 'Back.easeOut',
   });
   scene.tweens.add({
-    targets: [brand, tag, sub, rematchBtn, menuBtn],
+    targets: [brand, tag, sub, meta, rematchBtn, menuBtn],
     alpha: 1,
     duration: 400,
     delay: 180,

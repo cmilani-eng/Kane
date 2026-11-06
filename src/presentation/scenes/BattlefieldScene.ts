@@ -1261,6 +1261,8 @@ export class BattlefieldScene extends Phaser.Scene {
       scene: this,
       win: result === 'victory',
       speciesId: this.world.speciesId,
+      mapId: this.world.mapId,
+      durationMs: Math.max(0, Math.floor(this.matchElapsedMs)),
       reason: matchEndReason(this.world, result),
       onMenu: () => this.scene.start('Menu'),
       onRematch: () => this.rematchSameSkirmish(),
