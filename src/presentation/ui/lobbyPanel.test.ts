@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it } from 'vitest';
 import { rememberMatchPrefs } from '../../database/matchPrefs';
 import { resetLocaleForTests, setLocale } from '../../i18n';
-import { lobbyMapTipLine, lobbyStatusLine } from './lobbyPanel';
+import { lobbyMapTipLine, lobbySetupLine, lobbyStatusLine } from './lobbyPanel';
 
 function memoryStorage(): Storage {
   const data = new Map<string, string>();
@@ -47,5 +47,11 @@ describe('lobby status copy', () => {
     expect(tip).toContain('Diagonal bases');
     setLocale('pt-BR');
     expect(lobbyMapTipLine()).toContain('Cume');
+  });
+
+  it('pairs map and difficulty for lobby setup context', () => {
+    rememberMatchPrefs('brutes', 'hard', 'gap');
+    setLocale('en-GB');
+    expect(lobbySetupLine()).toBe('Gap  ·  Hard');
   });
 });
