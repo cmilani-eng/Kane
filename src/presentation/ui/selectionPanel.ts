@@ -9,7 +9,7 @@ import {
   type HeroAbilitySlot,
 } from '../../data/heroes';
 import { RESOURCES } from '../../data/resources';
-import { SPECIES } from '../../data/speciesStub';
+import { SPECIES, speciesCounterTip } from '../../data/speciesStub';
 import { getUnitType, type UnitTypeId } from '../../data/units';
 import type {
   BattlefieldBuilding,
@@ -582,7 +582,7 @@ export function buildSelectionView(
     return {
       kind: 'building',
       title: b.name,
-      flavor: `${species.name} · ${species.uniqueMechanic}`,
+      flavor: `${species.name} · ${species.uniqueMechanic} · ${speciesCounterTip(bdef.speciesId)}`,
       hp: b.hp,
       maxHp: b.maxHp,
       ready,
@@ -626,7 +626,7 @@ export function buildSelectionView(
       kind: 'units',
       count: 1,
       title: u.name,
-      flavor: `${species.name} · ${species.motto}${cargo}`,
+      flavor: `${species.name} · ${speciesCounterTip(u.speciesId)}${cargo}`,
       hp: u.hp,
       maxHp: u.maxHp,
       dmg: u.dmg,
@@ -645,7 +645,7 @@ export function buildSelectionView(
   const speciesIds = new Set(alive.map((u) => u.speciesId));
   const flavor =
     speciesIds.size === 1
-      ? `${SPECIES[alive[0]!.speciesId].name} · ${alive.length} selected`
+      ? `${SPECIES[alive[0]!.speciesId].name} · ${alive.length} selected · ${speciesCounterTip(alive[0]!.speciesId)}`
       : `${alive.length} selected · Mixed species`;
   const hp = alive.reduce((s, u) => s + u.hp, 0);
   const maxHp = alive.reduce((s, u) => s + u.maxHp, 0);

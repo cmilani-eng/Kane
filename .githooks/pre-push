@@ -1,0 +1,19 @@
+#!/bin/sh
+# Block a push when ESLint fails. Same command as CI (`npm run lint`).
+# Bypass once with: git push --no-verify
+
+set -e
+
+repo_root=$(CDPATH= cd -- "$(dirname "$0")/.." && pwd)
+cd "$repo_root" || exit 1
+
+if ! command -v npm >/dev/null 2>&1; then
+  echo "pre-push: npm is not on PATH, so lint did not run." >&2
+  exit 1
+fi
+
+echo "pre-push: npm run lint"
+if ! npm run lint </dev/null; then
+  echo "pre-push: lint failed. Fix the issues, or push with --no-verify." >&2
+  exit 1
+fi

@@ -9,6 +9,7 @@
     "build": "tsc && vite build",
     "preview": "vite preview --host",
     "lint": "eslint .",
+    "prepare": "git rev-parse --is-inside-work-tree >/dev/null 2>&1 && git config core.hooksPath .githooks || true",
     "test": "vitest run --dir src",
     "emulators": "firebase emulators:start",
     "emulators:exec": "firebase emulators:exec --only auth,database,firestore",

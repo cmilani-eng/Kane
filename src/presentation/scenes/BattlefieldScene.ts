@@ -311,6 +311,9 @@ export class BattlefieldScene extends Phaser.Scene {
         this.cameraCtl.centerOn(result.focus.x, result.focus.y);
       }
     };
+    this.hud.onUnderAttackJump = (x, y) => {
+      this.cameraCtl.centerOn(x, y);
+    };
     this.controlsHelp = createControlsHelpPanel({});
     mountSelectionPanel({
       stop: () => this.issueStopCommand(),
@@ -550,10 +553,20 @@ export class BattlefieldScene extends Phaser.Scene {
     this.setPaused(!this.paused);
   }
 
+  private pauseSnapshot() {
+    return {
+      elapsedMs: this.matchElapsedMs,
+      supplyCurrent: livingByTeam(this.world, 'player'),
+      supplyCap: flags.unitCap,
+    };
+  }
+
   private setPaused(value: boolean): void {
     if (this.matchResult !== 'ongoing') return;
     if (value === this.paused) {
-      if (value && !this.pauseMenu.isOpen) this.pauseMenu.show();
+      if (value && !this.pauseMenu.isOpen) {
+        this.pauseMenu.show(this.pauseSnapshot());
+      }
       return;
     }
     this.paused = value;
@@ -563,7 +576,7 @@ export class BattlefieldScene extends Phaser.Scene {
       this.ghostGfx.clear();
       this.boxGfx.clear();
       this.cameraCtl.suppressPan = true;
-      this.pauseMenu.show();
+      this.pauseMenu.show(this.pauseSnapshot());
       playSfx('ui');
     } else {
       this.pauseMenu.hide();
@@ -987,6 +1000,7 @@ export class BattlefieldScene extends Phaser.Scene {
       this.scale.height,
       alert.lifeMs,
       alert.maxLifeMs,
+      alert.severity === 'critical',
     );
   }
 
@@ -1037,7 +1051,12 @@ export class BattlefieldScene extends Phaser.Scene {
       if (alert?.pulse) {
         alert.pulse = false;
         playSfx('alert');
-        this.cameraCtl.softNudgeToward(alert.x, alert.y);
+        const critical = alert.severity === 'critical';
+        this.cameraCtl.softNudgeToward(
+          alert.x,
+          alert.y,
+          critical ? 0.38 : 0.22,
+        );
       }
       tickTutorial(this.world, this.tutorial, delta);
       const result = evaluateMatch(this.world);
@@ -1071,7 +1090,7 @@ export class BattlefieldScene extends Phaser.Scene {
     this.refreshHud(delta);
     this.coach.refresh();
     this.coreBanner.refresh(delta);
-    this.minimap.refresh(delta);
+    this.minimap.refresh(delta, this.selectedBuilding);
   }
 
   private showEndScreen(result: MatchResult): void {

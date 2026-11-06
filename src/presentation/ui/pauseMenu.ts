@@ -1,13 +1,21 @@
 /**
  * In-match pause overlay — resume, mute, volume, quit to menu.
+ * Also shows a frozen match-clock + supply snapshot.
  * ScrollFactor 0; ignore on the zoomed world camera.
  */
 import Phaser from 'phaser';
 import { BRAND } from '../../config/brand';
 import { subscribeLocale, t } from '../../i18n';
 import { isSfxMuted, playSfx, setSfxMuted } from '../audio/sfx';
+import { formatMatchClock } from './battlefieldHud';
 import { addLocalePicker } from './localePicker';
 import { createVolumeSlider, type VolumeSliderHandle } from './volumeSlider';
+
+export interface PauseMenuSnapshot {
+  elapsedMs: number;
+  supplyCurrent: number;
+  supplyCap: number;
+}
 
 export interface PauseMenuOpts {
   scene: Phaser.Scene;
@@ -26,6 +34,11 @@ export class PauseMenu {
   private volume: VolumeSliderHandle | null = null;
   private localeUnsub: (() => void) | null = null;
   private open = false;
+  private snapshot: PauseMenuSnapshot = {
+    elapsedMs: 0,
+    supplyCurrent: 0,
+    supplyCap: 36,
+  };
 
   constructor(opts: PauseMenuOpts) {
     this.scene = opts.scene;
@@ -38,7 +51,8 @@ export class PauseMenu {
     return this.open;
   }
 
-  show(): void {
+  show(snapshot?: PauseMenuSnapshot): void {
+    if (snapshot) this.snapshot = snapshot;
     if (this.open) return;
     this.open = true;
     this.build();
@@ -76,7 +90,7 @@ export class PauseMenu {
   private build(): void {
     const { width, height } = this.scene.scale;
     const panelW = Math.min(360, width - 40);
-    const panelH = Math.min(460, height * 0.78);
+    const panelH = Math.min(520, height * 0.84);
     const cx = width / 2;
     const cy = height * 0.48;
 
@@ -95,7 +109,7 @@ export class PauseMenu {
     this.root.push(panel);
 
     const title = this.scene.add
-      .text(cx, cy - panelH * 0.42, t('pause.paused'), {
+      .text(cx, cy - panelH * 0.44, t('pause.paused'), {
         fontFamily: 'Georgia, "Times New Roman", serif',
         fontSize: Math.min(32, width * 0.08) + 'px',
         color: '#f5e6c8',
@@ -104,7 +118,7 @@ export class PauseMenu {
       .setScrollFactor(0)
       .setDepth(222);
     const brand = this.scene.add
-      .text(cx, cy - panelH * 0.32, BRAND.name, {
+      .text(cx, cy - panelH * 0.36, BRAND.name, {
         fontFamily: 'system-ui, sans-serif',
         fontSize: '13px',
         color: '#9eb4c8',
@@ -112,10 +126,32 @@ export class PauseMenu {
       .setOrigin(0.5)
       .setScrollFactor(0)
       .setDepth(222);
-    this.root.push(title, brand);
 
-    const btnY0 = cy - panelH * 0.18;
-    const gap = Math.min(46, panelH * 0.13);
+    const clock = formatMatchClock(this.snapshot.elapsedMs);
+    const supply = t('pause.supply', {
+      current: this.snapshot.supplyCurrent,
+      cap: this.snapshot.supplyCap,
+    });
+    const nearCap =
+      this.snapshot.supplyCurrent >=
+      Math.floor(this.snapshot.supplyCap * 0.85);
+    const atCap =
+      this.snapshot.supplyCurrent >= this.snapshot.supplyCap;
+    const snap = this.scene.add
+      .text(cx, cy - panelH * 0.27, `${t('pause.match', { clock })}\n${supply}`, {
+        fontFamily: 'system-ui, sans-serif',
+        fontSize: '14px',
+        color: atCap ? '#e87aa8' : nearCap ? '#f0c75e' : '#d7e6f2',
+        align: 'center',
+        lineSpacing: 6,
+      })
+      .setOrigin(0.5)
+      .setScrollFactor(0)
+      .setDepth(222);
+    this.root.push(title, brand, snap);
+
+    const btnY0 = cy - panelH * 0.14;
+    const gap = Math.min(44, panelH * 0.11);
     this.root.push(
       this.makeBtn(cx, btnY0, t('pause.resume'), () => {
         this.hide();
