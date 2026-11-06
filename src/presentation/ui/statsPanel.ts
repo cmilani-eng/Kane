@@ -28,6 +28,7 @@ import {
   formatAdminAllowlist,
   localAdminCandidateId,
 } from '../../database/adminAllowlist';
+import { formatMatchClock } from './matchClock';
 import {
   formatModerationLog,
   recordModerationEvent,
@@ -79,15 +80,12 @@ function recentMatchesText(store: MatchSummaryStore, limit = 4): string {
     t('stats.recentHead', { n: Math.min(limit, store.summaries.length) }),
   ];
   for (const s of store.summaries.slice(0, limit)) {
-    const mins = Math.max(0, Math.round(s.durationMs / 60000));
-    const secs = Math.max(0, Math.round((s.durationMs % 60000) / 1000));
     lines.push(
       t('stats.matchLine', {
         result: s.won ? t('stats.win') : t('stats.loss'),
         species: speciesName(s.species),
         difficulty: difficultyCopy(s.difficulty).label,
-        mins,
-        secs,
+        clock: formatMatchClock(s.durationMs),
       }),
     );
   }
