@@ -16,9 +16,9 @@ const cleanups = new WeakMap<HTMLElement, () => void>();
 
 /** Tailwind text classes for the DOM stock strip (match Phaser SUPPLY_TONE_COLOR). */
 export const STOCK_SUPPLY_CLASS: Record<SupplyTone, string> = {
-  ok: 'text-[#d7e6f2]',
-  near: 'text-[#f0c75e]',
-  full: 'text-[#e87aa8]',
+  ok: 'text-kane-ink',
+  near: 'text-kane-gold',
+  full: 'text-kane-pink',
 };
 
 export function stockSupplyClass(
@@ -63,20 +63,20 @@ export function mountStockStrip(): void {
   root.setAttribute('aria-live', 'polite');
   root.className = [
     'pointer-events-none fixed z-30 flex items-center gap-3',
-    'rounded-sm border border-[#3a4555] bg-[#0f1a2e]/90',
-    'px-3 font-sans text-sm font-semibold text-[#f5e6c8]',
+    'rounded-sm border border-kane-slate bg-kane-night/90',
+    'px-3 font-sans text-sm font-semibold text-kane-cream',
   ].join(' ');
   root.innerHTML = `
     <div data-slot="gold" class="flex items-center gap-1.5">
-      <span class="size-3 shrink-0 rounded-full bg-[#f0c75e]" aria-hidden="true"></span>
+      <span class="size-3 shrink-0 rounded-full bg-kane-gold" aria-hidden="true"></span>
       <span data-value></span>
     </div>
     <div data-slot="crystals" class="flex items-center gap-1.5">
-      <span class="size-3 shrink-0 rounded-full bg-[#7ec8ff]" aria-hidden="true"></span>
+      <span class="size-3 shrink-0 rounded-full bg-kane-ice" aria-hidden="true"></span>
       <span data-value></span>
     </div>
-    <div data-slot="supply" class="flex items-center gap-1.5 text-[#d7e6f2]">
-      <span class="size-3 shrink-0 rounded-full bg-[#b8c9d9]" aria-hidden="true"></span>
+    <div data-slot="supply" class="flex items-center gap-1.5 text-kane-ink">
+      <span class="size-3 shrink-0 rounded-full bg-kane-fog" aria-hidden="true"></span>
       <span data-value></span>
     </div>
   `;
