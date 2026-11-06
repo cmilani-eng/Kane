@@ -33,121 +33,28 @@ export interface AuthPanelOpts {
 }
 
 const ROOT_ID = 'kane-auth-panel';
-const STYLE_ID = 'kane-auth-panel-style';
-
-function ensureStyle(): void {
-  if (document.getElementById(STYLE_ID)) return;
-  const style = document.createElement('style');
-  style.id = STYLE_ID;
-  style.textContent = `
-    #${ROOT_ID} {
-      position: fixed; inset: 0; z-index: 10000;
-      display: flex; align-items: center; justify-content: center;
-      background: rgba(10, 18, 32, 0.84);
-      font-family: system-ui, sans-serif;
-      padding: 16px;
-    }
-    #${ROOT_ID} .kane-auth-card {
-      position: relative;
-      width: min(400px, 100%);
-      background: #122033;
-      border: 2px solid rgba(240, 199, 94, 0.85);
-      border-radius: 4px;
-      padding: 22px 20px 18px;
-      color: #d7e6f2;
-      box-sizing: border-box;
-    }
-    #${ROOT_ID} .kane-auth-card::before {
-      content: '';
-      position: absolute; left: 2px; right: 2px; top: 2px;
-      height: 4px; background: rgba(240, 199, 94, 0.9);
-      pointer-events: none;
-    }
-    #${ROOT_ID} .kane-auth-brand {
-      margin: 4px 0 2px;
-      font-family: Georgia, "Times New Roman", serif;
-      font-size: 13px; font-weight: bold; color: #f0c75e;
-      text-align: center; letter-spacing: 0.04em;
-    }
-    #${ROOT_ID} h2 {
-      margin: 0 0 4px;
-      font-family: Georgia, "Times New Roman", serif;
-      font-size: 26px; font-weight: normal; color: #f5e6c8;
-      text-align: center;
-    }
-    #${ROOT_ID} .kane-auth-sub {
-      margin: 0 0 14px; font-size: 13px; color: #9eb4c8; text-align: center;
-    }
-    #${ROOT_ID} label {
-      display: block; font-size: 11px; color: #9eb4c8; margin: 10px 0 4px;
-    }
-    #${ROOT_ID} input {
-      width: 100%; box-sizing: border-box;
-      background: #0a1220; border: 1px solid #3a4555; color: #fff8e8;
-      padding: 10px 12px; font-size: 15px; border-radius: 2px;
-    }
-    #${ROOT_ID} input:focus { outline: 1px solid #f0c75e; }
-    #${ROOT_ID} .kane-auth-err {
-      min-height: 18px; margin: 10px 0 0; font-size: 12px; color: #e87a7a;
-      text-align: center;
-    }
-    #${ROOT_ID} .kane-auth-ok {
-      min-height: 18px; margin: 10px 0 0; font-size: 12px; color: #6ecfbf;
-      text-align: center;
-    }
-    #${ROOT_ID} .kane-auth-actions {
-      display: flex; flex-direction: column; gap: 8px; margin-top: 14px;
-    }
-    #${ROOT_ID} button {
-      font-family: system-ui, sans-serif;
-      font-size: 14px; padding: 11px 14px; cursor: pointer;
-      border: none; color: #fff8e8; background: #2a3a50;
-    }
-    #${ROOT_ID} button.primary,
-    #${ROOT_ID} button.ghost {
-      min-height: 48px; text-align: center; white-space: normal; line-height: 1.25;
-    }
-    #${ROOT_ID} button.primary { background: #3a5530; color: #f0c75e; }
-    #${ROOT_ID} button.ghost { background: #3a4555; font-size: 13px; }
-    #${ROOT_ID} button.linkish {
-      background: transparent; color: #7ec8ff;
-      font-size: 12px; padding: 6px;
-    }
-    #${ROOT_ID} button:disabled { opacity: 0.55; cursor: wait; }
-    #${ROOT_ID} .kane-auth-row { display: flex; justify-content: space-between; gap: 8px; }
-    #${ROOT_ID} .kane-auth-quiet {
-      margin: 10px 0 0; font-size: 11px; color: #6a7f94; text-align: center;
-    }
-    @media (max-height: 499px) {
-      #${ROOT_ID} {
-        align-items: flex-start;
-        overflow: auto;
-        padding: 8px 12px;
-      }
-      #${ROOT_ID} .kane-auth-card {
-        width: min(720px, 100%);
-        padding: 12px 16px 10px;
-      }
-      #${ROOT_ID} h2 { font-size: 20px; margin: 0; }
-      #${ROOT_ID} .kane-auth-sub { margin: 0 0 6px; }
-      #${ROOT_ID} label { margin: 4px 0 2px; }
-      #${ROOT_ID} input { padding: 7px 10px; }
-      #${ROOT_ID} .kane-auth-actions {
-        flex-direction: row;
-        flex-wrap: wrap;
-        align-items: center;
-        margin-top: 8px;
-      }
-      #${ROOT_ID} .kane-auth-actions > button.primary,
-      #${ROOT_ID} .kane-auth-actions > button.ghost {
-        flex: 1 1 140px;
-      }
-      #${ROOT_ID} .kane-auth-row { flex: 1 1 100%; margin: 0; }
-      #${ROOT_ID} .kane-auth-quiet { margin: 6px 0 0; }
-    }
-  `;
-  document.head.appendChild(style);
-}
+const CARD_GLINT =
+  "before:pointer-events-none before:absolute before:inset-x-0.5 before:top-0.5 before:h-1 before:bg-kane-gold/90 before:content-['']";
+const ROOT_CLASS = [
+  'fixed inset-0 z-[10000] flex items-center justify-center bg-kane-scrim p-4 font-sans',
+  'short:items-start short:overflow-auto short:px-3 short:py-2',
+].join(' ');
+const CARD_CLASS = [
+  'relative box-border w-[min(400px,100%)] rounded border-2 border-kane-gold/85 bg-kane-card',
+  'px-5 pt-[22px] pb-[18px] text-kane-ink',
+  'short:w-[min(720px,100%)] short:px-4 short:pt-3 short:pb-2.5',
+  CARD_GLINT,
+].join(' ');
+const LABEL = 'mt-2.5 mb-1 block text-[11px] text-kane-muted short:mt-1 short:mb-0.5';
+const INPUT = [
+  'box-border w-full rounded-xs border border-kane-slate bg-kane-deep px-3 py-2.5 text-[15px]',
+  'text-kane-parchment focus:outline-1 focus:outline-kane-gold short:px-2.5 short:py-[7px]',
+].join(' ');
+const BUTTON = 'cursor-pointer border-none font-sans disabled:cursor-wait disabled:opacity-55';
+const BIG_BUTTON = `${BUTTON} min-h-12 px-3.5 py-[11px] text-center leading-[1.25] whitespace-normal short:flex-[1_1_140px]`;
+const PRIMARY = `${BIG_BUTTON} bg-kane-moss text-sm text-kane-gold`;
+const GHOST = `${BIG_BUTTON} bg-kane-slate text-[13px] text-kane-parchment`;
+const LINKISH = `${BUTTON} bg-transparent p-1.5 text-xs text-kane-ice`;
 
 function destroy(): void {
   document.getElementById(ROOT_ID)?.remove();
@@ -155,7 +62,6 @@ function destroy(): void {
 
 export function showAuthPanel(opts: AuthPanelOpts): void {
   destroy();
-  ensureStyle();
   playSfx('ui');
 
   let mode: AuthPanelMode = opts.mode ?? 'login';
@@ -163,16 +69,17 @@ export function showAuthPanel(opts: AuthPanelOpts): void {
 
   const root = document.createElement('div');
   root.id = ROOT_ID;
+  root.className = ROOT_CLASS;
   root.innerHTML = `
-    <div class="kane-auth-card" role="dialog" aria-modal="true" aria-labelledby="kane-auth-title">
-      <div class="kane-auth-brand">${BRAND.name}</div>
-      <h2 id="kane-auth-title">Account</h2>
-      <p class="kane-auth-sub" id="kane-auth-sub"></p>
+    <div class="${CARD_CLASS}" role="dialog" aria-modal="true" aria-labelledby="kane-auth-title">
+      <div class="mt-1 mb-0.5 text-center font-kane-serif text-[13px] font-bold tracking-[0.04em] text-kane-gold">${BRAND.name}</div>
+      <h2 class="mb-1 text-center font-kane-serif text-[26px] text-kane-cream short:m-0 short:text-xl" id="kane-auth-title">Account</h2>
+      <p class="mb-3.5 text-center text-[13px] text-kane-muted short:mb-1.5" id="kane-auth-sub"></p>
       <div id="kane-auth-fields"></div>
-      <p class="kane-auth-err" id="kane-auth-err" hidden></p>
-      <p class="kane-auth-ok" id="kane-auth-ok" hidden></p>
-      <div class="kane-auth-actions" id="kane-auth-actions"></div>
-      <p class="kane-auth-quiet" id="kane-auth-quiet"></p>
+      <p class="mt-2.5 min-h-[18px] text-center text-xs text-kane-danger" id="kane-auth-err" hidden></p>
+      <p class="mt-2.5 min-h-[18px] text-center text-xs text-kane-teal" id="kane-auth-ok" hidden></p>
+      <div class="mt-3.5 flex flex-col gap-2 short:mt-2 short:flex-row short:flex-wrap short:items-center" id="kane-auth-actions"></div>
+      <p class="mt-2.5 text-center text-[11px] text-kane-quiet short:mt-1.5" id="kane-auth-quiet"></p>
     </div>
   `;
   document.body.appendChild(root);
@@ -228,25 +135,25 @@ export function showAuthPanel(opts: AuthPanelOpts): void {
     fieldsEl.innerHTML = '';
     if (mode === 'signup') {
       fieldsEl.innerHTML += `
-        <label for="kane-auth-name">${t('auth.displayName')}</label>
-        <input id="kane-auth-name" type="text" maxlength="32" autocomplete="nickname" placeholder="${t('auth.displayPlaceholder')}" />
+        <label class="${LABEL}" for="kane-auth-name">${t('auth.displayName')}</label>
+        <input class="${INPUT}" id="kane-auth-name" type="text" maxlength="32" autocomplete="nickname" placeholder="${t('auth.displayPlaceholder')}" />
       `;
     }
     fieldsEl.innerHTML += `
-      <label for="kane-auth-email">${t('auth.email')}</label>
-      <input id="kane-auth-email" type="email" autocomplete="email" required />
+      <label class="${LABEL}" for="kane-auth-email">${t('auth.email')}</label>
+      <input class="${INPUT}" id="kane-auth-email" type="email" autocomplete="email" required />
     `;
     if (mode !== 'reset') {
       fieldsEl.innerHTML += `
-        <label for="kane-auth-pass">${t('auth.password')}</label>
-        <input id="kane-auth-pass" type="password" autocomplete="${mode === 'signup' ? 'new-password' : 'current-password'}" minlength="6" required />
+        <label class="${LABEL}" for="kane-auth-pass">${t('auth.password')}</label>
+        <input class="${INPUT}" id="kane-auth-pass" type="password" autocomplete="${mode === 'signup' ? 'new-password' : 'current-password'}" minlength="6" required />
       `;
     }
 
     actionsEl.innerHTML = '';
     const primary = document.createElement('button');
     primary.type = 'button';
-    primary.className = 'primary';
+    primary.className = PRIMARY;
     primary.textContent =
       mode === 'login' ? t('auth.login') : mode === 'signup' ? t('auth.signup') : t('auth.sendReset');
     primary.disabled = !sdk || busy;
@@ -256,7 +163,7 @@ export function showAuthPanel(opts: AuthPanelOpts): void {
     if (opts.allowGuest && (opts.onGuest || sdk)) {
       const guest = document.createElement('button');
       guest.type = 'button';
-      guest.className = 'ghost';
+      guest.className = GHOST;
       guest.disabled = busy;
       guest.textContent = sdk ? t('auth.guest') : t('auth.guestLocal');
       guest.onclick = () => void continueAsGuest();
@@ -264,11 +171,11 @@ export function showAuthPanel(opts: AuthPanelOpts): void {
     }
 
     const row = document.createElement('div');
-    row.className = 'kane-auth-row';
+    row.className = 'flex justify-between gap-2 short:m-0 short:flex-[1_1_100%]';
     if (mode === 'login') {
       const toSignup = document.createElement('button');
       toSignup.type = 'button';
-      toSignup.className = 'linkish';
+      toSignup.className = LINKISH;
       toSignup.textContent = t('auth.signup');
       toSignup.onclick = () => {
         mode = 'signup';
@@ -276,7 +183,7 @@ export function showAuthPanel(opts: AuthPanelOpts): void {
       };
       const toReset = document.createElement('button');
       toReset.type = 'button';
-      toReset.className = 'linkish';
+      toReset.className = LINKISH;
       toReset.textContent = t('auth.forgot');
       toReset.onclick = () => {
         mode = 'reset';
@@ -286,7 +193,7 @@ export function showAuthPanel(opts: AuthPanelOpts): void {
     } else {
       const toLogin = document.createElement('button');
       toLogin.type = 'button';
-      toLogin.className = 'linkish';
+      toLogin.className = LINKISH;
       toLogin.textContent = t('auth.back');
       toLogin.onclick = () => {
         mode = 'login';
@@ -298,7 +205,7 @@ export function showAuthPanel(opts: AuthPanelOpts): void {
 
     const close = document.createElement('button');
     close.type = 'button';
-    close.className = 'ghost';
+    close.className = GHOST;
     close.textContent = t('auth.cancel');
     close.onclick = () => {
       playSfx('ui');
