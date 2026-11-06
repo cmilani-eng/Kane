@@ -23,6 +23,7 @@ import type {
 } from '../../gameplay/battlefield/battlefieldWorld';
 import { canAfford } from '../../gameplay/battlefield/battlefieldBuildings';
 import { walletOf } from '../../gameplay/battlefield/battlefieldEconomy';
+import { RAGE } from '../../gameplay/battlefield/battlefieldRage';
 
 export type SelectionAbilityView = {
   slot: HeroAbilitySlot;
@@ -53,6 +54,8 @@ export type SelectionPanelHandlers = {
   placeBuilding: (typeId: BuildingTypeId) => void;
   /** Toggle Nobles formation lock on selected formation-capable units (F). */
   toggleFormation: () => void;
+  /** Toggle Brutes Rage lock on selected rage-capable units (R). */
+  toggleRage: () => void;
 };
 
 /** Nobles formation / stance summary for the selection panel. */
@@ -62,6 +65,16 @@ export type SelectionFormationView = {
   locked: number;
   /** All eligible units have formation lock on. */
   allLocked: boolean;
+};
+
+/** Brutes Rage summary — meter + lock for the selection panel. */
+export type SelectionRageView = {
+  eligible: number;
+  enraged: number;
+  locked: number;
+  allLocked: boolean;
+  /** 0–1 linger / lock fill (hottest eligible unit). */
+  meter: number;
 };
 
 export type SelectionPlaceOption = {
@@ -93,6 +106,8 @@ export type SelectionPanelView =
       abilities: SelectionAbilityView[] | null;
       /** Nobles formation-capable selection — stance lock control. */
       formation: SelectionFormationView | null;
+      /** Brutes rage-capable selection — meter + lock. */
+      rage: SelectionRageView | null;
     }
   | {
       kind: 'building';
@@ -153,6 +168,12 @@ export function ensureSelectionPanel(): HTMLElement {
             <span class="kane-sel-hp-text" data-role="hp-text"></span>
           </div>
           <div class="kane-sel-stats" data-role="stats"></div>
+          <div class="kane-sel-meter" data-role="meter" hidden>
+            <div class="kane-sel-meter-track">
+              <div class="kane-sel-meter-fill" data-role="meter-fill"></div>
+            </div>
+            <span class="kane-sel-meter-label" data-role="meter-label"></span>
+          </div>
         </div>
       </div>
       <div class="kane-sel-actions" data-role="actions"></div>
@@ -198,6 +219,8 @@ export function ensureSelectionPanel(): HTMLElement {
       handlers.castAbility(btn.dataset.slot as HeroAbilitySlot);
     } else if (act === 'toggleFormation') {
       handlers.toggleFormation();
+    } else if (act === 'toggleRage') {
+      handlers.toggleRage();
     }
   });
 
@@ -472,6 +495,47 @@ function injectStyles(): void {
       color: #c8d8a8;
       letter-spacing: 0.02em;
     }
+    #kane-selection-panel button.is-rage {
+      background: #5a3020;
+      border-color: #e87a4a;
+      min-width: 96px;
+      text-align: left;
+    }
+    #kane-selection-panel button.is-rage.is-armed {
+      background: #8a4020;
+      border-color: #ffb070;
+      color: #fff0e0;
+    }
+    #kane-selection-panel button.is-rage .kane-sel-stance-sub {
+      color: #ffc8a0;
+    }
+    #kane-selection-panel .kane-sel-meter {
+      margin-top: 6px;
+    }
+    #kane-selection-panel .kane-sel-meter-track {
+      height: 8px;
+      border-radius: 3px;
+      background: #0a121c;
+      border: 1px solid #5a3030;
+      overflow: hidden;
+    }
+    #kane-selection-panel .kane-sel-meter-fill {
+      height: 100%;
+      width: 0%;
+      border-radius: 2px;
+      background: linear-gradient(90deg, #8a3030, #e87a4a);
+      transition: width 80ms linear;
+    }
+    #kane-selection-panel .kane-sel-meter-fill.is-locked {
+      background: linear-gradient(90deg, #a04020, #ffb070);
+    }
+    #kane-selection-panel .kane-sel-meter-label {
+      display: block;
+      margin-top: 3px;
+      font-size: 11px;
+      color: #e8b090;
+      line-height: 1.25;
+    }
     #kane-selection-panel button:disabled {
       cursor: default;
     }
@@ -712,6 +776,7 @@ export function buildSelectionView(
       attackMoveArmed,
       abilities: heroAbilityViews(world, u),
       formation: formationViewFor(alive),
+      rage: rageViewFor(alive),
     };
   }
 
@@ -754,6 +819,7 @@ export function buildSelectionView(
     attackMoveArmed,
     abilities: null,
     formation: formationViewFor(alive),
+    rage: rageViewFor(alive),
   };
 }
 
@@ -774,6 +840,32 @@ function formationViewFor(
     formed,
     locked,
     allLocked: locked === eligible.length,
+  };
+}
+
+function rageViewFor(units: BattlefieldUnit[]): SelectionRageView | null {
+  const eligible = units.filter((u) => {
+    if (u.team !== 'player' || u.hp <= 0 || u.speciesId !== 'brutes') {
+      return false;
+    }
+    return !!getUnitType(u.typeId).canRage;
+  });
+  if (eligible.length === 0) return null;
+  const locked = eligible.filter((u) => u.rageLocked).length;
+  const enraged = eligible.filter((u) => u.enraged).length;
+  let meter = 0;
+  for (const u of eligible) {
+    const m = u.rageLocked
+      ? 1
+      : Math.min(1, Math.max(0, (u.rageCombatMs ?? 0) / RAGE.lingerMs));
+    if (m > meter) meter = m;
+  }
+  return {
+    eligible: eligible.length,
+    enraged,
+    locked,
+    allLocked: locked === eligible.length,
+    meter,
   };
 }
 
@@ -819,6 +911,9 @@ function structureSignature(view: SelectionPanelView): string {
     const form = view.formation
       ? `f${view.formation.eligible}:${view.formation.formed}:${view.formation.locked}:${view.formation.allLocked ? 1 : 0}`
       : '';
+    const rage = view.rage
+      ? `r${view.rage.eligible}:${view.rage.enraged}:${view.rage.locked}:${view.rage.allLocked ? 1 : 0}:${Math.round(view.rage.meter * 20)}`
+      : '';
     return [
       'u',
       view.count,
@@ -829,6 +924,7 @@ function structureSignature(view: SelectionPanelView): string {
       view.attackMoveArmed ? 1 : 0,
       abs,
       form,
+      rage,
     ].join('|');
   }
   if (view.kind === 'resource') {
@@ -984,6 +1080,68 @@ function applyFormationButtonState(
     : 'F · Lock formation stance (hold bonuses)';
 }
 
+function rageButtonHtml(r: SelectionRageView): string {
+  const locked = r.allLocked;
+  const classes = ['is-rage'];
+  if (locked) classes.push('is-armed');
+  const stance = locked ? 'Locked rage' : 'Auto rage';
+  const status =
+    r.eligible === 1
+      ? r.enraged
+        ? 'Enraged'
+        : 'Calm'
+      : `${r.enraged}/${r.eligible} hot`;
+  const title = locked
+    ? 'title="R · Unlock Rage (return to auto)"'
+    : 'title="R · Lock Rage (stay enraged)"';
+  return `<button type="button" class="${classes.join(' ')}" data-act="toggleRage" ${title}><span class="kane-sel-train-name">${locked ? 'R · Rage lock ON' : 'R · Rage lock'}</span><span class="kane-sel-stance-sub">${escapeHtml(stance)} · ${escapeHtml(status)}</span></button>`;
+}
+
+function applyRageButtonState(
+  btn: HTMLButtonElement,
+  r: SelectionRageView,
+): void {
+  const locked = r.allLocked;
+  btn.classList.toggle('is-armed', locked);
+  const name = btn.querySelector('.kane-sel-train-name');
+  const sub = btn.querySelector('.kane-sel-stance-sub');
+  if (name) name.textContent = locked ? 'R · Rage lock ON' : 'R · Rage lock';
+  if (sub) {
+    const stance = locked ? 'Locked rage' : 'Auto rage';
+    const status =
+      r.eligible === 1
+        ? r.enraged
+          ? 'Enraged'
+          : 'Calm'
+        : `${r.enraged}/${r.eligible} hot`;
+    sub.textContent = `${stance} · ${status}`;
+  }
+  btn.title = locked
+    ? 'R · Unlock Rage (return to auto)'
+    : 'R · Lock Rage (stay enraged)';
+}
+
+function applyRageMeter(
+  meterRoot: HTMLElement,
+  fill: HTMLElement,
+  label: HTMLElement,
+  r: SelectionRageView | null,
+): void {
+  if (!r) {
+    meterRoot.hidden = true;
+    return;
+  }
+  meterRoot.hidden = false;
+  const pct = Math.round(r.meter * 100);
+  fill.style.width = `${pct}%`;
+  fill.classList.toggle('is-locked', r.allLocked);
+  const mode = r.allLocked ? 'Locked' : 'Linger';
+  label.textContent =
+    r.eligible === 1
+      ? `Rage ${pct}% · ${mode}`
+      : `Rage ${pct}% · ${mode} · ${r.enraged}/${r.eligible} hot`;
+}
+
 function applyTrainAffordability(
   btn: HTMLButtonElement,
   t: { canPay: boolean; affordable: boolean },
@@ -1052,6 +1210,13 @@ export function renderSelectionPanel(view: SelectionPanelView): boolean {
   const hpFill = root.querySelector('[data-role="hp-fill"]') as HTMLElement;
   const hpText = root.querySelector('[data-role="hp-text"]') as HTMLElement;
   const stats = root.querySelector('[data-role="stats"]') as HTMLElement;
+  const meterRoot = root.querySelector('[data-role="meter"]') as HTMLElement;
+  const meterFill = root.querySelector(
+    '[data-role="meter-fill"]',
+  ) as HTMLElement;
+  const meterLabel = root.querySelector(
+    '[data-role="meter-label"]',
+  ) as HTMLElement;
   const actions = root.querySelector('[data-role="actions"]') as HTMLElement;
   const queue = root.querySelector('[data-role="queue"]') as HTMLElement;
   const queueFill = root.querySelector('[data-role="queue-fill"]') as HTMLElement;
@@ -1079,6 +1244,7 @@ export function renderSelectionPanel(view: SelectionPanelView): boolean {
       '--kane-sel-accent',
       view.resourceId === 'magic_crystals' ? '#7ec8ff' : '#f0c75e',
     );
+    meterRoot.hidden = true;
     if (structuralChange) {
       const label =
         view.resourceId === 'magic_crystals' ? 'Crystals left' : 'Gold left';
@@ -1113,10 +1279,12 @@ export function renderSelectionPanel(view: SelectionPanelView): boolean {
         const formHtml = view.formation
           ? formationButtonHtml(view.formation)
           : '';
+        const rageHtml = view.rage ? rageButtonHtml(view.rage) : '';
         actions.innerHTML = `
         <button type="button" data-act="stop">Stop</button>
         <button type="button" data-act="attackMove" class="${view.attackMoveArmed ? 'is-armed' : ''}">${view.attackMoveArmed ? 'Atk · Armed' : 'Atk-move'}</button>
         ${formHtml}
+        ${rageHtml}
         ${abilityHtml}
       `;
       } else {
@@ -1141,9 +1309,17 @@ export function renderSelectionPanel(view: SelectionPanelView): boolean {
           ) as HTMLButtonElement | null;
           if (fb) applyFormationButtonState(fb, view.formation);
         }
+        if (view.rage) {
+          const rb = actions.querySelector(
+            '[data-act="toggleRage"]',
+          ) as HTMLButtonElement | null;
+          if (rb) applyRageButtonState(rb, view.rage);
+        }
       }
+      applyRageMeter(meterRoot, meterFill, meterLabel, view.rage);
       queue.hidden = true;
     } else {
+      meterRoot.hidden = true;
       portrait.classList.add('is-building');
       portrait.classList.remove('is-mixed');
       portrait.style.setProperty('--kane-sel-accent', '#3d7ea6');
