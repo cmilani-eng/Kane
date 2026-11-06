@@ -29,6 +29,10 @@ export const enGB = {
   'map.crossing.blurb': 'Classic bases · mid CORE',
   'map.ridge.label': 'Ridge',
   'map.ridge.blurb': 'Diagonal bases · shifted belt',
+  'tutorial.map.crossing':
+    'Crossing: your base is south and the CORE is in the middle. Rematch keeps this map.',
+  'tutorial.map.ridge':
+    'Ridge: you start north-west, the enemy south-east. Rematch keeps this map.',
   'species.brutes.name': 'The Brutes',
   'species.brutes.motto': 'WHY BUILD WALL WHEN ENEMY WALL?',
   'species.brutes.mechanic': 'RAGE',
@@ -240,6 +244,10 @@ export const ptBR = {
   'map.crossing.blurb': 'Bases clássicas · CORE no meio',
   'map.ridge.label': 'Cume',
   'map.ridge.blurb': 'Bases em diagonal · faixa deslocada',
+  'tutorial.map.crossing':
+    'Travessia: sua base fica no sul e o CORE no meio. A revanche mantém este mapa.',
+  'tutorial.map.ridge':
+    'Cume: você começa no noroeste e o inimigo no sudeste. A revanche mantém este mapa.',
   'species.brutes.name': 'Os Brutos',
   'species.brutes.motto': 'PRA QUE MURO SE O INIMIGO TEM MURO?',
   'species.brutes.mechanic': 'FÚRIA',
@@ -447,6 +455,10 @@ export const es = {
   'map.crossing.blurb': 'Bases clásicas · CORE al centro',
   'map.ridge.label': 'Cresta',
   'map.ridge.blurb': 'Bases en diagonal · franja corrida',
+  'tutorial.map.crossing':
+    'Cruce: tu base está al sur y el CORE en el centro. La revancha conserva este mapa.',
+  'tutorial.map.ridge':
+    'Cresta: empiezas al noroeste y el enemigo al sureste. La revancha conserva este mapa.',
   'species.brutes.name': 'Los Brutos',
   'species.brutes.motto': '¿PA QUÉ MURO SI EL ENEMIGO TIENE MURO?',
   'species.brutes.mechanic': 'FURIA',
