@@ -54,7 +54,7 @@ const BUTTON = 'cursor-pointer border-none font-sans disabled:cursor-wait disabl
 const BIG_BUTTON = `${BUTTON} min-h-12 px-3.5 py-[11px] text-center leading-[1.25] whitespace-normal short:flex-[1_1_140px]`;
 const PRIMARY = `${BIG_BUTTON} bg-kane-moss text-sm text-kane-gold`;
 const GHOST = `${BIG_BUTTON} bg-kane-slate text-[13px] text-kane-parchment`;
-const LINKISH = `${BUTTON} bg-transparent p-1.5 text-xs text-kane-ice`;
+const LINKISH = `${BUTTON} bg-transparent p-1.5 text-xs/normal text-kane-ice`;
 
 function destroy(): void {
   document.getElementById(ROOT_ID)?.remove();
@@ -73,11 +73,11 @@ export function showAuthPanel(opts: AuthPanelOpts): void {
   root.innerHTML = `
     <div class="${CARD_CLASS}" role="dialog" aria-modal="true" aria-labelledby="kane-auth-title">
       <div class="mt-1 mb-0.5 text-center font-kane-serif text-[13px] font-bold tracking-[0.04em] text-kane-gold">${BRAND.name}</div>
-      <h2 class="mb-1 text-center font-kane-serif text-[26px] text-kane-cream short:m-0 short:text-xl" id="kane-auth-title">Account</h2>
+      <h2 class="mb-1 text-center font-kane-serif text-[26px] text-kane-cream short:m-0 short:text-xl/normal" id="kane-auth-title">Account</h2>
       <p class="mb-3.5 text-center text-[13px] text-kane-muted short:mb-1.5" id="kane-auth-sub"></p>
       <div id="kane-auth-fields"></div>
-      <p class="mt-2.5 min-h-[18px] text-center text-xs text-kane-danger" id="kane-auth-err" hidden></p>
-      <p class="mt-2.5 min-h-[18px] text-center text-xs text-kane-teal" id="kane-auth-ok" hidden></p>
+      <p class="mt-2.5 min-h-[18px] text-center text-xs/normal text-kane-danger" id="kane-auth-err" hidden></p>
+      <p class="mt-2.5 min-h-[18px] text-center text-xs/normal text-kane-teal" id="kane-auth-ok" hidden></p>
       <div class="mt-3.5 flex flex-col gap-2 short:mt-2 short:flex-row short:flex-wrap short:items-center" id="kane-auth-actions"></div>
       <p class="mt-2.5 text-center text-[11px] text-kane-quiet short:mt-1.5" id="kane-auth-quiet"></p>
     </div>

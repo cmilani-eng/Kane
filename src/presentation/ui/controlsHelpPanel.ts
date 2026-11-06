@@ -132,12 +132,12 @@ export function createControlsHelpPanel(opts: {
         <button type="button" class="kane-help-x absolute top-2.5 right-2.5 min-h-9 min-w-10 cursor-pointer touch-manipulation rounded-xs bg-kane-iron text-base text-kane-fog" aria-label="${esc(copy.close)}">✕</button>
         <div class="flex-none px-[18px] pt-[18px] pb-2.5 text-center">
           <div class="font-kane-serif text-[13px] font-bold tracking-[0.04em] text-kane-gold">KANE</div>
-          <div class="mt-1 font-kane-serif text-2xl text-kane-cream" id="kane-help-title">${esc(copy.title)}</div>
+          <div class="mt-1 font-kane-serif text-2xl/normal text-kane-cream" id="kane-help-title">${esc(copy.title)}</div>
           <p class="mt-1.5 text-[13px] text-kane-muted">${esc(copy.sub)}</p>
         </div>
         <div class="flex-auto overflow-y-auto overscroll-contain px-[18px] pt-1 pb-2 [-webkit-overflow-scrolling:touch]">${copy.body}</div>
         <div class="flex flex-none flex-col items-center gap-2 px-[18px] pt-2.5 pb-3.5">
-          <button type="button" class="kane-help-close min-h-12 min-w-[120px] cursor-pointer touch-manipulation rounded-xs bg-kane-steel px-[18px] py-2.5 text-sm font-semibold text-kane-parchment">${esc(copy.gotIt)}</button>
+          <button type="button" class="kane-help-close min-h-12 min-w-[120px] cursor-pointer touch-manipulation rounded-xs bg-kane-steel px-[18px] py-2.5 text-sm/normal font-semibold text-kane-parchment">${esc(copy.gotIt)}</button>
           <div class="text-center text-[11px] text-kane-quiet">${esc(copy.closeHint)}</div>
         </div>
       </div>
