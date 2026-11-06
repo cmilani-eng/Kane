@@ -8,10 +8,25 @@ import {
   subscribeMatchStock,
   type MatchStock,
 } from './matchUiStore';
+import { supplyTone, type SupplyTone } from './supplyTone';
 
 const ROOT_ID = 'kane-stock';
 
 const cleanups = new WeakMap<HTMLElement, () => void>();
+
+/** Tailwind text classes for the DOM stock strip (match Phaser SUPPLY_TONE_COLOR). */
+export const STOCK_SUPPLY_CLASS: Record<SupplyTone, string> = {
+  ok: 'text-[#d7e6f2]',
+  near: 'text-[#f0c75e]',
+  full: 'text-[#e87aa8]',
+};
+
+export function stockSupplyClass(
+  current: number,
+  cap: number,
+): string {
+  return STOCK_SUPPLY_CLASS[supplyTone(current, cap)];
+}
 
 function flash(slot: Element | null): void {
   if (!(slot instanceof HTMLElement)) return;
@@ -33,15 +48,11 @@ function paint(root: HTMLElement, stock: MatchStock): void {
     });
   }
   const supplySlot = root.querySelector('[data-slot="supply"]');
-  if (supplySlot) {
-    const full = stock.supplyCap > 0 && stock.supply >= stock.supplyCap;
-    const high =
-      !full &&
-      stock.supplyCap > 0 &&
-      stock.supply >= Math.floor(stock.supplyCap * 0.85);
-    supplySlot.classList.toggle('text-[#e87aa8]', full);
-    supplySlot.classList.toggle('text-[#f0c75e]', high);
-    supplySlot.classList.toggle('text-[#d7e6f2]', !full && !high);
+  if (supplySlot instanceof HTMLElement) {
+    for (const cls of Object.values(STOCK_SUPPLY_CLASS)) {
+      supplySlot.classList.remove(cls);
+    }
+    supplySlot.classList.add(stockSupplyClass(stock.supply, stock.supplyCap));
   }
 }
 
