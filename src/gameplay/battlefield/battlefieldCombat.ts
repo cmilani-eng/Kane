@@ -13,6 +13,12 @@ import {
   mutationIncomingMult,
   mutationOutgoingMult,
 } from './battlefieldMutations';
+import {
+  spawnBuildingHitFx,
+  spawnDeathFx,
+  spawnHitFx,
+  tickCombatFx,
+} from './battlefieldCombatFx';
 import { setUnitPath } from './battlefieldPathfinding';
 import type {
   BattlefieldBuilding,
@@ -116,7 +122,10 @@ function acquireNearestEnemy(
 
 function removeDead(world: BattlefieldWorld): void {
   for (let i = world.units.length - 1; i >= 0; i--) {
-    if (world.units[i]!.hp <= 0) world.units.splice(i, 1);
+    const u = world.units[i]!;
+    if (u.hp > 0) continue;
+    spawnDeathFx(world, u.x, u.y, u.radius, u.color);
+    world.units.splice(i, 1);
   }
   const ids = new Set([
     ...world.units.map((u) => u.id),
@@ -191,7 +200,9 @@ export function tickBattlefieldCombat(
       const isBuilding = 'typeId' in t && 'buildProgress' in t;
       if (isBuilding) {
         raw *= udef.structureMult ?? 1;
-        damageBuilding(world, t as BattlefieldBuilding, raw);
+        const b = t as BattlefieldBuilding;
+        damageBuilding(world, b, raw);
+        spawnBuildingHitFx(world, b.x, b.y, b.radius);
       } else {
         const victim = t as BattlefieldUnit;
         victim.hp -=
@@ -199,6 +210,7 @@ export function tickBattlefieldCombat(
           heroIncomingMult(world, victim) *
           mutationIncomingMult(victim);
         if (victim.hp <= 0) victim.hp = 0;
+        spawnHitFx(world, victim.x, victim.y, victim.radius, victim.color);
       }
       u.attackCd = u.attackCooldownMs;
       u.lastAttackFlashMs = 120;
@@ -213,6 +225,7 @@ export function tickBattlefieldCombat(
   }
 
   removeDead(world);
+  tickCombatFx(world, dtMs);
 }
 
 export function livingByTeam(

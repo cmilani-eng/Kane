@@ -120,6 +120,8 @@ export interface BattlefieldWorld {
   heroRuntime: import('./battlefieldHeroes').HeroRuntime | null;
   enemyHeroRuntime: import('./battlefieldHeroes').HeroRuntime | null;
   vfx: import('./battlefieldHeroes').HeroVfx[];
+  /** Short combat hit / death pops (presentation). */
+  combatFx: import('./battlefieldCombatFx').CombatFx[];
   /** Player fog of war (explored / visible). */
   fog: import('./battlefieldFog').FogState;
   /** Skirmish AI difficulty for this match. */
@@ -375,6 +377,7 @@ export function createBattlefieldWorld(
     heroRuntime: null,
     enemyHeroRuntime: null,
     vfx: [],
+    combatFx: [],
     fog: createFogState(),
     aiDifficulty: ai.id,
   };
