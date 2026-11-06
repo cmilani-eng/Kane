@@ -9,6 +9,7 @@ import {
   tutorialTip,
   type TutorialState,
 } from '../../gameplay/battlefield/battlefieldTutorial';
+import { t } from '../../i18n';
 import { playSfx } from '../audio/sfx';
 
 export class TutorialCoach {
@@ -52,7 +53,7 @@ export class TutorialCoach {
       .setDepth(121);
 
     this.nextBtn = scene.add
-      .text(0, 0, 'Next', {
+      .text(0, 0, t('tutorial.next'), {
         fontFamily: 'system-ui, sans-serif',
         fontSize: '13px',
         color: '#0f1a2e',
@@ -68,7 +69,7 @@ export class TutorialCoach {
       });
 
     this.skipBtn = scene.add
-      .text(0, 0, 'Got it', {
+      .text(0, 0, t('tutorial.gotIt'), {
         fontFamily: 'system-ui, sans-serif',
         fontSize: '12px',
         color: '#b8c9d9',
@@ -96,17 +97,22 @@ export class TutorialCoach {
     const sh = this.scene.scale.height;
     const narrow = sw < 720;
     const w = Math.min(narrow ? sw - 20 : 560, sw - 24);
-    const h = narrow ? 120 : 108;
+    this.body.setStyle({
+      wordWrap: { width: w - 36 },
+      fontSize: narrow ? '12px' : '13px',
+    });
+    const h = Math.max(narrow ? 120 : 108, Math.ceil(this.body.height) + 72);
     const x = sw / 2;
-    const y = narrow ? sh * 0.3 : 220;
+    const top = narrow ? sh * 0.3 - 60 : 166;
+    const y = top + h / 2;
 
     this.panel.setSize(w, h).setPosition(x, y);
     this.label.setPosition(x - w / 2 + 14, y - h / 2 + 10);
-    this.body
-      .setPosition(x - w / 2 + 14, y - h / 2 + 28)
-      .setStyle({ wordWrap: { width: w - 36 }, fontSize: narrow ? '12px' : '13px' });
-    this.nextBtn.setPosition(x + w / 2 - 70, y + h / 2 - 28);
-    this.skipBtn.setPosition(x + w / 2 - 150, y + h / 2 - 28);
+    this.body.setPosition(x - w / 2 + 14, y - h / 2 + 28);
+    const right = x + w / 2 - 14;
+    const nextW = this.nextBtn.width;
+    this.nextBtn.setPosition(right - nextW, y + h / 2 - 32);
+    this.skipBtn.setPosition(right - nextW - 8 - this.skipBtn.width, y + h / 2 - 32);
   }
 
   refresh(): void {
@@ -117,6 +123,10 @@ export class TutorialCoach {
     if (!show) return;
     this.label.setText(tutorialStepLabel(this.state));
     this.body.setText(tutorialTip(this.state));
-    this.nextBtn.setText(this.state.step === 'heroes' ? 'Finish' : 'Next');
+    this.nextBtn.setText(
+      this.state.step === 'heroes' ? t('tutorial.finish') : t('tutorial.next'),
+    );
+    this.skipBtn.setText(t('tutorial.gotIt'));
+    this.layout();
   }
 }

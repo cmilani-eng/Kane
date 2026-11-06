@@ -7,7 +7,7 @@ Kane is a fantasy real-time strategy game (KANE — BUILD. COMMAND. CONQUER.). L
 TypeScript, Phaser 4, Vite, Vitest, ESLint. Firebase Auth, Firestore, and Hosting are opt-in. Ads are off.
 
 ## Current phase
-Soft-launch readiness: battlefield, economy, tutorial, menu, pause, end screen, local stats, cosmetics, and a local friend-lobby stub. No live multiplayer. Shell copy (boot, menu, pause, end, volume, and the DOM command bar) and the in-match HUD (resources, commands, and the selection panel) are localized. Source locale is en-GB. Also shipped: pt-BR and es (neutral Spanish). Tutorial, auth, lobby, stats, and the CORE/hero status lines are still English.
+Soft-launch readiness: battlefield, economy, tutorial, menu, pause, end screen, local stats, cosmetics, and a local friend-lobby stub. No live multiplayer. Shell copy (boot, menu, pause, end, volume, and the DOM command bar) the in-match HUD (resources, commands, and the selection panel), and the tutorial coach are localized. Source locale is en-GB. Also shipped: pt-BR and es (neutral Spanish). Auth, lobby, stats, and the CORE/hero status lines are still English.
 
 ## Key constraints
 Gameplay does not import presentation. The brand name and the English tagline stay fixed. Touch targets are about 48px, set in system-ui. The product is framed 13+ with no in-game age gate. Ads stay disabled. Privacy and Terms are placeholders. A missing translation falls back to en-GB for the player. The locale is stored on the device and applies immediately on the menu and pause.
