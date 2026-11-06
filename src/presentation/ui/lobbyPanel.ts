@@ -1,13 +1,19 @@
 /**
  * Friend lobby create/join code UI — local stub only.
  * No RTDB / live MP sync. SP vs AI path stays on Menu species cards.
- * Shows the skirmish map flavor from match prefs (same tip as the menu).
+ * Shows selected faction motto + skirmish map flavor from match prefs.
  */
 import Phaser from 'phaser';
 import { BRAND } from '../../config/brand';
 import { loadMatchPrefs } from '../../database/matchPrefs';
 import { loadMatchSummaries } from '../../database/matchSummary';
-import { difficultyCopy, mapCopy, speciesName, t } from '../../i18n';
+import {
+  difficultyCopy,
+  mapCopy,
+  speciesCopy,
+  speciesName,
+  t,
+} from '../../i18n';
 import { getLobbyStub } from '../../networking/lobbySingleton';
 import type { LobbyStatus } from '../../networking/lobbyStub';
 import { playSfx } from '../audio/sfx';
@@ -29,6 +35,12 @@ export function lobbyStatusLine(status: LobbyStatus, code: string | null): strin
 export function lobbyMapTipLine(): string {
   const map = mapCopy(loadMatchPrefs().mapId);
   return t('menu.mapTip', { label: map.label, blurb: map.blurb });
+}
+
+/** Selected faction motto tip — name · blurb from match prefs. */
+export function lobbyFactionTipLine(): string {
+  const s = speciesCopy(loadMatchPrefs().species);
+  return t('lobby.factionTip', { name: s.name, blurb: s.motto });
 }
 
 /** Species · map · difficulty — same shape as pause.setup for rematch context. */
@@ -115,7 +127,7 @@ export function showLobbyPanel(scene: Phaser.Scene, onClose: () => void): void {
     .text(
       cx,
       top + 106,
-      `${lobbySetupLine()}\n${lobbyMapTipLine()}\n${lobbyMatchLengthTipLine()}`,
+      `${lobbySetupLine()}\n${lobbyFactionTipLine()}\n${lobbyMapTipLine()}\n${lobbyMatchLengthTipLine()}`,
       {
         fontFamily: 'system-ui, sans-serif',
         fontSize: '12px',
