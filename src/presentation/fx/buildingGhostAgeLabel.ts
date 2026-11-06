@@ -1,5 +1,6 @@
 /**
- * World-space last-seen age labels on enemy leave-vision building ghosts.
+ * World-space last-seen age + sector tip on enemy leave-vision building ghosts.
+ * Sector tip is distinct from the age chip.
  */
 import Phaser from 'phaser';
 import { enemyRevealed } from '../../gameplay/battlefield/battlefieldFog';
@@ -9,6 +10,7 @@ import type {
 } from '../../gameplay/battlefield/battlefieldWorld';
 import { t } from '../../i18n';
 import { inView, type ViewBounds } from '../perf/mobileBudget';
+import { buildingGhostSectorTip } from './buildingGhostSectorTip';
 import { enemyBuildingGhostAgeSec } from './buildingLastSeenGhost';
 
 export class BuildingGhostAgeLabels {
@@ -46,7 +48,9 @@ export class BuildingGhostAgeLabels {
   }
 
   private place(b: BattlefieldBuilding, ageSec: number): void {
-    const text = t('hud.ghostAge', { sec: ageSec });
+    const sectorTip = buildingGhostSectorTip(b.x, b.y);
+    const ageTip = t('hud.ghostAge', { sec: ageSec });
+    const text = `${sectorTip} · ${ageTip}`;
     let label = this.labels.get(b.id);
     if (!label) {
       label = this.scene.add
