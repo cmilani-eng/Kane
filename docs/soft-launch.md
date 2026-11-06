@@ -56,6 +56,7 @@ This doc is the honest gate before any public preview URL.
 | Formation count tip | **OK** — Nobles selection hint shows F + formed/eligible count | `selectionPanel` `formationCountTip` |
 | Stance hotkey echo | **OK** — F / R / M flashes the matching stance button on the selection panel | `flashStanceHotkey` |
 | Idle gather target | **OK** — idle worker chip hints nearest Gold/Crystals gather target | `nearestIdleGatherResource`, `hud.idleGather` |
+| Idle gather type tip | **OK** — idle worker chip shows Gather · Gold/Crystals tip (distinct from cargo / plain idle) | `idleWorkerGatherTypeTip`, `hud.idleGatherType` |
 | End share line | **OK** — end screen Copy result pastes one-line KANE summary (result/species/map/difficulty/clock/standing) | `endShareLine`, `end.share*` |
 | Empty selection tip | **OK** — bottom panel shows brief select tip (Army / Idle / Home · Tab cycles types) when nothing is selected | `selectionPanel` `kind: empty`, `sel.empty*` |
 | Placement Esc hint | **OK** — place-mode cost strip + armed title mention Esc to cancel | `hud.place`, `sel.placeArmedTitle`, `hud.hintPlace` |
