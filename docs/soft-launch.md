@@ -32,7 +32,7 @@ This doc is the honest gate before any public preview URL.
 6. **Daily rollup / match summaries are device-local** — not a Cassio cloud dashboard yet.
 7. **Legal copy is placeholder** — not counsel-reviewed.
 8. **Content depth** — Phase 8 maps / deeper tutorial / practice arena not started.
-9. **No CI workflows** on the repo — “merge when green” has meant empty check rollups.
+9. **CI is thin** — Hosting auto-deploy on push to `dev` (see `docs/firebase-hosting.md`); other PRs may still show empty check rollups until more workflows land.
 10. **Cosmetics shop** — explicitly out; free unlocks only.
 11. **No offline service worker** — installability stubs exist; full offline PWA is later (`docs/pwa.md`).
 
