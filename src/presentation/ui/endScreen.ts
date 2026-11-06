@@ -30,6 +30,10 @@ export interface EndScreenOpts {
   playerUnitKills?: number;
   /** Player units lost this match (tallied on remove). */
   playerUnitLosses?: number;
+  /** Gold deposited at Keep this match. */
+  playerGoldGathered?: number;
+  /** Magic crystals deposited at Keep this match. */
+  playerCrystalsGathered?: number;
   onMenu: () => void;
   /** Restart skirmish with the same species + difficulty. */
   onRematch: () => void;
@@ -54,6 +58,8 @@ export function showKaneEndScreen(opts: EndScreenOpts): void {
     playerBuildingsLeft,
     playerUnitKills,
     playerUnitLosses,
+    playerGoldGathered,
+    playerCrystalsGathered,
     onMenu,
     onRematch,
     ignoreOnMain,
@@ -81,7 +87,7 @@ export function showKaneEndScreen(opts: EndScreenOpts): void {
   const panelW = short ? Math.min(720, width - 24) : Math.min(440, width - 32);
   const panelH = short
     ? height - 16
-    : Math.min(stepUp ? 540 : 480, height * (stepUp ? 0.84 : 0.76));
+    : Math.min(stepUp ? 556 : 496, height * (stepUp ? 0.86 : 0.78));
   const cy = short ? height / 2 : height * 0.48;
   const top = cy - panelH / 2;
   const yBrand = short ? top + 18 : cy - panelH * 0.4;
@@ -89,13 +95,14 @@ export function showKaneEndScreen(opts: EndScreenOpts): void {
   const yTag = short ? top + 90 : cy + panelH * 0.02;
   const ySub = short ? top + 112 : cy + panelH * 0.12;
   const yMeta = short ? top + 134 : cy + panelH * 0.2;
-  const yRecap = short ? top + 154 : cy + panelH * 0.27;
-  const yKill = short ? top + 168 : cy + panelH * 0.32;
-  const yShare = short ? top + (stepUp ? 170 : 188) : cy + panelH * 0.38;
-  const yStep = short ? top + panelH - 72 : cy + panelH * 0.44;
+  const yRecap = short ? top + 154 : cy + panelH * 0.26;
+  const yKill = short ? top + 168 : cy + panelH * 0.31;
+  const yGathered = short ? top + 182 : cy + panelH * 0.36;
+  const yShare = short ? top + (stepUp ? 184 : 202) : cy + panelH * 0.42;
+  const yStep = short ? top + panelH - 72 : cy + panelH * 0.48;
   const yActions = top + panelH - (short ? 28 : 36);
-  const yRematch = short ? yActions : cy + panelH * (stepUp ? 0.56 : 0.48);
-  const yMenu = short ? yActions : cy + panelH * (stepUp ? 0.68 : 0.6);
+  const yRematch = short ? yActions : cy + panelH * (stepUp ? 0.58 : 0.52);
+  const yMenu = short ? yActions : cy + panelH * (stepUp ? 0.7 : 0.64);
   const xRematch = short ? width / 2 - 110 : width / 2;
   const xMenu = short ? width / 2 + 110 : width / 2;
   const panel = scene.add
@@ -273,6 +280,28 @@ export function showKaneEndScreen(opts: EndScreenOpts): void {
     .setVisible(hasKillRatio);
   root.push(killRatio);
 
+  const hasGathered =
+    playerGoldGathered != null && playerCrystalsGathered != null;
+  const gatheredText = hasGathered
+    ? t('end.gathered', {
+        gold: playerGoldGathered,
+        crystals: playerCrystalsGathered,
+      })
+    : '';
+  const gathered = scene.add
+    .text(width / 2, yGathered, gatheredText, {
+      fontFamily: 'system-ui, sans-serif',
+      fontSize: '13px',
+      color: '#a8bdd0',
+      align: 'center',
+    })
+    .setOrigin(0.5)
+    .setScrollFactor(0)
+    .setDepth(202)
+    .setAlpha(0)
+    .setVisible(hasGathered);
+  root.push(gathered);
+
   const shareLine = formatEndShareLine({
     win,
     speciesName: name,
@@ -417,6 +446,7 @@ export function showKaneEndScreen(opts: EndScreenOpts): void {
       meta,
       recap,
       killRatio,
+      gathered,
       shareBtn,
       ...(stepBtn ? [stepBtn] : []),
       rematchBtn,
