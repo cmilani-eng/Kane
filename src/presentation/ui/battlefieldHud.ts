@@ -13,7 +13,8 @@ import {
 } from '../../gameplay/battlefield/battlefieldHeroes';
 import {
   countIdleWorkers,
-  selectIdleWorkers,
+  selectOrCycleIdleWorkers,
+  type IdleChipResult,
 } from '../../gameplay/battlefield/idleWorkers';
 import {
   countVisibleMilitary,
@@ -66,6 +67,8 @@ export class BattlefieldHud {
   onPause: (() => void) | null = null;
   /** Scene wires this after army select (clears building focus). */
   onSelectArmy: (() => void) | null = null;
+  /** Scene wires idle-chip select/cycle (clear building + camera). */
+  onIdleWorkers: ((result: IdleChipResult) => void) | null = null;
 
   private goldDot!: Phaser.GameObjects.Arc;
   private crystalDot!: Phaser.GameObjects.Arc;
@@ -346,7 +349,10 @@ export class BattlefieldHud {
       .setVisible(false)
       .setInteractive({ useHandCursor: true })
       .on('pointerup', () => {
-        if (selectIdleWorkers(this.world) > 0) playSfx('select');
+        const result = selectOrCycleIdleWorkers(this.world);
+        if (result.count <= 0) return;
+        playSfx('select');
+        this.onIdleWorkers?.(result);
       });
 
     this.buildAbilityPad(accent);
@@ -644,13 +650,17 @@ export class BattlefieldHud {
           u.path.length === 0 &&
           u.gatherNodeId == null,
       );
+      const cycling = this.world.units.some(
+        (u) => u.selected && u.team === 'player' && u.canGather && u.hp > 0,
+      );
+      const action = cycling ? 'cycle' : 'tap';
       this.idlePingBtn
         .setVisible(true)
         .setAlpha(pulse)
         .setText(
           holding
-            ? `Idle ${idleN} · tap (cargo)`
-            : `Idle ${idleN} · tap`,
+            ? `Idle ${idleN} · ${action} (cargo)`
+            : `Idle ${idleN} · ${action}`,
         );
     } else {
       this.idlePingBtn.setVisible(false).setAlpha(1);
