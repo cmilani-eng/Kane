@@ -17,6 +17,10 @@ import { SPECIES_MATCHUP_TIP, type SpeciesId } from '../../data/speciesStub';
 import { getLocale, speciesCopy, speciesName, t } from '../../i18n';
 import { unitArmorClass } from '../../data/unitArmorClass';
 import { getUnitType, type UnitTypeId } from '../../data/units';
+import {
+  sharedUnitAttackCooldownLabel,
+  unitAttackCooldownLabel,
+} from './unitAttackCooldown';
 import { attackRangeLabel } from './unitAttackRange';
 import { sharedUnitDpsLabel, unitDpsLabel } from './unitDps';
 import {
@@ -172,6 +176,8 @@ export type SelectionPanelView =
       visionTip: string | null;
       /** Catalog max-HP tip when selection shares one unit type. */
       hpMaxTip: string | null;
+      /** Catalog attack-cooldown tip when selection shares one unit type. */
+      atkCdTip: string | null;
       tags: string[];
       attackMoveArmed: boolean;
       /** Present when a single player hero is selected. */
@@ -587,6 +593,7 @@ export function buildSelectionView(
       speedTip: unitMoveSpeedLabel(u.typeId),
       visionTip: unitVisionLabel(u.typeId),
       hpMaxTip: unitHpMaxLabel(u.typeId),
+      atkCdTip: unitAttackCooldownLabel(u.typeId),
       tags,
       attackMoveArmed,
       abilities: heroAbilityViews(world, u),
@@ -645,6 +652,7 @@ export function buildSelectionView(
     speedTip: sharedUnitMoveSpeedLabel(alive.map((u) => u.typeId)),
     visionTip: sharedUnitVisionLabel(alive.map((u) => u.typeId)),
     hpMaxTip: sharedUnitHpMaxLabel(alive.map((u) => u.typeId)),
+    atkCdTip: sharedUnitAttackCooldownLabel(alive.map((u) => u.typeId)),
     tags,
     attackMoveArmed,
     abilities: null,
@@ -915,6 +923,7 @@ function structureSignature(view: SelectionPanelView): string {
       view.speedTip ?? '',
       view.visionTip ?? '',
       view.hpMaxTip ?? '',
+      view.atkCdTip ?? '',
       view.tags.join(','),
       view.attackMoveArmed ? 1 : 0,
       abs,
@@ -1434,6 +1443,9 @@ export function renderSelectionPanel(view: SelectionPanelView): boolean {
         }
         if (view.hpMaxTip) {
           bits.push(`<span>${escapeHtml(view.hpMaxTip)}</span>`);
+        }
+        if (view.atkCdTip) {
+          bits.push(`<span>${escapeHtml(view.atkCdTip)}</span>`);
         }
         if (view.armorClass) {
           bits.push(`<span>${escapeHtml(view.armorClass)}</span>`);
