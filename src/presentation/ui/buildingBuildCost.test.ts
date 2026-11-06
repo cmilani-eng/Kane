@@ -10,12 +10,12 @@ describe('buildingBuildCostLabel', () => {
     expect(buildingBuildCostLabel('bonker_hut')).toBe(
       t('sel.buildCostGold', { gold: hut.cost.gold ?? 0 }),
     );
-    const pen = getBuildingType('beast_pen');
-    expect(pen.cost.magic_crystals).toBeGreaterThan(0);
-    expect(buildingBuildCostLabel('beast_pen')).toBe(
+    const works = getBuildingType('scrap_works');
+    expect(works.cost.magic_crystals).toBeGreaterThan(0);
+    expect(buildingBuildCostLabel('scrap_works')).toBe(
       t('sel.buildCostBoth', {
-        gold: pen.cost.gold ?? 0,
-        crystals: pen.cost.magic_crystals ?? 0,
+        gold: works.cost.gold ?? 0,
+        crystals: works.cost.magic_crystals ?? 0,
       }),
     );
   });
