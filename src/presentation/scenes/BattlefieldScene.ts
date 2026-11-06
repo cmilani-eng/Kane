@@ -142,6 +142,7 @@ import {
 } from '../../database/matchSummary';
 import { getEquippedSkin } from '../../database/cosmeticsLoadout';
 import { rememberMatchPrefs } from '../../database/matchPrefs';
+import { isReduceMotion } from '../../database/motionPrefs';
 import { rematchPrefsFromWorld } from '../../gameplay/battlefield/rematchPrefs';
 import { recordGameStarted } from '../../database/localStats';
 import { writeMatchSummaryFunctionStub } from '../../server/matchSummaryFunctionStub';
@@ -1199,12 +1200,14 @@ export class BattlefieldScene extends Phaser.Scene {
       if (alert?.pulse) {
         alert.pulse = false;
         playSfx('alert');
-        const critical = alert.severity === 'critical';
-        this.cameraCtl.softNudgeToward(
-          alert.x,
-          alert.y,
-          critical ? 0.38 : 0.22,
-        );
+        if (!isReduceMotion()) {
+          const critical = alert.severity === 'critical';
+          this.cameraCtl.softNudgeToward(
+            alert.x,
+            alert.y,
+            critical ? 0.38 : 0.22,
+          );
+        }
       }
       tickTutorial(this.world, this.tutorial, delta);
       const result = evaluateMatch(this.world);
