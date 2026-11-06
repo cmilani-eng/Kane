@@ -373,6 +373,15 @@ export class BattlefieldScene extends Phaser.Scene {
         toggleRageSelected(this.world);
         playSfx('ui');
       },
+      toggleMutation: () => {
+        if (this.paused || this.matchResult !== 'ongoing') return;
+        if (this.world.speciesId !== 'weirdos') {
+          playSfx('ui');
+          return;
+        }
+        toggleMutationSelected(this.world);
+        playSfx('ui');
+      },
     });
     this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => {
       unmountSelectionPanel();

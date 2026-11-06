@@ -56,6 +56,8 @@ export type SelectionPanelHandlers = {
   toggleFormation: () => void;
   /** Toggle Brutes Rage lock on selected rage-capable units (R). */
   toggleRage: () => void;
+  /** Toggle Weirdos Mutation lock / role on selected mutate-capable units (M). */
+  toggleMutation: () => void;
 };
 
 /** Nobles formation / stance summary for the selection panel. */
@@ -75,6 +77,14 @@ export type SelectionRageView = {
   allLocked: boolean;
   /** 0–1 linger / lock fill (hottest eligible unit). */
   meter: number;
+};
+
+/** Weirdos Mutation / role summary for the selection panel. */
+export type SelectionMutationView = {
+  eligible: number;
+  mutated: number;
+  locked: number;
+  allLocked: boolean;
 };
 
 export type SelectionPlaceOption = {
@@ -108,6 +118,8 @@ export type SelectionPanelView =
       formation: SelectionFormationView | null;
       /** Brutes rage-capable selection — meter + lock. */
       rage: SelectionRageView | null;
+      /** Weirdos mutate-capable selection — mutation role lock. */
+      mutation: SelectionMutationView | null;
     }
   | {
       kind: 'building';
@@ -221,6 +233,8 @@ export function ensureSelectionPanel(): HTMLElement {
       handlers.toggleFormation();
     } else if (act === 'toggleRage') {
       handlers.toggleRage();
+    } else if (act === 'toggleMutation') {
+      handlers.toggleMutation();
     }
   });
 
@@ -509,6 +523,20 @@ function injectStyles(): void {
     #kane-selection-panel button.is-rage .kane-sel-stance-sub {
       color: #ffc8a0;
     }
+    #kane-selection-panel button.is-mutation {
+      background: #3a2a58;
+      border-color: #6ecfbf;
+      min-width: 96px;
+      text-align: left;
+    }
+    #kane-selection-panel button.is-mutation.is-armed {
+      background: #5a3a78;
+      border-color: #e87aa8;
+      color: #f8e8ff;
+    }
+    #kane-selection-panel button.is-mutation .kane-sel-stance-sub {
+      color: #b8e8d8;
+    }
     #kane-selection-panel .kane-sel-meter {
       margin-top: 6px;
     }
@@ -777,6 +805,7 @@ export function buildSelectionView(
       abilities: heroAbilityViews(world, u),
       formation: formationViewFor(alive),
       rage: rageViewFor(alive),
+      mutation: mutationViewFor(alive),
     };
   }
 
@@ -820,6 +849,7 @@ export function buildSelectionView(
     abilities: null,
     formation: formationViewFor(alive),
     rage: rageViewFor(alive),
+    mutation: mutationViewFor(alive),
   };
 }
 
@@ -869,6 +899,26 @@ function rageViewFor(units: BattlefieldUnit[]): SelectionRageView | null {
   };
 }
 
+function mutationViewFor(
+  units: BattlefieldUnit[],
+): SelectionMutationView | null {
+  const eligible = units.filter((u) => {
+    if (u.team !== 'player' || u.hp <= 0 || u.speciesId !== 'weirdos') {
+      return false;
+    }
+    return !!getUnitType(u.typeId).canMutate;
+  });
+  if (eligible.length === 0) return null;
+  const locked = eligible.filter((u) => u.mutationLocked).length;
+  const mutated = eligible.filter((u) => u.mutated).length;
+  return {
+    eligible: eligible.length,
+    mutated,
+    locked,
+    allLocked: locked === eligible.length,
+  };
+}
+
 function heroAbilityViews(
   world: BattlefieldWorld,
   u: BattlefieldUnit,
@@ -914,6 +964,9 @@ function structureSignature(view: SelectionPanelView): string {
     const rage = view.rage
       ? `r${view.rage.eligible}:${view.rage.enraged}:${view.rage.locked}:${view.rage.allLocked ? 1 : 0}:${Math.round(view.rage.meter * 20)}`
       : '';
+    const mut = view.mutation
+      ? `m${view.mutation.eligible}:${view.mutation.mutated}:${view.mutation.locked}:${view.mutation.allLocked ? 1 : 0}`
+      : '';
     return [
       'u',
       view.count,
@@ -925,6 +978,7 @@ function structureSignature(view: SelectionPanelView): string {
       abs,
       form,
       rage,
+      mut,
     ].join('|');
   }
   if (view.kind === 'resource') {
@@ -1142,6 +1196,47 @@ function applyRageMeter(
       : `Rage ${pct}% · ${mode} · ${r.enraged}/${r.eligible} hot`;
 }
 
+function mutationButtonHtml(m: SelectionMutationView): string {
+  const locked = m.allLocked;
+  const classes = ['is-mutation'];
+  if (locked) classes.push('is-armed');
+  const role = locked ? 'Locked role' : 'Auto role';
+  const status =
+    m.eligible === 1
+      ? m.mutated
+        ? 'Mutated'
+        : 'Stable'
+      : `${m.mutated}/${m.eligible} mutated`;
+  const title = locked
+    ? 'title="M · Unlock Mutation role (return to auto cluster)"'
+    : 'title="M · Lock Mutation role (stay mutated)"';
+  return `<button type="button" class="${classes.join(' ')}" data-act="toggleMutation" ${title}><span class="kane-sel-train-name">${locked ? 'M · Mut lock ON' : 'M · Mut lock'}</span><span class="kane-sel-stance-sub">${escapeHtml(role)} · ${escapeHtml(status)}</span></button>`;
+}
+
+function applyMutationButtonState(
+  btn: HTMLButtonElement,
+  m: SelectionMutationView,
+): void {
+  const locked = m.allLocked;
+  btn.classList.toggle('is-armed', locked);
+  const name = btn.querySelector('.kane-sel-train-name');
+  const sub = btn.querySelector('.kane-sel-stance-sub');
+  if (name) name.textContent = locked ? 'M · Mut lock ON' : 'M · Mut lock';
+  if (sub) {
+    const role = locked ? 'Locked role' : 'Auto role';
+    const status =
+      m.eligible === 1
+        ? m.mutated
+          ? 'Mutated'
+          : 'Stable'
+        : `${m.mutated}/${m.eligible} mutated`;
+    sub.textContent = `${role} · ${status}`;
+  }
+  btn.title = locked
+    ? 'M · Unlock Mutation role (return to auto cluster)'
+    : 'M · Lock Mutation role (stay mutated)';
+}
+
 function applyTrainAffordability(
   btn: HTMLButtonElement,
   t: { canPay: boolean; affordable: boolean },
@@ -1280,11 +1375,15 @@ export function renderSelectionPanel(view: SelectionPanelView): boolean {
           ? formationButtonHtml(view.formation)
           : '';
         const rageHtml = view.rage ? rageButtonHtml(view.rage) : '';
+        const mutHtml = view.mutation
+          ? mutationButtonHtml(view.mutation)
+          : '';
         actions.innerHTML = `
         <button type="button" data-act="stop">Stop</button>
         <button type="button" data-act="attackMove" class="${view.attackMoveArmed ? 'is-armed' : ''}">${view.attackMoveArmed ? 'Atk · Armed' : 'Atk-move'}</button>
         ${formHtml}
         ${rageHtml}
+        ${mutHtml}
         ${abilityHtml}
       `;
       } else {
@@ -1314,6 +1413,12 @@ export function renderSelectionPanel(view: SelectionPanelView): boolean {
             '[data-act="toggleRage"]',
           ) as HTMLButtonElement | null;
           if (rb) applyRageButtonState(rb, view.rage);
+        }
+        if (view.mutation) {
+          const mb = actions.querySelector(
+            '[data-act="toggleMutation"]',
+          ) as HTMLButtonElement | null;
+          if (mb) applyMutationButtonState(mb, view.mutation);
         }
       }
       applyRageMeter(meterRoot, meterFill, meterLabel, view.rage);
