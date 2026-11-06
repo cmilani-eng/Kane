@@ -13,6 +13,7 @@ import type { AiDifficultyId } from '../../gameplay/battlefield/aiDifficulty';
 import { isSfxMuted, playSfx, setSfxMuted } from '../audio/sfx';
 import { formatMatchClock } from './battlefieldHud';
 import { addLocalePicker } from './localePicker';
+import { pauseMapTipLine } from './pauseMapTip';
 import {
   SUPPLY_TONE_COLOR,
   formatSupplyLine,
@@ -153,6 +154,7 @@ export class PauseMenu {
 
     const clock = formatMatchClock(this.snapshot.elapsedMs);
     const elapsedLine = t('pause.elapsed', { clock });
+    const mapTip = pauseMapTipLine(this.snapshot.mapId);
     const setupLine = t('pause.setup', {
       species: speciesName(this.snapshot.speciesId),
       map: mapCopy(this.snapshot.mapId).label,
@@ -166,14 +168,25 @@ export class PauseMenu {
       this.snapshot.supplyCurrent,
       this.snapshot.supplyCap,
     );
-    const yElapsed = short ? top + 68 : cy - panelH * 0.3;
-    const ySetup = short ? top + 90 : cy - panelH * 0.22;
-    const ySupply = short ? top + 110 : cy - panelH * 0.14;
+    const yElapsed = short ? top + 64 : cy - panelH * 0.32;
+    const yMap = short ? top + 84 : cy - panelH * 0.26;
+    const ySetup = short ? top + 102 : cy - panelH * 0.2;
+    const ySupply = short ? top + 120 : cy - panelH * 0.14;
     const elapsed = this.scene.add
       .text(cx, yElapsed, elapsedLine, {
         fontFamily: 'system-ui, sans-serif',
         fontSize: short ? '15px' : '16px',
         color: '#f5e6c8',
+        align: 'center',
+      })
+      .setOrigin(0.5)
+      .setScrollFactor(0)
+      .setDepth(222);
+    const mapLine = this.scene.add
+      .text(cx, yMap, mapTip, {
+        fontFamily: 'system-ui, sans-serif',
+        fontSize: '13px',
+        color: '#c8d8e8',
         align: 'center',
       })
       .setOrigin(0.5)
@@ -199,10 +212,10 @@ export class PauseMenu {
       .setOrigin(0.5)
       .setScrollFactor(0)
       .setDepth(222);
-    this.root.push(title, brand, elapsed, setup, supplyText);
+    this.root.push(title, brand, elapsed, mapLine, setup, supplyText);
 
-    // Short layout: elapsed + setup + supply need a little more room before Resume.
-    const btnY0 = short ? top + 140 : cy - panelH * 0.04;
+    // Short layout: elapsed + map + setup + supply need a little more room before Resume.
+    const btnY0 = short ? top + 148 : cy - panelH * 0.04;
     const gap = short ? 36 : Math.min(44, panelH * 0.11);
     this.root.push(
       this.makeBtn(cx, btnY0, t('pause.resume'), () => {
