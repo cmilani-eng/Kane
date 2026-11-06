@@ -112,6 +112,7 @@ function render(): void {
   text('hub-locale-label').textContent = chrome.language;
   text('hub-title').textContent = chrome.title;
   text('hub-subtitle').textContent = chrome.subtitle;
+  text('hub-year').textContent = chrome.year;
   const privacy = text('hub-privacy') as HTMLAnchorElement;
   const terms = text('hub-terms') as HTMLAnchorElement;
   privacy.textContent = chrome.privacy;

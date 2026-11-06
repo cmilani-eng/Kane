@@ -135,6 +135,7 @@ export const enGB = {
   'hub.cardOpen': '{title}. {play}. Enter to open.',
   'hub.live': 'Live',
   'hub.experimental': 'Soft launch',
+  'hub.year': '© {n}',
   'hub.kane.blurb':
     'Fantasy real-time strategy. Pick a species, build a base and crush the enemy.',
   'hub.blob.blurb':
@@ -626,6 +627,7 @@ export const ptBR = {
   'hub.cardOpen': '{title}. {play}. Enter abre.',
   'hub.live': 'Ao vivo',
   'hub.experimental': 'Pré-lançamento',
+  'hub.year': '© {n}',
   'hub.kane.blurb':
     'Estratégia em tempo real de fantasia. Escolha uma espécie, construa uma base e esmague o inimigo.',
   'hub.blob.blurb':
@@ -1113,6 +1115,7 @@ export const es = {
   'hub.cardOpen': '{title}. {play}. Enter abre.',
   'hub.live': 'En vivo',
   'hub.experimental': 'Prelanzamiento',
+  'hub.year': '© {n}',
   'hub.kane.blurb':
     'Estrategia en tiempo real de fantasía. Elige una especie, construye una base y aplasta al enemigo.',
   'hub.blob.blurb':

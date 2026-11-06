@@ -5,6 +5,11 @@ const HUB_BLURB: Record<string, MessageKey> = {
   'blob-evolution': 'hub.blob.blurb',
 };
 
+/** Footer copyright year — pass `year` in tests; live path uses the calendar year. */
+export function hubFooterYear(year: number = new Date().getFullYear()): string {
+  return t('hub.year', { n: year });
+}
+
 export function hubChrome(): {
   title: string;
   documentTitle: string;
@@ -16,6 +21,7 @@ export function hubChrome(): {
   privacy: string;
   terms: string;
   language: string;
+  year: string;
 } {
   return {
     title: t('hub.title'),
@@ -28,6 +34,7 @@ export function hubChrome(): {
     privacy: t('menu.privacy'),
     terms: t('menu.terms'),
     language: t('menu.language'),
+    year: hubFooterYear(),
   };
 }
 
