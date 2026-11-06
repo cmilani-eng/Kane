@@ -76,6 +76,7 @@ This doc is the honest gate before any public preview URL.
 | Unit speed tip | **OK** — selection stats show catalog move speed in tiles/s (same-type only) | `unitMoveSpeed`, `sel.speedTip` |
 | Unit vision tip | **OK** — selection stats show catalog vision radius in map tiles (same-type only) | `unitVision`, `sel.visionTip` |
 | Unit HP max tip | **OK** — selection stats show catalog max HP (same-type only) | `unitHpMax`, `sel.hpMaxTip` |
+| Building HP max tip | **OK** — building selection stats show catalog Max HP tip | `buildingHpMax`, `sel.hpMaxTip` |
 | Unit atk CD tip | **OK** — selection stats show catalog attack cooldown in seconds (same-type only) | `unitAttackCooldown`, `sel.atkCdTip` |
 | Unit supply tip | **OK** — selection stats show catalog supply cost (1 slot per unit, same-type only) | `unitSupplyCost`, `sel.supplyTip` |
 | Unit train gold tip | **OK** — selection stats show catalog train gold cost (same-type only) | `unitTrainGold`, `sel.trainGoldTip` |
