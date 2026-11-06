@@ -84,6 +84,11 @@ import {
   type ControlGroups,
 } from '../../gameplay/battlefield/battlefieldOrders';
 import {
+  spawnControlGroupAssignFx,
+  spawnControlGroupRecallFx,
+  tickControlGroupFx,
+} from '../../gameplay/battlefield/battlefieldControlGroupFx';
+import {
   spawnStopPulses,
   tickStopFx,
 } from '../../gameplay/battlefield/battlefieldStopFx';
@@ -131,6 +136,7 @@ import {
 import { drawHeroAbilityVfxList } from '../fx/heroAbilityVfx';
 import { drawMutationVisuals } from '../fx/mutationVisual';
 import { drawRageVisuals } from '../fx/rageVisual';
+import { drawControlGroupFxList } from '../fx/controlGroupFeedback';
 import { drawStopFxList } from '../fx/stopCommandFeedback';
 import {
   drawUnitSilhouette,
@@ -360,6 +366,8 @@ export class BattlefieldScene extends Phaser.Scene {
   private onDigitHotkey(slot: number): void {
     if (this.ctrlHeld()) {
       if (assignControlGroup(this.world, this.controlGroups, slot)) {
+        spawnControlGroupAssignFx(this.world, slot);
+        this.hud.flashControlGroup(slot, 'assign');
         playSfx('select');
       }
       return;
@@ -383,6 +391,8 @@ export class BattlefieldScene extends Phaser.Scene {
         this.shiftHeld(),
       ) > 0
     ) {
+      spawnControlGroupRecallFx(this.world, slot);
+      this.hud.flashControlGroup(slot, 'recall');
       playSfx('select');
     }
   }
@@ -635,6 +645,7 @@ export class BattlefieldScene extends Phaser.Scene {
       }
       tickEconomyFx(this.world, delta);
       tickStopFx(this.world, delta);
+      tickControlGroupFx(this.world, delta);
       tickBuildings(this.world, delta);
       tickProduction(this.world, delta);
       tickFormations(this.world, delta);
@@ -824,6 +835,7 @@ export class BattlefieldScene extends Phaser.Scene {
     drawHeroAbilityVfxList(g, this.world.vfx, view);
     drawEconomyFxList(g, this.world.economyFx, view);
     drawStopFxList(g, this.world.stopFx, view);
+    drawControlGroupFxList(g, this.world.controlGroupFx, view);
     drawCoreFragments(g, this.world, this.animTimeMs, view);
     drawCombatFxList(g, this.world.combatFx, view);
     drawFormationVisuals(g, this.world, this.animTimeMs);
