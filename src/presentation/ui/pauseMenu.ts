@@ -10,6 +10,10 @@ import { subscribeLocale, t } from '../../i18n';
 import { isSfxMuted, playSfx, setSfxMuted } from '../audio/sfx';
 import { formatMatchClock } from './battlefieldHud';
 import { addLocalePicker } from './localePicker';
+import {
+  SUPPLY_TONE_COLOR,
+  supplyTone,
+} from './supplyTone';
 import { createVolumeSlider, type VolumeSliderHandle } from './volumeSlider';
 
 export interface PauseMenuSnapshot {
@@ -142,16 +146,15 @@ export class PauseMenu {
       current: this.snapshot.supplyCurrent,
       cap: this.snapshot.supplyCap,
     });
-    const nearCap =
-      this.snapshot.supplyCurrent >=
-      Math.floor(this.snapshot.supplyCap * 0.85);
-    const atCap =
-      this.snapshot.supplyCurrent >= this.snapshot.supplyCap;
+    const tone = supplyTone(
+      this.snapshot.supplyCurrent,
+      this.snapshot.supplyCap,
+    );
     const snap = this.scene.add
       .text(cx, short ? top + 74 : cy - panelH * 0.27, `${t('pause.match', { clock })}\n${supply}`, {
         fontFamily: 'system-ui, sans-serif',
         fontSize: '14px',
-        color: atCap ? '#e87aa8' : nearCap ? '#f0c75e' : '#d7e6f2',
+        color: SUPPLY_TONE_COLOR[tone],
         align: 'center',
         lineSpacing: 6,
       })
