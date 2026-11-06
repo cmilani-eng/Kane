@@ -13,7 +13,6 @@ import {
   type BuildingTypeId,
 } from '../../data/buildings';
 import { type SpeciesId } from '../../data/speciesStub';
-import { getUnitType } from '../../data/units';
 import {
   getAiDifficulty,
   type AiDifficultyId,
@@ -388,16 +387,14 @@ export class BattlefieldScene extends Phaser.Scene {
       cancelQueue: (index) => {
         const b = this.selectedBuilding;
         if (!b || b.team !== 'player') return;
-        const q = b.trainQueue;
-        const i =
-          index == null
-            ? q.length - 1
-            : Math.max(0, Math.min(q.length - 1, Math.floor(index)));
-        const typeId = q[i];
-        const name = typeId ? getUnitType(typeId).name : undefined;
-        if (cancelQueuedTrain(this.world, b, index)) {
+        const refunded = cancelQueuedTrain(this.world, b, index);
+        if (refunded) {
           playSfx('ui');
-          flashQueueCancel(name);
+          flashQueueCancel({
+            unitName: refunded.unitName,
+            gold: refunded.gold,
+            crystals: refunded.crystals,
+          });
         } else {
           playSfx('ui');
         }

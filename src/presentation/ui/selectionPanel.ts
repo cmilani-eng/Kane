@@ -281,8 +281,32 @@ export function mountSelectionPanel(next: SelectionPanelHandlers): void {
   ensureSelectionPanel();
 }
 
+/** Build refund toast copy including Gold / Crystal amounts. */
+export function formatQueueCancelFlash(opts: {
+  unitName?: string;
+  gold: number;
+  crystals: number;
+}): string {
+  const parts: string[] = [];
+  if (opts.gold > 0) parts.push(t('sel.goldCost', { n: opts.gold }));
+  if (opts.crystals > 0) parts.push(t('sel.crystalCost', { n: opts.crystals }));
+  if (parts.length === 0) {
+    return opts.unitName
+      ? t('sel.cancelFlashNamed', { name: opts.unitName })
+      : t('sel.cancelFlash');
+  }
+  const resources = parts.join(' · ');
+  return opts.unitName
+    ? t('sel.cancelFlashNamedRes', { name: opts.unitName, resources })
+    : t('sel.cancelFlashRes', { resources });
+}
+
 /** Brief queue-row flash + refund copy after a successful cancel. */
-export function flashQueueCancel(unitName?: string): void {
+export function flashQueueCancel(opts: {
+  unitName?: string;
+  gold: number;
+  crystals: number;
+}): void {
   const root = document.getElementById(PANEL_ID);
   if (!root) return;
   const queue = root.querySelector('[data-role="queue"]') as HTMLElement | null;
@@ -296,9 +320,7 @@ export function flashQueueCancel(unitName?: string): void {
   queue.classList.add('is-cancel-flash');
   if (label) {
     label.classList.add('is-flash');
-    label.textContent = unitName
-      ? t('sel.cancelFlashNamed', { name: unitName })
-      : t('sel.cancelFlash');
+    label.textContent = formatQueueCancelFlash(opts);
   }
   window.setTimeout(() => {
     queue.classList.remove('is-cancel-flash');
