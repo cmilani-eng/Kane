@@ -61,6 +61,7 @@ Gameplay does not import presentation. The skirmish loop lives in `gameplay/batt
 | Ctrl+A | Select all army |
 | RMB on enemy | Attack |
 | RMB on ground | Move selected |
+| Touch: press and hold on the map | Same as RMB: attack an enemy, gather, or move |
 | A, then click | Attack-move |
 | S | Stop |
 | Ctrl+0-9 (or Alt+0-9) | Save the selection as a control group |
