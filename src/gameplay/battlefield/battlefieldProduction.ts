@@ -4,7 +4,7 @@
 import { getBuildingType } from '../../data/buildings';
 import { getUnitType, type UnitTypeId } from '../../data/units';
 import { SPECIES } from '../../data/speciesStub';
-import { canAfford, pay } from './battlefieldBuildings';
+import { canAfford, pay, refund } from './battlefieldBuildings';
 import { walletOf } from './battlefieldEconomy';
 import { setUnitPath } from './battlefieldPathfinding';
 import {
@@ -29,6 +29,34 @@ export function queueTrain(
   if (!canAfford(wallet, cost)) return false;
   if (!pay(wallet, cost)) return false;
   building.trainQueue.push(typeId);
+  return true;
+}
+
+/**
+ * Cancel a queued train slot and refund its cost.
+ * Defaults to the last queue item (classic RTS). Pass `index` to cancel a specific slot.
+ */
+export function cancelQueuedTrain(
+  world: BattlefieldWorld,
+  building: BattlefieldBuilding,
+  index?: number,
+): boolean {
+  if (building.team !== 'player' || building.hp <= 0) return false;
+  const q = building.trainQueue;
+  if (q.length === 0) return false;
+  const i =
+    index == null
+      ? q.length - 1
+      : Math.max(0, Math.min(q.length - 1, Math.floor(index)));
+  const typeId = q[i];
+  if (!typeId) return false;
+  q.splice(i, 1);
+  if (i === 0) building.trainProgressMs = 0;
+  const udef = getUnitType(typeId);
+  refund(walletOf(world, building.team), {
+    gold: udef.costGold,
+    magic_crystals: udef.costCrystals,
+  });
   return true;
 }
 

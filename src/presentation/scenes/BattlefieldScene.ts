@@ -73,6 +73,7 @@ import {
 } from '../../gameplay/battlefield/battlefieldEconomy';
 import { tickEconomyFx } from '../../gameplay/battlefield/battlefieldEconomyFx';
 import {
+  cancelQueuedTrain,
   queueTrain,
   tickProduction,
   trainHotkey,
@@ -301,6 +302,12 @@ export class BattlefieldScene extends Phaser.Scene {
       stop: () => this.issueStopCommand(),
       attackMove: () => this.toggleAttackMoveMode(),
       rally: () => this.toggleRallyMode(),
+      cancelQueue: (index) => {
+        const b = this.selectedBuilding;
+        if (!b || b.team !== 'player') return;
+        if (cancelQueuedTrain(this.world, b, index)) playSfx('ui');
+        else playSfx('ui');
+      },
       train: (typeId) => {
         const b = this.selectedBuilding;
         if (!b || b.team !== 'player') return;
