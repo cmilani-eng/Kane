@@ -1,6 +1,6 @@
 /**
  * DATABASE — STUB.
- * Future: Firebase Auth + cloud progression.
+ * Phase 6: Auth / Firestore profiles stay stubbed; see `src/firebase/`.
  * Local SP already persists match counters via `localStats.ts` (localStorage).
  */
 

@@ -1,0 +1,28 @@
+{
+  "rules": {
+    ".read": false,
+    ".write": false,
+    "lobbies": {
+      "$code": {
+        ".read": "auth != null",
+        ".write": "auth != null && (!data.exists() || data.child('hostUid').val() === auth.uid || data.child('guestUid').val() === auth.uid)",
+        ".validate": "newData.hasChildren(['hostUid', 'createdAt'])"
+      }
+    },
+    "matches": {
+      "$matchId": {
+        ".read": "auth != null && (data.child('players').child(auth.uid).exists() || root.child('lobbies').child(data.child('lobbyCode').val()).child('hostUid').val() === auth.uid)",
+        "commands": {
+          "$tick": {
+            "$uid": {
+              ".write": "auth != null && $uid === auth.uid"
+            }
+          }
+        },
+        "meta": {
+          ".write": "auth != null"
+        }
+      }
+    }
+  }
+}

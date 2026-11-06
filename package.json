@@ -7,7 +7,9 @@
   "scripts": {
     "dev": "vite --host",
     "build": "tsc && vite build",
-    "preview": "vite preview --host"
+    "preview": "vite preview --host",
+    "emulators": "firebase emulators:start",
+    "emulators:exec": "firebase emulators:exec --only auth,database,firestore"
   },
   "dependencies": {
     "phaser": "^4.2.1"

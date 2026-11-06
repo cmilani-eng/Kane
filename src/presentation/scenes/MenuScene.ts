@@ -197,7 +197,7 @@ export class MenuScene extends Phaser.Scene {
       .text(
         width / 2,
         height * 0.8,
-        `Ages ${flags.ageGateMinYears}+  ·  Ads ${flags.adsEnabled ? 'on' : 'off'}  ·  Local-first`,
+        `Ages ${flags.ageGateMinYears}+  ·  Ads ${flags.adsEnabled ? 'on' : 'off'}  ·  Local-first  ·  Firebase stubs`,
         {
           fontFamily: 'system-ui, sans-serif',
           fontSize: '12px',

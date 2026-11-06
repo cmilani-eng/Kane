@@ -6,7 +6,7 @@ Fantasy Real-Time Strategy Game
 Built with **[Phaser 4](https://phaser.io/phaser4)** (`phaser@^4.2.1`) + TypeScript + Vite.  
 APIs: [docs.phaser.io](https://docs.phaser.io/) — do not assume Phaser 3.
 
-> **Local-first.** Ads off (`adsEnabled=false`). No Firebase deploy for this milestone.
+> **Local-first.** Ads off (`adsEnabled=false`). Firebase foundation is **stub-only** (emulators optional) — see `docs/firebase-hosting.md`.
 
 ## Quick start
 
@@ -41,9 +41,10 @@ Playable **battlefield** (select / move / attack):
 | Species / units | `src/data/speciesStub.ts`, `src/data/units.ts` | Brutes combat stats |
 | Resources (later) | `src/data/resources.ts` | Stub — Scrap + Core IDs |
 | Battlefield combat | `src/gameplay/battlefield/` | Select/move + combat |
-| Online connection | `src/networking/` | Stub |
+| Online connection | `src/networking/` | Stub (lobby codes local-only) |
 | Multiplayer server | `src/server/` | Stub |
-| Database | `src/database/` | Stub |
+| Database | `src/database/` | Local stats + persistence stub |
+| Firebase foundation | `src/firebase/` | Auth/age-gate/emulator stubs — no live MP |
 
 Gameplay does not import presentation. Full skirmish systems under `gameplay/` remain for later milestones; **M1 wires only** `battlefield/` + `BattlefieldScene`.
 
@@ -68,4 +69,4 @@ Gameplay does not import presentation. Full skirmish systems under `gameplay/` r
 
 ## What’s next
 
-Buildings, Scrap/Core economy, production, species mechanics, smarter AI, then online.
+Phase 6: Firebase emulators + friend lobby (stubs landed; SDK + live sync later). Keep ads off.

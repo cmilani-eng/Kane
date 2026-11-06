@@ -1,0 +1,27 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Soft-launch: closed by default. Profiles / match summaries unlock with Auth.
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    match /profiles/{uid} {
+      allow read: if request.auth != null && request.auth.uid == uid;
+      allow write: if request.auth != null
+        && request.auth.uid == uid
+        && request.resource.data.keys().hasOnly([
+          'displayName',
+          'ageGateOk',
+          'updatedAt',
+          'cosmetics'
+        ]);
+    }
+
+    match /matchSummaries/{id} {
+      allow read: if request.auth != null
+        && request.auth.uid in resource.data.playerUids;
+      allow create: if false; // Cloud Function only (future)
+    }
+  }
+}
