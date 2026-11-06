@@ -135,6 +135,7 @@ export const enGB = {
   'hub.play': 'Play',
   'hub.cardOpen': '{title}. {play}. Enter to open.',
   'hub.live': 'Live',
+  'hub.liveAria': 'Status: Live',
   'hub.experimental': 'Soft launch',
   'hub.year': '© {n}',
   'hub.kane.blurb':
@@ -628,6 +629,7 @@ export const ptBR = {
   'hub.play': 'Jogar',
   'hub.cardOpen': '{title}. {play}. Enter abre.',
   'hub.live': 'Ao vivo',
+  'hub.liveAria': 'Estado: Ao vivo',
   'hub.experimental': 'Pré-lançamento',
   'hub.year': '© {n}',
   'hub.kane.blurb':
@@ -1117,6 +1119,7 @@ export const es = {
   'hub.play': 'Jugar',
   'hub.cardOpen': '{title}. {play}. Enter abre.',
   'hub.live': 'En vivo',
+  'hub.liveAria': 'Estado: En vivo',
   'hub.experimental': 'Prelanzamiento',
   'hub.year': '© {n}',
   'hub.kane.blurb':
