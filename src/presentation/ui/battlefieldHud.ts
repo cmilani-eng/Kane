@@ -941,15 +941,11 @@ export class BattlefieldHud {
           !u.canGather &&
           u.hp > 0,
       );
-      const action = cycling ? 'cycle' : 'tap';
+      const action = t(cycling ? 'hud.idleCycle' : 'hud.idleTap');
       this.idleMilPingBtn
         .setVisible(true)
         .setAlpha(pulse)
-        .setText(
-          this.narrow
-            ? `Idle army ${idleMilN} · ${action}`
-            : `Idle army ${idleMilN} · ${action}`,
-        );
+        .setText(t('hud.idleArmy', { n: idleMilN, action }));
     } else {
       this.idleMilPingBtn.setVisible(false).setAlpha(1);
     }

@@ -4,11 +4,11 @@
  * Copy covers rematch, Idle chip, Army, pause, and Home.
  */
 import type { SkirmishMapId } from '../../data/skirmishMaps';
-import { t } from '../../i18n';
 import type { BattlefieldWorld } from './battlefieldWorld';
 import { selectedCount } from './battlefieldWorld';
 import { getBuildingType } from '../../data/buildings';
 import { getUnitType } from '../../data/units';
+import { t, type MessageKey } from '../../i18n';
 
 export type TutorialStepId =
   | 'welcome'
@@ -34,23 +34,6 @@ export interface TutorialState {
   seenHero: boolean;
 }
 
-const TIPS: Record<Exclude<TutorialStepId, 'done' | 'map'>, string> = {
-  welcome:
-    'Hi commander! Tap Next or just play. Esc / Pause freezes the fight — Rematch waits after victory or defeat.',
-  select:
-    'Tap or box-select your units (yellow ring). Need the whole army? Tap Army or press Ctrl+A.',
-  gather:
-    'Workers love shiny stuff! Right-click Gold or Crystals. Idle N · tap grabs idle workers — tap again to cycle.',
-  build:
-    'Press B (or the build flow) to place a building, then tap the map. Halls and huts train more friends!',
-  attack:
-    'Select fighters, then right-click an enemy — or arm A · Atk for attack-move. Stop clears orders.',
-  hud:
-    'Handy HUD: Pause / Esc, Home · Base recenters your keep, Army selects combat, Idle / Idle army cycle standers.',
-  heroes:
-    'Press H for your hero, then Q / W / E for big moves. When the match ends, Rematch keeps species, difficulty, and map!',
-};
-
 const STEP_ORDER: Exclude<TutorialStepId, 'done'>[] = [
   'welcome',
   'map',
@@ -75,6 +58,25 @@ export function createTutorialState(): TutorialState {
   };
 }
 
+function tipKey(step: Exclude<TutorialStepId, 'done' | 'map'>): MessageKey {
+  switch (step) {
+    case 'welcome':
+      return 'tutorial.welcome';
+    case 'select':
+      return 'tutorial.select';
+    case 'gather':
+      return 'tutorial.gather';
+    case 'build':
+      return 'tutorial.build';
+    case 'attack':
+      return 'tutorial.attack';
+    case 'hud':
+      return 'tutorial.hud';
+    case 'heroes':
+      return 'tutorial.heroes';
+  }
+}
+
 export function tutorialTip(
   state: TutorialState,
   mapId: SkirmishMapId = 'crossing',
@@ -83,13 +85,15 @@ export function tutorialTip(
   if (state.step === 'map') {
     return mapId === 'ridge' ? t('tutorial.map.ridge') : t('tutorial.map.crossing');
   }
-  return TIPS[state.step];
+  return t(tipKey(state.step));
 }
 
-export function tutorialStepLabel(t: TutorialState): string {
-  if (!t.visible || t.step === 'done') return '';
-  const i = STEP_ORDER.indexOf(t.step);
-  return i >= 0 ? `Tip ${i + 1}/${STEP_ORDER.length}` : '';
+export function tutorialStepLabel(state: TutorialState): string {
+  if (!state.visible || state.step === 'done') return '';
+  const i = STEP_ORDER.indexOf(state.step);
+  return i >= 0
+    ? t('tutorial.step', { n: i + 1, total: STEP_ORDER.length })
+    : '';
 }
 
 export function dismissTutorial(t: TutorialState): void {
