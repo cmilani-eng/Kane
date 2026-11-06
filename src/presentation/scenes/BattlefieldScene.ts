@@ -65,6 +65,7 @@ import {
   issueGatherSelected,
   tickBattlefieldEconomy,
 } from '../../gameplay/battlefield/battlefieldEconomy';
+import { tickEconomyFx } from '../../gameplay/battlefield/battlefieldEconomyFx';
 import {
   tickProduction,
   trainHotkey,
@@ -112,6 +113,7 @@ import { drawBuildingSilhouette } from '../buildings/buildingSilhouette';
 import { drawResourceNodeSilhouette } from '../resources/resourceNodeSilhouette';
 import { drawCombatFxList } from '../fx/combatFxDraw';
 import { drawCoreFragments } from '../fx/coreFragmentDraw';
+import { drawEconomyFxList } from '../fx/economyFxDraw';
 import { drawFormationVisuals } from '../fx/formationVisual';
 import { drawHeroAbilityVfxList } from '../fx/heroAbilityVfx';
 import { drawMutationVisuals } from '../fx/mutationVisual';
@@ -524,6 +526,11 @@ export class BattlefieldScene extends Phaser.Scene {
     if (this.matchResult === 'ongoing') {
       tickBattlefield(this.world, delta);
       tickBattlefieldEconomy(this.world);
+      // Mute-aware gather/deposit SFX — fire once while FX is fresh.
+      for (const fx of this.world.economyFx) {
+        if (fx.lifeMs >= fx.maxLifeMs - delta) playSfx(fx.sfx);
+      }
+      tickEconomyFx(this.world, delta);
       tickBuildings(this.world, delta);
       tickProduction(this.world, delta);
       tickFormations(this.world, delta);
@@ -709,6 +716,7 @@ export class BattlefieldScene extends Phaser.Scene {
     const view = this.viewCull;
 
     drawHeroAbilityVfxList(g, this.world.vfx, view);
+    drawEconomyFxList(g, this.world.economyFx, view);
     drawCoreFragments(g, this.world, this.animTimeMs, view);
     drawCombatFxList(g, this.world.combatFx, view);
     drawFormationVisuals(g, this.world, this.animTimeMs);

@@ -6,6 +6,7 @@
 export type SfxKey =
   | 'select'
   | 'gather'
+  | 'deposit'
   | 'build'
   | 'train'
   | 'attack'
@@ -22,6 +23,10 @@ const TONES: Record<SfxKey, Tone[]> = {
   gather: [
     { freq: 340, dur: 0.06, type: 'triangle', gain: 0.05 },
     { freq: 420, dur: 0.05, type: 'triangle', gain: 0.04 },
+  ],
+  deposit: [
+    { freq: 480, dur: 0.05, type: 'sine', gain: 0.045 },
+    { freq: 620, dur: 0.07, type: 'triangle', gain: 0.04 },
   ],
   build: [{ freq: 180, dur: 0.12, type: 'sawtooth', gain: 0.035 }],
   train: [{ freq: 260, dur: 0.08, type: 'square', gain: 0.04 }],
