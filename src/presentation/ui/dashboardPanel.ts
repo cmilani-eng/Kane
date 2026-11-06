@@ -160,8 +160,9 @@ export function showDashboardPanel(
     .setDepth(300)
     .setInteractive();
 
-  const panelW = Math.min(460, width - 28);
-  const panelH = Math.min(520, height - 28);
+  const short = height < 500;
+  const panelW = short ? Math.min(760, width - 24) : Math.min(460, width - 28);
+  const panelH = short ? height - 16 : Math.min(520, height - 28);
   const cx = width / 2;
   const cy = height / 2;
   const top = cy - panelH / 2;
@@ -367,6 +368,30 @@ export function showDashboardPanel(
     }
   }
 
+  const placeColumns = (): void => {
+    if (!short) {
+      statsBody.setY(profileBody.y + profileBody.height + 14);
+      matchesBody.setY(statsBody.y + statsBody.height + 14);
+      return;
+    }
+    const colW = Math.floor((panelW - 72) / 2);
+    profileBody.setStyle({ wordWrap: { width: colW } });
+    statsBody.setStyle({ wordWrap: { width: colW } });
+    statsBody.setPosition(left + colW + 24, profileBody.y);
+    const stackBottom = Math.max(
+      profileBody.y + profileBody.height,
+      statsBody.y + statsBody.height,
+    );
+    matchesBody.setPosition(left, stackBottom + 10);
+    const room = btnY - 28 - matchesBody.y;
+    if (room > 0 && matchesBody.height > room) {
+      const maxLines = Math.max(1, Math.floor(room / 18));
+      matchesBody.setText(
+        matchesBody.text.split('\n').slice(0, maxLines).join('\n'),
+      );
+    }
+  };
+
   const loadBody = async (): Promise<void> => {
     const current = getCurrentAuthUser();
     if (!isCloudAccount(current) || !current) {
@@ -405,9 +430,8 @@ export function showDashboardPanel(
         }),
       );
       statsBody.setText(accountOverviewText(overview) + emptyHint);
-      statsBody.setY(profileBody.y + profileBody.height + 14);
       matchesBody.setText(accountMatchesText(matches));
-      matchesBody.setY(statsBody.y + statsBody.height + 14);
+      placeColumns();
     } catch (err) {
       console.warn('[KANE] dashboard load failed', err);
       profileBody.setText(
@@ -418,9 +442,8 @@ export function showDashboardPanel(
         }),
       );
       statsBody.setText(accountOverviewText(emptyStatsOverview()));
-      statsBody.setY(profileBody.y + profileBody.height + 14);
       matchesBody.setText(accountMatchesText([]));
-      matchesBody.setY(statsBody.y + statsBody.height + 14);
+      placeColumns();
     }
   };
 

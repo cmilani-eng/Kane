@@ -175,6 +175,7 @@ export function controlsHelpCopy(
     ${row(t('help.stop'), 'S')}
     ${row(t('help.army'), 'Ctrl+A')}
     ${row(t('help.groups'), t('help.groupsKeys'))}
+    ${row(t('help.cycle'), t('help.cycleKeys'))}
     ${row(t('help.slots'), t('help.slotsKeys'))}
     ${row(t('help.place'), t('help.placeKeys'))}
     ${row(t('help.base'), 'Home')}

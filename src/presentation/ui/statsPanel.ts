@@ -178,8 +178,11 @@ export function showStatsPanel(
     .setDepth(300)
     .setInteractive();
 
-  const panelW = Math.min(460, width - 28);
-  const panelH = Math.min(wantAdmin ? 500 : 420, height - 28);
+  const short = height < 500;
+  const panelW = short ? Math.min(760, width - 24) : Math.min(460, width - 28);
+  const panelH = short
+    ? height - 16
+    : Math.min(wantAdmin ? 500 : 420, height - 28);
   const cx = width / 2;
   const cy = height / 2;
   const top = cy - panelH / 2;
@@ -285,6 +288,13 @@ export function showStatsPanel(
     playerBody.setText(playerRecordText(stats));
     recentBody.setText(recentMatchesText(matches, wantAdmin ? 3 : 4));
     recentBody.setY(playerBody.y + playerBody.height + 16);
+    const recentRoom = bodyBottom - 4 - recentBody.y;
+    if (recentBody.height > recentRoom) {
+      const maxLines = Math.max(1, Math.floor(recentRoom / 18));
+      recentBody.setText(
+        recentBody.text.split('\n').slice(0, maxLines).join('\n'),
+      );
+    }
 
     if (adminBody) {
       const adminText = [

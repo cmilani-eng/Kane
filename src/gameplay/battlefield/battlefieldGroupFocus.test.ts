@@ -7,6 +7,7 @@ import {
   GROUP_DOUBLE_TAP_MS,
 } from './battlefieldGroupFocus';
 import {
+  addToControlGroup,
   assignControlGroup,
   createControlGroups,
   recallControlGroup,
@@ -119,5 +120,67 @@ describe('control group round trip', () => {
     clearSelection(w);
     expect(assignControlGroup(w, groups, 3)).toBe(false);
     expect(groups.get(3)).toEqual(saved.map((u) => u.id));
+  });
+});
+
+describe('addToControlGroup', () => {
+  const pick = (w: ReturnType<typeof createBattlefieldWorld>, from: number, n: number) =>
+    w.units.filter(isMilitaryUnit).slice(from, from + n);
+  const select = (w: ReturnType<typeof createBattlefieldWorld>, units: { selected: boolean }[]) => {
+    clearSelection(w);
+    units.forEach((u) => (u.selected = true));
+  };
+
+  it('keeps the units already in the group and adds the selection', () => {
+    const w = createBattlefieldWorld('brutes');
+    const groups = createControlGroups();
+    const first = pick(w, 0, 2);
+    const more = pick(w, 2, 2);
+
+    select(w, first);
+    assignControlGroup(w, groups, 5);
+    select(w, more);
+
+    expect(addToControlGroup(w, groups, 5)).toBe(true);
+    expect(groups.get(5)).toEqual([...first, ...more].map((u) => u.id));
+  });
+
+  it('does not list a unit twice', () => {
+    const w = createBattlefieldWorld('brutes');
+    const groups = createControlGroups();
+    const units = pick(w, 0, 3);
+
+    select(w, units.slice(0, 2));
+    assignControlGroup(w, groups, 2);
+    select(w, units.slice(1, 3));
+    addToControlGroup(w, groups, 2);
+
+    expect(groups.get(2)).toEqual(units.map((u) => u.id));
+  });
+
+  it('starts a group when the slot is empty', () => {
+    const w = createBattlefieldWorld('brutes');
+    const groups = createControlGroups();
+    const units = pick(w, 0, 2);
+
+    select(w, units);
+    expect(addToControlGroup(w, groups, 7)).toBe(true);
+    expect(groups.get(7)).toEqual(units.map((u) => u.id));
+  });
+
+  it('does nothing with an empty selection or a bad slot', () => {
+    const w = createBattlefieldWorld('brutes');
+    const groups = createControlGroups();
+    const units = pick(w, 0, 2);
+
+    select(w, units);
+    assignControlGroup(w, groups, 1);
+    clearSelection(w);
+
+    expect(addToControlGroup(w, groups, 1)).toBe(false);
+    expect(groups.get(1)).toEqual(units.map((u) => u.id));
+    select(w, units);
+    expect(addToControlGroup(w, groups, 10)).toBe(false);
+    expect(addToControlGroup(w, groups, -1)).toBe(false);
   });
 });

@@ -90,6 +90,7 @@ import {
   type MatchResult,
 } from '../../gameplay/battlefield/battlefieldVictory';
 import {
+  addToControlGroup,
   assignControlGroup,
   createControlGroups,
   issueAttackMoveSelected,
@@ -97,6 +98,10 @@ import {
   stopSelected,
   type ControlGroups,
 } from '../../gameplay/battlefield/battlefieldOrders';
+import {
+  stepSubgroup,
+  type SubgroupCycle,
+} from '../../gameplay/battlefield/battlefieldSubgroups';
 import {
   groupCenter,
   GroupTapTracker,
@@ -161,6 +166,12 @@ import { createSkirmishMap } from '../maps/mapManager';
 import { FogOverlay } from '../ui/fogOverlay';
 import { showKaneEndScreen } from '../ui/endScreen';
 import { PauseMenu } from '../ui/pauseMenu';
+import { publishMatchStock, resetMatchStock } from '../ui/matchUiStore';
+import {
+  layoutStockStrip,
+  mountStockStrip,
+  unmountStockStrip,
+} from '../ui/stockStrip';
 import {
   createControlsHelpPanel,
   type ControlsHelpHandle,
@@ -238,6 +249,7 @@ export class BattlefieldScene extends Phaser.Scene {
   private amovePointer = { x: 0, y: 0 };
   private hud!: BattlefieldHud;
   private pauseMenu!: PauseMenu;
+  private pauseBlur: Phaser.Filters.Blur | null = null;
   private controlsHelp!: ControlsHelpHandle;
   private paused = false;
   private minimap!: Minimap;
@@ -251,6 +263,8 @@ export class BattlefieldScene extends Phaser.Scene {
   private controlGroups!: ControlGroups;
   /** Spots a double-tap on a group key, which centres the camera. */
   private groupTaps = new GroupTapTracker();
+  /** Where Tab is in its walk through the unit types of the selection. */
+  private subgroupCycle: SubgroupCycle | null = null;
   /** Finger-down that may become a move / attack / gather order. */
   private touchOrderPress: {
     pointerId: number;
@@ -331,6 +345,10 @@ export class BattlefieldScene extends Phaser.Scene {
     this.fogOverlay.refresh(this.world.fog);
 
     this.hud = new BattlefieldHud(this, this.world);
+    this.hud.hidePhaserStock();
+    resetMatchStock();
+    mountStockStrip();
+    layoutStockStrip(this.scale.width, this.scale.height);
     this.hud.menuBtn.on('pointerup', () => this.scene.start('Menu'));
     this.hud.onArmAttackMove = () => this.toggleAttackMoveMode();
     this.hud.onStopSelected = () => this.issueStopCommand();
@@ -470,6 +488,7 @@ export class BattlefieldScene extends Phaser.Scene {
     );
     const onResize = (): void => {
       this.hud.layout();
+      layoutStockStrip(this.scale.width, this.scale.height);
       this.coach.layout();
       this.coreBanner.layout();
       this.minimap.layout();
@@ -479,6 +498,11 @@ export class BattlefieldScene extends Phaser.Scene {
     this.events.once(Phaser.Scenes.Events.SHUTDOWN, () =>
       this.scale.off('resize', onResize),
     );
+    this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => {
+      this.clearGameplayBlur();
+      unmountStockStrip();
+      resetMatchStock();
+    });
 
     this.shiftKey =
       this.input.keyboard?.addKey(Phaser.Input.Keyboard.KeyCodes.SHIFT) ?? null;
@@ -489,6 +513,7 @@ export class BattlefieldScene extends Phaser.Scene {
     this.controlGroups = createControlGroups();
     // Phaser reuses this scene object between matches.
     this.groupTaps.reset();
+    this.subgroupCycle = null;
     this.touchOrderPress = null;
 
     this.bindInput();
@@ -620,6 +645,37 @@ export class BattlefieldScene extends Phaser.Scene {
         this.onDigitHotkey(slot, e.timeStamp, e.repeat),
       );
     });
+
+    // Tab is a plain window listener, not a Phaser key capture: Phaser queues
+    // key events, so it would preventDefault too late, and a capture would
+    // outlive this scene and break Tab in the login and lobby forms.
+    const onTab = (e: KeyboardEvent): void => {
+      if (e.key !== 'Tab' || e.ctrlKey || e.altKey || e.metaKey) return;
+      if (this.paused || this.matchResult !== 'ongoing') return;
+      if (this.controlsHelp.isOpen()) return;
+      const el = e.target instanceof Element ? e.target : null;
+      if (el?.closest('input, textarea, select, [contenteditable]')) return;
+      e.preventDefault();
+      if (!e.repeat) this.cycleSubgroup(e.shiftKey ? -1 : 1);
+    };
+    window.addEventListener('keydown', onTab);
+    this.events.once(Phaser.Scenes.Events.SHUTDOWN, () =>
+      window.removeEventListener('keydown', onTab),
+    );
+  }
+
+  /** Tab / Shift+Tab: step through the unit types in the selection. */
+  private cycleSubgroup(dir: 1 | -1): void {
+    const step = stepSubgroup(this.world, this.subgroupCycle, dir);
+    if (!step) {
+      playSfx('ui');
+      return;
+    }
+    this.subgroupCycle = step.cycle;
+    this.clearBuildingSelection();
+    const wanted = new Set(step.ids);
+    for (const u of this.world.units) u.selected = wanted.has(u.id);
+    playSfx('select');
   }
 
   /** Esc: close help, cancel place/A-move, else toggle pause (resume when open). */
@@ -671,6 +727,7 @@ export class BattlefieldScene extends Phaser.Scene {
     if (value === this.paused) {
       if (value && !this.pauseMenu.isOpen) {
         this.pauseMenu.show(this.pauseSnapshot());
+        this.setGameplayBlur(true);
       }
       return;
     }
@@ -683,13 +740,41 @@ export class BattlefieldScene extends Phaser.Scene {
       this.boxGfx.clear();
       this.cameraCtl.suppressPan = true;
       this.pauseMenu.show(this.pauseSnapshot());
+      this.setGameplayBlur(true);
       playSfx('ui');
     } else {
       this.pauseMenu.hide();
+      this.setGameplayBlur(false);
       this.cameraCtl.suppressPan = false;
       this.hud.syncMuteLabel();
       playSfx('ui');
     }
+  }
+
+  /**
+   * Blur the world camera only. The pause menu is drawn by the HUD camera,
+   * so it stays sharp.
+   */
+  private setGameplayBlur(on: boolean): void {
+    if (on) {
+      if (this.pauseBlur) return;
+      this.pauseBlur = this.cameras.main.filters.internal.addBlur(
+        0,
+        2,
+        2,
+        1,
+        0xffffff,
+        4,
+      );
+      return;
+    }
+    this.clearGameplayBlur();
+  }
+
+  private clearGameplayBlur(): void {
+    if (!this.pauseBlur) return;
+    this.cameras.main.filters.internal.remove(this.pauseBlur);
+    this.pauseBlur = null;
   }
 
   /**
@@ -703,7 +788,9 @@ export class BattlefieldScene extends Phaser.Scene {
     // Alt+N is a fallback: browsers can reserve Ctrl+digit for tab switching.
     if (this.ctrlHeld() || this.altHeld()) {
       this.groupTaps.reset();
-      if (countKey && assignControlGroup(this.world, this.controlGroups, slot)) {
+      // With Shift the selection is added to the group instead of replacing it.
+      const save = this.shiftHeld() ? addToControlGroup : assignControlGroup;
+      if (countKey && save(this.world, this.controlGroups, slot)) {
         spawnControlGroupAssignFx(this.world, slot);
         this.hud.flashControlGroup(slot, 'assign');
         playSfx('select');
@@ -1295,6 +1382,7 @@ export class BattlefieldScene extends Phaser.Scene {
     if (this.paused) {
       this.paused = false;
       this.pauseMenu.hide();
+      this.setGameplayBlur(false);
     }
     this.clearAttackMoveMode();
     this.ghostGfx.clear();
@@ -1320,10 +1408,24 @@ export class BattlefieldScene extends Phaser.Scene {
       reason: matchEndReason(this.world, result),
       onMenu: () => this.scene.start('Menu'),
       onRematch: () => this.rematchSameSkirmish(),
+      difficulty: this.world.aiDifficulty,
+      onStepUp:
+        result === 'victory' && this.world.aiDifficulty === 'practice'
+          ? () => this.stepUpFromPractice()
+          : undefined,
       ignoreOnMain: (objs) => {
         this.cameras.main.ignore(this.add.container(0, 0, objs));
       },
     });
+  }
+
+  /** Practice win — same species and map, one step up to Easy. */
+  private stepUpFromPractice(): void {
+    const { species, mapId } = rematchPrefsFromWorld(this.world);
+    rememberMatchPrefs(species, 'easy', mapId);
+    recordGameStarted(species);
+    void maybeRecordCloudGameStarted(species);
+    this.scene.start('Battlefield', { species, difficulty: 'easy', mapId });
   }
 
   /** End-screen Rematch — same species + difficulty + map, no menu hop. */
@@ -1404,7 +1506,10 @@ export class BattlefieldScene extends Phaser.Scene {
       this.mode === 'place' ? this.placeType : null,
     );
     const panelOpen = renderSelectionPanel(selView);
-    const inset = selectionPanelInsetPx(panelOpen);
+    const inset = selectionPanelInsetPx(
+      panelOpen,
+      selView.kind === 'empty',
+    );
     this.hud.setBottomInset(inset);
     this.minimap.setBottomInset(inset);
 
@@ -1454,6 +1559,13 @@ export class BattlefieldScene extends Phaser.Scene {
       def?.cost.magic_crystals ?? 0,
     );
     this.hud.refresh(status, hint, dtMs);
+    const wallet = walletOf(this.world, 'player');
+    publishMatchStock({
+      gold: wallet.gold,
+      crystals: wallet.magic_crystals,
+      supply: livingByTeam(this.world, 'player'),
+      supplyCap: flags.unitCap,
+    });
   }
 
   private drawWorld(): void {

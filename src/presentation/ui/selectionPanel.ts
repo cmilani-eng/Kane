@@ -117,6 +117,11 @@ export type SelectionPlaceOption = {
 export type SelectionPanelView =
   | { kind: 'hidden' }
   | {
+      kind: 'empty';
+      title: string;
+      flavor: string;
+    }
+  | {
       kind: 'units';
       count: number;
       title: string;
@@ -290,6 +295,28 @@ function injectStyles(): void {
     }
     #kane-selection-panel.is-visible {
       display: block;
+    }
+    #kane-selection-panel.is-empty .kane-sel-portrait,
+    #kane-selection-panel.is-empty .kane-sel-hp,
+    #kane-selection-panel.is-empty .kane-sel-carry,
+    #kane-selection-panel.is-empty .kane-sel-stats,
+    #kane-selection-panel.is-empty .kane-sel-meter,
+    #kane-selection-panel.is-empty .kane-sel-control-hint,
+    #kane-selection-panel.is-empty .kane-sel-actions,
+    #kane-selection-panel.is-empty .kane-sel-queue {
+      display: none !important;
+    }
+    #kane-selection-panel.is-empty .kane-sel-inner {
+      max-width: 420px;
+      padding: 8px 12px 10px;
+    }
+    #kane-selection-panel.is-empty .kane-sel-title {
+      font-size: 13px;
+      color: #c8d8e8;
+    }
+    #kane-selection-panel.is-empty .kane-sel-flavor {
+      font-size: 12px;
+      color: #9eb4c8;
     }
     #kane-selection-panel .kane-sel-inner {
       pointer-events: auto;
@@ -807,12 +834,20 @@ export function unmountSelectionPanel(): void {
 }
 
 /** Approximate panel height for Phaser HUD / minimap insets. */
-export function selectionPanelInsetPx(visible: boolean): number {
+export function selectionPanelInsetPx(
+  visible: boolean,
+  empty = false,
+): number {
   if (!visible) return 0;
   const narrow =
     typeof window !== 'undefined' ? window.innerWidth < 720 : false;
   const short =
     typeof window !== 'undefined' ? window.innerHeight < 500 : false;
+  // Compact empty tip — less HUD lift than a full selection card.
+  if (empty) {
+    if (short) return 72;
+    return narrow ? 96 : 88;
+  }
   // iPhone 17 landscape is only ~402px tall, so the panel stays shorter.
   if (short) return 120;
   return narrow ? 188 : 172;
@@ -924,7 +959,13 @@ export function buildSelectionView(
   }
 
   const alive = units.filter((u) => u.hp > 0);
-  if (alive.length === 0) return { kind: 'hidden' };
+  if (alive.length === 0) {
+    return {
+      kind: 'empty',
+      title: t('sel.emptyTitle'),
+      flavor: t('sel.emptyTip'),
+    };
+  }
 
   if (alive.length === 1) {
     const u = alive[0]!;
@@ -1212,6 +1253,7 @@ function heroAbilityViews(
 function structureSignature(view: SelectionPanelView): string {
   const locale = getLocale();
   if (view.kind === 'hidden') return 'h';
+  if (view.kind === 'empty') return `e|${locale}|${view.title}|${view.flavor}`;
   if (view.kind === 'units') {
     const abs = view.abilities
       ? view.abilities
@@ -1556,7 +1598,7 @@ export function renderSelectionPanel(view: SelectionPanelView): boolean {
     if (!lastVisible) return false;
     lastVisible = false;
     lastStructureSig = 'h';
-    root.classList.remove('is-visible');
+    root.classList.remove('is-visible', 'is-empty');
     return false;
   }
 
@@ -1564,6 +1606,7 @@ export function renderSelectionPanel(view: SelectionPanelView): boolean {
   lastStructureSig = structSig;
   lastVisible = true;
   root.classList.add('is-visible');
+  root.classList.toggle('is-empty', view.kind === 'empty');
 
   const portrait = root.querySelector('[data-role="portrait"]') as HTMLElement;
   const titleEl = root.querySelector('[data-role="title"]') as HTMLElement;
@@ -1594,6 +1637,25 @@ export function renderSelectionPanel(view: SelectionPanelView): boolean {
 
   titleEl.textContent = view.title;
   flavorEl.textContent = view.flavor;
+
+  if (view.kind === 'empty') {
+    carryEl.hidden = true;
+    carryEl.textContent = '';
+    hpFill.style.width = '0%';
+    hpFill.classList.remove('is-low', 'is-building');
+    hpText.classList.remove('is-low');
+    hpText.textContent = '';
+    portrait.classList.remove('is-building', 'is-mixed');
+    meterRoot.hidden = true;
+    controlHintEl.hidden = true;
+    controlHintEl.textContent = '';
+    if (structuralChange) {
+      stats.innerHTML = '';
+      actions.innerHTML = '';
+    }
+    queue.hidden = true;
+    return true;
+  }
 
   if (view.kind === 'resource') {
     carryEl.hidden = true;

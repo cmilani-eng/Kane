@@ -38,6 +38,9 @@ This doc is the honest gate before any public preview URL.
 | Minimap double-tap flash | **OK** — brief gold wash when double-tap recenters on selection/order | `minimap`, `MINIMAP_FOCUS_FLASH_MS` |
 | Help species hotkeys | **OK** — Controls help lists Formation/Mutation/Rage only for the current species | `controlsHelpPanel`, `help.formation` / `mutation` / `rage` |
 | End share line | **OK** — end screen Copy result pastes one-line KANE summary (result/species/map/clock/standing) | `endShareLine`, `end.share*` |
+| Empty selection tip | **OK** — bottom panel shows brief select tip when nothing is selected | `selectionPanel` `kind: empty`, `sel.empty*` |
+| Placement Esc hint | **OK** — place-mode cost strip + armed title mention Esc to cancel | `hud.place`, `sel.placeArmedTitle`, `hud.hintPlace` |
+| Critical alert chip | **OK** — Keep/hero under-attack chip auto-dismisses ~3.2s (does not refresh every hit) | `battlefieldUnderAttack` `chipLifeMs` |
 | Easy AI cushion | **OK** — Easy gives player start gold/crystal cushion + slower AI eco; menu shows a short tip only while Easy is selected | `aiDifficulty`, `MenuScene`, `createBattlefieldWorld` |
 | Hard lean tip | **OK** — Hard shows a quiet leaner-start tip (same pattern as Easy); Normal stays tip-free | `MenuScene`, `menu.hardTip` |
 | In-match tips | **OK** — coach copy covers Pause/Esc, Home, Army, Idle chip, Rematch | `battlefieldTutorial`, `tutorialCoach` |
@@ -52,7 +55,7 @@ This doc is the honest gate before any public preview URL.
 5. **Admin allowlist is soft** — default `open` for local-dev; no Custom Claims / server enforcement. Admin **`#/admin`** tools are separate from menu **Stats**.
 6. **Match writes are client-trusted** for SP MVP — Functions deferred; local `#/admin` summaries still device-local.
 7. **Legal copy is placeholder** — not counsel-reviewed.
-8. **Content depth** — three skirmish maps (Crossing / Ridge / Gap). The coach shows once, then stays quiet until Tips is turned back on.
+8. **Content depth** — three skirmish maps (Crossing / Ridge / Gap). The coach shows once, then stays quiet until Tips is turned back on. A Practice win offers Easy (same species and map); Rematch stays on Practice.
 9. **CI is thin** — pull requests run lint, unit tests and the build (`.github/workflows/ci.yml`) and a push to `dev` runs the same checks before auto-deploying Hosting (see `docs/firebase-hosting.md`); there are no browser or gameplay tests yet.
 10. **Cosmetics shop** — explicitly out; free unlocks only.
 11. **No offline service worker** — installability stubs exist; full offline PWA is later (`docs/pwa.md`).

@@ -20,10 +20,17 @@ export interface UnderAttackAlert {
   /** Keep/hero hits escalate the flash + chip. */
   severity: UnderAttackSeverity;
   kind: UnderAttackKind;
+  /**
+   * Critical HUD chip lifetime — starts on first Keep/hero hit, does not
+   * refresh every tick, so the chip auto-dismisses after a few seconds.
+   */
+  chipLifeMs: number;
 }
 
 const ALERT_LIFE_MS = 520;
 const CRITICAL_LIFE_MS = 980;
+/** Keep/hero chip stays readable, then auto-dismisses. */
+export const CRITICAL_CHIP_LIFE_MS = 3200;
 /** Soft rate-limit so melee spam does not strobe the HUD. */
 const PULSE_COOLDOWN_MS = 850;
 /** Critical keep/hero can re-pulse sooner. */
@@ -39,6 +46,7 @@ export function createUnderAttackAlert(): UnderAttackAlert {
     pulse: false,
     severity: 'normal',
     kind: 'unit',
+    chipLifeMs: 0,
   };
 }
 
@@ -49,6 +57,7 @@ export function ensureUnderAttackAlert(world: BattlefieldWorld): void {
   const a = world.underAttackAlert;
   if (a.severity == null) a.severity = 'normal';
   if (a.kind == null) a.kind = 'unit';
+  if (a.chipLifeMs == null) a.chipLifeMs = 0;
 }
 
 /** Call when a player unit or building takes damage from an enemy. */
@@ -70,6 +79,8 @@ export function notifyUnderAttack(
   if (critical) {
     a.severity = 'critical';
     a.kind = kind;
+    // Only arm the chip when idle so sustained hits still auto-dismiss.
+    if (a.chipLifeMs <= 0) a.chipLifeMs = CRITICAL_CHIP_LIFE_MS;
   } else if (a.lifeMs <= 0 || a.severity !== 'critical') {
     a.severity = 'normal';
     a.kind = kind;
@@ -101,6 +112,9 @@ export function tickUnderAttackAlert(
       a.severity = 'normal';
       a.kind = 'unit';
     }
+  }
+  if (a.chipLifeMs > 0) {
+    a.chipLifeMs = Math.max(0, a.chipLifeMs - dtMs);
   }
   if (a.cooldownMs > 0) {
     a.cooldownMs = Math.max(0, a.cooldownMs - dtMs);

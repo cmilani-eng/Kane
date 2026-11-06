@@ -52,8 +52,9 @@ export function showCosmeticsPanel(
     .setDepth(300)
     .setInteractive();
 
-  const panelW = Math.min(460, width - 28);
-  const panelH = Math.min(420, height - 28);
+  const short = height < 500;
+  const panelW = short ? Math.min(760, width - 24) : Math.min(460, width - 28);
+  const panelH = short ? height - 16 : Math.min(420, height - 28);
   const cx = width / 2;
   const cy = height / 2;
   const top = cy - panelH / 2;
@@ -99,12 +100,12 @@ export function showCosmeticsPanel(
     .setDepth(302);
 
   const swatch = scene.add
-    .circle(cx, top + 128, 24, 0xf0c75e, 1)
+    .circle(cx, short ? top + 104 : top + 128, short ? 16 : 24, 0xf0c75e, 1)
     .setStrokeStyle(2, 0xfff8e8, 0.9)
     .setDepth(302);
 
   const body = scene.add
-    .text(cx, top + 168, '', {
+    .text(cx, short ? top + 132 : top + 168, '', {
       fontFamily: 'system-ui, sans-serif',
       fontSize: '14px',
       color: '#d7e6f2',
@@ -116,7 +117,7 @@ export function showCosmeticsPanel(
     .setDepth(302);
 
   const loadoutNote = scene.add
-    .text(cx, bottom - 22, '', {
+    .text(cx, short ? bottom - 96 : bottom - 22, '', {
       fontFamily: 'system-ui, sans-serif',
       fontSize: '11px',
       color: '#6a7f94',
@@ -170,7 +171,7 @@ export function showCosmeticsPanel(
 
     loadoutNote.setText(formatMiniLoadout());
 
-    const rowY = bottom - 92;
+    const rowY = short ? bottom - 64 : bottom - 92;
     mkBtn(cx - 130, rowY, '◀', '#3a4555', () => {
       page = (page - 1 + skins.length) % skins.length;
       refresh();
@@ -192,7 +193,7 @@ export function showCosmeticsPanel(
       refresh();
     });
 
-    const tabY = bottom - 48;
+    const tabY = short ? bottom - 28 : bottom - 48;
     const tabs = SPECIES_ORDER.map((id) =>
       mkBtn(
         0,

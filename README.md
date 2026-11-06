@@ -65,6 +65,8 @@ Gameplay does not import presentation. The skirmish loop lives in `gameplay/batt
 | A, then click | Attack-move |
 | S | Stop |
 | Ctrl+0-9 (or Alt+0-9) | Save the selection as a control group |
+| Shift+Ctrl+0-9 (or Shift+Alt+0-9) | Add the selection to a control group |
+| Tab / Shift+Tab | Step through the unit types in the selection |
 | 0-9 | Select a group (Shift adds); press twice to centre the camera |
 | WASD / arrows | Pan |
 | Edge of screen | Pan |
@@ -80,4 +82,4 @@ Full list, and how each key maps to StarCraft, Age of Empires and C&C: [docs/hot
 
 ## What’s next
 
-Phase 6 (Firebase emulators + live friend lobby) stays parked. Match writes are still client-trusted. The coach shows once: finishing or skipping it keeps later matches quiet, and the menu Tips switch turns it back on. Ads stay off.
+Phase 6 (Firebase emulators + live friend lobby) stays parked. Match writes are still client-trusted. The coach shows once: finishing or skipping it keeps later matches quiet, and the menu Tips switch turns it back on. A Practice win offers Easy with the same species and map; Rematch stays on Practice. Ads stay off.
