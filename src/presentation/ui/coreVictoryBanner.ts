@@ -7,6 +7,7 @@ import {
   type CoreHoldBannerState,
 } from '../../gameplay/battlefield/battlefieldCoreFragments';
 import type { BattlefieldWorld } from '../../gameplay/battlefield/battlefieldWorld';
+import { t } from '../../i18n';
 
 function formatRemain(ms: number): string {
   const totalSec = Math.max(0, Math.ceil(ms / 1000));
@@ -111,8 +112,8 @@ export class CoreVictoryBanner {
       .setColor(labelColor)
       .setText(
         player
-          ? `VICTORY HOLD  ·  CORE ${state.owned}/${state.needed}`
-          : `ENEMY CORE HOLD  ·  ${state.owned}/${state.needed}`,
+          ? t('core.victoryHold', { owned: state.owned, needed: state.needed })
+          : t('core.enemyHold', { owned: state.owned, needed: state.needed }),
       );
     this.clock
       .setVisible(true)

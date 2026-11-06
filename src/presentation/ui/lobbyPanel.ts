@@ -68,7 +68,7 @@ export function showLobbyPanel(scene: Phaser.Scene, onClose: () => void): void {
     .setDepth(302);
 
   const subtitle = scene.add
-    .text(cx, top + 84, t('lobby.sub'), {
+    .text(cx, top + 84, t('lobby.subtitle'), {
       fontFamily: 'system-ui, sans-serif',
       fontSize: '13px',
       color: '#9eb4c8',
