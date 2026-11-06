@@ -48,3 +48,8 @@ export function hubBlurb(id: string, fallback: string): string {
 export function hubKanePathTip(path = '/kane/'): string {
   return t('hub.kanePathTip', { path });
 }
+
+/** Soft-launch play path tip for the Blob Evolution hub card (`/blob-evolution/`). */
+export function hubBlobPathTip(path = '/blob-evolution/'): string {
+  return t('hub.blobPathTip', { path });
+}
