@@ -23,6 +23,7 @@ import { showCosmeticsPanel } from '../ui/cosmeticsPanel';
 import { showLobbyPanel } from '../ui/lobbyPanel';
 import { softLaunchStatusStrip } from '../ui/softLaunchStatus';
 import { showStatsPanel } from '../ui/statsPanel';
+import { createVolumeSlider } from '../ui/volumeSlider';
 import { drawSpeciesPreview } from '../units/unitSilhouette';
 
 export class MenuScene extends Phaser.Scene {
@@ -244,8 +245,16 @@ export class MenuScene extends Phaser.Scene {
       });
     }
 
+    createVolumeSlider({
+      scene: this,
+      x: width / 2,
+      y: height * 0.76,
+      width: Math.min(280, width * 0.7),
+      depth: 30,
+    });
+
     this.add
-      .text(width / 2, height * 0.8, softLaunchStatusStrip(), {
+      .text(width / 2, height * 0.81, softLaunchStatusStrip(), {
         fontFamily: 'system-ui, sans-serif',
         fontSize: '11px',
         color: '#7a8fa3',
