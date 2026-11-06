@@ -26,6 +26,7 @@ import {
   unitAttackCooldownLabel,
 } from './unitAttackCooldown';
 import { attackRangeLabel } from './unitAttackRange';
+import { sharedUnitDamageLabel, unitDamageLabel } from './unitDamage';
 import { sharedUnitDpsLabel, unitDpsLabel } from './unitDps';
 import {
   sharedUnitMoveSpeedLabel,
@@ -202,6 +203,8 @@ export type SelectionPanelView =
       armorClass: string | null;
       /** Catalog DPS tip when selection shares one unit type. */
       dpsTip: string | null;
+      /** Catalog attack-damage tip when selection shares one unit type (distinct from ATK chip / DPS). */
+      dmgTip: string | null;
       /** Catalog move-speed tip when selection shares one unit type. */
       speedTip: string | null;
       /** Catalog vision-radius tip when selection shares one unit type. */
@@ -648,6 +651,7 @@ export function buildSelectionView(
       range: u.range,
       armorClass: armorClassLabel(u.typeId),
       dpsTip: unitDpsLabel(u.typeId),
+      dmgTip: unitDamageLabel(u.typeId),
       speedTip: unitMoveSpeedLabel(u.typeId),
       visionTip: unitVisionLabel(u.typeId),
       hpMaxTip: unitHpMaxLabel(u.typeId),
@@ -714,6 +718,7 @@ export function buildSelectionView(
     range,
     armorClass: sharedArmorClassLabel(alive),
     dpsTip: sharedUnitDpsLabel(alive.map((u) => u.typeId)),
+    dmgTip: sharedUnitDamageLabel(alive.map((u) => u.typeId)),
     speedTip: sharedUnitMoveSpeedLabel(alive.map((u) => u.typeId)),
     visionTip: sharedUnitVisionLabel(alive.map((u) => u.typeId)),
     hpMaxTip: sharedUnitHpMaxLabel(alive.map((u) => u.typeId)),
@@ -992,6 +997,7 @@ function structureSignature(view: SelectionPanelView): string {
       view.range ?? '-',
       view.armorClass ?? '',
       view.dpsTip ?? '',
+      view.dmgTip ?? '',
       view.speedTip ?? '',
       view.visionTip ?? '',
       view.hpMaxTip ?? '',
@@ -1517,6 +1523,9 @@ export function renderSelectionPanel(view: SelectionPanelView): boolean {
         }
         if (view.dpsTip) {
           bits.push(`<span>${escapeHtml(view.dpsTip)}</span>`);
+        }
+        if (view.dmgTip) {
+          bits.push(`<span>${escapeHtml(view.dmgTip)}</span>`);
         }
         if (view.speedTip) {
           bits.push(`<span>${escapeHtml(view.speedTip)}</span>`);

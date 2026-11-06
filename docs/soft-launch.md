@@ -72,6 +72,7 @@ This doc is the honest gate before any public preview URL.
 | Train button secs | **OK** — production train browse buttons show full train duration beside Gold/Crystal | `trainFullSec`, `sel.trainSec` |
 | Unit armor class | **OK** — selection stats show GDD role as Armor · class (HUD label only) | `unitArmorClass`, `sel.armorClass` |
 | Unit DPS tip | **OK** — selection stats show catalog DPS from dmg / attackCooldownMs (same-type only) | `unitDps`, `sel.dps` |
+| Unit damage tip | **OK** — selection stats show catalog attack damage tip (same-type only; distinct from ATK chip / DPS) | `unitDamage`, `sel.dmgTip` |
 | Unit range tip | **OK** — selection stats show attack reach in map tiles (rangePx / MAP.tile) | `unitAttackRange`, `sel.rangeTip` |
 | Unit speed tip | **OK** — selection stats show catalog move speed in tiles/s (same-type only) | `unitMoveSpeed`, `sel.speedTip` |
 | Unit vision tip | **OK** — selection stats show catalog vision radius in map tiles (same-type only) | `unitVision`, `sel.visionTip` |
