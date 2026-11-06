@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import {
   ATTENTION_PING_LIFE_MS,
   ATTENTION_PING_MAX,
+  attentionPingFade,
   spawnAttentionPing,
   tickAttentionPings,
 } from './battlefieldAttentionPing';
@@ -31,5 +32,15 @@ describe('attention ping', () => {
 
     tickAttentionPings(world, ATTENTION_PING_LIFE_MS + 1);
     expect(world.attentionPings).toHaveLength(0);
+  });
+
+  it('fades opacity to zero over lifetime (no hard floor)', () => {
+    expect(attentionPingFade(ATTENTION_PING_LIFE_MS, ATTENTION_PING_LIFE_MS)).toBe(1);
+    expect(attentionPingFade(ATTENTION_PING_LIFE_MS / 2, ATTENTION_PING_LIFE_MS)).toBeCloseTo(
+      0.25,
+      5,
+    );
+    expect(attentionPingFade(0, ATTENTION_PING_LIFE_MS)).toBe(0);
+    expect(attentionPingFade(-10, ATTENTION_PING_LIFE_MS)).toBe(0);
   });
 });
