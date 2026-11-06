@@ -1,6 +1,7 @@
 import { beforeEach, describe, expect, it } from 'vitest';
+import { rememberMatchPrefs } from '../../database/matchPrefs';
 import { resetLocaleForTests, setLocale } from '../../i18n';
-import { lobbyStatusLine } from './lobbyPanel';
+import { lobbyMapTipLine, lobbyStatusLine } from './lobbyPanel';
 
 function memoryStorage(): Storage {
   const data = new Map<string, string>();
@@ -36,5 +37,15 @@ describe('lobby status copy', () => {
     expect(line).toContain('Uniéndote');
     expect(line).not.toContain('Joining');
     expect(lobbyStatusLine('blocked', null)).toBe('El código es demasiado corto');
+  });
+
+  it('surfaces the selected skirmish map flavor like the menu tip', () => {
+    rememberMatchPrefs('nobles', 'normal', 'ridge');
+    setLocale('en-GB');
+    const tip = lobbyMapTipLine();
+    expect(tip).toContain('Ridge');
+    expect(tip).toContain('Diagonal bases');
+    setLocale('pt-BR');
+    expect(lobbyMapTipLine()).toContain('Cume');
   });
 });

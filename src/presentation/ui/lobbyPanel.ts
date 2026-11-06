@@ -1,10 +1,12 @@
 /**
  * Friend lobby create/join code UI — local stub only.
  * No RTDB / live MP sync. SP vs AI path stays on Menu species cards.
+ * Shows the skirmish map flavor from match prefs (same tip as the menu).
  */
 import Phaser from 'phaser';
 import { BRAND } from '../../config/brand';
-import { t } from '../../i18n';
+import { loadMatchPrefs } from '../../database/matchPrefs';
+import { mapCopy, t } from '../../i18n';
 import { getLobbyStub } from '../../networking/lobbySingleton';
 import type { LobbyStatus } from '../../networking/lobbyStub';
 import { playSfx } from '../audio/sfx';
@@ -20,6 +22,12 @@ export function lobbyStatusLine(status: LobbyStatus, code: string | null): strin
     case 'blocked':
       return t('lobby.codeShort');
   }
+}
+
+/** Selected skirmish map tip — mirrors menu.mapTip for lobby parity. */
+export function lobbyMapTipLine(): string {
+  const map = mapCopy(loadMatchPrefs().mapId);
+  return t('menu.mapTip', { label: map.label, blurb: map.blurb });
 }
 
 export function showLobbyPanel(scene: Phaser.Scene, onClose: () => void): void {
@@ -78,8 +86,19 @@ export function showLobbyPanel(scene: Phaser.Scene, onClose: () => void): void {
     .setOrigin(0.5)
     .setDepth(302);
 
+  const mapTip = scene.add
+    .text(cx, top + 108, lobbyMapTipLine(), {
+      fontFamily: 'system-ui, sans-serif',
+      fontSize: '12px',
+      color: '#a8c8c0',
+      align: 'center',
+      wordWrap: { width: panelW - 40 },
+    })
+    .setOrigin(0.5)
+    .setDepth(302);
+
   const codeText = scene.add
-    .text(cx, short ? top + 128 : cy - 28, '————', {
+    .text(cx, short ? top + 148 : cy - 22, '————', {
       fontFamily: 'Georgia, "Times New Roman", serif',
       fontSize: short ? '28px' : '40px',
       color: '#f0c75e',
@@ -89,7 +108,7 @@ export function showLobbyPanel(scene: Phaser.Scene, onClose: () => void): void {
     .setDepth(302);
 
   const statusText = scene.add
-    .text(cx, short ? top + 164 : cy + 18, '', {
+    .text(cx, short ? top + 184 : cy + 24, '', {
       fontFamily: 'system-ui, sans-serif',
       fontSize: '14px',
       color: '#d7e6f2',
@@ -132,6 +151,7 @@ export function showLobbyPanel(scene: Phaser.Scene, onClose: () => void): void {
     brand,
     title,
     subtitle,
+    mapTip,
     codeText,
     statusText,
     quietNote,
