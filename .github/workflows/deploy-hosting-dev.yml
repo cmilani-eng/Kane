@@ -21,10 +21,10 @@ jobs:
     timeout-minutes: 15
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
 
       - name: Setup Node
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v7
         with:
           node-version: '22'
           cache: npm
@@ -32,7 +32,20 @@ jobs:
       - name: Install
         run: npm ci
 
-      - name: Build (tsc + Vite → dist/)
+      - name: Lint
+        run: npm run lint
+
+      - name: Test
+        run: npm test
+
+      - name: Authenticate to Google Cloud
+        uses: google-github-actions/auth@v3
+        with:
+          credentials_json: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_KANE_RTS_GAME }}
+
+      - name: Build and deploy Firebase Hosting (kane-web)
+        # Same as local `npm run hosting:deploy` (tsc + Vite build, then deploy);
+        # project and target come from .firebaserc / firebase.json.
         env:
           VITE_FIREBASE_API_KEY: ${{ secrets.VITE_FIREBASE_API_KEY }}
           VITE_FIREBASE_AUTH_DOMAIN: ${{ secrets.VITE_FIREBASE_AUTH_DOMAIN }}
@@ -42,13 +55,4 @@ jobs:
           VITE_FIREBASE_MESSAGING_SENDER_ID: ${{ secrets.VITE_FIREBASE_MESSAGING_SENDER_ID }}
           VITE_FIREBASE_APP_ID: ${{ secrets.VITE_FIREBASE_APP_ID }}
           VITE_FIREBASE_USE_EMULATORS: ${{ secrets.VITE_FIREBASE_USE_EMULATORS }}
-        run: npm run build
-
-      - name: Authenticate to Google Cloud
-        uses: google-github-actions/auth@v2
-        with:
-          credentials_json: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_KANE_RTS_GAME }}
-
-      - name: Deploy Firebase Hosting (kane-web)
-        # Matches `npm run hosting:deploy` target; project from `.firebaserc`.
-        run: npx --yes firebase-tools@13 deploy --only hosting:kane-web --non-interactive --project kane-rts-game
+        run: npm run hosting:deploy -- --non-interactive

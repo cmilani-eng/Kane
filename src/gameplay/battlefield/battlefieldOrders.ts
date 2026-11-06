@@ -6,7 +6,11 @@ import { clamp } from '../math';
 import { clearUnitPath, setUnitPath } from './battlefieldPathfinding';
 import { spawnWaypointMarker } from './battlefieldWaypointMarkers';
 import type { BattlefieldWorld } from './battlefieldWorld';
-import { clearSelection, selectedUnits } from './battlefieldWorld';
+import {
+  clearSelection,
+  isLivingPlayerUnit,
+  selectedUnits,
+} from './battlefieldWorld';
 
 export type ControlGroups = Map<number, number[]>;
 
@@ -14,7 +18,10 @@ export function createControlGroups(): ControlGroups {
   return new Map();
 }
 
-/** Ctrl+N — save selected player units into group 0–9. */
+/**
+ * Ctrl+N — save selected player units into group 0–9.
+ * An empty selection is a no-op, so a stray chord never wipes a saved group.
+ */
 export function assignControlGroup(
   world: BattlefieldWorld,
   groups: ControlGroups,
@@ -22,10 +29,7 @@ export function assignControlGroup(
 ): boolean {
   if (slot < 0 || slot > 9) return false;
   const ids = selectedUnits(world).map((u) => u.id);
-  if (ids.length === 0) {
-    groups.delete(slot);
-    return false;
-  }
+  if (ids.length === 0) return false;
   groups.set(slot, ids);
   return true;
 }
@@ -40,7 +44,7 @@ export function recallControlGroup(
   const ids = groups.get(slot);
   if (!ids || ids.length === 0) return 0;
   const living = new Set(
-    world.units.filter((u) => u.team === 'player' && u.hp > 0).map((u) => u.id),
+    world.units.filter(isLivingPlayerUnit).map((u) => u.id),
   );
   const valid = ids.filter((id) => living.has(id));
   groups.set(slot, valid);
