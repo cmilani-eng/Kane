@@ -17,6 +17,7 @@ import { SPECIES_MATCHUP_TIP, type SpeciesId } from '../../data/speciesStub';
 import { getLocale, speciesCopy, speciesName, t } from '../../i18n';
 import { unitArmorClass } from '../../data/unitArmorClass';
 import { getUnitType, type UnitTypeId } from '../../data/units';
+import { buildingArmorClassLabel } from './buildingArmorClass';
 import { buildingHpMaxLabel } from './buildingHpMax';
 import {
   sharedUnitAttackCooldownLabel,
@@ -248,6 +249,8 @@ export type SelectionPanelView =
       maxHp: number;
       /** Catalog max-HP tip for the selected building type. */
       hpMaxTip: string | null;
+      /** Armor · Structure tip for the selected building type. */
+      armorClass: string | null;
       /** Building finished construction (can start training). */
       ready: boolean;
       /** 0–1 construction progress while incomplete. */
@@ -560,6 +563,7 @@ export function buildSelectionView(
       hp: b.hp,
       maxHp: b.maxHp,
       hpMaxTip: buildingHpMaxLabel(b.typeId),
+      armorClass: buildingArmorClassLabel(b.typeId),
       ready,
       buildPct,
       buildRemainSec: buildRemain,
@@ -1021,6 +1025,7 @@ function structureSignature(view: SelectionPanelView): string {
     view.rallyArmed ? 1 : 0,
     view.rallyDistTiles,
     view.hpMaxTip ?? '',
+    view.armorClass ?? '',
     view.trains
       .map((t) => `${t.typeId}:${t.canPay ? 1 : 0}:${t.affordable ? 1 : 0}`)
       .join(','),
@@ -1618,6 +1623,9 @@ export function renderSelectionPanel(view: SelectionPanelView): boolean {
         if (view.hpMaxTip) {
           bits.push(`<span>${escapeHtml(view.hpMaxTip)}</span>`);
         }
+        if (view.armorClass) {
+          bits.push(`<span>${escapeHtml(view.armorClass)}</span>`);
+        }
         if (view.trains.length) bits.push(`<span>${t('sel.production')}</span>`);
         if (view.places.length) bits.push(`<span>${t('sel.build')}</span>`);
         if (bits.length === 0) bits.push(`<span>${t('sel.noProductionStat')}</span>`);
@@ -1689,16 +1697,21 @@ export function renderSelectionPanel(view: SelectionPanelView): boolean {
         if (structuralChange) queueIcons.innerHTML = '';
         queueLabel.textContent = queueLabelText(view);
         if (structuralChange) {
-          const tip = view.hpMaxTip
-            ? `<span>${escapeHtml(view.hpMaxTip)}</span>`
-            : '';
+          const tips = [
+            view.hpMaxTip
+              ? `<span>${escapeHtml(view.hpMaxTip)}</span>`
+              : '',
+            view.armorClass
+              ? `<span>${escapeHtml(view.armorClass)}</span>`
+              : '',
+          ].join('');
           stats.innerHTML = `<span>${t('sel.hpStat', {
             hp: Math.ceil(view.hp),
             max: Math.ceil(view.maxHp),
           })}</span><span>${t('sel.buildingPct', {
             pct: Math.floor(view.buildPct * 100),
             sec: view.buildRemainSec,
-          })}</span>${tip}`;
+          })}</span>${tips}`;
         } else {
           const spans = stats.querySelectorAll('span');
           if (spans[0]) {
@@ -1713,8 +1726,13 @@ export function renderSelectionPanel(view: SelectionPanelView): boolean {
               sec: view.buildRemainSec,
             });
           }
-          if (spans[2] && view.hpMaxTip) {
-            spans[2].textContent = view.hpMaxTip;
+          let tipIdx = 2;
+          if (spans[tipIdx] && view.hpMaxTip) {
+            spans[tipIdx].textContent = view.hpMaxTip;
+            tipIdx += 1;
+          }
+          if (spans[tipIdx] && view.armorClass) {
+            spans[tipIdx].textContent = view.armorClass;
           }
         }
       } else if (view.trains.length === 0) {
