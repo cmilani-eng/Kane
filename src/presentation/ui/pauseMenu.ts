@@ -93,10 +93,12 @@ export class PauseMenu {
 
   private build(): void {
     const { width, height } = this.scene.scale;
-    const panelW = Math.min(360, width - 40);
-    const panelH = Math.min(560, height * 0.88);
+    const short = height < 500;
+    const panelW = short ? Math.min(760, width - 24) : Math.min(360, width - 40);
+    const panelH = short ? height - 16 : Math.min(560, height * 0.88);
     const cx = width / 2;
-    const cy = height * 0.48;
+    const cy = short ? height / 2 : height * 0.48;
+    const top = cy - panelH / 2;
 
     const dim = this.scene.add
       .rectangle(cx, height / 2, width, height, 0x060a12, 0.72)
@@ -113,16 +115,16 @@ export class PauseMenu {
     this.root.push(panel);
 
     const title = this.scene.add
-      .text(cx, cy - panelH * 0.44, t('pause.paused'), {
+      .text(cx, short ? top + 22 : cy - panelH * 0.44, t('pause.paused'), {
         fontFamily: 'Georgia, "Times New Roman", serif',
-        fontSize: Math.min(32, width * 0.08) + 'px',
+        fontSize: (short ? 22 : Math.min(32, width * 0.08)) + 'px',
         color: '#f5e6c8',
       })
       .setOrigin(0.5)
       .setScrollFactor(0)
       .setDepth(222);
     const brand = this.scene.add
-      .text(cx, cy - panelH * 0.36, BRAND.name, {
+      .text(cx, short ? top + 44 : cy - panelH * 0.36, BRAND.name, {
         fontFamily: 'system-ui, sans-serif',
         fontSize: '13px',
         color: '#9eb4c8',
@@ -142,7 +144,7 @@ export class PauseMenu {
     const atCap =
       this.snapshot.supplyCurrent >= this.snapshot.supplyCap;
     const snap = this.scene.add
-      .text(cx, cy - panelH * 0.27, `${t('pause.match', { clock })}\n${supply}`, {
+      .text(cx, short ? top + 74 : cy - panelH * 0.27, `${t('pause.match', { clock })}\n${supply}`, {
         fontFamily: 'system-ui, sans-serif',
         fontSize: '14px',
         color: atCap ? '#e87aa8' : nearCap ? '#f0c75e' : '#d7e6f2',
@@ -154,26 +156,26 @@ export class PauseMenu {
       .setDepth(222);
     this.root.push(title, brand, snap);
 
-    const btnY0 = cy - panelH * 0.14;
-    const gap = Math.min(44, panelH * 0.11);
+    const btnY0 = short ? top + 118 : cy - panelH * 0.14;
+    const gap = short ? 40 : Math.min(44, panelH * 0.11);
     this.root.push(
       this.makeBtn(cx, btnY0, t('pause.resume'), () => {
         this.hide();
         this.onResume();
-      }),
+      }, false, short),
     );
     this.muteLabel = this.makeBtn(cx, btnY0 + gap, this.muteText(), () => {
       setSfxMuted(!isSfxMuted());
       this.muteLabel?.setText(this.muteText());
       this.volume?.refresh();
       if (!isSfxMuted()) playSfx('ui');
-    });
+    }, false, short);
     this.root.push(this.muteLabel);
 
     this.volume = createVolumeSlider({
       scene: this.scene,
       x: cx,
-      y: btnY0 + gap * 2 + 8,
+      y: short ? btnY0 + gap * 2 + 10 : btnY0 + gap * 2 + 8,
       width: Math.min(260, panelW - 48),
       depth: 222,
       scrollFactor: 0,
@@ -182,20 +184,22 @@ export class PauseMenu {
 
     this.motionLabel = this.makeBtn(
       cx,
-      btnY0 + gap * 3 + 16,
+      short ? btnY0 + gap * 3 + 8 : btnY0 + gap * 3 + 16,
       this.motionText(),
       () => {
         setReduceMotion(!isReduceMotion());
         this.motionLabel?.setText(this.motionText());
         playSfx('ui');
       },
+      false,
+      short,
     );
     this.root.push(this.motionLabel);
 
     this.root.push(
       this.makeBtn(
         cx,
-        btnY0 + gap * 4 + 24,
+        short ? btnY0 + gap * 4 + 12 : btnY0 + gap * 4 + 24,
         t('pause.quit'),
         () => {
           playSfx('ui');
@@ -203,6 +207,7 @@ export class PauseMenu {
           this.onQuit();
         },
         true,
+        short,
       ),
     );
 
@@ -210,7 +215,7 @@ export class PauseMenu {
       ...addLocalePicker({
         scene: this.scene,
         x: cx,
-        y: cy + panelH * 0.38,
+        y: short ? top + panelH - 28 : cy + panelH * 0.38,
         depth: 222,
         scrollFactor: 0,
       }),
@@ -235,14 +240,15 @@ export class PauseMenu {
     label: string,
     onClick: () => void,
     danger = false,
+    compact = false,
   ): Phaser.GameObjects.Text {
     const btn = this.scene.add
       .text(x, y, label, {
         fontFamily: 'system-ui, sans-serif',
-        fontSize: '16px',
+        fontSize: compact ? '14px' : '16px',
         color: '#fff8e8',
         backgroundColor: danger ? '#5a3030' : '#2a4050',
-        padding: { x: 28, y: 14 },
+        padding: { x: compact ? 16 : 28, y: compact ? 6 : 14 },
         align: 'center',
       })
       .setOrigin(0.5)
