@@ -459,6 +459,17 @@ function injectStyles(): void {
       background: #5a3a3a;
       border-color: #e87a7a;
     }
+    #kane-selection-panel .kane-sel-queue.is-cancel-flash {
+      animation: kane-sel-cancel-flash 420ms ease-out;
+    }
+    #kane-selection-panel .kane-sel-queue-label.is-flash {
+      color: #f0c75e;
+      font-weight: 700;
+    }
+    @keyframes kane-sel-cancel-flash {
+      0% { background: rgba(232, 122, 122, 0.35); }
+      100% { background: transparent; }
+    }
     #kane-selection-panel button.is-train {
       background: #3d7ea6;
       flex: 1 1 100px;
@@ -724,6 +735,31 @@ function injectStyles(): void {
 export function mountSelectionPanel(next: SelectionPanelHandlers): void {
   handlers = next;
   ensureSelectionPanel();
+}
+
+/** Brief queue-row flash + refund copy after a successful cancel. */
+export function flashQueueCancel(unitName?: string): void {
+  const root = document.getElementById(PANEL_ID);
+  if (!root) return;
+  const queue = root.querySelector('[data-role="queue"]') as HTMLElement | null;
+  const label = root.querySelector(
+    '[data-role="queue-label"]',
+  ) as HTMLElement | null;
+  if (!queue || queue.hidden) return;
+  queue.classList.remove('is-cancel-flash');
+  // Force reflow so rapid cancels retrigger the animation.
+  void queue.offsetWidth;
+  queue.classList.add('is-cancel-flash');
+  if (label) {
+    label.classList.add('is-flash');
+    label.textContent = unitName
+      ? t('sel.cancelFlashNamed', { name: unitName })
+      : t('sel.cancelFlash');
+  }
+  window.setTimeout(() => {
+    queue.classList.remove('is-cancel-flash');
+    label?.classList.remove('is-flash');
+  }, 420);
 }
 
 export function unmountSelectionPanel(): void {
