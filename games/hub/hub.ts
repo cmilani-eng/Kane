@@ -5,6 +5,7 @@ import {
   LOCALE_CHOICES,
   setLocale,
   subscribeLocale,
+  t,
 } from '../../src/i18n';
 import { GAMES, type GameEntry } from '../registry';
 import { hubBlurb, hubChrome } from './hubCopy';
@@ -44,6 +45,10 @@ function gameCard(
     'bg-linear-145 from-panel-from to-panel-to text-center text-ink no-underline shadow-panel',
   ].join(' ');
   link.href = gamePlayHref(game.id);
+  link.setAttribute(
+    'aria-label',
+    t('hub.cardOpen', { title: game.title, play: playLabel }),
+  );
 
   const pills = document.createElement('div');
   pills.className = 'flex flex-wrap justify-center gap-1.5';
