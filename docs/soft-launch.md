@@ -50,6 +50,7 @@ This doc is the honest gate before any public preview URL.
 | Hard lean tip | **OK** — Hard shows a quiet leaner-start tip (same pattern as Easy); Normal stays tip-free; short/landscape menu shows the tip too | `MenuScene`, `menu.hardTip` |
 | In-match tips | **OK** — coach copy covers Pause/Esc, Home, Army, Idle chip, Rematch | `battlefieldTutorial`, `tutorialCoach` |
 | Friend lobby UI | **OK** — Create / Join / Leave local stub; quiet “no live sync” note; selected map flavor tip (menu parity) | `lobbyPanel`, `lobbyMapTipLine`, `lobbyStub` |
+| Hub → Kane path | **OK** — picker cards link `./kane/`; hash forward + manifest start_url match `games/PATHS.md` | `hub.gamePlayHref`, `games/registry.test.ts` |
 
 ## Remaining gaps (honest)
 

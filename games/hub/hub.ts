@@ -8,6 +8,7 @@ import {
 } from '../../src/i18n';
 import { GAMES, type GameEntry } from '../registry';
 import { hubBlurb, hubChrome } from './hubCopy';
+import { gamePlayHref } from './hubLinks';
 
 const PILL =
   'inline-block rounded-full px-[11px] py-1.5 text-xs font-extrabold uppercase tracking-[0.08em]';
@@ -27,7 +28,7 @@ function gameCard(game: GameEntry, playLabel: string, experimental: string): HTM
     'bg-linear-145 from-panel-from to-panel-to text-center text-ink no-underline shadow-panel',
     'focus-visible:outline-2 focus-visible:outline-offset-3 focus-visible:outline-accent',
   ].join(' ');
-  link.href = `./${game.id}/`;
+  link.href = gamePlayHref(game.id);
 
   const pills = document.createElement('div');
   pills.className = 'flex flex-wrap justify-center gap-1.5';
