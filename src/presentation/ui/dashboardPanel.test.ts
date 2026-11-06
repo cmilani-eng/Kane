@@ -87,6 +87,7 @@ describe('account copy', () => {
       email: 'ada@example.com',
       species: 'weirdos',
       difficulty: 'hard',
+      mapId: 'ridge',
       skins: {
         brutes: 'skin_brutes_scrap',
         nobles: 'skin_default',
@@ -97,6 +98,7 @@ describe('account copy', () => {
     expect(profile).toContain('ada@example.com');
     expect(profile).toContain('Los Raros');
     expect(profile).toContain('Difícil');
+    expect(profile).toContain('Cresta');
     expect(profile).toContain('Aspectos');
     expect(profile).not.toContain('Prefs');
 

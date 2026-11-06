@@ -25,8 +25,9 @@ import {
   type StatsOverviewDoc,
   type UserMatchDoc,
 } from '../../firebase/types';
+import type { SkirmishMapId } from '../../data/skirmishMaps';
 import type { AiDifficultyId } from '../../gameplay/battlefield/aiDifficulty';
-import { difficultyCopy, speciesName, t } from '../../i18n';
+import { difficultyCopy, mapCopy, speciesName, t } from '../../i18n';
 import { playSfx } from '../audio/sfx';
 import { showAuthPanel } from './authPanel';
 import { formatMatchClock } from './matchClock';
@@ -90,6 +91,7 @@ export function accountProfileText(opts: {
   email: string | null | undefined;
   species: SpeciesId;
   difficulty: AiDifficultyId;
+  mapId: SkirmishMapId;
   skins: { brutes: string; nobles: string; weirdos: string };
 }): string {
   const accountKind = opts.anonymous
@@ -104,6 +106,7 @@ export function accountProfileText(opts: {
     t('account.prefs', {
       species: speciesName(opts.species),
       difficulty: difficultyCopy(opts.difficulty).label,
+      map: mapCopy(opts.mapId).label,
     }),
     t('account.skins', {
       brutes: shortSkin(opts.skins.brutes),
@@ -424,6 +427,7 @@ export function showDashboardPanel(
           email: current.email,
           species: prefs.species,
           difficulty: prefs.difficulty,
+          mapId: prefs.mapId ?? loadMatchPrefs().mapId,
           skins,
         }),
       );
