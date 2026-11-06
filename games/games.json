@@ -12,7 +12,7 @@
     "title": "Blob Evolution 3D",
     "tagline": "Eat. Evolve. Ascend.",
     "description": "Start as a tiny blob and eat your way up the chain to become the Angel.",
-    "build": "static",
+    "build": "vite",
     "status": "experimental"
   }
 ]

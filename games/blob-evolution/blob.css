@@ -1,0 +1,38 @@
+@import "tailwindcss" source(none);
+@import "../shared/theme.css";
+
+@source "./index.html";
+
+@layer components {
+  .panel {
+    @apply w-[min(520px,100%)] rounded-3xl border border-white/16 bg-linear-145 from-panel-from to-panel-to p-[26px] text-center text-ink shadow-panel max-[600px]:px-[17px] max-[600px]:py-[21px];
+  }
+
+  .panel-title {
+    @apply mt-0 mb-2 text-[clamp(28px,6vw,44px)] font-bold tracking-[-1.5px];
+  }
+
+  .panel-copy {
+    @apply mt-2 mb-[18px] leading-normal text-muted;
+  }
+
+  .panel-note {
+    @apply mt-2 mb-0 text-[12px] leading-normal text-subtle;
+  }
+
+  .pill {
+    @apply inline-block rounded-full bg-pill-bg px-[11px] py-1.5 text-[12px] font-extrabold tracking-[0.08em] text-pill uppercase;
+  }
+
+  .btn-row {
+    @apply mt-4 flex flex-wrap justify-center gap-2.5;
+  }
+
+  .btn {
+    @apply cursor-pointer rounded-[14px] bg-accent px-[19px] py-[13px] text-[15px] font-black text-ink-dark shadow-key hover:-translate-y-px hover:brightness-108 active:translate-y-0.5 active:shadow-key-pressed;
+  }
+
+  .btn-choice {
+    @apply min-w-[105px] px-3.5 py-4 text-[18px];
+  }
+}
