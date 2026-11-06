@@ -144,6 +144,8 @@ export type SelectionPanelView =
       maxHp: number;
       /** Building finished construction (can start training). */
       ready: boolean;
+      /** 0–1 construction progress while incomplete. */
+      buildPct: number;
       trains: {
         typeId: UnitTypeId;
         name: string;
@@ -372,6 +374,9 @@ function injectStyles(): void {
     }
     #kane-selection-panel .kane-sel-hp-fill.is-low {
       background: linear-gradient(90deg, #8a3030, #e87a7a);
+    }
+    #kane-selection-panel .kane-sel-hp-fill.is-building {
+      background: linear-gradient(90deg, #8a7030, #f0c75e);
     }
     #kane-selection-panel .kane-sel-carry {
       margin-top: 4px;
@@ -786,13 +791,22 @@ export function buildSelectionView(
       head && head.trainMs > 0
         ? Math.min(1, Math.max(0, b.trainProgressMs / head.trainMs))
         : 0;
+    const buildPct = ready
+      ? 1
+      : Math.min(1, Math.max(0, b.buildProgress));
+    const flavorBase = `${species.name} · ${species.mechanic} · ${matchupLine(bdef.speciesId)}`;
     return {
       kind: 'building',
       title: b.name,
-      flavor: `${species.name} · ${species.mechanic} · ${matchupLine(bdef.speciesId)}`,
+      flavor: ready
+        ? flavorBase
+        : `${flavorBase} · ${t('sel.buildingPct', {
+            pct: Math.floor(buildPct * 100),
+          })}`,
       hp: b.hp,
       maxHp: b.maxHp,
       ready,
+      buildPct,
       trains,
       places,
       queue: [...b.trainQueue],
@@ -1356,7 +1370,7 @@ function queueLabelText(
   view: Extract<SelectionPanelView, { kind: 'building' }>,
 ): string {
   if (!view.ready) {
-    return view.places.length ? t('sel.trainBuildLocked') : t('sel.trainLocked');
+    return t('sel.buildingPct', { pct: Math.floor(view.buildPct * 100) });
   }
   if (view.queue.length === 0) {
     if (view.trains.length) {
@@ -1437,6 +1451,7 @@ export function renderSelectionPanel(view: SelectionPanelView): boolean {
         : 0;
     hpFill.style.width = `${(remPct * 100).toFixed(1)}%`;
     hpFill.classList.toggle('is-low', remPct < 0.35);
+    hpFill.classList.remove('is-building');
     hpText.textContent = `${Math.floor(view.remaining)}/${Math.floor(view.maxAmount)}`;
     portrait.classList.toggle('is-building', false);
     portrait.classList.toggle('is-mixed', false);
@@ -1466,6 +1481,10 @@ export function renderSelectionPanel(view: SelectionPanelView): boolean {
       view.maxHp > 0 ? Math.min(1, Math.max(0, view.hp / view.maxHp)) : 0;
     hpFill.style.width = `${(hpPct * 100).toFixed(1)}%`;
     hpFill.classList.toggle('is-low', hpPct < 0.35);
+    hpFill.classList.toggle(
+      'is-building',
+      view.kind === 'building' && !view.ready,
+    );
     hpText.textContent = `${Math.ceil(view.hp)}/${Math.ceil(view.maxHp)}`;
 
     if (view.kind === 'units') {
@@ -1618,7 +1637,35 @@ export function renderSelectionPanel(view: SelectionPanelView): boolean {
         }
       }
 
-      if (view.trains.length === 0) {
+      if (!view.ready) {
+        // Incomplete — HP bar already shows hp/max; queue bar shows build %.
+        queue.hidden = false;
+        queue.classList.add('is-idle');
+        queueFill.style.width = `${(view.buildPct * 100).toFixed(1)}%`;
+        if (structuralChange) queueIcons.innerHTML = '';
+        queueLabel.textContent = queueLabelText(view);
+        if (structuralChange) {
+          stats.innerHTML = `<span>${t('sel.hpStat', {
+            hp: Math.ceil(view.hp),
+            max: Math.ceil(view.maxHp),
+          })}</span><span>${t('sel.buildingPct', {
+            pct: Math.floor(view.buildPct * 100),
+          })}</span>`;
+        } else {
+          const spans = stats.querySelectorAll('span');
+          if (spans[0]) {
+            spans[0].textContent = t('sel.hpStat', {
+              hp: Math.ceil(view.hp),
+              max: Math.ceil(view.maxHp),
+            });
+          }
+          if (spans[1]) {
+            spans[1].textContent = t('sel.buildingPct', {
+              pct: Math.floor(view.buildPct * 100),
+            });
+          }
+        }
+      } else if (view.trains.length === 0) {
         queue.hidden = true;
       } else {
         queue.hidden = false;
