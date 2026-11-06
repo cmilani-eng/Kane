@@ -15,6 +15,7 @@ import {
 } from '../../ads/adsSdkStub';
 import { playSfx } from '../audio/sfx';
 import { hideDomHud } from '../ui/domHud';
+import { showCosmeticsPanel } from '../ui/cosmeticsPanel';
 import { showLobbyPanel } from '../ui/lobbyPanel';
 import { showStatsPanel } from '../ui/statsPanel';
 import { drawSpeciesPreview } from '../units/unitSilhouette';
@@ -22,6 +23,7 @@ import { drawSpeciesPreview } from '../units/unitSilhouette';
 export class MenuScene extends Phaser.Scene {
   private statsOpen = false;
   private lobbyOpen = false;
+  private cosmeticsOpen = false;
   private difficulty: AiDifficultyId = 'normal';
   private previewGfx: Phaser.GameObjects.Graphics | null = null;
   private previewSlots: { id: SpeciesId; x: number; y: number }[] = [];
@@ -38,6 +40,7 @@ export class MenuScene extends Phaser.Scene {
     }
     this.statsOpen = false;
     this.lobbyOpen = false;
+    this.cosmeticsOpen = false;
     this.previewSlots = [];
     this.buildLayout(true);
     showMenuBannerStub();
@@ -53,7 +56,7 @@ export class MenuScene extends Phaser.Scene {
 
   /** Everything is positioned from the canvas size, so rebuild when it changes. */
   private onResize(): void {
-    if (this.statsOpen || this.lobbyOpen) return;
+    if (this.statsOpen || this.lobbyOpen || this.cosmeticsOpen) return;
     this.tweens.killAll();
     this.children.removeAll(true);
     this.previewGfx = null;
@@ -74,7 +77,7 @@ export class MenuScene extends Phaser.Scene {
   }
 
   private openStats(): void {
-    if (this.statsOpen || this.lobbyOpen) return;
+    if (this.statsOpen || this.lobbyOpen || this.cosmeticsOpen) return;
     this.statsOpen = true;
     playSfx('ui');
     showStatsPanel(this, () => {
@@ -83,11 +86,20 @@ export class MenuScene extends Phaser.Scene {
   }
 
   private openLobby(): void {
-    if (this.statsOpen || this.lobbyOpen) return;
+    if (this.statsOpen || this.lobbyOpen || this.cosmeticsOpen) return;
     this.lobbyOpen = true;
     playSfx('ui');
     showLobbyPanel(this, () => {
       this.lobbyOpen = false;
+    });
+  }
+
+  private openCosmetics(): void {
+    if (this.statsOpen || this.lobbyOpen || this.cosmeticsOpen) return;
+    this.cosmeticsOpen = true;
+    playSfx('ui');
+    showCosmeticsPanel(this, () => {
+      this.cosmeticsOpen = false;
     });
   }
 
@@ -229,25 +241,36 @@ export class MenuScene extends Phaser.Scene {
       )
       .setOrigin(0.5);
 
-    const gap = Math.min(150, width * 0.36);
+    const gap = Math.min(120, width * 0.3);
     this.add
-      .text(width / 2 - gap * 0.5, height * 0.86, 'Friends lobby', {
+      .text(width / 2 - gap, height * 0.86, 'Friends', {
         fontFamily: 'system-ui, sans-serif',
-        fontSize: '14px',
+        fontSize: '13px',
         color: '#fff8e8',
         backgroundColor: '#2a3a50',
-        padding: { x: 14, y: 8 },
+        padding: { x: 12, y: 8 },
       })
       .setOrigin(0.5)
       .setInteractive({ useHandCursor: true })
       .on('pointerup', () => this.openLobby());
     this.add
-      .text(width / 2 + gap * 0.5, height * 0.86, 'Stats  ·  #/admin', {
+      .text(width / 2, height * 0.86, 'Cosmetics', {
         fontFamily: 'system-ui, sans-serif',
-        fontSize: '14px',
+        fontSize: '13px',
+        color: '#fff8e8',
+        backgroundColor: '#3a4a2a',
+        padding: { x: 12, y: 8 },
+      })
+      .setOrigin(0.5)
+      .setInteractive({ useHandCursor: true })
+      .on('pointerup', () => this.openCosmetics());
+    this.add
+      .text(width / 2 + gap, height * 0.86, 'Stats', {
+        fontFamily: 'system-ui, sans-serif',
+        fontSize: '13px',
         color: '#fff8e8',
         backgroundColor: '#3a4555',
-        padding: { x: 14, y: 8 },
+        padding: { x: 12, y: 8 },
       })
       .setOrigin(0.5)
       .setInteractive({ useHandCursor: true })

@@ -21,6 +21,10 @@ import {
 import { writeMatchSummaryFunctionStub } from '../server/matchSummaryFunctionStub';
 import { rollupDailyMatchStatsFunctionStub } from '../server/dailyRollupFunctionStub';
 import type { SpeciesId } from '../data/speciesStub';
+import {
+  loadCosmeticsLoadout,
+  ownedSkinIds,
+} from './cosmeticsLoadout';
 
 export interface PlayerProfileStub {
   displayName: string;
@@ -40,9 +44,10 @@ export function createDatabaseStub() {
     ] as const,
     async getProfile(_uid: string): Promise<PlayerProfileStub | null> {
       const local = loadLocalStats();
+      void loadCosmeticsLoadout();
       return {
         displayName: 'Local Commander',
-        cosmetics: [],
+        cosmetics: ownedSkinIds(),
         stats: { wins: local.wins, losses: local.losses },
       };
     },
