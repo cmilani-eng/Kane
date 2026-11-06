@@ -6,6 +6,12 @@ import {
   rememberMatchPrefs,
 } from '../../database/matchPrefs';
 import { canEnterGame, loadAgeGate } from '../../firebase/ageGate';
+import {
+  getCurrentAuthUser,
+  isCloudAccount,
+  subscribeAuth,
+} from '../../firebase/auth';
+import { maybeRecordCloudGameStarted } from '../../firebase/cloudProgression';
 import { SPECIES, type SpeciesId } from '../../data/speciesStub';
 import {
   AI_DIFFICULTIES,
@@ -19,7 +25,9 @@ import {
 import { ensureAmbientBgm } from '../audio/bgm';
 import { playSfx } from '../audio/sfx';
 import { hideDomHud } from '../ui/domHud';
+import { showAuthPanel, hideAuthPanel } from '../ui/authPanel';
 import { showCosmeticsPanel } from '../ui/cosmeticsPanel';
+import { showDashboardPanel } from '../ui/dashboardPanel';
 import { showLobbyPanel } from '../ui/lobbyPanel';
 import { softLaunchStatusStrip } from '../ui/softLaunchStatus';
 import { showStatsPanel } from '../ui/statsPanel';
@@ -30,6 +38,9 @@ export class MenuScene extends Phaser.Scene {
   private statsOpen = false;
   private lobbyOpen = false;
   private cosmeticsOpen = false;
+  private accountOpen = false;
+  private authUnsub: (() => void) | null = null;
+  private accountLabel: Phaser.GameObjects.Text | null = null;
   private difficulty: AiDifficultyId = 'normal';
   /** Last played / remembered species — highlighted on the menu. */
   private lastSpecies: SpeciesId = 'nobles';
@@ -52,14 +63,20 @@ export class MenuScene extends Phaser.Scene {
     this.statsOpen = false;
     this.lobbyOpen = false;
     this.cosmeticsOpen = false;
+    this.accountOpen = false;
     this.previewSlots = [];
     this.buildLayout(true);
     showMenuBannerStub();
+    this.authUnsub?.();
+    this.authUnsub = subscribeAuth(() => this.refreshAccountChip());
     // Ambient BGM needs a user gesture for autoplay policy.
     this.input.once('pointerdown', () => ensureAmbientBgm());
     this.scale.on('resize', this.onResize, this);
     this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => {
       this.scale.off('resize', this.onResize, this);
+      this.authUnsub?.();
+      this.authUnsub = null;
+      hideAuthPanel();
       hideMenuBannerStub();
     });
     if (wantsAdminPanel()) {
@@ -69,16 +86,29 @@ export class MenuScene extends Phaser.Scene {
 
   /** Everything is positioned from the canvas size, so rebuild when it changes. */
   private onResize(): void {
-    if (this.statsOpen || this.lobbyOpen || this.cosmeticsOpen) return;
+    if (
+      this.statsOpen ||
+      this.lobbyOpen ||
+      this.cosmeticsOpen ||
+      this.accountOpen
+    ) {
+      return;
+    }
     this.tweens.killAll();
     this.children.removeAll(true);
     this.previewGfx = null;
     this.previewSlots = [];
+    this.accountLabel = null;
     this.buildLayout(false);
   }
 
   update(_t: number, _dt: number): void {
-    if (this.statsOpen || !this.previewGfx || this.previewSlots.length === 0) {
+    if (
+      this.statsOpen ||
+      this.accountOpen ||
+      !this.previewGfx ||
+      this.previewSlots.length === 0
+    ) {
       return;
     }
     const g = this.previewGfx;
@@ -89,8 +119,17 @@ export class MenuScene extends Phaser.Scene {
     }
   }
 
+  private anyOverlayOpen(): boolean {
+    return (
+      this.statsOpen ||
+      this.lobbyOpen ||
+      this.cosmeticsOpen ||
+      this.accountOpen
+    );
+  }
+
   private openStats(): void {
-    if (this.statsOpen || this.lobbyOpen || this.cosmeticsOpen) return;
+    if (this.anyOverlayOpen()) return;
     this.statsOpen = true;
     playSfx('ui');
     showStatsPanel(this, () => {
@@ -99,7 +138,7 @@ export class MenuScene extends Phaser.Scene {
   }
 
   private openLobby(): void {
-    if (this.statsOpen || this.lobbyOpen || this.cosmeticsOpen) return;
+    if (this.anyOverlayOpen()) return;
     this.lobbyOpen = true;
     playSfx('ui');
     showLobbyPanel(this, () => {
@@ -108,12 +147,33 @@ export class MenuScene extends Phaser.Scene {
   }
 
   private openCosmetics(): void {
-    if (this.statsOpen || this.lobbyOpen || this.cosmeticsOpen) return;
+    if (this.anyOverlayOpen()) return;
     this.cosmeticsOpen = true;
     playSfx('ui');
     showCosmeticsPanel(this, () => {
       this.cosmeticsOpen = false;
     });
+  }
+
+  private openAccount(): void {
+    if (this.anyOverlayOpen()) return;
+    this.accountOpen = true;
+    playSfx('ui');
+    showDashboardPanel(this, () => {
+      this.accountOpen = false;
+      this.refreshAccountChip();
+    });
+  }
+
+  private refreshAccountChip(): void {
+    if (!this.accountLabel) return;
+    const u = getCurrentAuthUser();
+    if (isCloudAccount(u) && u) {
+      const short = (u.displayName || 'Account').slice(0, 12);
+      this.accountLabel.setText(short);
+    } else {
+      this.accountLabel.setText('Account');
+    }
   }
 
   private buildLayout(intro: boolean): void {
@@ -261,36 +321,48 @@ export class MenuScene extends Phaser.Scene {
       })
       .setOrigin(0.5);
 
-    const gap = Math.min(120, width * 0.3);
+    const gap = Math.min(88, width * 0.22);
     this.add
-      .text(width / 2 - gap, height * 0.86, 'Friends', {
+      .text(width / 2 - gap * 1.5, height * 0.855, 'Friends', {
         fontFamily: 'system-ui, sans-serif',
-        fontSize: '13px',
+        fontSize: '12px',
         color: '#fff8e8',
         backgroundColor: '#2a3a50',
-        padding: { x: 12, y: 8 },
+        padding: { x: 10, y: 7 },
       })
       .setOrigin(0.5)
       .setInteractive({ useHandCursor: true })
       .on('pointerup', () => this.openLobby());
     this.add
-      .text(width / 2, height * 0.86, 'Cosmetics', {
+      .text(width / 2 - gap * 0.5, height * 0.855, 'Cosmetics', {
         fontFamily: 'system-ui, sans-serif',
-        fontSize: '13px',
+        fontSize: '12px',
         color: '#fff8e8',
         backgroundColor: '#3a4a2a',
-        padding: { x: 12, y: 8 },
+        padding: { x: 10, y: 7 },
       })
       .setOrigin(0.5)
       .setInteractive({ useHandCursor: true })
       .on('pointerup', () => this.openCosmetics());
-    this.add
-      .text(width / 2 + gap, height * 0.86, 'Stats', {
+    this.accountLabel = this.add
+      .text(width / 2 + gap * 0.5, height * 0.855, 'Account', {
         fontFamily: 'system-ui, sans-serif',
-        fontSize: '13px',
+        fontSize: '12px',
+        color: '#fff8e8',
+        backgroundColor: '#3a2a4a',
+        padding: { x: 10, y: 7 },
+      })
+      .setOrigin(0.5)
+      .setInteractive({ useHandCursor: true })
+      .on('pointerup', () => this.openAccount());
+    this.refreshAccountChip();
+    this.add
+      .text(width / 2 + gap * 1.5, height * 0.855, 'Stats', {
+        fontFamily: 'system-ui, sans-serif',
+        fontSize: '12px',
         color: '#fff8e8',
         backgroundColor: '#3a4555',
-        padding: { x: 12, y: 8 },
+        padding: { x: 10, y: 7 },
       })
       .setOrigin(0.5)
       .setInteractive({ useHandCursor: true })
@@ -299,7 +371,7 @@ export class MenuScene extends Phaser.Scene {
     this.add
       .text(
         width / 2,
-        height * 0.92,
+        height * 0.915,
         'RAGE (R) · FORMATIONS (F) · MUTATION (M) · Heroes (H, Q/W/E)',
         {
           fontFamily: 'system-ui, sans-serif',
@@ -376,14 +448,45 @@ export class MenuScene extends Phaser.Scene {
     });
   }
 
-  private startMatch(species: SpeciesId): void {
+  private launchMatch(species: SpeciesId): void {
     this.lastSpecies = species;
     rememberMatchPrefs(species, this.difficulty);
     recordGameStarted(species);
+    void maybeRecordCloudGameStarted(species);
     playSfx('ui');
     this.scene.start('Battlefield', {
       species,
       difficulty: this.difficulty,
+    });
+  }
+
+  /**
+   * Start Game: signed-in (email or Firebase anonymous) → play;
+   * else offer Login / Create / Play as guest (anonymous when SDK ready).
+   */
+  private startMatch(species: SpeciesId): void {
+    if (this.anyOverlayOpen()) return;
+    if (isCloudAccount(getCurrentAuthUser())) {
+      this.launchMatch(species);
+      return;
+    }
+    this.accountOpen = true;
+    showAuthPanel({
+      mode: 'login',
+      allowGuest: true,
+      onAuthed: () => {
+        this.accountOpen = false;
+        this.refreshAccountChip();
+        this.launchMatch(species);
+      },
+      onGuest: () => {
+        // Local-only fallback when Firebase env is missing.
+        this.accountOpen = false;
+        this.launchMatch(species);
+      },
+      onClose: () => {
+        this.accountOpen = false;
+      },
     });
   }
 

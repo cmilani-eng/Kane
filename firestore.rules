@@ -1,11 +1,11 @@
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
-    // Deny-by-default. Soft-launch: no open collections.
-    match /{document=**} {
-      allow read, write: if false;
-    }
+    // DRAFT for Cassio review — do NOT deploy without explicit ask.
+    // Production project target: kane-rts-game.
 
+    // Email/password and Anonymous Auth both set request.auth.uid —
+    // self-paths treat them the same (no provider check).
     function signedIn() {
       return request.auth != null;
     }
@@ -14,7 +14,96 @@ service cloud.firestore {
       return signedIn() && request.auth.uid == uid;
     }
 
-    // Own profile only — mirrors RTDB profiles/$uid assumptions.
+    function validSpecies(s) {
+      return s in ['brutes', 'nobles', 'weirdos'];
+    }
+
+    function validDifficulty(d) {
+      return d in ['easy', 'normal', 'hard'];
+    }
+
+    function validEquipped(eq) {
+      return eq.keys().hasOnly(['brutes', 'nobles', 'weirdos'])
+        && eq.brutes is string
+        && eq.nobles is string
+        && eq.weirdos is string
+        && eq.brutes.size() > 0 && eq.brutes.size() <= 64
+        && eq.nobles.size() > 0 && eq.nobles.size() <= 64
+        && eq.weirdos.size() > 0 && eq.weirdos.size() <= 64;
+    }
+
+    // ---- Player account tree (SP MVP — client-trusted writes) ----
+    // Anonymous guests and email users: same isSelf(uid) gate on users/{uid}.
+    match /users/{uid} {
+      allow read: if isSelf(uid);
+      allow create: if isSelf(uid)
+        && request.resource.data.keys().hasAll([
+          'displayName', 'ageGateOk', 'createdAtMs', 'updatedAtMs', 'prefs', 'cosmetics'
+        ])
+        && request.resource.data.displayName is string
+        && request.resource.data.displayName.size() > 0
+        && request.resource.data.displayName.size() <= 32
+        && request.resource.data.ageGateOk is bool
+        && request.resource.data.createdAtMs is int
+        && request.resource.data.updatedAtMs is int
+        && request.resource.data.prefs.keys().hasOnly(['species', 'difficulty'])
+        && validSpecies(request.resource.data.prefs.species)
+        && validDifficulty(request.resource.data.prefs.difficulty)
+        && request.resource.data.cosmetics.keys().hasOnly(['equipped'])
+        && validEquipped(request.resource.data.cosmetics.equipped);
+      allow update: if isSelf(uid)
+        && request.resource.data.displayName is string
+        && request.resource.data.displayName.size() > 0
+        && request.resource.data.displayName.size() <= 32
+        && request.resource.data.ageGateOk is bool
+        && request.resource.data.updatedAtMs is int
+        && request.resource.data.prefs.keys().hasOnly(['species', 'difficulty'])
+        && validSpecies(request.resource.data.prefs.species)
+        && validDifficulty(request.resource.data.prefs.difficulty)
+        && request.resource.data.cosmetics.keys().hasOnly(['equipped'])
+        && validEquipped(request.resource.data.cosmetics.equipped);
+      allow delete: if false;
+
+      match /matches/{matchId} {
+        allow read: if isSelf(uid);
+        allow create: if isSelf(uid)
+          && request.resource.data.keys().hasAll([
+            'endedAtMs', 'durationMs', 'result', 'won', 'species',
+            'difficulty', 'playerUnitsLeft', 'enemyUnitsLeft',
+            'playerBuildingsLeft', 'enemyBuildingsLeft', 'mode'
+          ])
+          && request.resource.data.endedAtMs is int
+          && request.resource.data.durationMs is int
+          && request.resource.data.durationMs >= 0
+          && request.resource.data.result in ['victory', 'defeat']
+          && request.resource.data.won is bool
+          && request.resource.data.won == (request.resource.data.result == 'victory')
+          && validSpecies(request.resource.data.species)
+          && validDifficulty(request.resource.data.difficulty)
+          && request.resource.data.mode == 'sp_ai';
+        allow update, delete: if false;
+      }
+
+      match /statistics/{docId} {
+        allow read: if isSelf(uid);
+        allow create, update: if isSelf(uid)
+          && docId == 'overview'
+          && request.resource.data.keys().hasAll([
+            'gamesStarted', 'wins', 'losses', 'bySpecies', 'updatedAtMs'
+          ])
+          && request.resource.data.gamesStarted is int
+          && request.resource.data.gamesStarted >= 0
+          && request.resource.data.wins is int
+          && request.resource.data.wins >= 0
+          && request.resource.data.losses is int
+          && request.resource.data.losses >= 0
+          && request.resource.data.updatedAtMs is int
+          && request.resource.data.bySpecies.keys().hasOnly(['brutes', 'nobles', 'weirdos']);
+        allow delete: if false;
+      }
+    }
+
+    // ---- Legacy draft paths ----
     match /profiles/{uid} {
       allow read: if isSelf(uid);
       allow create, update: if isSelf(uid)
@@ -32,21 +121,23 @@ service cloud.firestore {
       allow delete: if false;
     }
 
-    // Per-match summaries — client create denied (Function stub / Admin SDK).
     match /matchSummaries/{id} {
       allow read: if signedIn()
         && request.auth.uid in resource.data.playerUids;
       allow create, update, delete: if false;
     }
 
-    // Daily rollups — authenticated read; writes Function/Admin only.
     match /dailyRollups/{day} {
       allow read: if signedIn();
       allow write: if false;
     }
 
-    // Moderation log — no client access until Custom Claims land.
     match /moderationEvents/{id} {
+      allow read, write: if false;
+    }
+
+    // Deny-by-default catch-all (must stay last).
+    match /{document=**} {
       allow read, write: if false;
     }
   }
