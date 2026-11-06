@@ -25,6 +25,11 @@ export interface SilhouetteOpts {
   flash?: boolean;
   mutated?: boolean;
   inFormation?: boolean;
+  /**
+   * Cosmetics skin accent override (visual only — never from gameplay stats).
+   * When set, replaces species palette accent in silhouette extras.
+   */
+  skinAccent?: number;
 }
 
 export function resolveUnitAnimPhase(u: {
@@ -255,6 +260,7 @@ function drawWeirdoExtras(
 export function drawUnitSilhouette(g: G, opts: SilhouetteOpts): void {
   const def = getUnitType(opts.typeId);
   const pal = SPECIES[opts.speciesId].palette;
+  const accent = opts.skinAccent ?? pal.accent;
   const shape = def.shape ?? 'circle';
   const seed = opts.seed ?? 0;
   const phase = opts.phase ?? 'idle';
@@ -273,7 +279,7 @@ export function drawUnitSilhouette(g: G, opts: SilhouetteOpts): void {
   );
 
   if (opts.speciesId === 'weirdos' || def.isHero) {
-    g.fillStyle(pal.accent, phase === 'attack' ? 0.28 : 0.16);
+    g.fillStyle(accent, phase === 'attack' ? 0.28 : 0.16);
     g.fillCircle(x, y, r * 1.28);
   }
 
@@ -291,10 +297,10 @@ export function drawUnitSilhouette(g: G, opts: SilhouetteOpts): void {
     phase === 'idle' && cycle(opts.timeMs, 2800, seed + 3) > 0.92;
 
   if (opts.speciesId === 'brutes') {
-    drawBruteExtras(g, x, y, r, pal.accent, anim.swing);
+    drawBruteExtras(g, x, y, r, accent, anim.swing);
     drawEyes(g, x, y, r, false, blink);
   } else if (opts.speciesId === 'nobles') {
-    drawNobleExtras(g, x, y, r, pal.accent, pal.silver ?? 0xc0c8d4, anim.swing);
+    drawNobleExtras(g, x, y, r, accent, pal.silver ?? 0xc0c8d4, anim.swing);
     drawEyes(g, x, y + r * 0.04, r * 0.9, false, blink);
   } else {
     drawWeirdoExtras(
@@ -302,7 +308,7 @@ export function drawUnitSilhouette(g: G, opts: SilhouetteOpts): void {
       x,
       y,
       r,
-      pal.accent,
+      accent,
       pal.pink ?? 0xe87aa8,
       !!opts.mutated,
       anim.swing,
@@ -311,9 +317,9 @@ export function drawUnitSilhouette(g: G, opts: SilhouetteOpts): void {
   }
 
   if (def.isHero) {
-    g.lineStyle(2, pal.accent, 0.95);
+    g.lineStyle(2, accent, 0.95);
     g.strokeCircle(x, y, r + 5);
-    g.fillStyle(pal.accent, 0.9);
+    g.fillStyle(accent, 0.9);
     g.fillCircle(x, y - r - 8 - Math.abs(anim.oy), 3.5);
   }
 
