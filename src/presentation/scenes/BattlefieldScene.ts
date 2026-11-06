@@ -98,7 +98,10 @@ import {
   isExplored,
   tickFog,
 } from '../../gameplay/battlefield/battlefieldFog';
-import { recordMatchResult } from '../../database/localStats';
+import {
+  makeMatchSummaryId,
+} from '../../database/matchSummary';
+import { writeMatchSummaryFunctionStub } from '../../server/matchSummaryFunctionStub';
 import { playSfx } from '../audio/sfx';
 import { RtsCamera } from '../camera/rtsCamera';
 import { createSkirmishMap } from '../maps/mapManager';
@@ -150,6 +153,7 @@ export class BattlefieldScene extends Phaser.Scene {
   private selectedBuilding: BattlefieldBuilding | null = null;
   private ai!: AiState;
   private matchResult: MatchResult = 'ongoing';
+  private matchStartedAtMs = 0;
   private animTimeMs = 0;
   private fogAccMs = 999;
   private viewCull: ViewBounds | null = null;
@@ -173,6 +177,8 @@ export class BattlefieldScene extends Phaser.Scene {
     this.placeIndex = 0;
     this.placeType = this.placeables[0] ?? 'bonker_hut';
     this.ai = createAiState(difficulty);
+    this.matchResult = 'ongoing';
+    this.matchStartedAtMs = Date.now();
     this.cameraCtl = new RtsCamera(this);
     const first = this.world.units.find((u) => u.team === 'player');
     if (first) this.cameras.main.centerOn(first.x + 80, first.y - 40);
@@ -559,12 +565,13 @@ export class BattlefieldScene extends Phaser.Scene {
 
   private showEndScreen(result: MatchResult): void {
     if (this.matchResult !== 'ongoing') return;
+    if (result === 'ongoing') return;
     this.matchResult = result;
     this.mode = 'none';
     this.ghostGfx.clear();
     this.cameraCtl.suppressPan = true;
     playSfx(result === 'victory' ? 'victory' : 'defeat');
-    recordMatchResult(this.world.speciesId, result === 'victory');
+    this.writeEndMatchSummary(result);
 
     showKaneEndScreen({
       scene: this,
@@ -574,6 +581,33 @@ export class BattlefieldScene extends Phaser.Scene {
       ignoreOnMain: (objs) => {
         this.cameras.main.ignore(this.add.container(0, 0, objs));
       },
+    });
+  }
+
+  /** Admin/#/admin payload — Function stub → localStorage. SP path unchanged. */
+  private writeEndMatchSummary(result: Exclude<MatchResult, 'ongoing'>): void {
+    const endedAtMs = Date.now();
+    const playerUnitsLeft = livingByTeam(this.world, 'player');
+    const enemyUnitsLeft = livingByTeam(this.world, 'enemy');
+    const playerBuildingsLeft = this.world.buildings.filter(
+      (b) => b.team === 'player' && b.hp > 0,
+    ).length;
+    const enemyBuildingsLeft = this.world.buildings.filter(
+      (b) => b.team === 'enemy' && b.hp > 0,
+    ).length;
+    void writeMatchSummaryFunctionStub({
+      id: makeMatchSummaryId(endedAtMs),
+      version: 1,
+      endedAtMs,
+      durationMs: Math.max(0, endedAtMs - this.matchStartedAtMs),
+      result,
+      won: result === 'victory',
+      species: this.world.speciesId,
+      difficulty: this.world.aiDifficulty,
+      playerUnitsLeft,
+      enemyUnitsLeft,
+      playerBuildingsLeft,
+      enemyBuildingsLeft,
     });
   }
 

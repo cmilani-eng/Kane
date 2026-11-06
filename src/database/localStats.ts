@@ -123,7 +123,7 @@ export function formatStatsSummary(stats: LocalStats = loadLocalStats()): string
       `  ${id}: ${r.started} started · ${r.wins}W / ${r.losses}L`,
     );
   }
-  lines.push('', '(Local only — no cloud account yet)');
+  lines.push('', '(Counters local — match summaries below / in localStorage)');
   return lines.join('\n');
 }
 
