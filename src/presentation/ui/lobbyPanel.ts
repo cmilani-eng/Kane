@@ -18,6 +18,7 @@ import { getLobbyStub } from '../../networking/lobbySingleton';
 import type { LobbyStatus } from '../../networking/lobbyStub';
 import { playSfx } from '../audio/sfx';
 import { lobbyLastFactionTipLine } from './lobbyLastFactionTip';
+import { lobbyLastMapTipLine } from './lobbyLastMapTip';
 
 export function lobbyStatusLine(status: LobbyStatus, code: string | null): string {
   switch (status) {
@@ -136,6 +137,7 @@ export function showLobbyPanel(scene: Phaser.Scene, onClose: () => void): void {
     lobbyLastFactionTipLine(),
     lobbyDifficultyTipLine(),
     lobbyMapTipLine(),
+    lobbyLastMapTipLine(),
     lobbyMatchLengthTipLine(),
   ]
     .filter(Boolean)
