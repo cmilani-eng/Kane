@@ -42,6 +42,7 @@ import {
   minimapPingDenyFlashAlpha,
 } from './minimapPingCooldown';
 import { minimapSelectedUnitBlip } from './minimapSelectedBlip';
+import { minimapCameraViewportLabelText } from './minimapCameraViewportLabel';
 import {
   minimapScoutPulseLabelAlpha,
   minimapScoutPulseLabelText,
@@ -56,6 +57,8 @@ export class Minimap {
   private readonly frame: Phaser.GameObjects.Rectangle;
   /** Short sector label when fog scout pulse lands. */
   private readonly scoutLabel: Phaser.GameObjects.Text;
+  /** Short mark on the camera viewport frame. */
+  private readonly camLabel: Phaser.GameObjects.Text;
 
   private mapX = 0;
   private mapY = 0;
@@ -111,6 +114,19 @@ export class Minimap {
       .setDepth(113)
       .setOrigin(0.5, 1)
       .setVisible(false);
+
+    this.camLabel = scene.add
+      .text(0, 0, minimapCameraViewportLabelText(), {
+        fontFamily: 'Segoe UI, system-ui, sans-serif',
+        fontSize: '10px',
+        color: '#f0c75e',
+        stroke: '#0a1018',
+        strokeThickness: 3,
+      })
+      .setScrollFactor(0)
+      .setDepth(113)
+      .setOrigin(0.5, 1)
+      .setAlpha(0.9);
 
     this.hit = scene.add
       .rectangle(0, 0, this.mapW, this.mapH, 0x000000, 0.001)
@@ -174,7 +190,7 @@ export class Minimap {
   }
 
   objects(): Phaser.GameObjects.GameObject[] {
-    return [this.frame, this.gfx, this.hit, this.scoutLabel];
+    return [this.frame, this.gfx, this.hit, this.scoutLabel, this.camLabel];
   }
 
   setBottomInset(px: number): void {
@@ -485,6 +501,21 @@ export class Minimap {
     g.strokeRect(vx, vy, vwM, vhM);
     g.lineStyle(1, 0xfff8e8, 0.55);
     g.strokeRect(vx + 1.5, vy + 1.5, Math.max(0, vwM - 3), Math.max(0, vhM - 3));
+    // Short View mark at the top of the camera frame
+    const camLabelX = Phaser.Math.Clamp(
+      vx + vwM / 2,
+      this.mapX + 10,
+      this.mapX + this.mapW - 10,
+    );
+    const camLabelY = Phaser.Math.Clamp(
+      vy - 2,
+      this.mapY + 10,
+      this.mapY + this.mapH - 2,
+    );
+    this.camLabel
+      .setText(minimapCameraViewportLabelText())
+      .setPosition(camLabelX, camLabelY)
+      .setVisible(true);
 
     // Selected unit blips — on top of camera/order so selection never hides
     for (const u of this.world.units) {
