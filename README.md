@@ -23,7 +23,7 @@ Checks: `npm run lint` (ESLint), `npm test` (Vitest), `npm run build` (type-chec
 
 Playable **battlefield** (select / move / attack / build / train):
 
-- Camera: **WASD** / arrows, **edge scroll**, wheel zoom
+- Camera: **WASD** / arrows, **edge scroll**, wheel or **`[` `]`** zoom
 - Menu picks **Brutes**, **Nobles**, or **Weirdos**, plus Easy / Normal / Hard, then Rematch
 - Brutes train Bonkers and Rock Throwers from the Bonker Hut, Wolf Riders and Big Bonkers from the Beast Pen, Stompers and Boom Goblins from Scrap Works
 - **LMB** select · **Shift** add/toggle · **drag** box · **RMB** attack enemy or move

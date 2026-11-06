@@ -34,7 +34,9 @@ players use double-click or Cmd+click.
 | Add the selection to a group | Shift+Ctrl+0-9 (SC2) | — | 🔜 |
 
 Alt+0-9 exists because Chrome and Firefox reserve Ctrl+digit for switching tabs
-on some platforms, and a page cannot always override that.
+on some platforms, and a page cannot always override that. It has only been
+tried with scripted key events, not in real browsers. Chrome and Firefox on
+Linux use Alt+digit for tabs too, so saving a group may not work there yet.
 
 With a production building selected, **1 / 2 / 3** train units there instead of
 recalling a group. Select a unit first to use the number for a group.
@@ -43,7 +45,8 @@ recalling a group. Select a unit first to use the number for a group.
 
 | Function | Reference games | KANE | Status |
 |----------|-----------------|------|--------|
-| Move / attack / gather | right-click | RMB (long-press on touch) | ✅ |
+| Move / attack / gather | right-click | RMB | ✅ |
+| Move / attack / gather on touch | long-press | — (a tap selects; the panel's A-move button sends units) | 🔜 |
 | Attack-move | A, then click | A, then click | ✅ |
 | Stop | S | S (phones get a Stop button) | ✅ |
 | Hold position / patrol | H / P (SC2) | — | 🔜 |

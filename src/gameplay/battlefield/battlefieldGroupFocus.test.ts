@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import {
   groupCenter,
+  GroupTapTracker,
   isGroupDoubleTap,
   GROUP_DOUBLE_TAP_MS,
 } from './battlefieldGroupFocus';
@@ -9,6 +10,7 @@ import {
   createControlGroups,
   recallControlGroup,
 } from './battlefieldOrders';
+import { isMilitaryUnit } from './selectMilitary';
 import {
   clearSelection,
   createBattlefieldWorld,
@@ -16,8 +18,7 @@ import {
   type BattlefieldWorld,
 } from './battlefieldWorld';
 
-const army = (w: BattlefieldWorld) =>
-  w.units.filter((u) => u.team === 'player' && !u.canGather);
+const army = (w: BattlefieldWorld) => w.units.filter(isMilitaryUnit);
 
 describe('isGroupDoubleTap', () => {
   it('needs the same slot inside the window', () => {
@@ -27,6 +28,31 @@ describe('isGroupDoubleTap', () => {
     expect(isGroupDoubleTap(prev, 3, 1000 + GROUP_DOUBLE_TAP_MS)).toBe(true);
     expect(isGroupDoubleTap(prev, 4, 1100)).toBe(false);
     expect(isGroupDoubleTap(prev, 3, 1001 + GROUP_DOUBLE_TAP_MS)).toBe(false);
+  });
+});
+
+describe('GroupTapTracker', () => {
+  it('reports the second quick press on the same slot', () => {
+    const taps = new GroupTapTracker();
+
+    expect(taps.press(2, 1000)).toBe(false);
+    expect(taps.press(2, 1100)).toBe(true);
+  });
+
+  it('does not chain across different slots or a slow press', () => {
+    const taps = new GroupTapTracker();
+
+    taps.press(2, 1000);
+    expect(taps.press(3, 1100)).toBe(false);
+    expect(taps.press(3, 1100 + GROUP_DOUBLE_TAP_MS + 1)).toBe(false);
+  });
+
+  it('forgets the last press after reset (assign, train, empty slot)', () => {
+    const taps = new GroupTapTracker();
+
+    taps.press(2, 1000);
+    taps.reset();
+    expect(taps.press(2, 1100)).toBe(false);
   });
 });
 
@@ -74,5 +100,19 @@ describe('control group round trip', () => {
         .sort(),
     ).toEqual(saved.map((u) => u.id).sort());
     expect(groupCenter(w, groups.get(4)!)).toEqual({ x: 600, y: 700 });
+  });
+
+  it('keeps a saved group when assigning with nothing selected', () => {
+    const w = createBattlefieldWorld('brutes');
+    const groups = createControlGroups();
+    const saved = army(w).slice(0, 2);
+
+    clearSelection(w);
+    saved.forEach((u) => (u.selected = true));
+    assignControlGroup(w, groups, 3);
+
+    clearSelection(w);
+    expect(assignControlGroup(w, groups, 3)).toBe(false);
+    expect(groups.get(3)).toEqual(saved.map((u) => u.id));
   });
 });

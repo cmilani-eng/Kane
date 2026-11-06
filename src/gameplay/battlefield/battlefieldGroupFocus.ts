@@ -2,7 +2,7 @@
  * Double-tapping a control-group key centres the camera on that group.
  * Pure helpers (no Phaser) so the timing and maths are unit-tested.
  */
-import type { BattlefieldWorld } from './battlefieldWorld';
+import { isLivingPlayerUnit, type BattlefieldWorld } from './battlefieldWorld';
 
 export const GROUP_DOUBLE_TAP_MS = 350;
 
@@ -24,6 +24,25 @@ export function isGroupDoubleTap(
   );
 }
 
+/**
+ * Remembers the last group-key press. Anything that is not a group recall
+ * (assigning, training, an empty slot, a new match) must call `reset`.
+ */
+export class GroupTapTracker {
+  private last: GroupTap | null = null;
+
+  /** Records this press; true when it completes a double-tap on `slot`. */
+  press(slot: number, time: number): boolean {
+    const double = isGroupDoubleTap(this.last, slot, time);
+    this.last = { slot, time };
+    return double;
+  }
+
+  reset(): void {
+    this.last = null;
+  }
+}
+
 /** The middle of the living player units in `ids`, or null if none are left. */
 export function groupCenter(
   world: BattlefieldWorld,
@@ -31,7 +50,7 @@ export function groupCenter(
 ): { x: number; y: number } | null {
   const wanted = new Set(ids);
   const members = world.units.filter(
-    (u) => u.team === 'player' && u.hp > 0 && wanted.has(u.id),
+    (u) => isLivingPlayerUnit(u) && wanted.has(u.id),
   );
   if (members.length === 0) return null;
   return {

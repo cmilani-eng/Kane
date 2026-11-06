@@ -3,9 +3,11 @@
  * Phaser 4 GameObjects only (touch-friendly min sizes).
  */
 import Phaser from 'phaser';
+import { flags } from '../../config/flags';
 import { heroForSpecies, type HeroAbilitySlot } from '../../data/heroes';
 import { SPECIES, type SpeciesId } from '../../data/speciesStub';
 import { getAiDifficulty } from '../../gameplay/battlefield/aiDifficulty';
+import { livingByTeam } from '../../gameplay/battlefield/battlefieldCombat';
 import {
   castHeroAbility,
   heroHudLine,
@@ -16,6 +18,7 @@ import {
   selectOrCycleIdleWorkers,
   type IdleChipResult,
 } from '../../gameplay/battlefield/idleWorkers';
+import { coreHudSummary } from '../../gameplay/battlefield/battlefieldCoreFragments';
 import {
   countVisibleMilitary,
   selectAllVisibleMilitary,
@@ -50,8 +53,12 @@ export class BattlefieldHud {
   readonly timerText!: Phaser.GameObjects.Text;
   readonly goldText!: Phaser.GameObjects.Text;
   readonly crystalText!: Phaser.GameObjects.Text;
+  /** Living player units vs `flags.unitCap`. */
+  readonly supplyText!: Phaser.GameObjects.Text;
   readonly status!: Phaser.GameObjects.Text;
   readonly heroLine!: Phaser.GameObjects.Text;
+  /** CORE fragment ownership + capture/contest progress. */
+  readonly coreLine!: Phaser.GameObjects.Text;
   readonly hint!: Phaser.GameObjects.Text;
   readonly menuBtn!: Phaser.GameObjects.Text;
   readonly muteBtn!: Phaser.GameObjects.Text;
@@ -86,6 +93,7 @@ export class BattlefieldHud {
 
   private goldDot!: Phaser.GameObjects.Arc;
   private crystalDot!: Phaser.GameObjects.Arc;
+  private supplyDot!: Phaser.GameObjects.Arc;
   private resourcePanel!: Phaser.GameObjects.Rectangle;
   private abilityBtns: AbilityBtn[] = [];
   private narrow = false;
@@ -191,6 +199,20 @@ export class BattlefieldHud {
       .setScrollFactor(0)
       .setDepth(100);
 
+    this.supplyDot = scene.add
+      .circle(280, 86, 7, 0xb8c9d9)
+      .setScrollFactor(0)
+      .setDepth(100);
+    this.supplyText = scene.add
+      .text(294, 76, `Supply  0 / ${flags.unitCap}`, {
+        fontFamily: 'system-ui, sans-serif',
+        fontSize: '15px',
+        color: '#d7e6f2',
+        fontStyle: 'bold',
+      })
+      .setScrollFactor(0)
+      .setDepth(100);
+
     this.status = scene.add
       .text(12, 110, '', {
         fontFamily: 'system-ui, sans-serif',
@@ -208,6 +230,18 @@ export class BattlefieldHud {
         fontFamily: 'system-ui, sans-serif',
         fontSize: '12px',
         color: accent,
+        backgroundColor: '#0f1a2ecc',
+        padding: { x: 8, y: 6 },
+        wordWrap: { width: 520 },
+      })
+      .setScrollFactor(0)
+      .setDepth(100);
+
+    this.coreLine = scene.add
+      .text(12, 184, '', {
+        fontFamily: 'system-ui, sans-serif',
+        fontSize: '12px',
+        color: '#c8e4ff',
         backgroundColor: '#0f1a2ecc',
         padding: { x: 8, y: 6 },
         wordWrap: { width: 520 },
@@ -485,8 +519,10 @@ export class BattlefieldHud {
       this.timerText,
       this.goldText,
       this.crystalText,
+      this.supplyText,
       this.status,
       this.heroLine,
+      this.coreLine,
       this.hint,
       this.menuBtn,
       this.muteBtn,
@@ -499,6 +535,7 @@ export class BattlefieldHud {
       this.idlePingBtn,
       this.goldDot,
       this.crystalDot,
+      this.supplyDot,
       this.resourcePanel,
     ];
     for (const b of this.abilityBtns) {
@@ -533,19 +570,25 @@ export class BattlefieldHud {
 
     const resY = pad + (this.narrow ? 50 : 60);
     this.resourcePanel.setPosition(pad, resY);
-    this.resourcePanel.width = this.narrow ? Math.min(w - pad * 2, 300) : 300;
-    this.resourcePanel.height = this.narrow ? 56 : 36;
+    this.resourcePanel.width = this.narrow
+      ? Math.min(w - pad * 2, 300)
+      : 440;
+    this.resourcePanel.height = this.narrow ? 80 : 36;
 
     if (this.narrow) {
-      this.goldDot.setPosition(pad + 14, resY + 16);
-      this.goldText.setPosition(pad + 28, resY + 8).setFontSize('14px');
-      this.crystalDot.setPosition(pad + 14, resY + 40);
-      this.crystalText.setPosition(pad + 28, resY + 32).setFontSize('14px');
+      this.goldDot.setPosition(pad + 14, resY + 14);
+      this.goldText.setPosition(pad + 28, resY + 6).setFontSize('14px');
+      this.crystalDot.setPosition(pad + 14, resY + 38);
+      this.crystalText.setPosition(pad + 28, resY + 30).setFontSize('14px');
+      this.supplyDot.setPosition(pad + 14, resY + 62);
+      this.supplyText.setPosition(pad + 28, resY + 54).setFontSize('14px');
     } else {
       this.goldDot.setPosition(pad + 16, resY + 18);
       this.goldText.setPosition(pad + 30, resY + 8).setFontSize('15px');
-      this.crystalDot.setPosition(pad + 140, resY + 18);
-      this.crystalText.setPosition(pad + 154, resY + 8).setFontSize('15px');
+      this.crystalDot.setPosition(pad + 130, resY + 18);
+      this.crystalText.setPosition(pad + 144, resY + 8).setFontSize('15px');
+      this.supplyDot.setPosition(pad + 280, resY + 18);
+      this.supplyText.setPosition(pad + 294, resY + 8).setFontSize('15px');
     }
 
     const belowRes = resY + this.resourcePanel.height + 8;
@@ -558,6 +601,15 @@ export class BattlefieldHud {
       .setStyle({ wordWrap: { width: Math.min(520, w - pad * 2) } });
     this.heroLine
       .setPosition(pad, belowRes + idleOffset + (this.narrow ? 44 : 36))
+      .setStyle({ wordWrap: { width: Math.min(560, w - pad * 2) } })
+      .setFontSize(this.narrow ? '11px' : '12px');
+    const coreY =
+      belowRes +
+      idleOffset +
+      (this.narrow ? 44 : 36) +
+      (this.heroLine.visible && this.heroLine.text ? (this.narrow ? 28 : 30) : 0);
+    this.coreLine
+      .setPosition(pad, coreY)
       .setStyle({ wordWrap: { width: Math.min(560, w - pad * 2) } })
       .setFontSize(this.narrow ? '11px' : '12px');
 
@@ -698,8 +750,34 @@ export class BattlefieldHud {
     const w = this.world.wallet;
     this.goldText.setText(`Gold  ${Math.floor(w.gold)}`);
     this.crystalText.setText(`Crystals  ${Math.floor(w.magic_crystals)}`);
+    const pop = livingByTeam(this.world, 'player');
+    const cap = flags.unitCap;
+    this.supplyText.setText(`Supply  ${pop} / ${cap}`);
+    if (pop >= cap) {
+      this.supplyText.setColor('#e87aa8');
+      this.supplyDot.setFillStyle(0xe87aa8);
+    } else if (pop >= Math.floor(cap * 0.85)) {
+      this.supplyText.setColor('#f0c75e');
+      this.supplyDot.setFillStyle(0xf0c75e);
+    } else {
+      this.supplyText.setColor('#d7e6f2');
+      this.supplyDot.setFillStyle(0xb8c9d9);
+    }
     this.status.setText(statusText);
     this.heroLine.setText(heroHudLine(this.world));
+    const coreText = coreHudSummary(this.world);
+    const wasCore = this.coreLine.visible;
+    this.coreLine.setText(coreText).setVisible(!!coreText);
+    if (coreText.includes('Capturing')) {
+      this.coreLine.setColor('#7ec8ff');
+    } else if (coreText.includes('Contested')) {
+      this.coreLine.setColor('#f0c75e');
+    } else if (coreText.includes('Enemy hold')) {
+      this.coreLine.setColor('#e87aa8');
+    } else {
+      this.coreLine.setColor('#c8e4ff');
+    }
+    if (wasCore !== this.coreLine.visible) this.layout();
     const armyN = countVisibleMilitary(this.world);
     this.armyBtn.setText(
       this.narrow

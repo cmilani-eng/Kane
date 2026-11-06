@@ -33,7 +33,7 @@ This doc is the honest gate before any public preview URL.
 6. **Match writes are client-trusted** for SP MVP — Functions deferred; local `#/admin` summaries still device-local.
 7. **Legal copy is placeholder** — not counsel-reviewed.
 8. **Content depth** — Phase 8 maps / deeper tutorial / practice arena not started.
-9. **CI is thin** — Hosting auto-deploy on push to `dev` (see `docs/firebase-hosting.md`); other PRs may still show empty check rollups until more workflows land.
+9. **CI is thin** — pull requests run lint, unit tests and the build (`.github/workflows/ci.yml`) and a push to `dev` runs the same checks before auto-deploying Hosting (see `docs/firebase-hosting.md`); there are no browser or gameplay tests yet.
 10. **Cosmetics shop** — explicitly out; free unlocks only.
 11. **No offline service worker** — installability stubs exist; full offline PWA is later (`docs/pwa.md`).
 

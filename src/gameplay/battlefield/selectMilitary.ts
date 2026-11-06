@@ -5,12 +5,12 @@ import type {
   BattlefieldUnit,
   BattlefieldWorld,
 } from './battlefieldWorld';
-import { clearSelection } from './battlefieldWorld';
+import { clearSelection, isLivingPlayerUnit } from './battlefieldWorld';
 import { isVisible } from './battlefieldFog';
 
 /** Combat unit: living player unit that cannot gather (army + heroes). */
 export function isMilitaryUnit(u: BattlefieldUnit): boolean {
-  return u.team === 'player' && u.hp > 0 && !u.canGather;
+  return isLivingPlayerUnit(u) && !u.canGather;
 }
 
 export function listVisibleMilitary(world: BattlefieldWorld): BattlefieldUnit[] {

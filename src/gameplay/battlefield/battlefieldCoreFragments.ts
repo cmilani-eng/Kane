@@ -42,7 +42,7 @@ export function seedCoreFragments(world: BattlefieldWorld): void {
   }));
 }
 
-function teamPresent(
+export function teamPresent(
   world: BattlefieldWorld,
   f: CoreFragment,
 ): { player: number; enemy: number } {
@@ -55,6 +55,47 @@ function teamPresent(
     else if (u.team === 'enemy') enemy++;
   }
   return { player, enemy };
+}
+
+/** Compact HUD line for CORE ownership + active hold/contest. */
+export function coreHudSummary(world: BattlefieldWorld): string {
+  const list = world.coreFragments ?? [];
+  if (list.length === 0) return '';
+
+  let ours = 0;
+  let theirs = 0;
+  let open = 0;
+  let best:
+    | { priority: number; text: string }
+    | null = null;
+
+  for (const f of list) {
+    if (f.owner === 'player') ours++;
+    else if (f.owner === 'enemy') theirs++;
+    else open++;
+
+    const { player, enemy } = teamPresent(world, f);
+    if (player > 0 && enemy > 0) {
+      const text = 'Contested';
+      if (!best || best.priority < 3) best = { priority: 3, text };
+      continue;
+    }
+    if (f.captureTeam === 'player' && f.captureProgress > 0.02) {
+      const pct = Math.floor(f.captureProgress * 100);
+      const text = `Capturing ${pct}%`;
+      if (!best || best.priority < 2) best = { priority: 2, text };
+      continue;
+    }
+    if (f.captureTeam === 'enemy' && f.captureProgress > 0.02) {
+      const pct = Math.floor(f.captureProgress * 100);
+      const text = `Enemy hold ${pct}%`;
+      if (!best || best.priority < 1) best = { priority: 1, text };
+    }
+  }
+
+  const ownership = `You ${ours} · Enemy ${theirs}${open > 0 ? ` · ${open} open` : ''}`;
+  if (best) return `CORE  ·  ${ownership}  ·  ${best.text}`;
+  return `CORE  ·  ${ownership}`;
 }
 
 function claimBurst(
