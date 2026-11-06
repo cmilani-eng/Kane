@@ -83,4 +83,4 @@ This doc is the honest gate before any public preview URL.
 
 ## Menu status strip
 
-The title menu shows a one-line soft-launch strip (hosting · admin · cosmetics · vol · pwa) built by `src/presentation/ui/softLaunchStatus.ts`. Ads and age-gate flags stay out of that strip so the main experience stays clean.
+The title menu shows a one-line soft-launch strip (hosting · admin · cosmetics · vol · pwa · /kane) built by `src/presentation/ui/softLaunchStatus.ts`. Ads and age-gate flags stay out of that strip so the main experience stays clean.
