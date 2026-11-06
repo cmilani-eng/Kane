@@ -1,6 +1,10 @@
 import Phaser from 'phaser';
 import { BRAND } from '../../config/brand';
 import { recordGameStarted, wantsAdminPanel } from '../../database/localStats';
+import {
+  loadMatchPrefs,
+  rememberMatchPrefs,
+} from '../../database/matchPrefs';
 import { canEnterGame, loadAgeGate } from '../../firebase/ageGate';
 import { SPECIES, type SpeciesId } from '../../data/speciesStub';
 import {
@@ -26,6 +30,8 @@ export class MenuScene extends Phaser.Scene {
   private lobbyOpen = false;
   private cosmeticsOpen = false;
   private difficulty: AiDifficultyId = 'normal';
+  /** Last played / remembered species — highlighted on the menu. */
+  private lastSpecies: SpeciesId = 'nobles';
   private previewGfx: Phaser.GameObjects.Graphics | null = null;
   private previewSlots: { id: SpeciesId; x: number; y: number }[] = [];
 
@@ -39,6 +45,9 @@ export class MenuScene extends Phaser.Scene {
       this.scene.start('AgeGate');
       return;
     }
+    const prefs = loadMatchPrefs();
+    this.difficulty = prefs.difficulty;
+    this.lastSpecies = prefs.species;
     this.statsOpen = false;
     this.lobbyOpen = false;
     this.cosmeticsOpen = false;
@@ -210,6 +219,7 @@ export class MenuScene extends Phaser.Scene {
           () => this.startMatch(c.id),
           Math.min(300, width * 0.88),
           92,
+          c.id === this.lastSpecies,
         );
       });
     } else {
@@ -227,6 +237,9 @@ export class MenuScene extends Phaser.Scene {
           c.fill,
           c.stroke,
           () => this.startMatch(c.id),
+          undefined,
+          undefined,
+          c.id === this.lastSpecies,
         );
       });
     }
@@ -343,6 +356,7 @@ export class MenuScene extends Phaser.Scene {
       bg.on('pointerup', () => {
         if (this.difficulty === id) return;
         this.difficulty = id;
+        rememberMatchPrefs(this.lastSpecies, this.difficulty);
         playSfx('ui');
         this.tweens.killAll();
         this.children.removeAll(true);
@@ -354,6 +368,8 @@ export class MenuScene extends Phaser.Scene {
   }
 
   private startMatch(species: SpeciesId): void {
+    this.lastSpecies = species;
+    rememberMatchPrefs(species, this.difficulty);
     recordGameStarted(species);
     playSfx('ui');
     this.scene.start('Battlefield', {
@@ -374,12 +390,13 @@ export class MenuScene extends Phaser.Scene {
     onClick: () => void,
     cardW?: number,
     cardH?: number,
+    remembered = false,
   ): void {
     const w = cardW ?? Math.min(190, this.scale.width * 0.28);
     const h = cardH ?? 150;
     const bg = this.add
       .rectangle(x, y, w, h, fill, 1)
-      .setStrokeStyle(3, stroke)
+      .setStrokeStyle(remembered ? 4 : 3, remembered ? 0xf0c75e : stroke)
       .setInteractive({ useHandCursor: true });
     this.previewSlots.push({ id: speciesId, x, y: y - 28 });
     this.add
@@ -389,6 +406,15 @@ export class MenuScene extends Phaser.Scene {
         color: '#fff8e8',
       })
       .setOrigin(0.5);
+    if (remembered && h > 120) {
+      this.add
+        .text(x, y - 68, 'Last played', {
+          fontFamily: 'system-ui, sans-serif',
+          fontSize: '10px',
+          color: '#f0c75e',
+        })
+        .setOrigin(0.5);
+    }
     this.add
       .text(x, y + 8, motto, {
         fontFamily: 'system-ui, sans-serif',
@@ -407,10 +433,10 @@ export class MenuScene extends Phaser.Scene {
       })
       .setOrigin(0.5);
     this.add
-      .text(x, y + 58, 'Play', {
+      .text(x, y + 58, remembered ? 'Play · last' : 'Play', {
         fontFamily: 'system-ui, sans-serif',
         fontSize: '14px',
-        color: '#fff8e8',
+        color: remembered ? '#f0c75e' : '#fff8e8',
       })
       .setOrigin(0.5);
     bg.on('pointerover', () => bg.setAlpha(0.92));
