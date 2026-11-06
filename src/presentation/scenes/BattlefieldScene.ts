@@ -133,6 +133,7 @@ import {
   isExplored,
   tickFog,
 } from '../../gameplay/battlefield/battlefieldFog';
+import { tickAttentionPings } from '../../gameplay/battlefield/battlefieldAttentionPing';
 import {
   spawnScoutPulsesFromFog,
   tickScoutPulses,
@@ -184,6 +185,7 @@ import { drawWaypointMarkers } from '../fx/waypointMarkersDraw';
 import { ControlGroupBadgeLayer } from '../fx/controlGroupBadges';
 import { drawBuildingRallyMarkers } from '../fx/rallyMarkerDraw';
 import { drawGatherTargetHighlights } from '../fx/gatherTargetHighlight';
+import { drawAttentionPingList } from '../fx/attentionPingDraw';
 import { drawScoutPulseList } from '../fx/scoutPulseDraw';
 import {
   buildingCanRally,
@@ -1186,6 +1188,7 @@ export class BattlefieldScene extends Phaser.Scene {
         }
       }
       tickScoutPulses(this.world, delta);
+      tickAttentionPings(this.world, delta);
       tickCoreFragments(this.world, delta);
       tickBattlefieldCombat(this.world, delta);
       // Attack flash just set (~120) — one SFX per frame max.
@@ -1415,6 +1418,7 @@ export class BattlefieldScene extends Phaser.Scene {
     drawStopFxList(g, this.world.stopFx, view);
     drawControlGroupFxList(g, this.world.controlGroupFx, view);
     drawScoutPulseList(g, this.world.scoutPulses, view);
+    drawAttentionPingList(g, this.world.attentionPings, view);
     drawWaypointMarkers(
       g,
       this.world.waypointMarkers,

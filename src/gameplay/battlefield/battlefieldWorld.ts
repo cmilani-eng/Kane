@@ -147,6 +147,8 @@ export interface BattlefieldWorld {
   scoutPulses: import('./battlefieldScoutPulse').ScoutPulse[];
   /** Move / attack-move ground waypoints. */
   waypointMarkers: import('./battlefieldWaypointMarkers').WaypointMarker[];
+  /** Chat-free attention pings (look-here marks). */
+  attentionPings: import('./battlefieldAttentionPing').AttentionPing[];
   /** Capturable CORE fragments (shattered KANE CORE). */
   coreFragments: import('./battlefieldCoreFragments').CoreFragment[];
   /** Presentation cue — claim SFX window. */
@@ -429,6 +431,7 @@ export function createBattlefieldWorld(
     controlGroupFx: [],
     scoutPulses: [],
     waypointMarkers: [],
+    attentionPings: [],
     coreFragments: [],
     coreClaimFlashMs: 0,
     playerCoreHoldMs: 0,
