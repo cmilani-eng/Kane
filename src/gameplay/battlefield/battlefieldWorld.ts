@@ -23,6 +23,7 @@ import { createFogState, isVisible } from './battlefieldFog';
 import { setUnitPath } from './battlefieldPathfinding';
 import { mutationSpeedMult } from './battlefieldMutations';
 import { rageSpeedMult } from './battlefieldRage';
+import { defaultRallyFor } from './battlefieldRally';
 import { spawnWaypointMarker } from './battlefieldWaypointMarkers';
 
 export type BattlefieldTeam = 'player' | 'enemy' | 'neutral';
@@ -64,6 +65,9 @@ export interface BattlefieldBuilding {
   /** Production queue (unit type ids). */
   trainQueue: UnitTypeId[];
   trainProgressMs: number;
+  /** Where freshly trained units march (world coords). */
+  rallyX: number;
+  rallyY: number;
   selected?: boolean;
 }
 
@@ -175,6 +179,7 @@ function seedHall(
     accent: def.accent,
     trainQueue: [],
     trainProgressMs: 0,
+    ...defaultRallyFor({ x, y, radius: def.radius }),
   });
   world.stockpiles.push({
     id: world.nextId++,

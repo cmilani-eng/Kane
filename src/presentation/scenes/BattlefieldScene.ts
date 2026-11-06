@@ -166,6 +166,11 @@ import { drawRageVisuals } from '../fx/rageVisual';
 import { drawControlGroupFxList } from '../fx/controlGroupFeedback';
 import { drawStopFxList } from '../fx/stopCommandFeedback';
 import { drawWaypointMarkers } from '../fx/waypointMarkersDraw';
+import { drawBuildingRallyMarkers } from '../fx/rallyMarkerDraw';
+import {
+  buildingCanRally,
+  setBuildingRally,
+} from '../../gameplay/battlefield/battlefieldRally';
 import {
   drawUnitSilhouette,
   resolveUnitAnimPhase,
@@ -177,7 +182,14 @@ import {
   type ViewBounds,
 } from '../perf/mobileBudget';
 
-type PointerMode = 'none' | 'select' | 'box' | 'pan' | 'place' | 'attackMove';
+type PointerMode =
+  | 'none'
+  | 'select'
+  | 'box'
+  | 'pan'
+  | 'place'
+  | 'attackMove'
+  | 'rally';
 
 export class BattlefieldScene extends Phaser.Scene {
   private world!: BattlefieldWorld;
@@ -288,6 +300,7 @@ export class BattlefieldScene extends Phaser.Scene {
     mountSelectionPanel({
       stop: () => this.issueStopCommand(),
       attackMove: () => this.toggleAttackMoveMode(),
+      rally: () => this.toggleRallyMode(),
       train: (typeId) => {
         const b = this.selectedBuilding;
         if (!b || b.team !== 'player') return;
@@ -372,6 +385,7 @@ export class BattlefieldScene extends Phaser.Scene {
     this.input.keyboard?.on('keydown-PAUSE', () => this.togglePause());
     this.input.keyboard?.on('keydown-B', () => {
       if (this.paused || this.matchResult !== 'ongoing') return;
+      if (this.controlsHelp.isOpen()) return;
       if (this.mode === 'place' && this.placeables.length > 1) {
         this.placeIndex = (this.placeIndex + 1) % this.placeables.length;
         this.placeType = this.placeables[this.placeIndex]!;
@@ -379,6 +393,7 @@ export class BattlefieldScene extends Phaser.Scene {
         return;
       }
       if (this.mode === 'attackMove') this.clearAttackMoveMode();
+      this.clearRallyMode();
       this.mode = this.mode === 'place' ? 'none' : 'place';
       if (this.mode === 'place' && this.placeables.length) {
         this.placeType = this.placeables[this.placeIndex]!;
@@ -483,8 +498,13 @@ export class BattlefieldScene extends Phaser.Scene {
       this.setPaused(false);
       return;
     }
-    if (this.mode === 'place' || this.mode === 'attackMove') {
+    if (
+      this.mode === 'place' ||
+      this.mode === 'attackMove' ||
+      this.mode === 'rally'
+    ) {
       this.clearAttackMoveMode();
+      this.clearRallyMode();
       this.mode = 'none';
       this.ghostGfx.clear();
       return;
@@ -576,6 +596,28 @@ export class BattlefieldScene extends Phaser.Scene {
   private clearBuildingSelection(): void {
     for (const b of this.world.buildings) b.selected = false;
     this.selectedBuilding = null;
+    this.clearRallyMode();
+  }
+
+  private toggleRallyMode(): void {
+    if (this.mode === 'rally') {
+      this.clearRallyMode();
+      playSfx('ui');
+      return;
+    }
+    const b = this.selectedBuilding;
+    if (!b || b.team !== 'player' || !buildingCanRally(b)) {
+      playSfx('ui');
+      return;
+    }
+    if (this.mode === 'place') this.ghostGfx.clear();
+    this.clearAttackMoveMode();
+    this.mode = 'rally';
+    playSfx('ui');
+  }
+
+  private clearRallyMode(): void {
+    if (this.mode === 'rally') this.mode = 'none';
   }
 
   private shiftHeld(): boolean {
@@ -605,6 +647,16 @@ export class BattlefieldScene extends Phaser.Scene {
       return;
     }
 
+    if (this.mode === 'rally' && pointer.leftButtonDown()) {
+      const b = this.selectedBuilding;
+      if (b && b.team === 'player' && buildingCanRally(b)) {
+        setBuildingRally(b, wp.x, wp.y);
+        playSfx('ui');
+      }
+      this.clearRallyMode();
+      return;
+    }
+
     if (this.mode === 'place' && pointer.leftButtonDown()) {
       if (this.ghostValid) {
         const placed = placeBuilding(
@@ -628,8 +680,13 @@ export class BattlefieldScene extends Phaser.Scene {
       return;
     }
     if (pointer.rightButtonDown()) {
-      if (this.mode === 'place' || this.mode === 'attackMove') {
+      if (
+        this.mode === 'place' ||
+        this.mode === 'attackMove' ||
+        this.mode === 'rally'
+      ) {
         this.clearAttackMoveMode();
+        this.clearRallyMode();
         this.mode = 'none';
         this.ghostGfx.clear();
         return;
@@ -834,6 +891,7 @@ export class BattlefieldScene extends Phaser.Scene {
       return;
     }
     if (this.mode === 'place') this.ghostGfx.clear();
+    this.clearRallyMode();
     this.mode = 'attackMove';
     const mid = this.cameras.main.midPoint;
     this.amovePointer = { x: mid.x, y: mid.y };
@@ -1058,6 +1116,7 @@ export class BattlefieldScene extends Phaser.Scene {
       b,
       sel,
       this.mode === 'attackMove',
+      this.mode === 'rally',
     );
     const panelOpen = renderSelectionPanel(selView);
     const inset = selectionPanelInsetPx(panelOpen);
@@ -1066,8 +1125,10 @@ export class BattlefieldScene extends Phaser.Scene {
 
     // Compact top status — detail lives in the bottom selection panel.
     let status: string;
-    if (b) {
-      status = `${b.name} selected · tap Train below or 1–3`;
+    if (this.mode === 'rally' && b) {
+      status = `${b.name} · tap map to set rally · Esc cancel`;
+    } else if (b) {
+      status = `${b.name} selected · Train / Set rally below`;
     } else if (n === 0) {
       status = `Alive ${friends} vs ${foes}  ·  Select a unit or building`;
     } else if (n === 1) {
@@ -1099,6 +1160,13 @@ export class BattlefieldScene extends Phaser.Scene {
     drawWaypointMarkers(
       g,
       this.world.waypointMarkers,
+      this.animTimeMs,
+      view,
+    );
+    drawBuildingRallyMarkers(
+      g,
+      this.world.buildings,
+      this.selectedBuilding,
       this.animTimeMs,
       view,
     );
