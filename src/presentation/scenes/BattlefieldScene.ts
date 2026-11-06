@@ -11,7 +11,7 @@ import {
   placeableBuildings,
   type BuildingTypeId,
 } from '../../data/buildings';
-import { SPECIES, type SpeciesId } from '../../data/speciesStub';
+import { type SpeciesId } from '../../data/speciesStub';
 import { getUnitType } from '../../data/units';
 import {
   getAiDifficulty,
@@ -98,6 +98,7 @@ import { playSfx } from '../audio/sfx';
 import { RtsCamera } from '../camera/rtsCamera';
 import { createSkirmishMap } from '../maps/mapManager';
 import { FogOverlay } from '../ui/fogOverlay';
+import { showKaneEndScreen } from '../ui/endScreen';
 import { drawCombatFxList } from '../fx/combatFxDraw';
 import { drawFormationVisuals } from '../fx/formationVisual';
 import {
@@ -525,62 +526,15 @@ export class BattlefieldScene extends Phaser.Scene {
     playSfx(result === 'victory' ? 'victory' : 'defeat');
     recordMatchResult(this.world.speciesId, result === 'victory');
 
-    const { width, height } = this.scale;
-    const win = result === 'victory';
-    const bg = this.add
-      .rectangle(width / 2, height / 2, width, height, 0x0a1220, 0.72)
-      .setScrollFactor(0)
-      .setDepth(200);
-    const title = this.add
-      .text(
-        width / 2,
-        height * 0.38,
-        win ? 'VICTORY' : 'DEFEAT',
-        {
-          fontFamily: 'Georgia, "Times New Roman", serif',
-          fontSize: '56px',
-          color: win ? '#f0c75e' : '#e85a5a',
-          stroke: '#000',
-          strokeThickness: 6,
-        },
-      )
-      .setOrigin(0.5)
-      .setScrollFactor(0)
-      .setDepth(201);
-    const sub = this.add
-      .text(
-        width / 2,
-        height * 0.5,
-        win
-          ? `Enemy hall destroyed — ${SPECIES[this.world.speciesId].name} claim the field.`
-          : `Your hall fell — ${SPECIES[this.world.speciesId].name} need a rematch.`,
-        {
-          fontFamily: 'system-ui, sans-serif',
-          fontSize: '16px',
-          color: '#d7e6f2',
-          align: 'center',
-          wordWrap: { width: Math.min(480, width - 40) },
-        },
-      )
-      .setOrigin(0.5)
-      .setScrollFactor(0)
-      .setDepth(201);
-    const btn = this.add
-      .text(width / 2, height * 0.62, 'Return to Menu', {
-        fontFamily: 'system-ui, sans-serif',
-        fontSize: '18px',
-        color: '#fff8e8',
-        backgroundColor: '#3a4555',
-        padding: { x: 20, y: 12 },
-      })
-      .setOrigin(0.5)
-      .setScrollFactor(0)
-      .setDepth(201)
-      .setInteractive({ useHandCursor: true })
-      .on('pointerup', () => this.scene.start('Menu'));
-
-    // Added after splitHudCamera, so keep it off the zoomed main camera.
-    this.cameras.main.ignore(this.add.container(0, 0, [bg, title, sub, btn]));
+    showKaneEndScreen({
+      scene: this,
+      win: result === 'victory',
+      speciesId: this.world.speciesId,
+      onMenu: () => this.scene.start('Menu'),
+      ignoreOnMain: (objs) => {
+        this.cameras.main.ignore(this.add.container(0, 0, objs));
+      },
+    });
   }
 
   private refreshHud(): void {

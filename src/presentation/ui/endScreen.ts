@@ -1,0 +1,225 @@
+/**
+ * Match end overlay — KANE-brand victory / defeat tone.
+ * Procedural Phaser shapes + short tweens; mobile-friendly.
+ */
+import Phaser from 'phaser';
+import { BRAND } from '../../config/brand';
+import { SPECIES, type SpeciesId } from '../../data/speciesStub';
+
+export interface EndScreenOpts {
+  scene: Phaser.Scene;
+  win: boolean;
+  speciesId: SpeciesId;
+  onMenu: () => void;
+  /** Ignore these objects on the zoomed main camera. */
+  ignoreOnMain: (objs: Phaser.GameObjects.GameObject[]) => void;
+}
+
+export function showKaneEndScreen(opts: EndScreenOpts): void {
+  const { scene, win, speciesId, onMenu, ignoreOnMain } = opts;
+  const { width, height } = scene.scale;
+  const species = SPECIES[speciesId];
+  const accent = win ? 0xf0c75e : 0xe85a5a;
+  const accentHex = win ? '#f0c75e' : '#e87a7a';
+  const wash = win ? 0x1a2818 : 0x1a0e14;
+
+  const root: Phaser.GameObjects.GameObject[] = [];
+
+  const dim = scene.add
+    .rectangle(width / 2, height / 2, width, height, 0x060a12, 0.78)
+    .setScrollFactor(0)
+    .setDepth(200)
+    .setAlpha(0);
+  root.push(dim);
+
+  const panelW = Math.min(440, width - 32);
+  const panelH = Math.min(320, height * 0.55);
+  const panel = scene.add
+    .rectangle(width / 2, height * 0.48, panelW, panelH, wash, 0.92)
+    .setStrokeStyle(2, accent, 0.85)
+    .setScrollFactor(0)
+    .setDepth(201)
+    .setScale(0.92)
+    .setAlpha(0);
+  root.push(panel);
+
+  // Soft atmosphere orbs
+  const orbA = scene.add
+    .circle(
+      width / 2 - panelW * 0.28,
+      height * 0.38,
+      48,
+      win ? 0x3d7ea6 : 0x7a2a3a,
+      0.2,
+    )
+    .setScrollFactor(0)
+    .setDepth(201);
+  const orbB = scene.add
+    .circle(
+      width / 2 + panelW * 0.3,
+      height * 0.58,
+      36,
+      win ? 0x4a7a3a : 0x4a2030,
+      0.18,
+    )
+    .setScrollFactor(0)
+    .setDepth(201);
+  root.push(orbA, orbB);
+
+  const brand = scene.add
+    .text(width / 2, height * 0.48 - panelH * 0.38, BRAND.name, {
+      fontFamily: 'Georgia, "Times New Roman", serif',
+      fontSize: Math.min(28, width * 0.07) + 'px',
+      color: '#f5e6c8',
+      stroke: '#0a1220',
+      strokeThickness: 4,
+    })
+    .setOrigin(0.5)
+    .setScrollFactor(0)
+    .setDepth(202)
+    .setAlpha(0);
+  root.push(brand);
+
+  const title = scene.add
+    .text(width / 2, height * 0.48 - panelH * 0.12, win ? 'VICTORY' : 'DEFEAT', {
+      fontFamily: 'Georgia, "Times New Roman", serif',
+      fontSize: Math.min(58, width * 0.14) + 'px',
+      color: accentHex,
+      stroke: '#0a1220',
+      strokeThickness: 8,
+    })
+    .setOrigin(0.5)
+    .setScrollFactor(0)
+    .setDepth(202)
+    .setScale(0.7)
+    .setAlpha(0);
+  root.push(title);
+
+  const tag = scene.add
+    .text(width / 2, height * 0.48 + panelH * 0.08, BRAND.tagline, {
+      fontFamily: 'system-ui, sans-serif',
+      fontSize: '13px',
+      color: accentHex,
+      fontStyle: 'bold',
+    })
+    .setOrigin(0.5)
+    .setScrollFactor(0)
+    .setDepth(202)
+    .setAlpha(0);
+  root.push(tag);
+
+  const sub = scene.add
+    .text(
+      width / 2,
+      height * 0.48 + panelH * 0.22,
+      win
+        ? `Enemy hall destroyed — ${species.name} claim the field.`
+        : `Your hall fell — ${species.name} need a rematch.`,
+      {
+        fontFamily: 'system-ui, sans-serif',
+        fontSize: '15px',
+        color: '#d7e6f2',
+        align: 'center',
+        wordWrap: { width: panelW - 48 },
+      },
+    )
+    .setOrigin(0.5)
+    .setScrollFactor(0)
+    .setDepth(202)
+    .setAlpha(0);
+  root.push(sub);
+
+  const btn = scene.add
+    .text(width / 2, height * 0.48 + panelH * 0.4, 'Return to Menu', {
+      fontFamily: 'Georgia, "Times New Roman", serif',
+      fontSize: '18px',
+      color: '#fff8e8',
+      backgroundColor: win ? '#2a3a28' : '#3a2430',
+      padding: { x: 22, y: 12 },
+    })
+    .setOrigin(0.5)
+    .setScrollFactor(0)
+    .setDepth(202)
+    .setAlpha(0)
+    .setInteractive({ useHandCursor: true })
+    .on('pointerover', () => btn.setStyle({ color: accentHex }))
+    .on('pointerout', () => btn.setStyle({ color: '#fff8e8' }))
+    .on('pointerup', onMenu);
+  root.push(btn);
+
+  ignoreOnMain(root);
+
+  scene.tweens.add({
+    targets: dim,
+    alpha: 1,
+    duration: 280,
+    ease: 'Sine.easeOut',
+  });
+  scene.tweens.add({
+    targets: panel,
+    alpha: 1,
+    scale: 1,
+    duration: 420,
+    ease: 'Back.easeOut',
+  });
+  scene.tweens.add({
+    targets: [brand, tag, sub, btn],
+    alpha: 1,
+    duration: 400,
+    delay: 180,
+    ease: 'Sine.easeOut',
+  });
+  scene.tweens.add({
+    targets: title,
+    alpha: 1,
+    scale: 1,
+    duration: 520,
+    delay: 80,
+    ease: 'Back.easeOut',
+  });
+
+  if (win) {
+    scene.tweens.add({
+      targets: orbA,
+      y: orbA.y - 18,
+      alpha: 0.32,
+      duration: 2200,
+      yoyo: true,
+      repeat: -1,
+      ease: 'Sine.easeInOut',
+    });
+    scene.tweens.add({
+      targets: orbB,
+      y: orbB.y + 14,
+      alpha: 0.28,
+      duration: 2600,
+      yoyo: true,
+      repeat: -1,
+      ease: 'Sine.easeInOut',
+    });
+    scene.tweens.add({
+      targets: title,
+      y: title.y - 4,
+      duration: 1600,
+      yoyo: true,
+      repeat: -1,
+      ease: 'Sine.easeInOut',
+    });
+  } else {
+    scene.tweens.add({
+      targets: title,
+      x: title.x + 3,
+      duration: 60,
+      yoyo: true,
+      repeat: 5,
+      ease: 'Sine.easeInOut',
+    });
+    scene.tweens.add({
+      targets: [orbA, orbB],
+      alpha: 0.08,
+      duration: 1800,
+      yoyo: true,
+      repeat: -1,
+    });
+  }
+}
