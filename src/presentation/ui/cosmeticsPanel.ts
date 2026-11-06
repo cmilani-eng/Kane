@@ -1,7 +1,9 @@
 /**
  * Cosmetics browse + equip UI — skins only, local stub, not a shop.
+ * Visual language matches Friend lobby + Stats (navy / gold / cream).
  */
 import Phaser from 'phaser';
+import { BRAND } from '../../config/brand';
 import {
   listAllSkins,
   type CosmeticSkinDef,
@@ -25,64 +27,90 @@ export function showCosmeticsPanel(
   let page = 0;
 
   const overlay = scene.add
-    .rectangle(width / 2, height / 2, width, height, 0x0a1220, 0.82)
+    .rectangle(width / 2, height / 2, width, height, 0x0a1220, 0.84)
     .setDepth(300)
     .setInteractive();
 
-  const panelW = Math.min(480, width - 24);
-  const panelH = Math.min(420, height - 36);
+  const panelW = Math.min(460, width - 28);
+  const panelH = Math.min(420, height - 28);
+  const cx = width / 2;
+  const cy = height / 2;
+  const top = cy - panelH / 2;
+  const bottom = cy + panelH / 2;
+
   const panel = scene.add
-    .rectangle(width / 2, height / 2, panelW, panelH, 0x152238, 0.98)
-    .setStrokeStyle(2, 0xf0c75e, 0.9)
+    .rectangle(cx, cy, panelW, panelH, 0x122033, 0.98)
+    .setStrokeStyle(2, 0xf0c75e, 0.85)
     .setDepth(301);
 
-  const title = scene.add
-    .text(width / 2, height / 2 - panelH / 2 + 26, 'Cosmetics  ·  skins only', {
+  const accent = scene.add
+    .rectangle(cx, top + 3, panelW - 4, 4, 0xf0c75e, 0.9)
+    .setDepth(302);
+
+  const brand = scene.add
+    .text(cx, top + 26, BRAND.name, {
       fontFamily: 'Georgia, "Times New Roman", serif',
-      fontSize: '20px',
+      fontSize: '13px',
+      color: '#f0c75e',
+      fontStyle: 'bold',
+    })
+    .setOrigin(0.5)
+    .setDepth(302);
+
+  const title = scene.add
+    .text(cx, top + 52, 'Cosmetics', {
+      fontFamily: 'Georgia, "Times New Roman", serif',
+      fontSize: '26px',
       color: '#f5e6c8',
     })
     .setOrigin(0.5)
     .setDepth(302);
 
   const subtitle = scene.add
-    .text(
-      width / 2,
-      height / 2 - panelH / 2 + 50,
-      'Browse & equip locally · no stats · not purchasable yet',
-      {
-        fontFamily: 'system-ui, sans-serif',
-        fontSize: '12px',
-        color: '#9eb4c8',
-      },
-    )
-    .setOrigin(0.5)
-    .setDepth(302);
-
-  const body = scene.add
-    .text(width / 2, height / 2 - 20, '', {
+    .text(cx, top + 80, 'Skins only · never pay-to-win', {
       fontFamily: 'system-ui, sans-serif',
       fontSize: '13px',
-      color: '#d7e6f2',
-      align: 'center',
-      wordWrap: { width: panelW - 48 },
-      lineSpacing: 5,
+      color: '#9eb4c8',
     })
     .setOrigin(0.5)
     .setDepth(302);
 
   const swatch = scene.add
-    .circle(width / 2, height / 2 - panelH / 2 + 110, 22, 0xf0c75e, 1)
+    .circle(cx, top + 128, 24, 0xf0c75e, 1)
     .setStrokeStyle(2, 0xfff8e8, 0.9)
+    .setDepth(302);
+
+  const body = scene.add
+    .text(cx, top + 168, '', {
+      fontFamily: 'system-ui, sans-serif',
+      fontSize: '14px',
+      color: '#d7e6f2',
+      align: 'center',
+      wordWrap: { width: panelW - 48 },
+      lineSpacing: 5,
+    })
+    .setOrigin(0.5, 0)
+    .setDepth(302);
+
+  const loadoutNote = scene.add
+    .text(cx, bottom - 22, '', {
+      fontFamily: 'system-ui, sans-serif',
+      fontSize: '11px',
+      color: '#6a7f94',
+    })
+    .setOrigin(0.5)
     .setDepth(302);
 
   const nodes: Phaser.GameObjects.GameObject[] = [
     overlay,
     panel,
+    accent,
+    brand,
     title,
     subtitle,
     body,
     swatch,
+    loadoutNote,
   ];
   const dynamicBtns: Phaser.GameObjects.GameObject[] = [];
 
@@ -103,38 +131,46 @@ export function showCosmeticsPanel(
     const skin = skins[page]!;
     const equipped = getEquippedSkinId(species) === skin.id;
     swatch.setFillStyle(skin.accent, 1);
+
     body.setText(
       [
-        `${SPECIES[species].name}`,
+        SPECIES[species].name,
         '',
         skin.name,
         skin.blurb,
         '',
-        equipped ? 'Equipped' : 'Tap Equip to wear (local only)',
-        `unlock=${skin.unlock} · purchasable=${skin.purchasable}`,
-        '',
-        formatMiniLoadout(),
+        equipped ? 'Equipped on this species' : 'Tap Equip to wear (local)',
+        skin.id === 'skin_default' ? 'Always available' : 'Free unlock · not for sale',
       ].join('\n'),
     );
 
-    const rowY = height / 2 + panelH / 2 - 92;
-    mkBtn(width / 2 - 130, rowY, '◀', '#3a4555', () => {
+    loadoutNote.setText(formatMiniLoadout());
+
+    const rowY = bottom - 92;
+    mkBtn(cx - 130, rowY, '◀', '#3a4555', () => {
       page = (page - 1 + skins.length) % skins.length;
       refresh();
     });
-    mkBtn(width / 2, rowY, equipped ? 'Equipped' : 'Equip', '#2a4a38', () => {
-      equipSkin(species, skin.id);
-      playSfx('ui');
-      refresh();
-    });
-    mkBtn(width / 2 + 130, rowY, '▶', '#3a4555', () => {
+    mkBtn(
+      cx,
+      rowY,
+      equipped ? 'Equipped' : 'Equip',
+      equipped ? '#2a4a38' : '#3a5530',
+      () => {
+        if (equipped) return;
+        equipSkin(species, skin.id);
+        playSfx('ui');
+        refresh();
+      },
+    );
+    mkBtn(cx + 130, rowY, '▶', '#3a4555', () => {
       page = (page + 1) % skins.length;
       refresh();
     });
 
-    const tabY = height / 2 + panelH / 2 - 48;
+    const tabY = bottom - 48;
     SPECIES_ORDER.forEach((id, i) => {
-      const x = width / 2 + (i - 1) * 110;
+      const x = cx + (i - 1) * 110;
       mkBtn(
         x,
         tabY,
@@ -174,11 +210,11 @@ export function showCosmeticsPanel(
   };
 
   const closeBtn = scene.add
-    .text(width / 2 + panelW / 2 - 20, height / 2 - panelH / 2 + 14, '✕', {
+    .text(cx + panelW / 2 - 18, top + 14, '✕', {
       fontFamily: 'system-ui, sans-serif',
-      fontSize: '18px',
+      fontSize: '16px',
       color: '#b8c9d9',
-      backgroundColor: '#3a4555',
+      backgroundColor: '#2a3545',
       padding: { x: 10, y: 4 },
     })
     .setOrigin(1, 0)
@@ -203,7 +239,7 @@ export function showCosmeticsPanel(
 
 function formatMiniLoadout(): string {
   const l = loadCosmeticsLoadout();
-  return `Loadout · B:${short(l.equipped.brutes)} N:${short(l.equipped.nobles)} W:${short(l.equipped.weirdos)}`;
+  return `Loadout · B ${short(l.equipped.brutes)} · N ${short(l.equipped.nobles)} · W ${short(l.equipped.weirdos)}`;
 }
 
 function short(id: string): string {
