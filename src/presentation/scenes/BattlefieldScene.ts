@@ -101,6 +101,7 @@ import {
 import {
   makeMatchSummaryId,
 } from '../../database/matchSummary';
+import { getEquippedSkin } from '../../database/cosmeticsLoadout';
 import { writeMatchSummaryFunctionStub } from '../../server/matchSummaryFunctionStub';
 import { playSfx } from '../audio/sfx';
 import { RtsCamera } from '../camera/rtsCamera';
@@ -157,6 +158,8 @@ export class BattlefieldScene extends Phaser.Scene {
   private animTimeMs = 0;
   private fogAccMs = 999;
   private viewCull: ViewBounds | null = null;
+  /** Equipped cosmetics accent for the player species (visual only). */
+  private playerSkinAccent = 0xf0c75e;
 
   constructor() {
     super('Battlefield');
@@ -170,6 +173,7 @@ export class BattlefieldScene extends Phaser.Scene {
         ? data.species
         : 'brutes';
     const difficulty = getAiDifficulty(data?.difficulty).id;
+    this.playerSkinAccent = getEquippedSkin(playerSpecies).accent;
 
     const { layer } = createSkirmishMap(this);
     this.world = createBattlefieldWorld(playerSpecies, difficulty);
@@ -728,7 +732,7 @@ export class BattlefieldScene extends Phaser.Scene {
         y: b.y,
         radius: b.radius,
         color: b.color,
-        accent: b.accent,
+        accent: b.team === 'player' ? this.playerSkinAccent : b.accent,
         typeId: b.typeId,
         alpha,
         selected: !!b.selected,
@@ -830,8 +834,13 @@ export class BattlefieldScene extends Phaser.Scene {
         flash,
         mutated: u.mutated,
         inFormation: u.inFormation,
+        skinAccent:
+          u.team === 'player' ? this.playerSkinAccent : undefined,
       });
-      g.fillStyle(u.team === 'player' ? 0xf0c75e : 0xe8a0ff, 0.95);
+      g.fillStyle(
+        u.team === 'player' ? this.playerSkinAccent : 0xe8a0ff,
+        0.95,
+      );
       g.fillCircle(u.x, u.y - u.radius * 0.35, 3.2);
 
       if (u.carrying > 0 && u.carryingResource) {
