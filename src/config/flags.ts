@@ -25,6 +25,11 @@ export const flags = {
    * Does not auto-deploy; local Vite remains the primary SP path.
    */
   hostingPreviewConfig: true as const,
+  /**
+   * Phase 7 — admin allowlist stub for #/admin destructive actions.
+   * Local SP stats view stays open; reset can check the list.
+   */
+  adminAllowlistStub: true as const,
 } as const;
 
 export type FeatureFlags = typeof flags;

@@ -13,6 +13,7 @@
 | RTDB / Firestore rules drafts | `database.rules.json`, `firestore.rules` |
 | Auth / age gate / lobby stubs | `src/firebase/`, `src/networking/` |
 | Match summary write | `src/database/matchSummary.ts` → `#/admin` |
+| Admin allowlist stub | `src/database/adminAllowlist.ts` (reset gate) |
 | Env placeholders | `.env.example` |
 
 ## Local SP (primary — unchanged)

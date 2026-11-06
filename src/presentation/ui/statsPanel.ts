@@ -12,6 +12,11 @@ import {
   loadMatchSummaries,
   resetMatchSummaries,
 } from '../../database/matchSummary';
+import {
+  formatAdminAllowlist,
+  isAllowlistedAdmin,
+  localAdminCandidateId,
+} from '../../database/adminAllowlist';
 import { playSfx } from '../audio/sfx';
 
 function adminBodyText(): string {
@@ -19,6 +24,8 @@ function adminBodyText(): string {
     formatStatsSummary(loadLocalStats()),
     '',
     formatMatchSummaries(loadMatchSummaries(), 6),
+    '',
+    formatAdminAllowlist(),
   ].join('\n');
 }
 
@@ -94,6 +101,11 @@ export function showStatsPanel(scene: Phaser.Scene, onClose: () => void): void {
     .setInteractive({ useHandCursor: true })
     .on('pointerup', () => {
       playSfx('ui');
+      if (!isAllowlistedAdmin(localAdminCandidateId())) {
+        console.warn('[KANE] admin allowlist — reset blocked for this id');
+        refreshBody();
+        return;
+      }
       resetLocalStats();
       resetMatchSummaries();
       refreshBody();
