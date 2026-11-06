@@ -445,6 +445,7 @@ export function createBattlefieldWorld(
       pulse: false,
       severity: 'normal',
       kind: 'unit',
+      chipLifeMs: 0,
     },
     fog: createFogState(),
     aiDifficulty: ai.id,
