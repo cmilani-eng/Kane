@@ -249,6 +249,19 @@
     0% { background: rgba(232, 122, 122, 0.35); }
     100% { background: transparent; }
   }
+  #kane-selection-panel button.is-hotkey-echo {
+    animation: kane-sel-hotkey-echo 320ms ease-out;
+  }
+  @keyframes kane-sel-hotkey-echo {
+    0% {
+      box-shadow: 0 0 0 2px rgba(240, 199, 94, 0.85);
+      filter: brightness(1.18);
+    }
+    100% {
+      box-shadow: 0 0 0 0 transparent;
+      filter: brightness(1);
+    }
+  }
   #kane-selection-panel button.is-train {
     background: var(--color-kane-sky);
     flex: 1 1 100px;
