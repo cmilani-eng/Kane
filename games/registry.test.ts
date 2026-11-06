@@ -111,6 +111,15 @@ describe('games registry', () => {
     expect(hub).toContain('chrome.documentTitle');
   });
 
+  it('keeps a short meta description on the hub picker page', () => {
+    const page = readFileSync(resolve(gamesDir, 'index.html'), 'utf8');
+    expect(page).toContain('id="hub-meta"');
+    expect(page).toContain('name="description"');
+    expect(page).toContain('KANE · Game picker — fantasy RTS and more.');
+    const hub = readFileSync(resolve(gamesDir, 'hub/hub.ts'), 'utf8');
+    expect(hub).toContain("text('hub-meta')");
+  });
+
   it('keeps Privacy and Terms pages under games/ for hub footer links', () => {
     const privacy = readFileSync(resolve(gamesDir, 'privacy.html'), 'utf8');
     const terms = readFileSync(resolve(gamesDir, 'terms.html'), 'utf8');
