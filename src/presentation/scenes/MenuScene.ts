@@ -680,13 +680,15 @@ export class MenuScene extends Phaser.Scene {
   }
 
   private drawMapRow(width: number, y: number, compact = false): void {
-    const gap = Math.min(150, width * 0.4);
+    const count = SKIRMISH_MAP_ORDER.length;
+    const gap = Math.min(150, (width - 16) / count);
+    const buttonW = Math.min(140, gap - 10);
     SKIRMISH_MAP_ORDER.forEach((id, i) => {
       const m = mapCopy(id);
       const selected = this.mapId === id;
-      const x = width / 2 + (i - 0.5) * gap;
+      const x = width / 2 + (i - (count - 1) / 2) * gap;
       const bg = this.add
-        .rectangle(x, y, Math.min(140, gap - 10), compact ? 32 : 44, selected ? 0x2a2838 : 0x1a2433, 0.95)
+        .rectangle(x, y, buttonW, compact ? 32 : 44, selected ? 0x2a2838 : 0x1a2433, 0.95)
         .setStrokeStyle(2, selected ? 0x6ecfbf : 0x3a4555)
         .setInteractive({ useHandCursor: true });
       this.add
@@ -702,7 +704,7 @@ export class MenuScene extends Phaser.Scene {
           fontSize: '9px',
           color: '#9eb4c8',
           align: 'center',
-          wordWrap: { width: Math.min(130, gap - 12) },
+          wordWrap: { width: Math.max(72, buttonW - 8) },
         })
         .setOrigin(0.5);
       bg.on('pointerup', () => {

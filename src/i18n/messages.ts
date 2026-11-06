@@ -65,10 +65,14 @@ export const enGB = {
   'map.crossing.blurb': 'Classic bases · mid CORE',
   'map.ridge.label': 'Ridge',
   'map.ridge.blurb': 'Diagonal bases · shifted belt',
+  'map.gap.label': 'Gap',
+  'map.gap.blurb': 'West vs east · vertical CORE',
   'tutorial.map.crossing':
     'Crossing: your base is south and the CORE is in the middle. Rematch keeps this map.',
   'tutorial.map.ridge':
     'Ridge: you start north-west, the enemy south-east. Rematch keeps this map.',
+  'tutorial.map.gap':
+    'Gap: you start on the west and the enemy on the east. Rematch keeps this map.',
   'tutorial.practice':
     'Practice: the enemy builds and gathers, but never attacks. Destroy their base to win. Rematch keeps Practice.',
   'species.brutes.name': 'The Brutes',
@@ -349,10 +353,14 @@ export const ptBR = {
   'map.crossing.blurb': 'Bases clássicas · CORE no meio',
   'map.ridge.label': 'Cume',
   'map.ridge.blurb': 'Bases em diagonal · faixa deslocada',
+  'map.gap.label': 'Vão',
+  'map.gap.blurb': 'Oeste contra leste · CORE vertical',
   'tutorial.map.crossing':
     'Travessia: sua base fica no sul e o CORE no meio. A revanche mantém este mapa.',
   'tutorial.map.ridge':
     'Cume: você começa no noroeste e o inimigo no sudeste. A revanche mantém este mapa.',
+  'tutorial.map.gap':
+    'Vão: você começa no oeste e o inimigo no leste. A revanche mantém este mapa.',
   'tutorial.practice':
     'Treino: o inimigo constrói e coleta, mas nunca ataca. Destrua a base para vencer. A revanche mantém Treino.',
   'species.brutes.name': 'Os Brutos',
@@ -629,10 +637,14 @@ export const es = {
   'map.crossing.blurb': 'Bases clásicas · CORE al centro',
   'map.ridge.label': 'Cresta',
   'map.ridge.blurb': 'Bases en diagonal · franja corrida',
+  'map.gap.label': 'Brecha',
+  'map.gap.blurb': 'Oeste contra este · CORE vertical',
   'tutorial.map.crossing':
     'Cruce: tu base está al sur y el CORE en el centro. La revancha conserva este mapa.',
   'tutorial.map.ridge':
     'Cresta: empiezas al noroeste y el enemigo al sureste. La revancha conserva este mapa.',
+  'tutorial.map.gap':
+    'Brecha: empiezas al oeste y el enemigo al este. La revancha conserva este mapa.',
   'tutorial.practice':
     'Práctica: el enemigo construye y recolecta, pero nunca ataca. Destruye su base para ganar. La revancha conserva Práctica.',
   'species.brutes.name': 'Los Brutos',

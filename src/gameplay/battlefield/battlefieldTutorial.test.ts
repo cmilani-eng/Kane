@@ -60,11 +60,16 @@ describe('map coach tip', () => {
     expect(tutorialTip(state, 'crossing')).toContain('Rematch keeps this map');
     expect(tutorialTip(state, 'ridge')).toContain('Ridge');
     expect(tutorialTip(state, 'ridge')).toContain('north-west');
+    expect(tutorialTip(state, 'gap')).toContain('Gap');
+    expect(tutorialTip(state, 'gap')).toContain('west');
+    expect(tutorialTip(state, 'gap')).toContain('Rematch keeps this map');
 
     setLocale('pt-BR');
     expect(tutorialTip(state, 'ridge')).toContain('Cume');
+    expect(tutorialTip(state, 'gap')).toContain('Vão');
     setLocale('es');
     expect(tutorialTip(state, 'crossing')).toContain('Cruce');
+    expect(tutorialTip(state, 'gap')).toContain('Brecha');
     setLocale('en-GB');
   });
 
