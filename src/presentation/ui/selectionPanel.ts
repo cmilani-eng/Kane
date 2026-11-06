@@ -382,9 +382,29 @@ function injectStyles(): void {
     }
     #kane-selection-panel .kane-sel-hp-fill.is-low {
       background: linear-gradient(90deg, #8a3030, #e87a7a);
+      animation: kane-sel-hp-low-pulse 1.1s ease-in-out infinite;
     }
     #kane-selection-panel .kane-sel-hp-fill.is-building {
       background: linear-gradient(90deg, #8a7030, #f0c75e);
+      animation: none;
+    }
+    #kane-selection-panel .kane-sel-hp-text.is-low {
+      color: #e87a7a;
+      animation: kane-sel-hp-text-pulse 1.1s ease-in-out infinite;
+    }
+    @keyframes kane-sel-hp-low-pulse {
+      0%, 100% { filter: brightness(1); opacity: 1; }
+      50% { filter: brightness(1.35); opacity: 0.85; }
+    }
+    @keyframes kane-sel-hp-text-pulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.55; }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      #kane-selection-panel .kane-sel-hp-fill.is-low,
+      #kane-selection-panel .kane-sel-hp-text.is-low {
+        animation: none;
+      }
     }
     #kane-selection-panel .kane-sel-carry {
       margin-top: 4px;
@@ -1566,6 +1586,7 @@ export function renderSelectionPanel(view: SelectionPanelView): boolean {
     hpFill.style.width = `${(remPct * 100).toFixed(1)}%`;
     hpFill.classList.toggle('is-low', remPct < 0.35);
     hpFill.classList.remove('is-building');
+    hpText.classList.toggle('is-low', remPct < 0.35);
     hpText.textContent = `${Math.floor(view.remaining)}/${Math.floor(view.maxAmount)}`;
     portrait.classList.toggle('is-building', false);
     portrait.classList.toggle('is-mixed', false);
@@ -1594,11 +1615,14 @@ export function renderSelectionPanel(view: SelectionPanelView): boolean {
     const hpPct =
       view.maxHp > 0 ? Math.min(1, Math.max(0, view.hp / view.maxHp)) : 0;
     hpFill.style.width = `${(hpPct * 100).toFixed(1)}%`;
-    hpFill.classList.toggle('is-low', hpPct < 0.35);
+    const lowHp =
+      hpPct < 0.35 && !(view.kind === 'building' && !view.ready);
+    hpFill.classList.toggle('is-low', lowHp);
     hpFill.classList.toggle(
       'is-building',
       view.kind === 'building' && !view.ready,
     );
+    hpText.classList.toggle('is-low', lowHp);
     hpText.textContent = `${Math.ceil(view.hp)}/${Math.ceil(view.maxHp)}`;
 
     if (view.kind === 'units') {
