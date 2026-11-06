@@ -2,6 +2,7 @@
  * Kid-friendly coach mark banner for Battlefield tutorial tips.
  */
 import Phaser from 'phaser';
+import type { SkirmishMapId } from '../../data/skirmishMaps';
 import {
   advanceTutorial,
   dismissTutorial,
@@ -20,7 +21,11 @@ export class TutorialCoach {
   private readonly scene: Phaser.Scene;
   private readonly state: TutorialState;
 
-  constructor(scene: Phaser.Scene, state: TutorialState) {
+  constructor(
+    scene: Phaser.Scene,
+    state: TutorialState,
+    private readonly mapId: () => SkirmishMapId = () => 'crossing',
+  ) {
     this.scene = scene;
     this.state = state;
     const w = Math.min(560, scene.scale.width - 24);
@@ -116,7 +121,7 @@ export class TutorialCoach {
     }
     if (!show) return;
     this.label.setText(tutorialStepLabel(this.state));
-    this.body.setText(tutorialTip(this.state));
+    this.body.setText(tutorialTip(this.state, this.mapId()));
     this.nextBtn.setText(this.state.step === 'heroes' ? 'Finish' : 'Next');
   }
 }
