@@ -92,6 +92,14 @@ describe('games registry', () => {
     }
   });
 
+  it('keeps a visible keyboard focus ring on hub game cards', () => {
+    const hub = readFileSync(resolve(gamesDir, 'hub/hub.ts'), 'utf8');
+    const css = readFileSync(resolve(gamesDir, 'hub/hub.css'), 'utf8');
+    expect(hub).toContain('hub-card');
+    expect(css).toContain('.hub-card:focus-visible');
+    expect(css).toContain('outline: 3px solid var(--color-accent)');
+  });
+
   it('keeps Privacy and Terms pages under games/ for hub footer links', () => {
     const privacy = readFileSync(resolve(gamesDir, 'privacy.html'), 'utf8');
     const terms = readFileSync(resolve(gamesDir, 'terms.html'), 'utf8');

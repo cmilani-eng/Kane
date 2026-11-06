@@ -3,3 +3,16 @@
 
 @source "../index.html";
 @source "./";
+
+/* Keyboard focus must beat the dark panel; Tailwind outline alone is easy to miss. */
+.hub-card:focus {
+  outline: none;
+}
+
+.hub-card:focus-visible {
+  outline: 3px solid var(--color-accent);
+  outline-offset: 4px;
+  box-shadow:
+    0 0 0 1px rgb(7 17 29 / 0.9),
+    0 0 0 6px rgb(123 224 255 / 0.28);
+}
