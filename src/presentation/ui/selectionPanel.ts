@@ -37,6 +37,10 @@ import {
 import { sharedUnitDamageLabel, unitDamageLabel } from './unitDamage';
 import { sharedUnitDpsLabel, unitDpsLabel } from './unitDps';
 import {
+  sharedUnitGatherYieldLabel,
+  unitGatherYieldLabel,
+} from './unitGatherYield';
+import {
   sharedUnitMoveCadenceLabel,
   unitMoveCadenceLabel,
 } from './unitMoveCadence';
@@ -231,6 +235,8 @@ export type SelectionPanelView =
       speciesTip: string | null;
       /** Catalog unit name tip when selection shares one unit type. */
       nameTip: string | null;
+      /** Catalog gather-yield tip when selection shares worker haul capacity. */
+      yieldTip: string | null;
       tags: string[];
       attackMoveArmed: boolean;
       /** Present when a single player hero is selected. */
@@ -672,6 +678,7 @@ export function buildSelectionView(
       roleTip: unitRoleLabel(u.typeId),
       speciesTip: unitSpeciesTipLabel(u.speciesId),
       nameTip: unitNameTipLabel(u.typeId),
+      yieldTip: unitGatherYieldLabel(u.typeId),
       tags,
       attackMoveArmed,
       abilities: heroAbilityViews(world, u),
@@ -741,6 +748,7 @@ export function buildSelectionView(
     roleTip: sharedUnitRoleLabel(alive.map((u) => u.typeId)),
     speciesTip: sharedUnitSpeciesTipLabel(alive.map((u) => u.speciesId)),
     nameTip: sharedUnitNameTipLabel(alive.map((u) => u.typeId)),
+    yieldTip: sharedUnitGatherYieldLabel(alive.map((u) => u.typeId)),
     tags,
     attackMoveArmed,
     abilities: null,
@@ -1022,6 +1030,7 @@ function structureSignature(view: SelectionPanelView): string {
       view.roleTip ?? '',
       view.speciesTip ?? '',
       view.nameTip ?? '',
+      view.yieldTip ?? '',
       view.tags.join(','),
       view.attackMoveArmed ? 1 : 0,
       abs,
@@ -1579,6 +1588,9 @@ export function renderSelectionPanel(view: SelectionPanelView): boolean {
         }
         if (view.nameTip) {
           bits.push(`<span>${escapeHtml(view.nameTip)}</span>`);
+        }
+        if (view.yieldTip) {
+          bits.push(`<span>${escapeHtml(view.yieldTip)}</span>`);
         }
         if (view.armorClass) {
           bits.push(`<span>${escapeHtml(view.armorClass)}</span>`);
