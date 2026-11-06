@@ -16,10 +16,7 @@ import {
   clearSelection,
   createBattlefieldWorld,
   selectedUnits,
-  type BattlefieldWorld,
 } from './battlefieldWorld';
-
-const army = (w: BattlefieldWorld) => w.units.filter(isMilitaryUnit);
 
 describe('shouldCountGroupHotkey', () => {
   it('counts the initial keydown and ignores auto-repeat', () => {
@@ -67,7 +64,7 @@ describe('GroupTapTracker', () => {
 describe('groupCenter', () => {
   it('is the middle of the living members', () => {
     const w = createBattlefieldWorld('brutes');
-    const [a, b, dead] = army(w);
+    const [a, b, dead] = w.units.filter(isMilitaryUnit);
     a!.x = 100;
     a!.y = 200;
     b!.x = 300;
@@ -90,7 +87,7 @@ describe('control group round trip', () => {
   it('recalls the saved units and centres on them', () => {
     const w = createBattlefieldWorld('brutes');
     const groups = createControlGroups();
-    const saved = army(w).slice(0, 2);
+    const saved = w.units.filter(isMilitaryUnit).slice(0, 2);
     saved[0]!.x = 500;
     saved[0]!.y = 600;
     saved[1]!.x = 700;
@@ -113,7 +110,7 @@ describe('control group round trip', () => {
   it('keeps a saved group when assigning with nothing selected', () => {
     const w = createBattlefieldWorld('brutes');
     const groups = createControlGroups();
-    const saved = army(w).slice(0, 2);
+    const saved = w.units.filter(isMilitaryUnit).slice(0, 2);
 
     clearSelection(w);
     saved.forEach((u) => (u.selected = true));
