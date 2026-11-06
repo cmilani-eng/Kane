@@ -152,6 +152,7 @@ export class PauseMenu {
       .setDepth(222);
 
     const clock = formatMatchClock(this.snapshot.elapsedMs);
+    const elapsedLine = t('pause.elapsed', { clock });
     const setupLine = t('pause.setup', {
       species: speciesName(this.snapshot.speciesId),
       map: mapCopy(this.snapshot.mapId).label,
@@ -165,26 +166,43 @@ export class PauseMenu {
       this.snapshot.supplyCurrent,
       this.snapshot.supplyCap,
     );
-    const snap = this.scene.add
-      .text(
-        cx,
-        short ? top + 74 : cy - panelH * 0.27,
-        `${t('pause.match', { clock })}\n${setupLine}\n${supply}`,
-        {
-          fontFamily: 'system-ui, sans-serif',
-          fontSize: '14px',
-          color: SUPPLY_TONE_COLOR[tone],
-          align: 'center',
-          lineSpacing: 6,
-        },
-      )
+    const yElapsed = short ? top + 68 : cy - panelH * 0.3;
+    const ySetup = short ? top + 90 : cy - panelH * 0.22;
+    const ySupply = short ? top + 110 : cy - panelH * 0.14;
+    const elapsed = this.scene.add
+      .text(cx, yElapsed, elapsedLine, {
+        fontFamily: 'system-ui, sans-serif',
+        fontSize: short ? '15px' : '16px',
+        color: '#f5e6c8',
+        align: 'center',
+      })
       .setOrigin(0.5)
       .setScrollFactor(0)
       .setDepth(222);
-    this.root.push(title, brand, snap);
+    const setup = this.scene.add
+      .text(cx, ySetup, setupLine, {
+        fontFamily: 'system-ui, sans-serif',
+        fontSize: '13px',
+        color: '#9eb4c8',
+        align: 'center',
+      })
+      .setOrigin(0.5)
+      .setScrollFactor(0)
+      .setDepth(222);
+    const supplyText = this.scene.add
+      .text(cx, ySupply, supply, {
+        fontFamily: 'system-ui, sans-serif',
+        fontSize: '14px',
+        color: SUPPLY_TONE_COLOR[tone],
+        align: 'center',
+      })
+      .setOrigin(0.5)
+      .setScrollFactor(0)
+      .setDepth(222);
+    this.root.push(title, brand, elapsed, setup, supplyText);
 
-    // Short layout: clock + setup + supply need a little more room before Resume.
-    const btnY0 = short ? top + 136 : cy - panelH * 0.12;
+    // Short layout: elapsed + setup + supply need a little more room before Resume.
+    const btnY0 = short ? top + 140 : cy - panelH * 0.04;
     const gap = short ? 36 : Math.min(44, panelH * 0.11);
     this.root.push(
       this.makeBtn(cx, btnY0, t('pause.resume'), () => {
