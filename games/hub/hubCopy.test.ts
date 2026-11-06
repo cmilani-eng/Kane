@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it } from 'vitest';
-import { resetLocaleForTests, setLocale } from '../../src/i18n';
+import { resetLocaleForTests, setLocale, t } from '../../src/i18n';
 import { hubBlurb, hubChrome, hubFooterYear } from './hubCopy';
 
 function memoryStorage(): Storage {
@@ -50,5 +50,11 @@ describe('hub copy', () => {
   it('formats the hub footer year from the calendar year', () => {
     expect(hubFooterYear(2026)).toBe('© 2026');
     expect(hubFooterYear(2031)).toBe('© 2031');
+  });
+
+  it('localizes the Live badge accessible label', () => {
+    expect(t('hub.liveAria')).toBe('Status: Live');
+    setLocale('pt-BR');
+    expect(t('hub.liveAria')).toBe('Estado: Ao vivo');
   });
 });

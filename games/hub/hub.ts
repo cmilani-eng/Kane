@@ -27,7 +27,9 @@ function statusPill(
   softLaunch: string,
 ): HTMLSpanElement {
   if (status === 'live') {
-    return pill(live, 'bg-[rgb(123_224_255/0.13)] text-accent');
+    const el = pill(live, 'bg-[rgb(123_224_255/0.13)] text-accent');
+    el.setAttribute('aria-label', t('hub.liveAria'));
+    return el;
   }
   return pill(softLaunch, 'bg-gold-bg text-gold');
 }

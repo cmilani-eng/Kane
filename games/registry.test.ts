@@ -103,6 +103,9 @@ describe('games registry', () => {
     for (const game of GAMES) {
       expect(['live', 'experimental']).toContain(game.status);
     }
+    const hub = readFileSync(resolve(gamesDir, 'hub/hub.ts'), 'utf8');
+    expect(hub).toContain("t('hub.liveAria')");
+    expect(hub).toContain("setAttribute('aria-label'");
   });
 
   it('keeps a visible keyboard focus ring on hub game cards', () => {
