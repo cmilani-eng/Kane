@@ -165,6 +165,10 @@ export interface BattlefieldWorld {
   playerUnitKills: number;
   /** Player units removed this match (losses). */
   playerUnitLosses: number;
+  /** Gold deposited at Keep this match (player gathers). */
+  playerGoldGathered: number;
+  /** Magic crystals deposited at Keep this match (player gathers). */
+  playerCrystalsGathered: number;
   /** Player fog of war (explored / visible). */
   fog: import('./battlefieldFog').FogState;
   /** Skirmish AI difficulty for this match. */
@@ -445,6 +449,8 @@ export function createBattlefieldWorld(
     enemyCoreHoldMs: 0,
     playerUnitKills: 0,
     playerUnitLosses: 0,
+    playerGoldGathered: 0,
+    playerCrystalsGathered: 0,
     underAttackAlert: {
       lifeMs: 0,
       maxLifeMs: 520,

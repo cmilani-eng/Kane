@@ -28,4 +28,11 @@ describe('end screen map + duration meta', () => {
     expect(line).toContain('7');
     expect(line).toContain('3');
   });
+
+  it('formats gold and crystal gathered from deposit tallies', () => {
+    const line = t('end.gathered', { gold: 120, crystals: 45 });
+    expect(line).toContain('120');
+    expect(line).toContain('45');
+  });
 });
+

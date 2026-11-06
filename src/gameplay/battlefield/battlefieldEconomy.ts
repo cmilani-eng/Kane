@@ -93,6 +93,10 @@ export function tickBattlefieldEconomy(world: BattlefieldWorld): void {
         }
         const deposited = u.carryingResource;
         walletOf(world, u.team)[u.carryingResource] += amt;
+        if (u.team === 'player') {
+          if (deposited === 'gold') world.playerGoldGathered += amt;
+          else world.playerCrystalsGathered += amt;
+        }
         spawnDepositFx(world, deposited, pile.x, pile.y - 8);
         u.carrying = 0;
         u.carryingResource = null;
