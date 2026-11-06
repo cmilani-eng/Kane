@@ -80,6 +80,7 @@ This doc is the honest gate before any public preview URL.
 | Unit supply tip | **OK** — selection stats show catalog supply cost (1 slot per unit, same-type only) | `unitSupplyCost`, `sel.supplyTip` |
 | Unit train gold tip | **OK** — selection stats show catalog train gold cost (same-type only) | `unitTrainGold`, `sel.trainGoldTip` |
 | Unit train crystal tip | **OK** — selection stats show catalog train crystal cost (same-type only; omitted when 0) | `unitTrainCrystal`, `sel.trainCrystalTip` |
+| Unit train duration tip | **OK** — selection stats show catalog full train seconds (same-type only; omitted when 0) | `unitTrainDuration`, `sel.trainDurationTip` |
 | Unit role tip | **OK** — selection stats show coarse duty role (worker / combat / hero), distinct from armor class | `unitRole`, `sel.roleTip` |
 | Unit species tip | **OK** — selection stats show species name tip when selection shares one species | `unitSpeciesTip`, `sel.speciesTip` |
 | Unit name tip | **OK** — selection stats show catalog unit name tip when selection shares one type | `unitNameTip`, `sel.nameTip` |

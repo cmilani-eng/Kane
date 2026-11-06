@@ -49,6 +49,10 @@ import {
   unitTrainCrystalLabel,
 } from './unitTrainCrystal';
 import {
+  sharedUnitTrainDurationLabel,
+  unitTrainDurationLabel,
+} from './unitTrainDuration';
+import {
   sharedUnitTrainGoldLabel,
   unitTrainGoldLabel,
 } from './unitTrainGold';
@@ -208,6 +212,8 @@ export type SelectionPanelView =
       trainGoldTip: string | null;
       /** Catalog train crystal-cost tip when selection shares one unit type. */
       trainCrystalTip: string | null;
+      /** Catalog full train-duration tip when selection shares one unit type. */
+      trainDurationTip: string | null;
       /** Coarse duty role tip (worker / combat / hero), distinct from armor class. */
       roleTip: string | null;
       /** Species name tip when selection shares one species. */
@@ -633,6 +639,7 @@ export function buildSelectionView(
       supplyTip: unitSupplyCostLabel(u.typeId),
       trainGoldTip: unitTrainGoldLabel(u.typeId),
       trainCrystalTip: unitTrainCrystalLabel(u.typeId),
+      trainDurationTip: unitTrainDurationLabel(u.typeId),
       roleTip: unitRoleLabel(u.typeId),
       speciesTip: unitSpeciesTipLabel(u.speciesId),
       nameTip: unitNameTipLabel(u.typeId),
@@ -698,6 +705,7 @@ export function buildSelectionView(
     supplyTip: sharedUnitSupplyCostLabel(alive.map((u) => u.typeId)),
     trainGoldTip: sharedUnitTrainGoldLabel(alive.map((u) => u.typeId)),
     trainCrystalTip: sharedUnitTrainCrystalLabel(alive.map((u) => u.typeId)),
+    trainDurationTip: sharedUnitTrainDurationLabel(alive.map((u) => u.typeId)),
     roleTip: sharedUnitRoleLabel(alive.map((u) => u.typeId)),
     speciesTip: sharedUnitSpeciesTipLabel(alive.map((u) => u.speciesId)),
     nameTip: sharedUnitNameTipLabel(alive.map((u) => u.typeId)),
@@ -975,6 +983,7 @@ function structureSignature(view: SelectionPanelView): string {
       view.supplyTip ?? '',
       view.trainGoldTip ?? '',
       view.trainCrystalTip ?? '',
+      view.trainDurationTip ?? '',
       view.roleTip ?? '',
       view.speciesTip ?? '',
       view.nameTip ?? '',
@@ -1509,6 +1518,9 @@ export function renderSelectionPanel(view: SelectionPanelView): boolean {
         }
         if (view.trainCrystalTip) {
           bits.push(`<span>${escapeHtml(view.trainCrystalTip)}</span>`);
+        }
+        if (view.trainDurationTip) {
+          bits.push(`<span>${escapeHtml(view.trainDurationTip)}</span>`);
         }
         if (view.roleTip) {
           bits.push(`<span>${escapeHtml(view.roleTip)}</span>`);
