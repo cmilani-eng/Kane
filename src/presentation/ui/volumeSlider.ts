@@ -3,6 +3,7 @@
  * Procedural Phaser controls; drag + tap on track.
  */
 import Phaser from 'phaser';
+import { t } from '../../i18n';
 import {
   getMasterVolume,
   setMasterVolume,
@@ -111,5 +112,5 @@ export function createVolumeSlider(opts: VolumeSliderOpts): VolumeSliderHandle {
 
 function volumeLabel(): string {
   const pct = Math.round(getMasterVolume() * 100);
-  return `Volume  ${pct}%`;
+  return t('volume.label', { pct });
 }

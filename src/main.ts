@@ -1,5 +1,6 @@
 import { BRAND } from './config/brand';
 import { createKaneGame } from './game/init';
+import { applyDocumentLanguage } from './i18n';
 
 const parent = document.getElementById('app');
 if (!parent) {
@@ -7,4 +8,5 @@ if (!parent) {
 }
 
 document.title = BRAND.name;
+applyDocumentLanguage();
 createKaneGame(parent);
