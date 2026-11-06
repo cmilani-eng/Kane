@@ -41,6 +41,8 @@ import type { BattlefieldWorld } from '../../gameplay/battlefield/battlefieldWor
 import { isSfxMuted, playSfx, setSfxMuted } from '../audio/sfx';
 import { formatMatchClock } from './matchClock';
 import { attackDirectionArrow } from '../../gameplay/battlefield/attackDirection';
+import { walletOf } from '../../gameplay/battlefield/battlefieldEconomy';
+import { abilityChargesLeft } from './abilityCharges';
 
 export { formatMatchClock } from './matchClock';
 
@@ -1079,21 +1081,37 @@ export class BattlefieldHud {
         continue;
       }
       const cd = rt.cds[b.slot];
+      const def = heroForSpecies(this.speciesId);
+      const ab =
+        b.slot === 'ability1'
+          ? def?.abilities.ability1
+          : b.slot === 'ability2'
+            ? def?.abilities.ability2
+            : def?.abilities.ultimate;
+      const name = ab?.name ?? b.key;
       if (cd > 0) {
         b.bg.setAlpha(0.55);
         b.sub.setText(`${Math.ceil(cd / 1000)}s`);
         b.sub.setColor('#f0c75e');
-      } else {
+        continue;
+      }
+      const charges = abilityChargesLeft(
+        walletOf(this.world, 'player').magic_crystals,
+        ab?.costCrystals ?? 0,
+      );
+      if (charges == null) {
         b.bg.setAlpha(1);
-        const def = heroForSpecies(this.speciesId);
-        const name =
-          b.slot === 'ability1'
-            ? def?.abilities.ability1.name
-            : b.slot === 'ability2'
-              ? def?.abilities.ability2.name
-              : def?.abilities.ultimate.name;
-        b.sub.setText(name ?? b.key);
+        b.sub.setText(name);
         b.sub.setColor('#b8c9d9');
+      } else {
+        b.sub.setText(t('hud.abilityCharges', { name, n: charges }));
+        if (charges <= 0) {
+          b.bg.setAlpha(0.55);
+          b.sub.setColor('#e87aa8');
+        } else {
+          b.bg.setAlpha(1);
+          b.sub.setColor('#b8c9d9');
+        }
       }
     }
   }
