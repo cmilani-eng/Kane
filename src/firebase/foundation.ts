@@ -17,11 +17,15 @@ export interface FirebaseFoundation {
   describe(): string;
 }
 
+let singleton: FirebaseFoundation | null = null;
+
 /**
  * Build foundation handles for logging / future lobby wiring.
  * Does not import `firebase` — SDK install is a later PR.
  */
 export function createFirebaseFoundation(): FirebaseFoundation {
+  if (singleton) return singleton;
+
   const cfg = loadFirebasePublicConfig();
   const useEmulators =
     flags.firebaseEmulators || envWantsEmulators();
@@ -32,7 +36,7 @@ export function createFirebaseFoundation(): FirebaseFoundation {
     auth.signInAnonymousLocal();
   }
 
-  return {
+  singleton = {
     enabled: flags.firebaseFoundation,
     useEmulators,
     projectId: cfg.projectId,
@@ -50,6 +54,12 @@ export function createFirebaseFoundation(): FirebaseFoundation {
       ].join(' · ');
     },
   };
+  return singleton;
+}
+
+/** Shared handle for menu / lobby UI — same instance as bootstrap. */
+export function getFirebaseFoundation(): FirebaseFoundation {
+  return createFirebaseFoundation();
 }
 
 export {
