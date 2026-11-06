@@ -23,7 +23,8 @@ export interface CombatFx {
   seed: number;
 }
 
-const MAX_FX = 48;
+/** Cap pops so mid-match spam stays mobile-friendly. */
+const MAX_FX = 32;
 
 export function ensureCombatFx(world: BattlefieldWorld): void {
   if (!world.combatFx) world.combatFx = [];

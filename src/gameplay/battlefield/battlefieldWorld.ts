@@ -494,6 +494,11 @@ export function issueMoveSelected(
   });
 }
 
+/** Accumulator for throttled soft-separation (ms). */
+let separateAccMs = 0;
+const SEPARATE_MS = 50;
+const SEP_CELL = 96;
+
 export function tickBattlefield(world: BattlefieldWorld, dtMs: number): void {
   const dt = Math.min(dtMs, 50) / 1000;
   for (const u of world.units) {
@@ -517,29 +522,72 @@ export function tickBattlefield(world: BattlefieldWorld, dtMs: number): void {
       u.moveTarget = u.path.length > 0 ? u.path.shift()! : null;
     }
   }
-  softSeparateUnits(world);
+  separateAccMs += dtMs;
+  if (separateAccMs >= SEPARATE_MS) {
+    separateAccMs = 0;
+    softSeparateUnits(world);
+  }
 }
 
-/** Cheap pairwise push so stacks read as a pack, not a single blob. */
+/**
+ * Soft pack separation — spatial buckets so mid-match unit caps stay cheap.
+ * Runs on a throttle (SEPARATE_MS), not every frame.
+ */
 function softSeparateUnits(world: BattlefieldWorld): void {
   const units = world.units;
   const n = units.length;
+  if (n < 2) return;
+
+  const cols = Math.ceil(MAP.width / SEP_CELL);
+  const buckets = new Map<number, number[]>();
   for (let i = 0; i < n; i++) {
+    const u = units[i]!;
+    if (u.hp <= 0) continue;
+    const cx = Math.max(0, Math.min(cols - 1, (u.x / SEP_CELL) | 0));
+    const cy = (u.y / SEP_CELL) | 0;
+    const key = cy * cols + cx;
+    let list = buckets.get(key);
+    if (!list) {
+      list = [];
+      buckets.set(key, list);
+    }
+    list.push(i);
+  }
+
+  const pushPair = (i: number, j: number): void => {
     const a = units[i]!;
-    if (a.hp <= 0) continue;
-    for (let j = i + 1; j < n; j++) {
-      const b = units[j]!;
-      if (b.hp <= 0) continue;
-      const minD = a.radius + b.radius + 2;
-      const d = dist(a.x, a.y, b.x, b.y);
-      if (d >= minD || d < 0.001) continue;
-      const push = ((minD - d) / minD) * 0.45;
-      const nx = (a.x - b.x) / d;
-      const ny = (a.y - b.y) / d;
-      a.x = clamp(a.x + nx * push * a.radius, a.radius, MAP.width - a.radius);
-      a.y = clamp(a.y + ny * push * a.radius, a.radius, MAP.height - a.radius);
-      b.x = clamp(b.x - nx * push * b.radius, b.radius, MAP.width - b.radius);
-      b.y = clamp(b.y - ny * push * b.radius, b.radius, MAP.height - b.radius);
+    const b = units[j]!;
+    const minD = a.radius + b.radius + 2;
+    const d = dist(a.x, a.y, b.x, b.y);
+    if (d >= minD || d < 0.001) return;
+    const push = ((minD - d) / minD) * 0.45;
+    const nx = (a.x - b.x) / d;
+    const ny = (a.y - b.y) / d;
+    a.x = clamp(a.x + nx * push * a.radius, a.radius, MAP.width - a.radius);
+    a.y = clamp(a.y + ny * push * a.radius, a.radius, MAP.height - a.radius);
+    b.x = clamp(b.x - nx * push * b.radius, b.radius, MAP.width - b.radius);
+    b.y = clamp(b.y - ny * push * b.radius, b.radius, MAP.height - b.radius);
+  };
+
+  for (const [key, list] of buckets) {
+    const cx = key % cols;
+    const cy = (key / cols) | 0;
+    // Self + right + down + diagonals (avoid double work)
+    const neighbors = [
+      key,
+      cy * cols + (cx + 1),
+      (cy + 1) * cols + cx,
+      (cy + 1) * cols + (cx + 1),
+      (cy + 1) * cols + (cx - 1),
+    ];
+    for (let a = 0; a < list.length; a++) {
+      const ia = list[a]!;
+      for (let b = a + 1; b < list.length; b++) pushPair(ia, list[b]!);
+      for (let nIdx = 1; nIdx < neighbors.length; nIdx++) {
+        const other = buckets.get(neighbors[nIdx]!);
+        if (!other) continue;
+        for (const ib of other) pushPair(ia, ib);
+      }
     }
   }
 }

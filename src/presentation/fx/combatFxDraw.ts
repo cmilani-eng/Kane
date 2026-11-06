@@ -3,11 +3,17 @@
  */
 import type Phaser from 'phaser';
 import type { CombatFx } from '../../gameplay/battlefield/battlefieldCombatFx';
+import { inView, type ViewBounds } from '../perf/mobileBudget';
 
 type G = Phaser.GameObjects.Graphics;
 
-export function drawCombatFxList(g: G, list: CombatFx[]): void {
+export function drawCombatFxList(
+  g: G,
+  list: CombatFx[],
+  view?: ViewBounds | null,
+): void {
   for (const fx of list) {
+    if (view && !inView(view, fx.x, fx.y)) continue;
     const t = Math.max(0, fx.lifeMs / fx.maxLifeMs);
     if (fx.kind === 'hit') drawHit(g, fx, t);
     else if (fx.kind === 'building_hit') drawBuildingHit(g, fx, t);

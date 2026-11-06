@@ -8,6 +8,7 @@ import {
 } from '../../gameplay/battlefield/battlefieldCoreFragments';
 import { isExplored } from '../../gameplay/battlefield/battlefieldFog';
 import type { BattlefieldWorld } from '../../gameplay/battlefield/battlefieldWorld';
+import { inView, type ViewBounds } from '../perf/mobileBudget';
 
 type G = Phaser.GameObjects.Graphics;
 
@@ -15,10 +16,12 @@ export function drawCoreFragments(
   g: G,
   world: BattlefieldWorld,
   timeMs: number,
+  view?: ViewBounds | null,
 ): void {
   const list = world.coreFragments ?? [];
   const pulse = 0.65 + 0.35 * Math.sin(timeMs / 380);
   for (const f of list) {
+    if (view && !inView(view, f.x, f.y)) continue;
     if (!isExplored(world.fog, f.x, f.y)) continue;
     drawOne(g, f, pulse, timeMs);
   }

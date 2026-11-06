@@ -11,6 +11,9 @@ export const PATH_CELL = 64;
 
 const COLS = Math.ceil(MAP.width / PATH_CELL);
 const ROWS = Math.ceil(MAP.height / PATH_CELL);
+/** Reused across path requests — avoid mid-match GC spikes. */
+const camePool = new Int32Array(COLS * ROWS);
+const queuePool: number[] = [];
 
 function cellCenter(cx: number, cy: number): Vec2 {
   return {
@@ -89,8 +92,11 @@ function bfsPath(
   if (start.cx === goal.cx && start.cy === goal.cy) return [to];
 
   const key = (cx: number, cy: number) => cy * COLS + cx;
-  const came = new Int32Array(COLS * ROWS).fill(-1);
-  const q: number[] = [key(start.cx, start.cy)];
+  const came = camePool;
+  came.fill(-1);
+  const q = queuePool;
+  q.length = 0;
+  q.push(key(start.cx, start.cy));
   came[q[0]!] = q[0]!;
 
   const dirs = [
