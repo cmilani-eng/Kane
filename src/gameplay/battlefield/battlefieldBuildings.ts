@@ -8,6 +8,7 @@ import {
 } from '../../data/buildings';
 import type { ResourceWallet } from '../../data/resources';
 import { dist } from '../math';
+import { spawnDeathFx } from './battlefieldCombatFx';
 import type {
   BattlefieldBuilding,
   BattlefieldTeam,
@@ -167,6 +168,7 @@ export function damageBuilding(
 ): void {
   b.hp -= amount;
   if (b.hp <= 0) {
+    spawnDeathFx(world, b.x, b.y, b.radius, b.color);
     const i = world.buildings.findIndex((x) => x.id === b.id);
     if (i >= 0) world.buildings.splice(i, 1);
     syncStockpilesFromBuildings(world);

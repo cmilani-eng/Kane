@@ -98,6 +98,7 @@ import { playSfx } from '../audio/sfx';
 import { RtsCamera } from '../camera/rtsCamera';
 import { createSkirmishMap } from '../maps/mapManager';
 import { FogOverlay } from '../ui/fogOverlay';
+import { drawCombatFxList } from '../fx/combatFxDraw';
 import {
   drawUnitSilhouette,
   resolveUnitAnimPhase,
@@ -493,6 +494,9 @@ export class BattlefieldScene extends Phaser.Scene {
       tickBattlefieldAi(this.world, this.ai, delta);
       tickFog(this.world, this.world.fog);
       tickBattlefieldCombat(this.world, delta);
+      if (this.world.units.some((u) => u.lastAttackFlashMs > 100)) {
+        playSfx('attack');
+      }
       tickTutorial(this.world, this.tutorial, delta);
       const result = evaluateMatch(this.world);
       if (result !== 'ongoing') this.showEndScreen(result);
@@ -644,6 +648,8 @@ export class BattlefieldScene extends Phaser.Scene {
       g.fillStyle(v.color, a * 0.12);
       g.fillCircle(v.x, v.y, v.radius * (1.05 - a * 0.2));
     }
+
+    drawCombatFxList(g, this.world.combatFx);
 
     for (const b of this.world.buildings) {
       if (b.team === 'enemy' && !enemyRevealed(this.world.fog, b.x, b.y)) {
