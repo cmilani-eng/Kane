@@ -98,6 +98,10 @@ import { playSfx } from '../audio/sfx';
 import { RtsCamera } from '../camera/rtsCamera';
 import { createSkirmishMap } from '../maps/mapManager';
 import { FogOverlay } from '../ui/fogOverlay';
+import {
+  drawUnitSilhouette,
+  resolveUnitAnimPhase,
+} from '../units/unitSilhouette';
 
 type PointerMode = 'none' | 'select' | 'box' | 'pan' | 'place' | 'attackMove';
 
@@ -128,6 +132,7 @@ export class BattlefieldScene extends Phaser.Scene {
   private selectedBuilding: BattlefieldBuilding | null = null;
   private ai!: AiState;
   private matchResult: MatchResult = 'ongoing';
+  private animTimeMs = 0;
 
   constructor() {
     super('Battlefield');
@@ -475,6 +480,7 @@ export class BattlefieldScene extends Phaser.Scene {
   }
 
   update(_t: number, delta: number): void {
+    this.animTimeMs += delta;
     this.cameraCtl.update(delta);
     if (this.matchResult === 'ongoing') {
       tickBattlefield(this.world, delta);
@@ -656,7 +662,7 @@ export class BattlefieldScene extends Phaser.Scene {
         b.radius * 2,
         6,
       );
-      // Accent roof / crystal nub
+      // Accent roof / crystal nub — species-flavored hall silhouette
       g.fillStyle(b.accent, alpha);
       if (def.isMainHall) {
         g.fillTriangle(
@@ -667,6 +673,18 @@ export class BattlefieldScene extends Phaser.Scene {
           b.x,
           b.y - b.radius * 1.15,
         );
+        if (def.speciesId === 'brutes') {
+          g.fillStyle(0xd4782e, alpha * 0.9);
+          g.fillRect(b.x + b.radius * 0.35, b.y - b.radius * 1.05, b.radius * 0.22, b.radius * 0.55);
+        } else if (def.speciesId === 'nobles') {
+          g.fillStyle(0xf0c75e, alpha);
+          g.fillRect(b.x - b.radius * 0.06, b.y - b.radius * 1.45, b.radius * 0.12, b.radius * 0.4);
+          g.fillCircle(b.x, b.y - b.radius * 1.5, b.radius * 0.16);
+        } else {
+          const pulse = 0.85 + 0.15 * Math.sin(this.animTimeMs / 400);
+          g.fillStyle(0x6ecfbf, alpha * pulse);
+          g.fillCircle(b.x, b.y - b.radius * 1.05, b.radius * 0.22);
+        }
       } else {
         g.fillCircle(b.x, b.y - b.radius * 0.55, b.radius * 0.28);
       }
@@ -757,20 +775,23 @@ export class BattlefieldScene extends Phaser.Scene {
         g.lineStyle(2, 0xf0c75e, 1);
         g.strokeCircle(u.x, u.y, u.radius + 6);
       }
-      if (u.inFormation) {
-        g.lineStyle(2, 0xc0c8d4, 0.95);
-        g.strokeCircle(u.x, u.y, u.radius + 9);
-      }
-      if (u.mutated) {
-        g.lineStyle(2, 0xe87aa8, 0.95);
-        g.strokeCircle(u.x, u.y, u.radius + 10);
-      }
-
       const flash = u.lastAttackFlashMs > 0;
-      g.fillStyle(flash ? 0xffffff : u.color, 1);
-      this.drawUnitBody(g, u.x, u.y, u.radius, getUnitType(u.typeId).shape);
+      drawUnitSilhouette(g, {
+        x: u.x,
+        y: u.y,
+        radius: u.radius,
+        fill: u.color,
+        speciesId: u.speciesId,
+        typeId: u.typeId,
+        timeMs: this.animTimeMs,
+        seed: u.id,
+        phase: resolveUnitAnimPhase(u),
+        flash,
+        mutated: u.mutated,
+        inFormation: u.inFormation,
+      });
       g.fillStyle(u.team === 'player' ? 0xf0c75e : 0xe8a0ff, 0.95);
-      g.fillCircle(u.x, u.y - 5, 3.5);
+      g.fillCircle(u.x, u.y - u.radius * 0.35, 3.2);
 
       if (u.carrying > 0 && u.carryingResource) {
         g.fillStyle(RESOURCES[u.carryingResource].color, 1);
@@ -814,53 +835,4 @@ export class BattlefieldScene extends Phaser.Scene {
     }
   }
 
-  private drawUnitBody(
-    g: Phaser.GameObjects.Graphics,
-    x: number,
-    y: number,
-    r: number,
-    shape: ReturnType<typeof getUnitType>['shape'],
-  ): void {
-    // Contact shadow
-    g.fillStyle(0x000000, 0.28);
-    g.fillEllipse(x, y + r * 0.65, r * 1.35, r * 0.4);
-
-    if (shape === 'square') {
-      g.fillRect(x - r, y - r, r * 2, r * 2);
-    } else if (shape === 'diamond') {
-      g.fillTriangle(x, y - r, x + r, y, x, y + r);
-      g.fillTriangle(x, y - r, x - r, y, x, y + r);
-    } else if (shape === 'triangle') {
-      g.fillTriangle(x, y - r, x + r, y + r * 0.7, x - r, y + r * 0.7);
-    } else if (shape === 'hex') {
-      for (let i = 0; i < 6; i++) {
-        const a0 = (Math.PI / 3) * i - Math.PI / 6;
-        const a1 = (Math.PI / 3) * (i + 1) - Math.PI / 6;
-        g.fillTriangle(
-          x,
-          y,
-          x + Math.cos(a0) * r,
-          y + Math.sin(a0) * r,
-          x + Math.cos(a1) * r,
-          y + Math.sin(a1) * r,
-        );
-      }
-    } else if (shape === 'star') {
-      g.fillCircle(x, y, r);
-      for (let i = 0; i < 5; i++) {
-        const a = (i / 5) * Math.PI * 2 - Math.PI / 2;
-        g.fillCircle(x + Math.cos(a) * r * 0.85, y + Math.sin(a) * r * 0.85, r * 0.22);
-      }
-    } else {
-      g.fillCircle(x, y, r);
-    }
-
-    // Eyes — readable silhouette detail
-    g.fillStyle(0xfff8e8, 0.95);
-    g.fillCircle(x - r * 0.28, y - r * 0.15, r * 0.22);
-    g.fillCircle(x + r * 0.28, y - r * 0.15, r * 0.22);
-    g.fillStyle(0x0a1220, 0.95);
-    g.fillCircle(x - r * 0.28, y - r * 0.12, r * 0.1);
-    g.fillCircle(x + r * 0.28, y - r * 0.12, r * 0.1);
-  }
 }
