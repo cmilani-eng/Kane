@@ -28,7 +28,7 @@ This doc is the honest gate before any public preview URL.
 | Hero hotkey tip | **OK** — selecting a hero shows Q/W/E ability names on the selection panel | `selectionPanel`, `sel.heroHotkeys` |
 | Full-load deposit | **OK** — full workers show deposit-at-Keep hint on the carry line | `selectionPanel`, `sel.cargoFull` |
 | Multi-select counts | **OK** — mixed selection title lists unit types × counts | `selectionPanel`, `sel.typeCount` |
-| Queue cancel flash | **OK** — canceling a train flashes the queue row + refund copy | `flashQueueCancel`, selection panel |
+| Queue cancel flash | **OK** — canceling a train flashes the queue row + refund copy with Gold / Crystal amounts | `flashQueueCancel`, `formatQueueCancelFlash` |
 | Clear rally | **OK** — selection panel Clear rally resets custom rally to default | `clearBuildingRally`, `sel.clearRally` |
 | Low-HP pulse | **OK** — selection HP bar/text soft-pulse under 35% (respects reduced motion) | `selectionPanel` `.is-low` |
 | Resource gather tip | **OK** — selecting a node shows haul-per-trip + active gatherer count | `selectionPanel`, `sel.gatherTip*` |
