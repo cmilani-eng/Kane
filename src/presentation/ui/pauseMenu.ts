@@ -5,6 +5,7 @@
  */
 import Phaser from 'phaser';
 import { BRAND } from '../../config/brand';
+import { isReduceMotion, setReduceMotion } from '../../database/motionPrefs';
 import { subscribeLocale, t } from '../../i18n';
 import { isSfxMuted, playSfx, setSfxMuted } from '../audio/sfx';
 import { formatMatchClock } from './battlefieldHud';
@@ -31,6 +32,7 @@ export class PauseMenu {
   private readonly ignoreOnMain: (objs: Phaser.GameObjects.GameObject[]) => void;
   private root: Phaser.GameObjects.GameObject[] = [];
   private muteLabel: Phaser.GameObjects.Text | null = null;
+  private motionLabel: Phaser.GameObjects.Text | null = null;
   private volume: VolumeSliderHandle | null = null;
   private localeUnsub: (() => void) | null = null;
   private open = false;
@@ -75,6 +77,7 @@ export class PauseMenu {
     for (const o of this.root) o.destroy();
     this.root = [];
     this.muteLabel = null;
+    this.motionLabel = null;
   }
 
   private onResize = (): void => {
@@ -84,13 +87,14 @@ export class PauseMenu {
     for (const o of this.root) o.destroy();
     this.root = [];
     this.muteLabel = null;
+    this.motionLabel = null;
     this.build();
   };
 
   private build(): void {
     const { width, height } = this.scene.scale;
     const panelW = Math.min(360, width - 40);
-    const panelH = Math.min(520, height * 0.84);
+    const panelH = Math.min(560, height * 0.88);
     const cx = width / 2;
     const cy = height * 0.48;
 
@@ -176,10 +180,22 @@ export class PauseMenu {
     });
     this.root.push(...this.volume.objects);
 
+    this.motionLabel = this.makeBtn(
+      cx,
+      btnY0 + gap * 3 + 16,
+      this.motionText(),
+      () => {
+        setReduceMotion(!isReduceMotion());
+        this.motionLabel?.setText(this.motionText());
+        playSfx('ui');
+      },
+    );
+    this.root.push(this.motionLabel);
+
     this.root.push(
       this.makeBtn(
         cx,
-        btnY0 + gap * 3 + 16,
+        btnY0 + gap * 4 + 24,
         t('pause.quit'),
         () => {
           playSfx('ui');
@@ -205,6 +221,12 @@ export class PauseMenu {
 
   private muteText(): string {
     return isSfxMuted() ? t('pause.soundOff') : t('pause.soundOn');
+  }
+
+  private motionText(): string {
+    return isReduceMotion()
+      ? t('pause.reduceMotionOn')
+      : t('pause.reduceMotionOff');
   }
 
   private makeBtn(

@@ -133,6 +133,7 @@ import {
   isExplored,
   tickFog,
 } from '../../gameplay/battlefield/battlefieldFog';
+import { tickAttentionPings } from '../../gameplay/battlefield/battlefieldAttentionPing';
 import {
   spawnScoutPulsesFromFog,
   tickScoutPulses,
@@ -142,6 +143,7 @@ import {
 } from '../../database/matchSummary';
 import { getEquippedSkin } from '../../database/cosmeticsLoadout';
 import { rememberMatchPrefs } from '../../database/matchPrefs';
+import { isReduceMotion } from '../../database/motionPrefs';
 import { rematchPrefsFromWorld } from '../../gameplay/battlefield/rematchPrefs';
 import { recordGameStarted } from '../../database/localStats';
 import { writeMatchSummaryFunctionStub } from '../../server/matchSummaryFunctionStub';
@@ -183,6 +185,7 @@ import { drawWaypointMarkers } from '../fx/waypointMarkersDraw';
 import { ControlGroupBadgeLayer } from '../fx/controlGroupBadges';
 import { drawBuildingRallyMarkers } from '../fx/rallyMarkerDraw';
 import { drawGatherTargetHighlights } from '../fx/gatherTargetHighlight';
+import { drawAttentionPingList } from '../fx/attentionPingDraw';
 import { drawScoutPulseList } from '../fx/scoutPulseDraw';
 import {
   buildingCanRally,
@@ -1185,6 +1188,7 @@ export class BattlefieldScene extends Phaser.Scene {
         }
       }
       tickScoutPulses(this.world, delta);
+      tickAttentionPings(this.world, delta);
       tickCoreFragments(this.world, delta);
       tickBattlefieldCombat(this.world, delta);
       // Attack flash just set (~120) — one SFX per frame max.
@@ -1199,12 +1203,14 @@ export class BattlefieldScene extends Phaser.Scene {
       if (alert?.pulse) {
         alert.pulse = false;
         playSfx('alert');
-        const critical = alert.severity === 'critical';
-        this.cameraCtl.softNudgeToward(
-          alert.x,
-          alert.y,
-          critical ? 0.38 : 0.22,
-        );
+        if (!isReduceMotion()) {
+          const critical = alert.severity === 'critical';
+          this.cameraCtl.softNudgeToward(
+            alert.x,
+            alert.y,
+            critical ? 0.38 : 0.22,
+          );
+        }
       }
       tickTutorial(this.world, this.tutorial, delta);
       const result = evaluateMatch(this.world);
@@ -1261,6 +1267,8 @@ export class BattlefieldScene extends Phaser.Scene {
       scene: this,
       win: result === 'victory',
       speciesId: this.world.speciesId,
+      mapId: this.world.mapId,
+      durationMs: Math.max(0, Math.floor(this.matchElapsedMs)),
       reason: matchEndReason(this.world, result),
       onMenu: () => this.scene.start('Menu'),
       onRematch: () => this.rematchSameSkirmish(),
@@ -1410,6 +1418,7 @@ export class BattlefieldScene extends Phaser.Scene {
     drawStopFxList(g, this.world.stopFx, view);
     drawControlGroupFxList(g, this.world.controlGroupFx, view);
     drawScoutPulseList(g, this.world.scoutPulses, view);
+    drawAttentionPingList(g, this.world.attentionPings, view);
     drawWaypointMarkers(
       g,
       this.world.waypointMarkers,

@@ -19,7 +19,9 @@ This doc is the honest gate before any public preview URL.
 | SP rematch loop | **OK** — species + difficulty + map prefs; end-screen **Rematch** (same setup) or Return to Menu | `endScreen`, `matchPrefs`, `rematchPrefs`, Battlefield |
 | PWA manifest + icons | **OK** — Add to Home Screen stubs; **no** offline service worker yet | `public/manifest.webmanifest`, `public/icons/`, `docs/pwa.md` |
 | Master volume | **OK** — mute-aware slider on menu + pause; persists `kane.masterVolume.v1` | `audioContext`, `volumeSlider`, pause/menu |
-| Easy AI cushion | **OK** — Easy gives player start gold/crystal cushion + slower AI eco; Normal/Hard unchanged | `aiDifficulty`, `createBattlefieldWorld` |
+| Reduce motion | **OK** — pause toggle disables under-attack camera nudge; persists `kane.reduceMotion.v1` | `motionPrefs`, `pauseMenu`, `BattlefieldScene` |
+| Attention ping | **OK** — hold minimap to drop a temporary look-here mark (world + minimap); no chat | `battlefieldAttentionPing`, `minimap`, help |
+| Easy AI cushion | **OK** — Easy gives player start gold/crystal cushion + slower AI eco; menu shows a short tip only while Easy is selected | `aiDifficulty`, `MenuScene`, `createBattlefieldWorld` |
 | In-match tips | **OK** — coach copy covers Pause/Esc, Home, Army, Idle chip, Rematch | `battlefieldTutorial`, `tutorialCoach` |
 | Friend lobby UI | **OK** — Create / Join / Leave local stub; quiet “no live sync” note | `lobbyPanel`, `lobbyStub` |
 

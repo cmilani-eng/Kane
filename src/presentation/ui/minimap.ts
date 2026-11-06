@@ -9,12 +9,18 @@ import {
   enemyRevealed,
   isExplored,
 } from '../../gameplay/battlefield/battlefieldFog';
+import { spawnAttentionPing } from '../../gameplay/battlefield/battlefieldAttentionPing';
 import {
   MINIMAP_DOUBLE_TAP_MS,
   selectionOrOrderFocus,
 } from '../../gameplay/battlefield/battlefieldMinimapFocus';
 import { buildingCanRally } from '../../gameplay/battlefield/battlefieldRally';
 import { isIdleWorker } from '../../gameplay/battlefield/idleWorkers';
+import {
+  TOUCH_LONG_PRESS_MS,
+  TOUCH_LONG_PRESS_SLOP_PX,
+  touchLongPressAction,
+} from '../../gameplay/battlefield/touchLongPress';
 import type {
   BattlefieldBuilding,
   BattlefieldWorld,
@@ -44,6 +50,10 @@ export class Minimap {
   private pulseMs = 0;
   /** Extra lift when DOM selection panel is open. */
   private bottomInset = 0;
+  /** Minimap hold → attention ping (chat-free mark). */
+  private holdTimer: Phaser.Time.TimerEvent | null = null;
+  private holdStartX = 0;
+  private holdStartY = 0;
 
   constructor(
     scene: Phaser.Scene,
@@ -80,6 +90,7 @@ export class Minimap {
       this.dragMoved = false;
 
       if (quick) {
+        this.clearHoldPing();
         const focus = selectionOrOrderFocus(
           this.world,
           this.selectedBuilding,
@@ -97,18 +108,25 @@ export class Minimap {
       this.dragging = true;
       this.panToPointer(p);
       playSfx('ui');
+      this.beginHoldPing(p);
     });
     this.hit.on('pointermove', (p: Phaser.Input.Pointer) => {
       if (this.dragging && p.isDown) {
-        this.dragMoved = true;
+        const moved = Math.hypot(p.x - this.holdStartX, p.y - this.holdStartY);
+        if (moved > TOUCH_LONG_PRESS_SLOP_PX) {
+          this.dragMoved = true;
+          this.clearHoldPing();
+        }
         this.panToPointer(p);
       }
     });
     this.hit.on('pointerup', () => {
       this.dragging = false;
+      this.clearHoldPing();
     });
     this.hit.on('pointerout', () => {
       this.dragging = false;
+      this.clearHoldPing();
     });
 
     this.layout();
@@ -150,11 +168,45 @@ export class Minimap {
   }
 
   private panToPointer(p: Phaser.Input.Pointer): void {
+    const { wx, wy } = this.worldFromPointer(p);
+    this.cameraCtl.centerOn(wx, wy);
+  }
+
+  private worldFromPointer(p: Phaser.Input.Pointer): { wx: number; wy: number } {
     const lx = Phaser.Math.Clamp(p.x - this.mapX, 0, this.mapW);
     const ly = Phaser.Math.Clamp(p.y - this.mapY, 0, this.mapH);
-    const wx = (lx / this.mapW) * MAP.width;
-    const wy = (ly / this.mapH) * MAP.height;
-    this.cameraCtl.centerOn(wx, wy);
+    return {
+      wx: (lx / this.mapW) * MAP.width,
+      wy: (ly / this.mapH) * MAP.height,
+    };
+  }
+
+  private beginHoldPing(p: Phaser.Input.Pointer): void {
+    this.clearHoldPing();
+    this.holdStartX = p.x;
+    this.holdStartY = p.y;
+    this.holdTimer = this.scene.time.delayedCall(TOUCH_LONG_PRESS_MS, () => {
+      this.holdTimer = null;
+      if (this.dragMoved) return;
+      const ptr = this.scene.input.activePointer;
+      const px = ptr?.x ?? this.holdStartX;
+      const py = ptr?.y ?? this.holdStartY;
+      const moved = Math.hypot(px - this.holdStartX, py - this.holdStartY);
+      if (touchLongPressAction(TOUCH_LONG_PRESS_MS, moved) !== 'order') {
+        return;
+      }
+      const { wx, wy } = this.worldFromPointer({
+        x: px,
+        y: py,
+      } as Phaser.Input.Pointer);
+      spawnAttentionPing(this.world, wx, wy);
+      playSfx('ui');
+    });
+  }
+
+  private clearHoldPing(): void {
+    this.holdTimer?.remove(false);
+    this.holdTimer = null;
   }
 
   private refreshAcc = 999;
@@ -304,6 +356,19 @@ export class Minimap {
         // Small diamond tip for attack-move
         g.fillTriangle(x, y - 8, x + 3.5, y - 3, x - 3.5, y - 3);
       }
+    }
+
+    // Attention pings — chat-free look-here marks
+    const attnPulse = 0.5 + 0.4 * Math.sin(this.pulseMs / 140);
+    for (const m of this.world.attentionPings ?? []) {
+      const x = this.mapX + m.x * sx;
+      const y = this.mapY + m.y * sy;
+      const life = Math.max(0.12, m.lifeMs / m.maxLifeMs);
+      const a = attnPulse * life;
+      g.lineStyle(2.25, 0xb8e8ff, a);
+      g.strokeCircle(x, y, 7.5);
+      g.fillStyle(0xfff8e8, a * 0.9);
+      g.fillCircle(x, y, 2.6);
     }
 
     // Camera viewport — gold frame + soft fill so it reads at a glance
