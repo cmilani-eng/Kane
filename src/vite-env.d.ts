@@ -9,6 +9,8 @@ interface ImportMetaEnv {
   readonly VITE_FIREBASE_MESSAGING_SENDER_ID?: string;
   readonly VITE_FIREBASE_APP_ID?: string;
   readonly VITE_FIREBASE_USE_EMULATORS?: string;
+  /** `open` (local-dev) or `allowlist` for #/admin gate. */
+  readonly VITE_ADMIN_ACCESS_MODE?: string;
 }
 
 interface ImportMeta {

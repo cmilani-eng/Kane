@@ -25,6 +25,16 @@ export const flags = {
    * Does not auto-deploy; local Vite remains the primary SP path.
    */
   hostingPreviewConfig: true as const,
+  /**
+   * Phase 7 — admin allowlist stub for #/admin.
+   * When true, `adminAccessMode` applies (`open` | `allowlist`).
+   */
+  adminAllowlistStub: true as const,
+  /**
+   * Local-dev default: `#/admin` open. Set `allowlist` (or
+   * `localStorage.kane.adminAccessMode.v1` / `VITE_ADMIN_ACCESS_MODE`) to deny.
+   */
+  adminAccessMode: 'open' as 'open' | 'allowlist',
 } as const;
 
 export type FeatureFlags = typeof flags;
