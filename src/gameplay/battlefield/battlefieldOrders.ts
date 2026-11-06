@@ -34,6 +34,22 @@ export function assignControlGroup(
   return true;
 }
 
+/**
+ * Shift+Ctrl+N — add the selected player units to group 0–9, keeping the
+ * units already in it. An empty selection is a no-op.
+ */
+export function addToControlGroup(
+  world: BattlefieldWorld,
+  groups: ControlGroups,
+  slot: number,
+): boolean {
+  if (slot < 0 || slot > 9) return false;
+  const ids = selectedUnits(world).map((u) => u.id);
+  if (ids.length === 0) return false;
+  groups.set(slot, [...new Set([...(groups.get(slot) ?? []), ...ids])]);
+  return true;
+}
+
 /** N — select living members of group (additive with Shift). */
 export function recallControlGroup(
   world: BattlefieldWorld,

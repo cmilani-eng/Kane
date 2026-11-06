@@ -18,11 +18,18 @@ How KANE's selection and command keys map to the RTS games they come from
 | Jump to base | Backspace (SC2) | Home, or the HUD button | ✅ |
 | Select idle workers | F1 (SC2), `.` (AoE II) | HUD **Idle** chip cycles them; no key yet | ✅ |
 | Select idle military | — | HUD **Idle army** chip cycles + recenters; no key yet | ✅ |
-| Cycle sub-group | Tab (SC2) | — | 🔜 |
+| Cycle sub-group | Tab (SC2) | Tab / Shift+Tab step through the unit types in the selection | ✅ |
 
 Double-click and Ctrl/Cmd+click select the units of that type that are in vision,
 not only the ones on screen. macOS turns Ctrl+click into a right-click, so Mac
 players use double-click or Cmd+click.
+
+Tab shows the whole selection, then each unit type on its own, then the whole
+selection again; Shift+Tab goes the other way. Unlike StarCraft, where Tab only
+switches which type's buttons show, here it changes the selection itself, so
+orders, S and A go only to the type you stopped on. Pick a different selection
+and the next Tab starts again from that one. With one unit type selected it does
+nothing.
 
 ## Control groups
 
@@ -32,7 +39,7 @@ players use double-click or Cmd+click.
 | Select a group | 0-9 | 0-9 | ✅ |
 | Add a group to the selection | Shift+0-9 | Shift+0-9 | ✅ |
 | Centre the camera on a group | press the number twice (SC2, AoE II) | Press the same number twice quickly | ✅ |
-| Add the selection to a group | Shift+Ctrl+0-9 (SC2) | — | 🔜 |
+| Add the selection to a group | Shift+Ctrl+0-9 (SC2) | Shift+Ctrl+0-9, or Shift+Alt+0-9; keeps the units already in the group | ✅ |
 
 Alt+0-9 exists because Chrome and Firefox reserve Ctrl+digit for switching tabs
 on some platforms, and a page cannot always override that. On Linux, Alt+0-9
