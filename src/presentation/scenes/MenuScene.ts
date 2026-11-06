@@ -5,6 +5,7 @@ import {
   wantsAdminPanel,
   wantsStatsPanel,
 } from '../../database/localStats';
+import { isCoachSeen, setCoachSeen } from '../../database/coachPrefs';
 import {
   loadMatchPrefs,
   rememberMatchPrefs,
@@ -394,6 +395,7 @@ export class MenuScene extends Phaser.Scene {
       y: Math.max(40, height * 0.055),
       depth: 40,
     });
+    this.addTipsToggle(88, Math.max(40, height * 0.055));
 
     this.add
       .text(width / 2, height * 0.81, softLaunchStatusStrip(), {
@@ -530,6 +532,7 @@ export class MenuScene extends Phaser.Scene {
       y: 42,
       depth: 40,
     });
+    this.addTipsToggle(78, 42);
 
     this.drawDifficultyRow(width, 78, true);
     this.drawMapRow(width, 116, true);
@@ -637,6 +640,25 @@ export class MenuScene extends Phaser.Scene {
     });
   }
 
+  private addTipsToggle(x: number, y: number): void {
+    const label = this.add
+      .text(x, y, isCoachSeen() ? t('menu.tipsOff') : t('menu.tipsOn'), {
+        fontFamily: 'system-ui, sans-serif',
+        fontSize: '13px',
+        color: '#fff8e8',
+        backgroundColor: '#1a2433',
+        padding: { x: 10, y: 6 },
+      })
+      .setOrigin(0, 0.5)
+      .setDepth(40)
+      .setInteractive({ useHandCursor: true });
+    label.on('pointerup', () => {
+      setCoachSeen(!isCoachSeen());
+      label.setText(isCoachSeen() ? t('menu.tipsOff') : t('menu.tipsOn'));
+      playSfx('ui');
+    });
+  }
+
   private drawDifficultyRow(width: number, y: number, compact = false): void {
     const count = AI_DIFFICULTY_ORDER.length;
     const gap = Math.min(108, (width - 16) / count);
@@ -680,13 +702,15 @@ export class MenuScene extends Phaser.Scene {
   }
 
   private drawMapRow(width: number, y: number, compact = false): void {
-    const gap = Math.min(150, width * 0.4);
+    const count = SKIRMISH_MAP_ORDER.length;
+    const gap = Math.min(150, (width - 16) / count);
+    const buttonW = Math.min(140, gap - 10);
     SKIRMISH_MAP_ORDER.forEach((id, i) => {
       const m = mapCopy(id);
       const selected = this.mapId === id;
-      const x = width / 2 + (i - 0.5) * gap;
+      const x = width / 2 + (i - (count - 1) / 2) * gap;
       const bg = this.add
-        .rectangle(x, y, Math.min(140, gap - 10), compact ? 32 : 44, selected ? 0x2a2838 : 0x1a2433, 0.95)
+        .rectangle(x, y, buttonW, compact ? 32 : 44, selected ? 0x2a2838 : 0x1a2433, 0.95)
         .setStrokeStyle(2, selected ? 0x6ecfbf : 0x3a4555)
         .setInteractive({ useHandCursor: true });
       this.add
@@ -702,7 +726,7 @@ export class MenuScene extends Phaser.Scene {
           fontSize: '9px',
           color: '#9eb4c8',
           align: 'center',
-          wordWrap: { width: Math.min(130, gap - 12) },
+          wordWrap: { width: Math.max(72, buttonW - 8) },
         })
         .setOrigin(0.5);
       bg.on('pointerup', () => {

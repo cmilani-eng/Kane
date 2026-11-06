@@ -8,15 +8,36 @@ import {
   listAllSkins,
   type CosmeticSkinDef,
 } from '../../data/cosmeticsCatalog';
-import { SPECIES, type SpeciesId } from '../../data/speciesStub';
+import type { SpeciesId } from '../../data/speciesStub';
 import {
   equipSkin,
   getEquippedSkinId,
   loadCosmeticsLoadout,
 } from '../../database/cosmeticsLoadout';
+import { speciesName, t, type MessageKey } from '../../i18n';
 import { playSfx } from '../audio/sfx';
 
 const SPECIES_ORDER: SpeciesId[] = ['brutes', 'nobles', 'weirdos'];
+
+const SKIN_COPY: Record<string, { name: MessageKey; blurb: MessageKey }> = {
+  skin_default: { name: 'cos.default.name', blurb: 'cos.default.blurb' },
+  skin_brutes_scrap: { name: 'cos.scrap.name', blurb: 'cos.scrap.blurb' },
+  skin_brutes_ember: { name: 'cos.ember.name', blurb: 'cos.ember.blurb' },
+  skin_nobles_gilded: { name: 'cos.gilded.name', blurb: 'cos.gilded.blurb' },
+  skin_nobles_midnight: { name: 'cos.midnight.name', blurb: 'cos.midnight.blurb' },
+  skin_weirdos_prism: { name: 'cos.prism.name', blurb: 'cos.prism.blurb' },
+  skin_weirdos_void: { name: 'cos.void.name', blurb: 'cos.void.blurb' },
+};
+
+export function cosmeticsSkinCopy(id: string): { name: string; blurb: string } {
+  const keys = SKIN_COPY[id];
+  if (!keys) return { name: id, blurb: '' };
+  return { name: t(keys.name), blurb: t(keys.blurb) };
+}
+
+function speciesTab(id: SpeciesId): string {
+  return speciesName(id).replace(/^(The |Os |Los )/, '');
+}
 
 export function showCosmeticsPanel(
   scene: Phaser.Scene,
@@ -31,8 +52,9 @@ export function showCosmeticsPanel(
     .setDepth(300)
     .setInteractive();
 
-  const panelW = Math.min(460, width - 28);
-  const panelH = Math.min(420, height - 28);
+  const short = height < 500;
+  const panelW = short ? Math.min(760, width - 24) : Math.min(460, width - 28);
+  const panelH = short ? height - 16 : Math.min(420, height - 28);
   const cx = width / 2;
   const cy = height / 2;
   const top = cy - panelH / 2;
@@ -58,7 +80,7 @@ export function showCosmeticsPanel(
     .setDepth(302);
 
   const title = scene.add
-    .text(cx, top + 52, 'Cosmetics', {
+    .text(cx, top + 52, t('menu.cosmetics'), {
       fontFamily: 'Georgia, "Times New Roman", serif',
       fontSize: '26px',
       color: '#f5e6c8',
@@ -67,21 +89,23 @@ export function showCosmeticsPanel(
     .setDepth(302);
 
   const subtitle = scene.add
-    .text(cx, top + 80, 'Skins only · never pay-to-win', {
+    .text(cx, top + 80, t('auth.skins'), {
       fontFamily: 'system-ui, sans-serif',
       fontSize: '13px',
       color: '#9eb4c8',
+      align: 'center',
+      wordWrap: { width: panelW - 40 },
     })
     .setOrigin(0.5)
     .setDepth(302);
 
   const swatch = scene.add
-    .circle(cx, top + 128, 24, 0xf0c75e, 1)
+    .circle(cx, short ? top + 104 : top + 128, short ? 16 : 24, 0xf0c75e, 1)
     .setStrokeStyle(2, 0xfff8e8, 0.9)
     .setDepth(302);
 
   const body = scene.add
-    .text(cx, top + 168, '', {
+    .text(cx, short ? top + 132 : top + 168, '', {
       fontFamily: 'system-ui, sans-serif',
       fontSize: '14px',
       color: '#d7e6f2',
@@ -93,7 +117,7 @@ export function showCosmeticsPanel(
     .setDepth(302);
 
   const loadoutNote = scene.add
-    .text(cx, bottom - 22, '', {
+    .text(cx, short ? bottom - 96 : bottom - 22, '', {
       fontFamily: 'system-ui, sans-serif',
       fontSize: '11px',
       color: '#6a7f94',
@@ -132,21 +156,22 @@ export function showCosmeticsPanel(
     const equipped = getEquippedSkinId(species) === skin.id;
     swatch.setFillStyle(skin.accent, 1);
 
+    const copy = cosmeticsSkinCopy(skin.id);
     body.setText(
       [
-        SPECIES[species].name,
+        speciesName(species),
         '',
-        skin.name,
-        skin.blurb,
+        copy.name,
+        copy.blurb,
         '',
-        equipped ? 'Equipped on this species' : 'Tap Equip to wear (local)',
-        skin.id === 'skin_default' ? 'Always available' : 'Free unlock · not for sale',
+        equipped ? t('cos.equippedOn') : t('cos.tapEquip'),
+        skin.id === 'skin_default' ? t('cos.always') : t('cos.free'),
       ].join('\n'),
     );
 
     loadoutNote.setText(formatMiniLoadout());
 
-    const rowY = bottom - 92;
+    const rowY = short ? bottom - 64 : bottom - 92;
     mkBtn(cx - 130, rowY, '◀', '#3a4555', () => {
       page = (page - 1 + skins.length) % skins.length;
       refresh();
@@ -154,7 +179,7 @@ export function showCosmeticsPanel(
     mkBtn(
       cx,
       rowY,
-      equipped ? 'Equipped' : 'Equip',
+      equipped ? t('cos.equipped') : t('cos.equip'),
       equipped ? '#2a4a38' : '#3a5530',
       () => {
         if (equipped) return;
@@ -168,13 +193,12 @@ export function showCosmeticsPanel(
       refresh();
     });
 
-    const tabY = bottom - 48;
-    SPECIES_ORDER.forEach((id, i) => {
-      const x = cx + (i - 1) * 110;
+    const tabY = short ? bottom - 28 : bottom - 48;
+    const tabs = SPECIES_ORDER.map((id) =>
       mkBtn(
-        x,
+        0,
         tabY,
-        SPECIES[id].name.replace(/^The /, ''),
+        speciesTab(id),
         species === id ? '#3d5a40' : '#2a3344',
         () => {
           species = id;
@@ -182,8 +206,16 @@ export function showCosmeticsPanel(
           playSfx('ui');
           refresh();
         },
-      );
-    });
+      ),
+    );
+    const tabGap = 10;
+    const tabTotal =
+      tabs.reduce((sum, b) => sum + b.width, 0) + tabGap * (tabs.length - 1);
+    let tabX = cx - tabTotal / 2;
+    for (const b of tabs) {
+      b.setPosition(tabX + b.width / 2, tabY);
+      tabX += b.width + tabGap;
+    }
   };
 
   const mkBtn = (
@@ -192,7 +224,7 @@ export function showCosmeticsPanel(
     label: string,
     bg: string,
     fn: () => void,
-  ): void => {
+  ): Phaser.GameObjects.Text => {
     const btn = scene.add
       .text(x, y, label, {
         fontFamily: 'system-ui, sans-serif',
@@ -207,6 +239,7 @@ export function showCosmeticsPanel(
       .on('pointerup', fn);
     dynamicBtns.push(btn);
     nodes.push(btn);
+    return btn;
   };
 
   const closeBtn = scene.add
@@ -239,7 +272,11 @@ export function showCosmeticsPanel(
 
 function formatMiniLoadout(): string {
   const l = loadCosmeticsLoadout();
-  return `Loadout · B ${short(l.equipped.brutes)} · N ${short(l.equipped.nobles)} · W ${short(l.equipped.weirdos)}`;
+  return t('cos.loadout', {
+    brutes: short(l.equipped.brutes),
+    nobles: short(l.equipped.nobles),
+    weirdos: short(l.equipped.weirdos),
+  });
 }
 
 function short(id: string): string {

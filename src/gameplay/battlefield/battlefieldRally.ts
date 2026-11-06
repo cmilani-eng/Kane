@@ -27,6 +27,24 @@ export function setBuildingRally(
   building.rallyY = clamp(y, 24, MAP.height - 24);
 }
 
+/** Reset rally to the default near-building march point. */
+export function clearBuildingRally(building: BattlefieldBuilding): void {
+  const d = defaultRallyFor(building);
+  building.rallyX = d.rallyX;
+  building.rallyY = d.rallyY;
+}
+
+/** True when rally differs from the default spawn march point. */
+export function buildingHasCustomRally(
+  building: BattlefieldBuilding,
+  slopPx = 8,
+): boolean {
+  const d = defaultRallyFor(building);
+  const dx = building.rallyX - d.rallyX;
+  const dy = building.rallyY - d.rallyY;
+  return dx * dx + dy * dy > slopPx * slopPx;
+}
+
 export function buildingCanRally(building: BattlefieldBuilding): boolean {
   if (building.hp <= 0) return false;
   return getBuildingType(building.typeId).trains.length > 0;

@@ -2,7 +2,10 @@
  * Attention ping — expanding “look here” ring (distinct from order waypoints).
  */
 import type Phaser from 'phaser';
-import type { AttentionPing } from '../../gameplay/battlefield/battlefieldAttentionPing';
+import {
+  attentionPingFade,
+  type AttentionPing,
+} from '../../gameplay/battlefield/battlefieldAttentionPing';
 import { inView, type ViewBounds } from '../perf/mobileBudget';
 
 type G = Phaser.GameObjects.Graphics;
@@ -17,7 +20,8 @@ export function drawAttentionPingList(
 ): void {
   for (const fx of list) {
     if (view && !inView(view, fx.x, fx.y)) continue;
-    const t = Math.max(0.05, fx.lifeMs / fx.maxLifeMs);
+    const t = attentionPingFade(fx.lifeMs, fx.maxLifeMs);
+    if (t < 0.02) continue;
     const expand = 0.65 + (1 - t) * 1.15;
     const r = 28 * expand;
     const a = t * 0.9;
@@ -29,6 +33,6 @@ export function drawAttentionPingList(
     g.lineStyle(1.5, 0xfff8e8, a * 0.55);
     g.strokeCircle(fx.x, fx.y, r * 0.45);
     g.fillStyle(0xfff8e8, a * 0.85);
-    g.fillCircle(fx.x, fx.y, 3.2);
+    g.fillCircle(fx.x, fx.y, 3.2 * Math.max(0.35, t));
   }
 }

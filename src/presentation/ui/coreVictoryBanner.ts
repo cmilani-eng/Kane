@@ -1,5 +1,6 @@
 /**
  * Mid-screen victory-hold countdown when a side owns enough CORE fragments.
+ * Clock is remaining whole seconds (hold is ≤60s) so it reads at a glance.
  */
 import Phaser from 'phaser';
 import {
@@ -7,12 +8,11 @@ import {
   type CoreHoldBannerState,
 } from '../../gameplay/battlefield/battlefieldCoreFragments';
 import type { BattlefieldWorld } from '../../gameplay/battlefield/battlefieldWorld';
+import { t } from '../../i18n';
 
-function formatRemain(ms: number): string {
-  const totalSec = Math.max(0, Math.ceil(ms / 1000));
-  const m = Math.floor(totalSec / 60);
-  const s = totalSec % 60;
-  return `${m}:${s.toString().padStart(2, '0')}`;
+/** Remaining whole seconds until hold win (ceil; never negative). */
+export function coreHoldRemainSec(ms: number): number {
+  return Math.max(0, Math.ceil(ms / 1000));
 }
 
 export class CoreVictoryBanner {
@@ -21,6 +21,7 @@ export class CoreVictoryBanner {
   private readonly panel: Phaser.GameObjects.Rectangle;
   private readonly label: Phaser.GameObjects.Text;
   private readonly clock: Phaser.GameObjects.Text;
+  private readonly sub: Phaser.GameObjects.Text;
   private pulseMs = 0;
 
   constructor(scene: Phaser.Scene, world: BattlefieldWorld) {
@@ -29,7 +30,7 @@ export class CoreVictoryBanner {
     const w = Math.min(420, scene.scale.width - 32);
 
     this.panel = scene.add
-      .rectangle(0, 0, w, 56, 0x122033, 0.92)
+      .rectangle(0, 0, w, 68, 0x122033, 0.92)
       .setStrokeStyle(2, 0xf0c75e, 0.95)
       .setScrollFactor(0)
       .setDepth(118)
@@ -50,9 +51,20 @@ export class CoreVictoryBanner {
     this.clock = scene.add
       .text(0, 0, '', {
         fontFamily: 'Georgia, "Times New Roman", serif',
-        fontSize: '22px',
+        fontSize: '26px',
         color: '#fff8e8',
         fontStyle: 'bold',
+      })
+      .setOrigin(0.5, 0.5)
+      .setScrollFactor(0)
+      .setDepth(119)
+      .setVisible(false);
+
+    this.sub = scene.add
+      .text(0, 0, '', {
+        fontFamily: 'system-ui, sans-serif',
+        fontSize: '11px',
+        color: '#c8d8e8',
       })
       .setOrigin(0.5, 0)
       .setScrollFactor(0)
@@ -63,7 +75,7 @@ export class CoreVictoryBanner {
   }
 
   gameObjects(): Phaser.GameObjects.GameObject[] {
-    return [this.panel, this.label, this.clock];
+    return [this.panel, this.label, this.clock, this.sub];
   }
 
   layout(): void {
@@ -71,10 +83,11 @@ export class CoreVictoryBanner {
     const panelW = Math.min(420, w - 32);
     const x = w / 2;
     // Sit under the match timer, above combat focus.
-    const y = 56;
-    this.panel.setSize(panelW, 56).setPosition(x, y);
-    this.label.setPosition(x, y - 4);
-    this.clock.setPosition(x, y + 2);
+    const y = 58;
+    this.panel.setSize(panelW, 68).setPosition(x, y);
+    this.label.setPosition(x, y - 14);
+    this.clock.setPosition(x, y + 4);
+    this.sub.setPosition(x, y + 20);
   }
 
   refresh(dtMs = 16): void {
@@ -87,11 +100,13 @@ export class CoreVictoryBanner {
       this.panel.setVisible(false);
       this.label.setVisible(false);
       this.clock.setVisible(false);
+      this.sub.setVisible(false);
       this.pulseMs = 0;
       return;
     }
 
     this.pulseMs += dtMs;
+    const remainSec = coreHoldRemainSec(state.remainMs);
     const urgent = state.remainMs <= 10_000;
     const pulse = urgent
       ? 0.82 + 0.18 * Math.sin(this.pulseMs / 180)
@@ -111,13 +126,24 @@ export class CoreVictoryBanner {
       .setColor(labelColor)
       .setText(
         player
-          ? `VICTORY HOLD  ·  CORE ${state.owned}/${state.needed}`
-          : `ENEMY CORE HOLD  ·  ${state.owned}/${state.needed}`,
+          ? t('core.victoryHold', {
+              owned: state.owned,
+              needed: state.needed,
+            })
+          : t('core.enemyHold', {
+              owned: state.owned,
+              needed: state.needed,
+            }),
       );
     this.clock
       .setVisible(true)
       .setColor(clockColor)
       .setAlpha(pulse)
-      .setText(formatRemain(state.remainMs));
+      .setText(t('banner.coreHoldSec', { n: remainSec }));
+    this.sub
+      .setVisible(true)
+      .setColor(urgent ? clockColor : '#c8d8e8')
+      .setAlpha(Math.min(1, pulse + 0.05))
+      .setText(t('banner.coreHoldLeft', { n: remainSec }));
   }
 }

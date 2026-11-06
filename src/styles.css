@@ -1,0 +1,14 @@
+@import "tailwindcss";
+
+@keyframes kane-slot-flash {
+  0% {
+    box-shadow: 0 0 0 0 rgb(240 199 94 / 0.75);
+  }
+  100% {
+    box-shadow: 0 0 0 8px rgb(240 199 94 / 0);
+  }
+}
+
+.kane-slot-flash {
+  animation: kane-slot-flash 420ms ease-out;
+}

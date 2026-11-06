@@ -5,7 +5,8 @@
  */
 import Phaser from 'phaser';
 import { BRAND } from '../../config/brand';
-import { SPECIES, type SpeciesId } from '../../data/speciesStub';
+import type { SpeciesId } from '../../data/speciesStub';
+import { difficultyCopy, speciesName, t } from '../../i18n';
 import {
   loadLocalStats,
   resetLocalStats,
@@ -25,7 +26,6 @@ import {
   adminDenyReason,
   canAccessAdmin,
   formatAdminAllowlist,
-  getAdminAccessMode,
   localAdminCandidateId,
 } from '../../database/adminAllowlist';
 import {
@@ -52,15 +52,20 @@ function clearAdminHash(): void {
 
 function playerRecordText(stats: LocalStats): string {
   const lines = [
-    `Games played   ${stats.gamesStarted}`,
-    `Wins  ${stats.wins}     Losses  ${stats.losses}`,
+    t('stats.played', { n: stats.gamesStarted }),
+    t('stats.record', { wins: stats.wins, losses: stats.losses }),
     '',
-    'By species',
+    t('stats.bySpecies'),
   ];
   for (const id of ['brutes', 'nobles', 'weirdos'] as SpeciesId[]) {
     const r = stats.bySpecies[id];
     lines.push(
-      `${SPECIES[id].name}  ·  ${r.started} played  ·  ${r.wins}W / ${r.losses}L`,
+      t('stats.speciesLine', {
+        name: speciesName(id),
+        played: r.started,
+        wins: r.wins,
+        losses: r.losses,
+      }),
     );
   }
   return lines.join('\n');
@@ -68,17 +73,22 @@ function playerRecordText(stats: LocalStats): string {
 
 function recentMatchesText(store: MatchSummaryStore, limit = 4): string {
   if (store.summaries.length === 0) {
-    return 'Recent matches\nNo matches yet — finish a skirmish to see history here.';
+    return t('stats.recentEmpty');
   }
   const lines = [
-    `Recent matches  ·  last ${Math.min(limit, store.summaries.length)}`,
+    t('stats.recentHead', { n: Math.min(limit, store.summaries.length) }),
   ];
   for (const s of store.summaries.slice(0, limit)) {
     const mins = Math.max(0, Math.round(s.durationMs / 60000));
     const secs = Math.max(0, Math.round((s.durationMs % 60000) / 1000));
-    const species = SPECIES[s.species]?.name ?? s.species;
     lines.push(
-      `${s.won ? 'Win' : 'Loss'}  ·  ${species} / ${s.difficulty}  ·  ${mins}m ${secs}s`,
+      t('stats.matchLine', {
+        result: s.won ? t('stats.win') : t('stats.loss'),
+        species: speciesName(s.species),
+        difficulty: difficultyCopy(s.difficulty).label,
+        mins,
+        secs,
+      }),
     );
   }
   return lines.join('\n');
@@ -88,9 +98,7 @@ function recentMatchesText(store: MatchSummaryStore, limit = 4): string {
 function showAdminDenied(scene: Phaser.Scene, onClose: () => void): void {
   const { width, height } = scene.scale;
   const you = localAdminCandidateId();
-  const reason =
-    adminDenyReason(you) ??
-    `Admin tools are locked for this device (mode=${getAdminAccessMode()}).`;
+  const reason = t('stats.deniedBody', { id: you });
 
   const overlay = scene.add
     .rectangle(width / 2, height / 2, width, height, 0x0a1220, 0.84)
@@ -105,7 +113,7 @@ function showAdminDenied(scene: Phaser.Scene, onClose: () => void): void {
     .setDepth(301);
 
   const title = scene.add
-    .text(width / 2, height / 2 - panelH / 2 + 36, 'Admin access denied', {
+    .text(width / 2, height / 2 - panelH / 2 + 36, t('stats.deniedTitle'), {
       fontFamily: 'Georgia, "Times New Roman", serif',
       fontSize: '22px',
       color: '#f5e6c8',
@@ -126,7 +134,7 @@ function showAdminDenied(scene: Phaser.Scene, onClose: () => void): void {
     .setDepth(302);
 
   const closeBtn = scene.add
-    .text(width / 2, height / 2 + panelH / 2 - 40, 'Back to menu', {
+    .text(width / 2, height / 2 + panelH / 2 - 40, t('stats.back'), {
       fontFamily: 'system-ui, sans-serif',
       fontSize: '15px',
       color: '#fff8e8',
@@ -170,8 +178,11 @@ export function showStatsPanel(
     .setDepth(300)
     .setInteractive();
 
-  const panelW = Math.min(460, width - 28);
-  const panelH = Math.min(wantAdmin ? 500 : 420, height - 28);
+  const short = height < 500;
+  const panelW = short ? Math.min(760, width - 24) : Math.min(460, width - 28);
+  const panelH = short
+    ? height - 16
+    : Math.min(wantAdmin ? 500 : 420, height - 28);
   const cx = width / 2;
   const cy = height / 2;
   const top = cy - panelH / 2;
@@ -198,7 +209,7 @@ export function showStatsPanel(
     .setDepth(302);
 
   const title = scene.add
-    .text(cx, top + 52, wantAdmin ? 'Admin' : 'Stats', {
+    .text(cx, top + 52, wantAdmin ? 'Admin' : t('menu.stats'), {
       fontFamily: 'Georgia, "Times New Roman", serif',
       fontSize: '26px',
       color: '#f5e6c8',
@@ -212,7 +223,7 @@ export function showStatsPanel(
       top + 80,
       wantAdmin
         ? 'Local tools for soft-launch checks'
-        : 'Your skirmish record on this device',
+        : t('stats.subtitle'),
       {
         fontFamily: 'system-ui, sans-serif',
         fontSize: '13px',
@@ -277,6 +288,13 @@ export function showStatsPanel(
     playerBody.setText(playerRecordText(stats));
     recentBody.setText(recentMatchesText(matches, wantAdmin ? 3 : 4));
     recentBody.setY(playerBody.y + playerBody.height + 16);
+    const recentRoom = bodyBottom - 4 - recentBody.y;
+    if (recentBody.height > recentRoom) {
+      const maxLines = Math.max(1, Math.floor(recentRoom / 18));
+      recentBody.setText(
+        recentBody.text.split('\n').slice(0, maxLines).join('\n'),
+      );
+    }
 
     if (adminBody) {
       const adminText = [
@@ -376,7 +394,7 @@ export function showStatsPanel(
     nodes.push(footerHint);
   } else {
     const done = scene.add
-      .text(cx, bottom - 28, 'Done', {
+      .text(cx, bottom - 28, t('stats.done'), {
         fontFamily: 'system-ui, sans-serif',
         fontSize: '14px',
         color: '#fff8e8',

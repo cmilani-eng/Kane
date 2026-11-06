@@ -20,11 +20,17 @@ import {
 } from '../../gameplay/battlefield/idleWorkers';
 import {
   countIdleMilitary,
+  isIdleMilitary,
   selectOrCycleIdleMilitary,
   type IdleMilitaryChipResult,
 } from '../../gameplay/battlefield/idleMilitary';
 import { coreHudModel } from '../../gameplay/battlefield/battlefieldCoreFragments';
 import { CORE_TONE_COLOR, formatCoreLine, formatHeroLine } from './matchStatusCopy';
+import {
+  SUPPLY_TONE_COLOR,
+  SUPPLY_TONE_DOT,
+  supplyTone,
+} from './supplyTone';
 import {
   countVisibleMilitary,
   selectAllVisibleMilitary,
@@ -491,7 +497,13 @@ export class BattlefieldHud {
       .setInteractive({ useHandCursor: true })
       .on('pointerup', () => {
         const a = this.world.underAttackAlert;
-        if (!a || a.lifeMs <= 0 || a.severity !== 'critical') return;
+        if (
+          !a ||
+          a.severity !== 'critical' ||
+          (a.chipLifeMs ?? 0) <= 0
+        ) {
+          return;
+        }
         playSfx('alert');
         this.onUnderAttackJump?.(a.x, a.y);
       });
@@ -602,6 +614,17 @@ export class BattlefieldHud {
       list.push(b.bg, b.label, b.sub);
     }
     return list;
+  }
+
+  /** Gold, crystals, and supply are drawn by the Tailwind stock strip. */
+  hidePhaserStock(): void {
+    this.resourcePanel.setVisible(false);
+    this.goldDot.setVisible(false);
+    this.crystalDot.setVisible(false);
+    this.supplyDot.setVisible(false);
+    this.goldText.setVisible(false);
+    this.crystalText.setVisible(false);
+    this.supplyText.setVisible(false);
   }
 
   /** Lift bottom chrome when the DOM selection panel is open. */
@@ -877,16 +900,9 @@ export class BattlefieldHud {
     const cap = flags.unitCap;
     this.supplyText.setText(t('pause.supply', { current: pop, cap }));
     this.fitResourceStrip();
-    if (pop >= cap) {
-      this.supplyText.setColor('#e87aa8');
-      this.supplyDot.setFillStyle(0xe87aa8);
-    } else if (pop >= Math.floor(cap * 0.85)) {
-      this.supplyText.setColor('#f0c75e');
-      this.supplyDot.setFillStyle(0xf0c75e);
-    } else {
-      this.supplyText.setColor('#d7e6f2');
-      this.supplyDot.setFillStyle(0xb8c9d9);
-    }
+    const tone = supplyTone(pop, cap);
+    this.supplyText.setColor(SUPPLY_TONE_COLOR[tone]);
+    this.supplyDot.setFillStyle(SUPPLY_TONE_DOT[tone]);
     this.status.setText(statusText);
     this.heroLine.setText(formatHeroLine(heroHudState(this.world)));
     const core = coreHudModel(this.world);
@@ -935,18 +951,14 @@ export class BattlefieldHud {
     }
     if (wasIdleVisible !== this.idlePingBtn.visible) this.layout();
 
-    // Idle military chip — same select-all → cycle pattern as workers
+    // Idle military chip — count-first label, select-all → cycle like workers
     this.idleMilPulseMs += dtMs;
     const idleMilN = countIdleMilitary(this.world);
     const wasIdleMilVisible = this.idleMilPingBtn.visible;
     if (idleMilN > 0) {
       const pulse = 0.72 + 0.28 * Math.sin(this.idleMilPulseMs / 900);
       const cycling = this.world.units.some(
-        (u) =>
-          u.selected &&
-          u.team === 'player' &&
-          !u.canGather &&
-          u.hp > 0,
+        (u) => u.selected && isIdleMilitary(u),
       );
       const action = t(cycling ? 'hud.idleCycle' : 'hud.idleTap');
       this.idleMilPingBtn
@@ -964,8 +976,8 @@ export class BattlefieldHud {
     const wasAttackVisible = this.attackPingBtn.visible;
     const showAttack =
       !!alert &&
-      alert.lifeMs > 0 &&
-      alert.severity === 'critical';
+      alert.severity === 'critical' &&
+      (alert.chipLifeMs ?? 0) > 0;
     if (showAttack && alert) {
       const pulse = 0.7 + 0.3 * Math.sin(this.attackPulseMs / 220);
       const label =

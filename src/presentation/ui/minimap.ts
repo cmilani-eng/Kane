@@ -9,7 +9,10 @@ import {
   enemyRevealed,
   isExplored,
 } from '../../gameplay/battlefield/battlefieldFog';
-import { spawnAttentionPing } from '../../gameplay/battlefield/battlefieldAttentionPing';
+import {
+  attentionPingFade,
+  spawnAttentionPing,
+} from '../../gameplay/battlefield/battlefieldAttentionPing';
 import {
   MINIMAP_DOUBLE_TAP_MS,
   selectionOrOrderFocus,
@@ -28,6 +31,10 @@ import type {
 import type { RtsCamera } from '../camera/rtsCamera';
 import { playSfx } from '../audio/sfx';
 import { MOBILE_PERF } from '../perf/mobileBudget';
+import {
+  MINIMAP_FOCUS_FLASH_MS,
+  minimapFocusFlashAlpha,
+} from './minimapFocusFlash';
 
 export class Minimap {
   private readonly scene: Phaser.Scene;
@@ -54,6 +61,8 @@ export class Minimap {
   private holdTimer: Phaser.Time.TimerEvent | null = null;
   private holdStartX = 0;
   private holdStartY = 0;
+  /** Remaining ms of double-tap recenter flash. */
+  private focusFlashMs = 0;
 
   constructor(
     scene: Phaser.Scene,
@@ -98,6 +107,7 @@ export class Minimap {
         if (focus) {
           this.dragging = false;
           this.cameraCtl.centerOn(focus.x, focus.y);
+          this.focusFlashMs = MINIMAP_FOCUS_FLASH_MS;
           playSfx('ui');
           // Consume the double so a third tap starts a fresh pair.
           this.lastTapMs = 0;
@@ -219,6 +229,11 @@ export class Minimap {
   ): void {
     this.selectedBuilding = selectedBuilding;
     this.pulseMs += dtMs;
+    if (this.focusFlashMs > 0) {
+      this.focusFlashMs = Math.max(0, this.focusFlashMs - dtMs);
+      // Keep redrawing while the flash fades.
+      this.refreshAcc = MOBILE_PERF.minimapMs;
+    }
     this.refreshAcc += dtMs;
     if (this.refreshAcc < MOBILE_PERF.minimapMs) return;
     this.refreshAcc = 0;
@@ -229,9 +244,20 @@ export class Minimap {
     const g = this.gfx;
     g.clear();
 
+    const flash = minimapFocusFlashAlpha(this.focusFlashMs);
+    this.frame.setStrokeStyle(
+      flash > 0 ? 2.75 : 2,
+      flash > 0 ? 0xfff8e8 : 0xf0c75e,
+      flash > 0 ? 0.55 + 0.45 * flash : 0.9,
+    );
+
     // Terrain fill (explored tint)
     g.fillStyle(0x0a1018, 1);
     g.fillRect(this.mapX, this.mapY, this.mapW, this.mapH);
+    if (flash > 0) {
+      g.fillStyle(0xf0c75e, 0.2 * flash);
+      g.fillRect(this.mapX, this.mapY, this.mapW, this.mapH);
+    }
 
     const sx = this.mapW / MAP.width;
     const sy = this.mapH / MAP.height;
@@ -359,17 +385,20 @@ export class Minimap {
       }
     }
 
-    // Attention pings — chat-free look-here marks
-    const attnPulse = 0.5 + 0.4 * Math.sin(this.pulseMs / 140);
+    // Attention pings — chat-free look-here marks (fade with remaining life)
     for (const m of this.world.attentionPings ?? []) {
+      const life = attentionPingFade(m.lifeMs, m.maxLifeMs);
+      if (life < 0.02) continue;
       const x = this.mapX + m.x * sx;
       const y = this.mapY + m.y * sy;
-      const life = Math.max(0.12, m.lifeMs / m.maxLifeMs);
+      // Pulse damps with life so the expiry reads as a fade, not a hard pop.
+      const attnPulse = 0.55 + 0.35 * Math.sin(this.pulseMs / 140) * life;
       const a = attnPulse * life;
+      const r = 7.5 + (1 - life) * 2.5;
       g.lineStyle(2.25, 0xb8e8ff, a);
-      g.strokeCircle(x, y, 7.5);
+      g.strokeCircle(x, y, r);
       g.fillStyle(0xfff8e8, a * 0.9);
-      g.fillCircle(x, y, 2.6);
+      g.fillCircle(x, y, 2.6 * Math.max(0.35, life));
     }
 
     // Camera viewport — gold frame + soft fill so it reads at a glance

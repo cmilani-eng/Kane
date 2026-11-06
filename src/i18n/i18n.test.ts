@@ -57,6 +57,19 @@ describe('catalogs', () => {
     expect(translate('pt-BR', 'pause.paused')).toBe('Pausado');
     expect(translate('es', 'end.victory')).toBe('VICTORIA');
   });
+
+  it('translates the lobby, stats, and CORE hold banner', () => {
+    expect(translate('en-GB', 'lobby.title')).toBe('Friend lobby');
+    expect(translate('en-GB', 'core.victoryHold', { owned: 2, needed: 3 })).toBe(
+      'VICTORY HOLD  ·  CORE 2/3',
+    );
+    expect(translate('pt-BR', 'lobby.title')).toBe('Saguão');
+    expect(translate('pt-BR', 'stats.done')).toBe('Pronto');
+    expect(translate('es', 'lobby.create')).toBe('Crear código');
+    expect(translate('es', 'core.enemyHold', { owned: 2, needed: 3 })).toContain(
+      'ENEMIGA',
+    );
+  });
 });
 
 describe('translate', () => {

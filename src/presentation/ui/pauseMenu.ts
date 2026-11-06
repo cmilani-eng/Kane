@@ -1,5 +1,5 @@
 /**
- * In-match pause overlay — resume, mute, volume, quit to menu.
+ * In-match pause overlay — resume, mute, volume, rematch, quit to menu.
  * Also shows a frozen match-clock + supply snapshot.
  * ScrollFactor 0; ignore on the zoomed world camera.
  */
@@ -10,6 +10,10 @@ import { subscribeLocale, t } from '../../i18n';
 import { isSfxMuted, playSfx, setSfxMuted } from '../audio/sfx';
 import { formatMatchClock } from './battlefieldHud';
 import { addLocalePicker } from './localePicker';
+import {
+  SUPPLY_TONE_COLOR,
+  supplyTone,
+} from './supplyTone';
 import { createVolumeSlider, type VolumeSliderHandle } from './volumeSlider';
 
 export interface PauseMenuSnapshot {
@@ -21,6 +25,8 @@ export interface PauseMenuSnapshot {
 export interface PauseMenuOpts {
   scene: Phaser.Scene;
   onResume: () => void;
+  /** Same species / difficulty / map — no menu hop. */
+  onRematch: () => void;
   onQuit: () => void;
   ignoreOnMain: (objs: Phaser.GameObjects.GameObject[]) => void;
 }
@@ -28,6 +34,7 @@ export interface PauseMenuOpts {
 export class PauseMenu {
   private readonly scene: Phaser.Scene;
   private readonly onResume: () => void;
+  private readonly onRematch: () => void;
   private readonly onQuit: () => void;
   private readonly ignoreOnMain: (objs: Phaser.GameObjects.GameObject[]) => void;
   private root: Phaser.GameObjects.GameObject[] = [];
@@ -45,6 +52,7 @@ export class PauseMenu {
   constructor(opts: PauseMenuOpts) {
     this.scene = opts.scene;
     this.onResume = opts.onResume;
+    this.onRematch = opts.onRematch;
     this.onQuit = opts.onQuit;
     this.ignoreOnMain = opts.ignoreOnMain;
   }
@@ -95,7 +103,7 @@ export class PauseMenu {
     const { width, height } = this.scene.scale;
     const short = height < 500;
     const panelW = short ? Math.min(760, width - 24) : Math.min(360, width - 40);
-    const panelH = short ? height - 16 : Math.min(560, height * 0.88);
+    const panelH = short ? height - 16 : Math.min(600, height * 0.9);
     const cx = width / 2;
     const cy = short ? height / 2 : height * 0.48;
     const top = cy - panelH / 2;
@@ -138,16 +146,15 @@ export class PauseMenu {
       current: this.snapshot.supplyCurrent,
       cap: this.snapshot.supplyCap,
     });
-    const nearCap =
-      this.snapshot.supplyCurrent >=
-      Math.floor(this.snapshot.supplyCap * 0.85);
-    const atCap =
-      this.snapshot.supplyCurrent >= this.snapshot.supplyCap;
+    const tone = supplyTone(
+      this.snapshot.supplyCurrent,
+      this.snapshot.supplyCap,
+    );
     const snap = this.scene.add
       .text(cx, short ? top + 74 : cy - panelH * 0.27, `${t('pause.match', { clock })}\n${supply}`, {
         fontFamily: 'system-ui, sans-serif',
         fontSize: '14px',
-        color: atCap ? '#e87aa8' : nearCap ? '#f0c75e' : '#d7e6f2',
+        color: SUPPLY_TONE_COLOR[tone],
         align: 'center',
         lineSpacing: 6,
       })
@@ -199,7 +206,22 @@ export class PauseMenu {
     this.root.push(
       this.makeBtn(
         cx,
-        short ? btnY0 + gap * 4 + 12 : btnY0 + gap * 4 + 24,
+        short ? btnY0 + gap * 4 + 8 : btnY0 + gap * 4 + 20,
+        t('pause.rematch'),
+        () => {
+          playSfx('ui');
+          this.hide();
+          this.onRematch();
+        },
+        false,
+        short,
+      ),
+    );
+
+    this.root.push(
+      this.makeBtn(
+        cx,
+        short ? btnY0 + gap * 5 + 10 : btnY0 + gap * 5 + 28,
         t('pause.quit'),
         () => {
           playSfx('ui');
@@ -215,7 +237,7 @@ export class PauseMenu {
       ...addLocalePicker({
         scene: this.scene,
         x: cx,
-        y: short ? top + panelH - 28 : cy + panelH * 0.38,
+        y: short ? top + panelH - 22 : cy + panelH * 0.42,
         depth: 222,
         scrollFactor: 0,
       }),
@@ -255,12 +277,25 @@ export class PauseMenu {
       .setScrollFactor(0)
       .setDepth(222)
       .setInteractive({ useHandCursor: true });
-    btn.on('pointerover', () =>
-      btn.setStyle({ backgroundColor: danger ? '#7a4040' : '#3a5565' }),
+    btn.enableFilters();
+    const glow = btn.filters?.internal.addGlow(
+      danger ? 0xe87a7a : 0xf0c75e,
+      3,
+      0,
+      1,
+      false,
+      4,
+      6,
     );
-    btn.on('pointerout', () =>
-      btn.setStyle({ backgroundColor: danger ? '#5a3030' : '#2a4050' }),
-    );
+    if (glow) glow.active = false;
+    btn.on('pointerover', () => {
+      btn.setStyle({ backgroundColor: danger ? '#7a4040' : '#3a5565' });
+      if (glow) glow.active = true;
+    });
+    btn.on('pointerout', () => {
+      btn.setStyle({ backgroundColor: danger ? '#5a3030' : '#2a4050' });
+      if (glow) glow.active = false;
+    });
     btn.on('pointerup', onClick);
     return btn;
   }

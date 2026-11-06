@@ -4,8 +4,23 @@
  */
 import Phaser from 'phaser';
 import { BRAND } from '../../config/brand';
+import { t } from '../../i18n';
 import { getLobbyStub } from '../../networking/lobbySingleton';
+import type { LobbyStatus } from '../../networking/lobbyStub';
 import { playSfx } from '../audio/sfx';
+
+export function lobbyStatusLine(status: LobbyStatus, code: string | null): string {
+  switch (status) {
+    case 'idle':
+      return t('lobby.idle');
+    case 'hosting':
+      return t('lobby.hosting');
+    case 'joining':
+      return t('lobby.joining', { code: code ?? '' });
+    case 'blocked':
+      return t('lobby.codeShort');
+  }
+}
 
 export function showLobbyPanel(scene: Phaser.Scene, onClose: () => void): void {
   const { width, height } = scene.scale;
@@ -16,8 +31,9 @@ export function showLobbyPanel(scene: Phaser.Scene, onClose: () => void): void {
     .setDepth(300)
     .setInteractive();
 
-  const panelW = Math.min(440, width - 28);
-  const panelH = Math.min(380, height - 36);
+  const short = height < 500;
+  const panelW = short ? Math.min(720, width - 24) : Math.min(440, width - 28);
+  const panelH = short ? height - 16 : Math.min(380, height - 36);
   const cx = width / 2;
   const cy = height / 2;
   const top = cy - panelH / 2;
@@ -43,7 +59,7 @@ export function showLobbyPanel(scene: Phaser.Scene, onClose: () => void): void {
     .setDepth(302);
 
   const title = scene.add
-    .text(cx, top + 54, 'Friend lobby', {
+    .text(cx, top + 54, t('lobby.title'), {
       fontFamily: 'Georgia, "Times New Roman", serif',
       fontSize: '26px',
       color: '#f5e6c8',
@@ -52,18 +68,20 @@ export function showLobbyPanel(scene: Phaser.Scene, onClose: () => void): void {
     .setDepth(302);
 
   const subtitle = scene.add
-    .text(cx, top + 84, 'Share a code with a friend — coming soon live', {
+    .text(cx, top + 84, t('lobby.subtitle'), {
       fontFamily: 'system-ui, sans-serif',
       fontSize: '13px',
       color: '#9eb4c8',
+      align: 'center',
+      wordWrap: { width: panelW - 40 },
     })
     .setOrigin(0.5)
     .setDepth(302);
 
   const codeText = scene.add
-    .text(cx, cy - 28, '————', {
+    .text(cx, short ? top + 128 : cy - 28, '————', {
       fontFamily: 'Georgia, "Times New Roman", serif',
-      fontSize: '40px',
+      fontSize: short ? '28px' : '40px',
       color: '#f0c75e',
       fontStyle: 'bold',
     })
@@ -71,7 +89,7 @@ export function showLobbyPanel(scene: Phaser.Scene, onClose: () => void): void {
     .setDepth(302);
 
   const statusText = scene.add
-    .text(cx, cy + 18, '', {
+    .text(cx, short ? top + 164 : cy + 18, '', {
       fontFamily: 'system-ui, sans-serif',
       fontSize: '14px',
       color: '#d7e6f2',
@@ -83,10 +101,12 @@ export function showLobbyPanel(scene: Phaser.Scene, onClose: () => void): void {
     .setDepth(302);
 
   const quietNote = scene.add
-    .text(cx, bottom - 22, 'Local stub · no live sync yet', {
+    .text(cx, short ? bottom - 64 : bottom - 22, t('lobby.quiet'), {
       fontFamily: 'system-ui, sans-serif',
       fontSize: '11px',
       color: '#6a7f94',
+      align: 'center',
+      wordWrap: { width: panelW - 40 },
     })
     .setOrigin(0.5)
     .setDepth(302);
@@ -101,15 +121,7 @@ export function showLobbyPanel(scene: Phaser.Scene, onClose: () => void): void {
           ? '#7ec8ff'
           : '#6a7f94',
     );
-    if (st.status === 'idle') {
-      statusText.setText('Create a code to host, or join one from a friend.');
-    } else if (st.status === 'hosting') {
-      statusText.setText('Hosting locally — share this code.\nLive match sync is not connected yet.');
-    } else if (st.status === 'joining') {
-      statusText.setText(`Joining ${st.code} locally.\nLive match sync is not connected yet.`);
-    } else {
-      statusText.setText(st.reason ?? 'Lobby unavailable.');
-    }
+    statusText.setText(lobbyStatusLine(st.status, st.code));
   };
   refresh();
 
@@ -126,14 +138,12 @@ export function showLobbyPanel(scene: Phaser.Scene, onClose: () => void): void {
   ];
 
   const mkBtn = (
-    x: number,
-    y: number,
     label: string,
     bg: string,
     fn: () => void,
-  ): void => {
+  ): Phaser.GameObjects.Text => {
     const btn = scene.add
-      .text(x, y, label, {
+      .text(0, 0, label, {
         fontFamily: 'system-ui, sans-serif',
         fontSize: '14px',
         color: '#fff8e8',
@@ -149,23 +159,54 @@ export function showLobbyPanel(scene: Phaser.Scene, onClose: () => void): void {
         refresh();
       });
     nodes.push(btn);
+    return btn;
   };
 
-  const rowY = bottom - 78;
-  mkBtn(cx - 110, rowY, 'Create code', '#2a4a38', () => {
+  const rowY = short ? bottom - 32 : bottom - 78;
+  quietNote.setPosition(cx, rowY - 36);
+  const createBtn = mkBtn(t('lobby.create'), '#2a4a38', () => {
     lobby.hostLocal();
   });
-  mkBtn(cx + 110, rowY, 'Join code…', '#2a3a50', () => {
+  const joinBtn = mkBtn(t('lobby.join'), '#2a3a50', () => {
     const raw =
       typeof window !== 'undefined'
-        ? window.prompt('Enter friend lobby code', 'KANE01')
+        ? window.prompt(t('lobby.prompt'), 'KANE01')
         : null;
     if (raw == null) return;
     lobby.joinLocal(raw);
   });
-  mkBtn(cx, rowY + 42, 'Leave', '#3a4555', () => {
+  const leaveBtn = mkBtn(t('lobby.leave'), '#3a4555', () => {
     lobby.leave();
   });
+  const gap = 12;
+  const place = (buttons: Phaser.GameObjects.Text[], y: number): void => {
+    const total = buttons.reduce((sum, b) => sum + b.width, 0) + gap * (buttons.length - 1);
+    let x = cx - total / 2;
+    for (const b of buttons) {
+      b.setPosition(x + b.width / 2, y);
+      x += b.width + gap;
+    }
+  };
+  if (short) {
+    const row = [createBtn, joinBtn, leaveBtn];
+    const total = row.reduce((sum, b) => sum + b.width, 0) + gap * 2;
+    if (total <= panelW - 24) place(row, rowY);
+    else {
+      createBtn.setPosition(cx, rowY - 44);
+      joinBtn.setPosition(cx, rowY);
+      leaveBtn.setPosition(cx, rowY + 44);
+    }
+  } else {
+    const pair = createBtn.width + joinBtn.width + gap;
+    if (pair <= panelW - 32) {
+      place([createBtn, joinBtn], rowY);
+      leaveBtn.setPosition(cx, rowY + 46);
+    } else {
+      createBtn.setPosition(cx, rowY - 46);
+      joinBtn.setPosition(cx, rowY);
+      leaveBtn.setPosition(cx, rowY + 46);
+    }
+  }
 
   const closeBtn = scene.add
     .text(cx + panelW / 2 - 18, top + 14, '✕', {

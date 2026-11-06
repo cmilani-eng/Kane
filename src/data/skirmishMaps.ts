@@ -5,7 +5,7 @@
 import { MAP } from '../config/balance';
 import type { ResourceId } from './resources';
 
-export type SkirmishMapId = 'crossing' | 'ridge';
+export type SkirmishMapId = 'crossing' | 'ridge' | 'gap';
 
 export interface SkirmishMapSpot {
   x: number;
@@ -94,12 +94,36 @@ const RIDGE: SkirmishMapDef = {
   ],
 };
 
+/** Gap — player on the west edge, enemy on the east, CORE in a vertical line. */
+const GAP: SkirmishMapDef = {
+  id: 'gap',
+  tileSeed: 29,
+  playerBase: { x: 380, y: MAP.height / 2 },
+  enemyBase: { x: MAP.width - 380, y: MAP.height / 2 },
+  nodes: [
+    { x: 560, y: 640, resourceId: 'gold', amount: 115 },
+    { x: 500, y: 980, resourceId: 'gold', amount: 100 },
+    { x: 720, y: 800, resourceId: 'magic_crystals', amount: 55 },
+    { x: 980, y: 620, resourceId: 'gold', amount: 105 },
+    { x: 1420, y: 980, resourceId: 'magic_crystals', amount: 58 },
+    { x: 1880, y: 700, resourceId: 'gold', amount: 110 },
+    { x: 1760, y: 1040, resourceId: 'gold', amount: 95 },
+    { x: 1680, y: 780, resourceId: 'magic_crystals', amount: 50 },
+  ],
+  cores: [
+    { x: MAP.width / 2, y: MAP.height * 0.32 },
+    { x: MAP.width / 2, y: MAP.height / 2 },
+    { x: MAP.width / 2, y: MAP.height * 0.68 },
+  ],
+};
+
 export const SKIRMISH_MAPS: Record<SkirmishMapId, SkirmishMapDef> = {
   crossing: CROSSING,
   ridge: RIDGE,
+  gap: GAP,
 };
 
-export const SKIRMISH_MAP_ORDER: SkirmishMapId[] = ['crossing', 'ridge'];
+export const SKIRMISH_MAP_ORDER: SkirmishMapId[] = ['crossing', 'ridge', 'gap'];
 
 export const DEFAULT_SKIRMISH_MAP: SkirmishMapId = 'crossing';
 

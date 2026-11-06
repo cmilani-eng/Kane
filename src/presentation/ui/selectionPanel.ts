@@ -23,6 +23,7 @@ import type {
   ResourceNode,
 } from '../../gameplay/battlefield/battlefieldWorld';
 import { canAfford } from '../../gameplay/battlefield/battlefieldBuildings';
+import { buildingHasCustomRally } from '../../gameplay/battlefield/battlefieldRally';
 
 function matchupLine(id: SpeciesId): string {
   const tip = SPECIES_MATCHUP_TIP[id];
@@ -31,7 +32,10 @@ function matchupLine(id: SpeciesId): string {
     weak: speciesName(tip.weakVs),
   });
 }
-import { walletOf } from '../../gameplay/battlefield/battlefieldEconomy';
+import {
+  GATHER,
+  walletOf,
+} from '../../gameplay/battlefield/battlefieldEconomy';
 import { RAGE } from '../../gameplay/battlefield/battlefieldRage';
 
 export type SelectionAbilityView = {
@@ -55,6 +59,8 @@ export type SelectionPanelHandlers = {
   train: (typeId: UnitTypeId) => void;
   /** Arm rally-set mode for the selected production building. */
   rally: () => void;
+  /** Reset rally to the default near-building point. */
+  clearRally: () => void;
   /** Cancel a queue slot (omit index = last item). */
   cancelQueue: (index?: number) => void;
   /** Cast selected hero ability (Q/W/E). */
@@ -111,6 +117,11 @@ export type SelectionPlaceOption = {
 export type SelectionPanelView =
   | { kind: 'hidden' }
   | {
+      kind: 'empty';
+      title: string;
+      flavor: string;
+    }
+  | {
       kind: 'units';
       count: number;
       title: string;
@@ -165,6 +176,8 @@ export type SelectionPanelView =
       headName: string | null;
       rallyArmed: boolean;
       hasRally: boolean;
+      /** Rally differs from the default march point. */
+      hasCustomRally: boolean;
     }
   | {
       kind: 'resource';
@@ -173,6 +186,8 @@ export type SelectionPanelView =
       remaining: number;
       maxAmount: number;
       resourceId: 'gold' | 'magic_crystals';
+      /** Gather amount-per-trip tip (and active count when workers are on this node). */
+      gatherTip: string;
     };
 
 let handlers: SelectionPanelHandlers | null = null;
@@ -237,6 +252,7 @@ export function ensureSelectionPanel(): HTMLElement {
     if (act === 'stop') handlers.stop();
     else if (act === 'attackMove') handlers.attackMove();
     else if (act === 'rally') handlers.rally();
+    else if (act === 'clearRally') handlers.clearRally();
     else if (act === 'cancelQueue') {
       const raw = btn.dataset.queueIndex;
       const idx =
@@ -279,6 +295,28 @@ function injectStyles(): void {
     }
     #kane-selection-panel.is-visible {
       display: block;
+    }
+    #kane-selection-panel.is-empty .kane-sel-portrait,
+    #kane-selection-panel.is-empty .kane-sel-hp,
+    #kane-selection-panel.is-empty .kane-sel-carry,
+    #kane-selection-panel.is-empty .kane-sel-stats,
+    #kane-selection-panel.is-empty .kane-sel-meter,
+    #kane-selection-panel.is-empty .kane-sel-control-hint,
+    #kane-selection-panel.is-empty .kane-sel-actions,
+    #kane-selection-panel.is-empty .kane-sel-queue {
+      display: none !important;
+    }
+    #kane-selection-panel.is-empty .kane-sel-inner {
+      max-width: 420px;
+      padding: 8px 12px 10px;
+    }
+    #kane-selection-panel.is-empty .kane-sel-title {
+      font-size: 13px;
+      color: #c8d8e8;
+    }
+    #kane-selection-panel.is-empty .kane-sel-flavor {
+      font-size: 12px;
+      color: #9eb4c8;
     }
     #kane-selection-panel .kane-sel-inner {
       pointer-events: auto;
@@ -376,9 +414,29 @@ function injectStyles(): void {
     }
     #kane-selection-panel .kane-sel-hp-fill.is-low {
       background: linear-gradient(90deg, #8a3030, #e87a7a);
+      animation: kane-sel-hp-low-pulse 1.1s ease-in-out infinite;
     }
     #kane-selection-panel .kane-sel-hp-fill.is-building {
       background: linear-gradient(90deg, #8a7030, #f0c75e);
+      animation: none;
+    }
+    #kane-selection-panel .kane-sel-hp-text.is-low {
+      color: #e87a7a;
+      animation: kane-sel-hp-text-pulse 1.1s ease-in-out infinite;
+    }
+    @keyframes kane-sel-hp-low-pulse {
+      0%, 100% { filter: brightness(1); opacity: 1; }
+      50% { filter: brightness(1.35); opacity: 0.85; }
+    }
+    @keyframes kane-sel-hp-text-pulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.55; }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      #kane-selection-panel .kane-sel-hp-fill.is-low,
+      #kane-selection-panel .kane-sel-hp-text.is-low {
+        animation: none;
+      }
     }
     #kane-selection-panel .kane-sel-carry {
       margin-top: 4px;
@@ -455,9 +513,24 @@ function injectStyles(): void {
       border-color: #f0c75e;
       color: #fff8e8;
     }
+    #kane-selection-panel button.is-rally-clear {
+      background: #3a4555;
+      border-color: #6a7a8a;
+    }
     #kane-selection-panel button.is-cancel {
       background: #5a3a3a;
       border-color: #e87a7a;
+    }
+    #kane-selection-panel .kane-sel-queue.is-cancel-flash {
+      animation: kane-sel-cancel-flash 420ms ease-out;
+    }
+    #kane-selection-panel .kane-sel-queue-label.is-flash {
+      color: #f0c75e;
+      font-weight: 700;
+    }
+    @keyframes kane-sel-cancel-flash {
+      0% { background: rgba(232, 122, 122, 0.35); }
+      100% { background: transparent; }
     }
     #kane-selection-panel button.is-train {
       background: #3d7ea6;
@@ -726,6 +799,31 @@ export function mountSelectionPanel(next: SelectionPanelHandlers): void {
   ensureSelectionPanel();
 }
 
+/** Brief queue-row flash + refund copy after a successful cancel. */
+export function flashQueueCancel(unitName?: string): void {
+  const root = document.getElementById(PANEL_ID);
+  if (!root) return;
+  const queue = root.querySelector('[data-role="queue"]') as HTMLElement | null;
+  const label = root.querySelector(
+    '[data-role="queue-label"]',
+  ) as HTMLElement | null;
+  if (!queue || queue.hidden) return;
+  queue.classList.remove('is-cancel-flash');
+  // Force reflow so rapid cancels retrigger the animation.
+  void queue.offsetWidth;
+  queue.classList.add('is-cancel-flash');
+  if (label) {
+    label.classList.add('is-flash');
+    label.textContent = unitName
+      ? t('sel.cancelFlashNamed', { name: unitName })
+      : t('sel.cancelFlash');
+  }
+  window.setTimeout(() => {
+    queue.classList.remove('is-cancel-flash');
+    label?.classList.remove('is-flash');
+  }, 420);
+}
+
 export function unmountSelectionPanel(): void {
   handlers = null;
   lastStructureSig = '';
@@ -736,12 +834,20 @@ export function unmountSelectionPanel(): void {
 }
 
 /** Approximate panel height for Phaser HUD / minimap insets. */
-export function selectionPanelInsetPx(visible: boolean): number {
+export function selectionPanelInsetPx(
+  visible: boolean,
+  empty = false,
+): number {
   if (!visible) return 0;
   const narrow =
     typeof window !== 'undefined' ? window.innerWidth < 720 : false;
   const short =
     typeof window !== 'undefined' ? window.innerHeight < 500 : false;
+  // Compact empty tip — less HUD lift than a full selection card.
+  if (empty) {
+    if (short) return 72;
+    return narrow ? 96 : 88;
+  }
   // iPhone 17 landscape is only ~402px tall, so the panel stays shorter.
   if (short) return 120;
   return narrow ? 188 : 172;
@@ -822,11 +928,25 @@ export function buildSelectionView(
       headName: head?.name ?? null,
       rallyArmed,
       hasRally: trains.length > 0,
+      hasCustomRally:
+        trains.length > 0 && buildingHasCustomRally(b),
     };
   }
 
   if (selectedNode && selectedNode.remaining > 0) {
     const def = RESOURCES[selectedNode.resourceId];
+    const gathering = world.units.filter(
+      (u) =>
+        u.team === 'player' &&
+        u.hp > 0 &&
+        u.canGather &&
+        u.gatherNodeId === selectedNode.id,
+    ).length;
+    const perTrip = GATHER.amountPerTrip;
+    const gatherTip =
+      gathering > 0
+        ? t('sel.gatherTipActive', { count: gathering, n: perTrip })
+        : t('sel.gatherTip', { n: perTrip });
     return {
       kind: 'resource',
       title: def.label,
@@ -834,11 +954,18 @@ export function buildSelectionView(
       remaining: selectedNode.remaining,
       maxAmount: selectedNode.maxAmount,
       resourceId: selectedNode.resourceId,
+      gatherTip,
     };
   }
 
   const alive = units.filter((u) => u.hp > 0);
-  if (alive.length === 0) return { kind: 'hidden' };
+  if (alive.length === 0) {
+    return {
+      kind: 'empty',
+      title: t('sel.emptyTitle'),
+      flavor: t('sel.emptyTip'),
+    };
+  }
 
   if (alive.length === 1) {
     const u = alive[0]!;
@@ -1126,6 +1253,7 @@ function heroAbilityViews(
 function structureSignature(view: SelectionPanelView): string {
   const locale = getLocale();
   if (view.kind === 'hidden') return 'h';
+  if (view.kind === 'empty') return `e|${locale}|${view.title}|${view.flavor}`;
   if (view.kind === 'units') {
     const abs = view.abilities
       ? view.abilities
@@ -1168,6 +1296,7 @@ function structureSignature(view: SelectionPanelView): string {
       view.title,
       Math.floor(view.remaining),
       Math.floor(view.maxAmount),
+      view.gatherTip,
     ].join('|');
   }
   return [
@@ -1176,6 +1305,7 @@ function structureSignature(view: SelectionPanelView): string {
     view.title,
     view.ready ? 1 : 0,
     view.hasRally ? 1 : 0,
+    view.hasCustomRally ? 1 : 0,
     view.rallyArmed ? 1 : 0,
     view.trains
       .map((t) => `${t.typeId}:${t.canPay ? 1 : 0}:${t.affordable ? 1 : 0}`)
@@ -1468,7 +1598,7 @@ export function renderSelectionPanel(view: SelectionPanelView): boolean {
     if (!lastVisible) return false;
     lastVisible = false;
     lastStructureSig = 'h';
-    root.classList.remove('is-visible');
+    root.classList.remove('is-visible', 'is-empty');
     return false;
   }
 
@@ -1476,6 +1606,7 @@ export function renderSelectionPanel(view: SelectionPanelView): boolean {
   lastStructureSig = structSig;
   lastVisible = true;
   root.classList.add('is-visible');
+  root.classList.toggle('is-empty', view.kind === 'empty');
 
   const portrait = root.querySelector('[data-role="portrait"]') as HTMLElement;
   const titleEl = root.querySelector('[data-role="title"]') as HTMLElement;
@@ -1507,6 +1638,25 @@ export function renderSelectionPanel(view: SelectionPanelView): boolean {
   titleEl.textContent = view.title;
   flavorEl.textContent = view.flavor;
 
+  if (view.kind === 'empty') {
+    carryEl.hidden = true;
+    carryEl.textContent = '';
+    hpFill.style.width = '0%';
+    hpFill.classList.remove('is-low', 'is-building');
+    hpText.classList.remove('is-low');
+    hpText.textContent = '';
+    portrait.classList.remove('is-building', 'is-mixed');
+    meterRoot.hidden = true;
+    controlHintEl.hidden = true;
+    controlHintEl.textContent = '';
+    if (structuralChange) {
+      stats.innerHTML = '';
+      actions.innerHTML = '';
+    }
+    queue.hidden = true;
+    return true;
+  }
+
   if (view.kind === 'resource') {
     carryEl.hidden = true;
     carryEl.textContent = '';
@@ -1517,6 +1667,7 @@ export function renderSelectionPanel(view: SelectionPanelView): boolean {
     hpFill.style.width = `${(remPct * 100).toFixed(1)}%`;
     hpFill.classList.toggle('is-low', remPct < 0.35);
     hpFill.classList.remove('is-building');
+    hpText.classList.toggle('is-low', remPct < 0.35);
     hpText.textContent = `${Math.floor(view.remaining)}/${Math.floor(view.maxAmount)}`;
     portrait.classList.toggle('is-building', false);
     portrait.classList.toggle('is-mixed', false);
@@ -1525,7 +1676,8 @@ export function renderSelectionPanel(view: SelectionPanelView): boolean {
       view.resourceId === 'magic_crystals' ? '#7ec8ff' : '#f0c75e',
     );
     meterRoot.hidden = true;
-    controlHintEl.hidden = true;
+    controlHintEl.hidden = false;
+    controlHintEl.textContent = view.gatherTip;
     if (structuralChange) {
       const label =
         view.resourceId === 'magic_crystals'
@@ -1545,11 +1697,14 @@ export function renderSelectionPanel(view: SelectionPanelView): boolean {
     const hpPct =
       view.maxHp > 0 ? Math.min(1, Math.max(0, view.hp / view.maxHp)) : 0;
     hpFill.style.width = `${(hpPct * 100).toFixed(1)}%`;
-    hpFill.classList.toggle('is-low', hpPct < 0.35);
+    const lowHp =
+      hpPct < 0.35 && !(view.kind === 'building' && !view.ready);
+    hpFill.classList.toggle('is-low', lowHp);
     hpFill.classList.toggle(
       'is-building',
       view.kind === 'building' && !view.ready,
     );
+    hpText.classList.toggle('is-low', lowHp);
     hpText.textContent = `${Math.ceil(view.hp)}/${Math.ceil(view.maxHp)}`;
 
     if (view.kind === 'units') {
@@ -1653,12 +1808,17 @@ export function renderSelectionPanel(view: SelectionPanelView): boolean {
         const rallyBtn = view.hasRally
           ? `<button type="button" class="is-rally${view.rallyArmed ? ' is-armed' : ''}" data-act="rally">${view.rallyArmed ? t('sel.rallyArmed') : t('sel.setRally')}</button>`
           : '';
+        const clearRallyBtn =
+          view.hasRally && view.hasCustomRally
+            ? `<button type="button" class="is-rally-clear" data-act="clearRally" title="${t('sel.clearRallyTitle')}">${t('sel.clearRally')}</button>`
+            : '';
         const cancelBtn =
           view.queue.length > 0
             ? `<button type="button" class="is-cancel" data-act="cancelQueue" title="${t('sel.cancelTitle')}">${t('sel.cancelLast')}</button>`
             : '';
         actions.innerHTML =
           rallyBtn +
+          clearRallyBtn +
           cancelBtn +
           view.trains.map(trainButtonHtml).join('') +
           view.places.map(placeButtonHtml).join('');
