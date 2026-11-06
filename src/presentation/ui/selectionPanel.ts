@@ -17,6 +17,7 @@ import { SPECIES_MATCHUP_TIP, type SpeciesId } from '../../data/speciesStub';
 import { getLocale, speciesCopy, speciesName, t } from '../../i18n';
 import { unitArmorClass } from '../../data/unitArmorClass';
 import { getUnitType, type UnitTypeId } from '../../data/units';
+import { attackRangeLabel } from './unitAttackRange';
 import { sharedUnitDpsLabel, unitDpsLabel } from './unitDps';
 import type {
   BattlefieldBuilding,
@@ -1395,7 +1396,12 @@ export function renderSelectionPanel(view: SelectionPanelView): boolean {
       if (structuralChange) {
         const bits: string[] = [];
         if (view.dmg != null) bits.push(`<span>${t('sel.atk')} ${view.dmg}</span>`);
-        if (view.range != null) bits.push(`<span>${t('sel.rng')} ${view.range}</span>`);
+        if (view.range != null) {
+          const rangeTip = attackRangeLabel(view.range);
+          bits.push(
+            `<span>${escapeHtml(rangeTip ?? `${t('sel.rng')} ${view.range}`)}</span>`,
+          );
+        }
         if (view.dpsTip) {
           bits.push(`<span>${escapeHtml(view.dpsTip)}</span>`);
         }
