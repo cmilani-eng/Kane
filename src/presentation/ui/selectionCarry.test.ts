@@ -35,4 +35,11 @@ describe('selection panel worker carry', () => {
     expect(line).toContain('15/24');
     expect(crystal).toBe(true);
   });
+
+  it('hints deposit when full', () => {
+    const { line, full } = carryLineFor([stubWorker(10, 'gold', 10)]);
+    expect(full).toBe(true);
+    expect(line).toMatch(/Full/i);
+    expect(line).toMatch(/deposit/i);
+  });
 });
