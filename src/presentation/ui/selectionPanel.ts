@@ -33,6 +33,10 @@ import {
   unitSupplyCostLabel,
 } from './unitSupplyCost';
 import {
+  sharedUnitTrainCrystalLabel,
+  unitTrainCrystalLabel,
+} from './unitTrainCrystal';
+import {
   sharedUnitTrainGoldLabel,
   unitTrainGoldLabel,
 } from './unitTrainGold';
@@ -190,6 +194,8 @@ export type SelectionPanelView =
       supplyTip: string | null;
       /** Catalog train gold-cost tip when selection shares one unit type. */
       trainGoldTip: string | null;
+      /** Catalog train crystal-cost tip when selection shares one unit type. */
+      trainCrystalTip: string | null;
       tags: string[];
       attackMoveArmed: boolean;
       /** Present when a single player hero is selected. */
@@ -608,6 +614,7 @@ export function buildSelectionView(
       atkCdTip: unitAttackCooldownLabel(u.typeId),
       supplyTip: unitSupplyCostLabel(u.typeId),
       trainGoldTip: unitTrainGoldLabel(u.typeId),
+      trainCrystalTip: unitTrainCrystalLabel(u.typeId),
       tags,
       attackMoveArmed,
       abilities: heroAbilityViews(world, u),
@@ -669,6 +676,7 @@ export function buildSelectionView(
     atkCdTip: sharedUnitAttackCooldownLabel(alive.map((u) => u.typeId)),
     supplyTip: sharedUnitSupplyCostLabel(alive.map((u) => u.typeId)),
     trainGoldTip: sharedUnitTrainGoldLabel(alive.map((u) => u.typeId)),
+    trainCrystalTip: sharedUnitTrainCrystalLabel(alive.map((u) => u.typeId)),
     tags,
     attackMoveArmed,
     abilities: null,
@@ -942,6 +950,7 @@ function structureSignature(view: SelectionPanelView): string {
       view.atkCdTip ?? '',
       view.supplyTip ?? '',
       view.trainGoldTip ?? '',
+      view.trainCrystalTip ?? '',
       view.tags.join(','),
       view.attackMoveArmed ? 1 : 0,
       abs,
@@ -1470,6 +1479,9 @@ export function renderSelectionPanel(view: SelectionPanelView): boolean {
         }
         if (view.trainGoldTip) {
           bits.push(`<span>${escapeHtml(view.trainGoldTip)}</span>`);
+        }
+        if (view.trainCrystalTip) {
+          bits.push(`<span>${escapeHtml(view.trainCrystalTip)}</span>`);
         }
         if (view.armorClass) {
           bits.push(`<span>${escapeHtml(view.armorClass)}</span>`);
