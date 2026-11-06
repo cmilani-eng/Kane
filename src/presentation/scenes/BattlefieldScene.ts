@@ -691,7 +691,7 @@ export class BattlefieldScene extends Phaser.Scene {
     if (this.mode === 'place') this.refreshPlacementGhost();
     if (this.mode === 'attackMove') this.drawAttackMoveFeedback();
     this.fogOverlay.refresh(this.world.fog, cam);
-    this.refreshHud();
+    this.refreshHud(delta);
     this.coach.refresh();
     this.minimap.refresh(delta);
   }
@@ -744,7 +744,7 @@ export class BattlefieldScene extends Phaser.Scene {
     });
   }
 
-  private refreshHud(): void {
+  private refreshHud(dtMs = 16): void {
     const n = selectedCount(this.world);
     const sel = selectedUnits(this.world);
     const friends = livingByTeam(this.world, 'player');
@@ -827,7 +827,7 @@ export class BattlefieldScene extends Phaser.Scene {
       def?.cost.gold ?? 0,
       this.mode === 'attackMove',
     );
-    this.hud.refresh(status, hint);
+    this.hud.refresh(status, hint, dtMs);
   }
 
   private drawWorld(): void {

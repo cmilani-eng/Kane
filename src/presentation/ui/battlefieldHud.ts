@@ -11,6 +11,10 @@ import {
   heroHudLine,
   recruitHero,
 } from '../../gameplay/battlefield/battlefieldHeroes';
+import {
+  countIdleWorkers,
+  selectIdleWorkers,
+} from '../../gameplay/battlefield/idleWorkers';
 import type { BattlefieldWorld } from '../../gameplay/battlefield/battlefieldWorld';
 import { isSfxMuted, playSfx, setSfxMuted } from '../audio/sfx';
 
@@ -40,6 +44,8 @@ export class BattlefieldHud {
   readonly attackMoveBtn!: Phaser.GameObjects.Text;
   /** Mobile/desktop Stop (S) — clear label for touch. */
   readonly stopBtn!: Phaser.GameObjects.Text;
+  /** Subtle idle-worker attention chip (hidden when 0). */
+  readonly idlePingBtn!: Phaser.GameObjects.Text;
   /** Scene wires this to toggle A-move mode. */
   onArmAttackMove: (() => void) | null = null;
   /** Scene wires this to issue stop + pulse. */
@@ -54,6 +60,7 @@ export class BattlefieldHud {
   private groupFlashText: string | null = null;
   private groupFlashColor = '#f0c75e';
   private groupFlashUntil = 0;
+  private idlePulseMs = 0;
 
   constructor(scene: Phaser.Scene, world: BattlefieldWorld) {
     this.scene = scene;
@@ -244,6 +251,22 @@ export class BattlefieldHud {
         this.stopBtn.setStyle({ backgroundColor: '#3a4555' }),
       );
 
+    this.idlePingBtn = scene.add
+      .text(12, 110, '', {
+        fontFamily: 'system-ui, sans-serif',
+        fontSize: '12px',
+        color: '#ffe6a0',
+        backgroundColor: '#3a3020cc',
+        padding: { x: 10, y: 6 },
+      })
+      .setScrollFactor(0)
+      .setDepth(101)
+      .setVisible(false)
+      .setInteractive({ useHandCursor: true })
+      .on('pointerup', () => {
+        if (selectIdleWorkers(this.world) > 0) playSfx('select');
+      });
+
     this.buildAbilityPad(accent);
     this.layout();
     scene.scale.on('resize', () => this.layout());
@@ -329,6 +352,7 @@ export class BattlefieldHud {
       this.muteBtn,
       this.attackMoveBtn,
       this.stopBtn,
+      this.idlePingBtn,
       this.goldDot,
       this.crystalDot,
       this.resourcePanel,
@@ -369,11 +393,15 @@ export class BattlefieldHud {
     }
 
     const belowRes = resY + this.resourcePanel.height + 8;
-    this.status
+    this.idlePingBtn
       .setPosition(pad, belowRes)
+      .setFontSize(this.narrow ? '11px' : '12px');
+    const idleOffset = this.idlePingBtn.visible ? 28 : 0;
+    this.status
+      .setPosition(pad, belowRes + idleOffset)
       .setStyle({ wordWrap: { width: Math.min(520, w - pad * 2) } });
     this.heroLine
-      .setPosition(pad, belowRes + (this.narrow ? 44 : 36))
+      .setPosition(pad, belowRes + idleOffset + (this.narrow ? 44 : 36))
       .setStyle({ wordWrap: { width: Math.min(560, w - pad * 2) } })
       .setFontSize(this.narrow ? '11px' : '12px');
 
@@ -453,7 +481,7 @@ export class BattlefieldHud {
     );
   }
 
-  refresh(statusText: string, hintText: string): void {
+  refresh(statusText: string, hintText: string, dtMs = 16): void {
     const w = this.world.wallet;
     this.goldText.setText(`Gold  ${Math.floor(w.gold)}`);
     this.crystalText.setText(`Crystals  ${Math.floor(w.magic_crystals)}`);
@@ -467,6 +495,34 @@ export class BattlefieldHud {
         .setText(hintText)
         .setColor(this.attackMoveArmed ? '#ffb8b8' : '#b8c9d9');
     }
+
+    // Subtle idle worker chip — slow pulse, no SFX spam
+    this.idlePulseMs += dtMs;
+    const idleN = countIdleWorkers(this.world);
+    const wasIdleVisible = this.idlePingBtn.visible;
+    if (idleN > 0) {
+      const pulse = 0.72 + 0.28 * Math.sin(this.idlePulseMs / 900);
+      const holding = this.world.units.some(
+        (u) =>
+          u.team === 'player' &&
+          u.canGather &&
+          u.carrying > 0 &&
+          !u.moveTarget &&
+          u.path.length === 0 &&
+          u.gatherNodeId == null,
+      );
+      this.idlePingBtn
+        .setVisible(true)
+        .setAlpha(pulse)
+        .setText(
+          holding
+            ? `Idle ${idleN} · tap (cargo)`
+            : `Idle ${idleN} · tap`,
+        );
+    } else {
+      this.idlePingBtn.setVisible(false).setAlpha(1);
+    }
+    if (wasIdleVisible !== this.idlePingBtn.visible) this.layout();
 
     // Brutes: live Rage count on match line
     if (this.speciesId === 'brutes') {
