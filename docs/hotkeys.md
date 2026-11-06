@@ -16,7 +16,8 @@ How KANE's selection and command keys map to the RTS games they come from
 | Select all army | F2 (SC2), Ctrl+A | Ctrl+A, or the HUD **Army** button | ✅ |
 | Clear selection / pause | Esc | Esc (cancels placing and attack-move first, then pauses) | ✅ |
 | Jump to base | Backspace (SC2) | Home, or the HUD button | ✅ |
-| Select idle workers | F1 (SC2), `.` (AoE II) | HUD **Idle** chip cycles them; no key yet | 🔜 |
+| Select idle workers | F1 (SC2), `.` (AoE II) | HUD **Idle** chip cycles them; no key yet | ✅ |
+| Select idle military | — | HUD **Idle army** chip cycles + recenters; no key yet | ✅ |
 | Cycle sub-group | Tab (SC2) | — | 🔜 |
 
 Double-click and Ctrl/Cmd+click select the units of that type that are in vision,

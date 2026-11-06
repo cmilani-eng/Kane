@@ -3,7 +3,11 @@
  * Mobile-web first; navy/gold/cream HUD aligned with battlefield chrome.
  * Reads gameplay state only — no new combat systems.
  */
-import { getBuildingType } from '../../data/buildings';
+import {
+  getBuildingType,
+  placeableBuildings,
+  type BuildingTypeId,
+} from '../../data/buildings';
 import {
   heroForSpecies,
   type HeroAbilitySlot,
@@ -28,6 +32,7 @@ function matchupLine(id: SpeciesId): string {
   });
 }
 import { walletOf } from '../../gameplay/battlefield/battlefieldEconomy';
+import { RAGE } from '../../gameplay/battlefield/battlefieldRage';
 
 export type SelectionAbilityView = {
   slot: HeroAbilitySlot;
@@ -54,6 +59,53 @@ export type SelectionPanelHandlers = {
   cancelQueue: (index?: number) => void;
   /** Cast selected hero ability (Q/W/E). */
   castAbility: (slot: HeroAbilitySlot) => void;
+  /** Arm building placement from Keep / main hall (existing place mode). */
+  placeBuilding: (typeId: BuildingTypeId) => void;
+  /** Toggle Nobles formation lock on selected formation-capable units (F). */
+  toggleFormation: () => void;
+  /** Toggle Brutes Rage lock on selected rage-capable units (R). */
+  toggleRage: () => void;
+  /** Toggle Weirdos Mutation lock / role on selected mutate-capable units (M). */
+  toggleMutation: () => void;
+};
+
+/** Nobles formation / stance summary for the selection panel. */
+export type SelectionFormationView = {
+  eligible: number;
+  formed: number;
+  locked: number;
+  /** All eligible units have formation lock on. */
+  allLocked: boolean;
+};
+
+/** Brutes Rage summary — meter + lock for the selection panel. */
+export type SelectionRageView = {
+  eligible: number;
+  enraged: number;
+  locked: number;
+  allLocked: boolean;
+  /** 0–1 linger / lock fill (hottest eligible unit). */
+  meter: number;
+};
+
+/** Weirdos Mutation / role summary for the selection panel. */
+export type SelectionMutationView = {
+  eligible: number;
+  mutated: number;
+  locked: number;
+  allLocked: boolean;
+};
+
+export type SelectionPlaceOption = {
+  typeId: BuildingTypeId;
+  name: string;
+  costGold: number;
+  costCrystals: number;
+  canPay: boolean;
+  /** Complete Keep + canPay — button enabled. */
+  affordable: boolean;
+  /** Currently armed in place mode. */
+  armed: boolean;
 };
 
 export type SelectionPanelView =
@@ -71,6 +123,12 @@ export type SelectionPanelView =
       attackMoveArmed: boolean;
       /** Present when a single player hero is selected. */
       abilities: SelectionAbilityView[] | null;
+      /** Nobles formation-capable selection — stance lock control. */
+      formation: SelectionFormationView | null;
+      /** Brutes rage-capable selection — meter + lock. */
+      rage: SelectionRageView | null;
+      /** Weirdos mutate-capable selection — mutation role lock. */
+      mutation: SelectionMutationView | null;
     }
   | {
       kind: 'building';
@@ -90,6 +148,8 @@ export type SelectionPanelView =
         /** Ready + canPay — button enabled. */
         affordable: boolean;
       }[];
+      /** Placeable buildings when Keep / main hall is selected. */
+      places: SelectionPlaceOption[];
       queue: UnitTypeId[];
       progressPct: number;
       headName: string | null;
@@ -129,6 +189,12 @@ export function ensureSelectionPanel(): HTMLElement {
             <span class="kane-sel-hp-text" data-role="hp-text"></span>
           </div>
           <div class="kane-sel-stats" data-role="stats"></div>
+          <div class="kane-sel-meter" data-role="meter" hidden>
+            <div class="kane-sel-meter-track">
+              <div class="kane-sel-meter-fill" data-role="meter-fill"></div>
+            </div>
+            <span class="kane-sel-meter-label" data-role="meter-label"></span>
+          </div>
         </div>
       </div>
       <div class="kane-sel-actions" data-role="actions"></div>
@@ -166,10 +232,18 @@ export function ensureSelectionPanel(): HTMLElement {
       handlers.cancelQueue(
         Number.isFinite(idx as number) ? (idx as number) : undefined,
       );
-    }     else if (act === 'train' && btn.dataset.typeId) {
+    } else if (act === 'train' && btn.dataset.typeId) {
       handlers.train(btn.dataset.typeId as UnitTypeId);
+    } else if (act === 'place' && btn.dataset.typeId) {
+      handlers.placeBuilding(btn.dataset.typeId as BuildingTypeId);
     } else if (act === 'castAbility' && btn.dataset.slot) {
       handlers.castAbility(btn.dataset.slot as HeroAbilitySlot);
+    } else if (act === 'toggleFormation') {
+      handlers.toggleFormation();
+    } else if (act === 'toggleRage') {
+      handlers.toggleRage();
+    } else if (act === 'toggleMutation') {
+      handlers.toggleMutation();
     }
   });
 
@@ -425,6 +499,80 @@ function injectStyles(): void {
     #kane-selection-panel button.is-ability.is-unaffordable .kane-sel-ability-cd {
       color: #e87a7a;
     }
+    #kane-selection-panel button.is-stance {
+      background: #3a4a2a;
+      border-color: #f0c75e;
+      min-width: 96px;
+      text-align: left;
+    }
+    #kane-selection-panel button.is-stance.is-armed {
+      background: #5a7030;
+      border-color: #f0c75e;
+      color: #fff8e8;
+    }
+    #kane-selection-panel button.is-stance .kane-sel-stance-sub {
+      display: block;
+      margin-top: 2px;
+      font-size: 10px;
+      font-weight: 600;
+      color: #c8d8a8;
+      letter-spacing: 0.02em;
+    }
+    #kane-selection-panel button.is-rage {
+      background: #5a3020;
+      border-color: #e87a4a;
+      min-width: 96px;
+      text-align: left;
+    }
+    #kane-selection-panel button.is-rage.is-armed {
+      background: #8a4020;
+      border-color: #ffb070;
+      color: #fff0e0;
+    }
+    #kane-selection-panel button.is-rage .kane-sel-stance-sub {
+      color: #ffc8a0;
+    }
+    #kane-selection-panel button.is-mutation {
+      background: #3a2a58;
+      border-color: #6ecfbf;
+      min-width: 96px;
+      text-align: left;
+    }
+    #kane-selection-panel button.is-mutation.is-armed {
+      background: #5a3a78;
+      border-color: #e87aa8;
+      color: #f8e8ff;
+    }
+    #kane-selection-panel button.is-mutation .kane-sel-stance-sub {
+      color: #b8e8d8;
+    }
+    #kane-selection-panel .kane-sel-meter {
+      margin-top: 6px;
+    }
+    #kane-selection-panel .kane-sel-meter-track {
+      height: 8px;
+      border-radius: 3px;
+      background: #0a121c;
+      border: 1px solid #5a3030;
+      overflow: hidden;
+    }
+    #kane-selection-panel .kane-sel-meter-fill {
+      height: 100%;
+      width: 0%;
+      border-radius: 2px;
+      background: linear-gradient(90deg, #8a3030, #e87a4a);
+      transition: width 80ms linear;
+    }
+    #kane-selection-panel .kane-sel-meter-fill.is-locked {
+      background: linear-gradient(90deg, #a04020, #ffb070);
+    }
+    #kane-selection-panel .kane-sel-meter-label {
+      display: block;
+      margin-top: 3px;
+      font-size: 11px;
+      color: #e8b090;
+      line-height: 1.25;
+    }
     #kane-selection-panel button:disabled {
       cursor: default;
     }
@@ -563,6 +711,8 @@ export function buildSelectionView(
   attackMoveArmed: boolean,
   rallyArmed = false,
   selectedNode: ResourceNode | null = null,
+  /** Armed place-mode building type (from Keep panel / B key). */
+  placeArmedType: BuildingTypeId | null = null,
 ): SelectionPanelView {
   if (selectedBuilding && selectedBuilding.hp > 0) {
     const b = selectedBuilding;
@@ -583,6 +733,24 @@ export function buildSelectionView(
         affordable: canPay && ready,
       };
     });
+    const places: SelectionPlaceOption[] =
+      b.team === 'player' && bdef.isMainHall
+        ? placeableBuildings(bdef.speciesId).map((typeId) => {
+            const pdef = getBuildingType(typeId);
+            const costGold = pdef.cost.gold ?? 0;
+            const costCrystals = pdef.cost.magic_crystals ?? 0;
+            const canPay = canAfford(wallet, pdef.cost);
+            return {
+              typeId,
+              name: pdef.name,
+              costGold,
+              costCrystals,
+              canPay,
+              affordable: canPay && ready,
+              armed: placeArmedType === typeId,
+            };
+          })
+        : [];
     const head = b.trainQueue[0] ? getUnitType(b.trainQueue[0]) : null;
     const progressPct =
       head && head.trainMs > 0
@@ -596,6 +764,7 @@ export function buildSelectionView(
       maxHp: b.maxHp,
       ready,
       trains,
+      places,
       queue: [...b.trainQueue],
       progressPct,
       headName: head?.name ?? null,
@@ -647,6 +816,9 @@ export function buildSelectionView(
       tags,
       attackMoveArmed,
       abilities: heroAbilityViews(world, u),
+      formation: formationViewFor(alive),
+      rage: rageViewFor(alive),
+      mutation: mutationViewFor(alive),
     };
   }
 
@@ -688,6 +860,75 @@ export function buildSelectionView(
     tags,
     attackMoveArmed,
     abilities: null,
+    formation: formationViewFor(alive),
+    rage: rageViewFor(alive),
+    mutation: mutationViewFor(alive),
+  };
+}
+
+function formationViewFor(
+  units: BattlefieldUnit[],
+): SelectionFormationView | null {
+  const eligible = units.filter((u) => {
+    if (u.team !== 'player' || u.hp <= 0 || u.speciesId !== 'nobles') {
+      return false;
+    }
+    return !!getUnitType(u.typeId).usesFormation;
+  });
+  if (eligible.length === 0) return null;
+  const locked = eligible.filter((u) => u.formationLocked).length;
+  const formed = eligible.filter((u) => u.inFormation).length;
+  return {
+    eligible: eligible.length,
+    formed,
+    locked,
+    allLocked: locked === eligible.length,
+  };
+}
+
+function rageViewFor(units: BattlefieldUnit[]): SelectionRageView | null {
+  const eligible = units.filter((u) => {
+    if (u.team !== 'player' || u.hp <= 0 || u.speciesId !== 'brutes') {
+      return false;
+    }
+    return !!getUnitType(u.typeId).canRage;
+  });
+  if (eligible.length === 0) return null;
+  const locked = eligible.filter((u) => u.rageLocked).length;
+  const enraged = eligible.filter((u) => u.enraged).length;
+  let meter = 0;
+  for (const u of eligible) {
+    const m = u.rageLocked
+      ? 1
+      : Math.min(1, Math.max(0, (u.rageCombatMs ?? 0) / RAGE.lingerMs));
+    if (m > meter) meter = m;
+  }
+  return {
+    eligible: eligible.length,
+    enraged,
+    locked,
+    allLocked: locked === eligible.length,
+    meter,
+  };
+}
+
+function mutationViewFor(
+  units: BattlefieldUnit[],
+): SelectionMutationView | null {
+  const eligible = units.filter((u) => {
+    if (u.team !== 'player' || u.hp <= 0 || u.speciesId !== 'weirdos') {
+      return false;
+    }
+    return !!getUnitType(u.typeId).canMutate;
+  });
+  if (eligible.length === 0) return null;
+  const locked = eligible.filter((u) => u.mutationLocked).length;
+  const mutated = eligible.filter((u) => u.mutated).length;
+  return {
+    eligible: eligible.length,
+    mutated,
+    locked,
+    allLocked: locked === eligible.length,
   };
 }
 
@@ -731,6 +972,15 @@ function structureSignature(view: SelectionPanelView): string {
           )
           .join(',')
       : '';
+    const form = view.formation
+      ? `f${view.formation.eligible}:${view.formation.formed}:${view.formation.locked}:${view.formation.allLocked ? 1 : 0}`
+      : '';
+    const rage = view.rage
+      ? `r${view.rage.eligible}:${view.rage.enraged}:${view.rage.locked}:${view.rage.allLocked ? 1 : 0}:${Math.round(view.rage.meter * 20)}`
+      : '';
+    const mut = view.mutation
+      ? `m${view.mutation.eligible}:${view.mutation.mutated}:${view.mutation.locked}:${view.mutation.allLocked ? 1 : 0}`
+      : '';
     return [
       locale,
       'u',
@@ -741,6 +991,9 @@ function structureSignature(view: SelectionPanelView): string {
       view.tags.join(','),
       view.attackMoveArmed ? 1 : 0,
       abs,
+      form,
+      rage,
+      mut,
     ].join('|');
   }
   if (view.kind === 'resource') {
@@ -762,6 +1015,12 @@ function structureSignature(view: SelectionPanelView): string {
     view.rallyArmed ? 1 : 0,
     view.trains
       .map((t) => `${t.typeId}:${t.canPay ? 1 : 0}:${t.affordable ? 1 : 0}`)
+      .join(','),
+    view.places
+      .map(
+        (p) =>
+          `${p.typeId}:${p.canPay ? 1 : 0}:${p.affordable ? 1 : 0}:${p.armed ? 1 : 0}`,
+      )
       .join(','),
     view.queue.join(','),
     view.headName ?? '',
@@ -838,6 +1097,161 @@ function trainButtonHtml(unit: {
   return `<button type="button" class="${classes.join(' ')}" data-act="train" data-type-id="${unit.typeId}"${unit.affordable ? '' : ' disabled'}${reason}><span class="kane-sel-train-name">${escapeHtml(unit.name)}</span>${trainCostHtml(unit.costGold, unit.costCrystals)}</button>`;
 }
 
+function placeButtonHtml(p: SelectionPlaceOption): string {
+  const classes = ['is-train', 'is-place'];
+  if (!p.affordable) classes.push('is-unaffordable');
+  if (p.armed) classes.push('is-armed');
+  const reason = !p.affordable
+    ? !p.canPay
+      ? ` title="${t('sel.needResources')}"`
+      : ` title="${t('sel.keepBuilding')}"`
+    : p.armed
+      ? ` title="${t('sel.placeArmedTitle')}"`
+      : ` title="${escapeHtml(t('sel.placeTitle', { name: p.name }))}"`;
+  const label = p.armed ? t('sel.placeArmed', { name: p.name }) : p.name;
+  return `<button type="button" class="${classes.join(' ')}" data-act="place" data-type-id="${p.typeId}"${p.affordable ? '' : ' disabled'}${reason}><span class="kane-sel-train-name">${escapeHtml(label)}</span>${trainCostHtml(p.costGold, p.costCrystals)}</button>`;
+}
+
+function formationCopy(f: SelectionFormationView): {
+  name: string;
+  sub: string;
+  title: string;
+} {
+  const locked = f.allLocked;
+  const stance = t(locked ? 'sel.stanceLocked' : 'sel.stanceAuto');
+  const status =
+    f.eligible === 1
+      ? t(f.formed ? 'sel.inFormation' : 'sel.notFormed')
+      : t('sel.formedCount', { formed: f.formed, eligible: f.eligible });
+  return {
+    name: t(locked ? 'sel.formLockOn' : 'sel.formLock'),
+    sub: `${stance} · ${status}`,
+    title: t(locked ? 'sel.formUnlock' : 'sel.formLockTitle'),
+  };
+}
+
+function formationButtonHtml(f: SelectionFormationView): string {
+  const copy = formationCopy(f);
+  const classes = ['is-stance'];
+  if (f.allLocked) classes.push('is-armed');
+  return `<button type="button" class="${classes.join(' ')}" data-act="toggleFormation" title="${escapeHtml(copy.title)}"><span class="kane-sel-train-name">${escapeHtml(copy.name)}</span><span class="kane-sel-stance-sub">${escapeHtml(copy.sub)}</span></button>`;
+}
+
+function applyFormationButtonState(
+  btn: HTMLButtonElement,
+  f: SelectionFormationView,
+): void {
+  const copy = formationCopy(f);
+  btn.classList.toggle('is-armed', f.allLocked);
+  const name = btn.querySelector('.kane-sel-train-name');
+  const sub = btn.querySelector('.kane-sel-stance-sub');
+  if (name) name.textContent = copy.name;
+  if (sub) sub.textContent = copy.sub;
+  btn.title = copy.title;
+}
+
+function rageCopy(r: SelectionRageView): {
+  name: string;
+  sub: string;
+  title: string;
+} {
+  const locked = r.allLocked;
+  const stance = t(locked ? 'sel.rageLocked' : 'sel.rageAuto');
+  const status =
+    r.eligible === 1
+      ? t(r.enraged ? 'sel.enraged' : 'sel.calm')
+      : t('sel.hotCount', { hot: r.enraged, eligible: r.eligible });
+  return {
+    name: t(locked ? 'sel.rageLockOn' : 'sel.rageLockBtn'),
+    sub: `${stance} · ${status}`,
+    title: t(locked ? 'sel.rageUnlock' : 'sel.rageLockTitle'),
+  };
+}
+
+function rageButtonHtml(r: SelectionRageView): string {
+  const copy = rageCopy(r);
+  const classes = ['is-rage'];
+  if (r.allLocked) classes.push('is-armed');
+  return `<button type="button" class="${classes.join(' ')}" data-act="toggleRage" title="${escapeHtml(copy.title)}"><span class="kane-sel-train-name">${escapeHtml(copy.name)}</span><span class="kane-sel-stance-sub">${escapeHtml(copy.sub)}</span></button>`;
+}
+
+function applyRageButtonState(
+  btn: HTMLButtonElement,
+  r: SelectionRageView,
+): void {
+  const copy = rageCopy(r);
+  btn.classList.toggle('is-armed', r.allLocked);
+  const name = btn.querySelector('.kane-sel-train-name');
+  const sub = btn.querySelector('.kane-sel-stance-sub');
+  if (name) name.textContent = copy.name;
+  if (sub) sub.textContent = copy.sub;
+  btn.title = copy.title;
+}
+
+function applyRageMeter(
+  meterRoot: HTMLElement,
+  fill: HTMLElement,
+  label: HTMLElement,
+  r: SelectionRageView | null,
+): void {
+  if (!r) {
+    meterRoot.hidden = true;
+    return;
+  }
+  meterRoot.hidden = false;
+  const pct = Math.round(r.meter * 100);
+  fill.style.width = `${pct}%`;
+  fill.classList.toggle('is-locked', r.allLocked);
+  const mode = t(r.allLocked ? 'sel.modeLocked' : 'sel.modeLinger');
+  label.textContent =
+    r.eligible === 1
+      ? t('sel.rageMeter', { pct, mode })
+      : t('sel.rageMeterHot', {
+          pct,
+          mode,
+          hot: r.enraged,
+          eligible: r.eligible,
+        });
+}
+
+function mutationCopy(m: SelectionMutationView): {
+  name: string;
+  sub: string;
+  title: string;
+} {
+  const locked = m.allLocked;
+  const role = t(locked ? 'sel.roleLocked' : 'sel.roleAuto');
+  const status =
+    m.eligible === 1
+      ? t(m.mutated ? 'sel.mutated' : 'sel.stable')
+      : t('sel.mutatedCount', { mutated: m.mutated, eligible: m.eligible });
+  return {
+    name: t(locked ? 'sel.mutLockOn' : 'sel.mutLock'),
+    sub: `${role} · ${status}`,
+    title: t(locked ? 'sel.mutUnlock' : 'sel.mutLockTitle'),
+  };
+}
+
+function mutationButtonHtml(m: SelectionMutationView): string {
+  const copy = mutationCopy(m);
+  const classes = ['is-mutation'];
+  if (m.allLocked) classes.push('is-armed');
+  return `<button type="button" class="${classes.join(' ')}" data-act="toggleMutation" title="${escapeHtml(copy.title)}"><span class="kane-sel-train-name">${escapeHtml(copy.name)}</span><span class="kane-sel-stance-sub">${escapeHtml(copy.sub)}</span></button>`;
+}
+
+function applyMutationButtonState(
+  btn: HTMLButtonElement,
+  m: SelectionMutationView,
+): void {
+  const copy = mutationCopy(m);
+  btn.classList.toggle('is-armed', m.allLocked);
+  const name = btn.querySelector('.kane-sel-train-name');
+  const sub = btn.querySelector('.kane-sel-stance-sub');
+  if (name) name.textContent = copy.name;
+  if (sub) sub.textContent = copy.sub;
+  btn.title = copy.title;
+}
+
 function applyTrainAffordability(
   btn: HTMLButtonElement,
   unit: { canPay: boolean; affordable: boolean },
@@ -856,9 +1270,14 @@ function applyTrainAffordability(
 function queueLabelText(
   view: Extract<SelectionPanelView, { kind: 'building' }>,
 ): string {
-  if (!view.ready) return t('sel.trainLocked');
+  if (!view.ready) {
+    return view.places.length ? t('sel.trainBuildLocked') : t('sel.trainLocked');
+  }
   if (view.queue.length === 0) {
-    return view.trains.length ? t('sel.idleTrain') : t('sel.noProduction');
+    if (view.trains.length) {
+      return view.places.length ? t('sel.idleTrainBuild') : t('sel.idleTrain');
+    }
+    return view.places.length ? t('sel.placeIdle') : t('sel.noProduction');
   }
   const pct = Math.floor(view.progressPct * 100);
   const waiting = view.queue.length - 1;
@@ -900,6 +1319,13 @@ export function renderSelectionPanel(view: SelectionPanelView): boolean {
   const hpFill = root.querySelector('[data-role="hp-fill"]') as HTMLElement;
   const hpText = root.querySelector('[data-role="hp-text"]') as HTMLElement;
   const stats = root.querySelector('[data-role="stats"]') as HTMLElement;
+  const meterRoot = root.querySelector('[data-role="meter"]') as HTMLElement;
+  const meterFill = root.querySelector(
+    '[data-role="meter-fill"]',
+  ) as HTMLElement;
+  const meterLabel = root.querySelector(
+    '[data-role="meter-label"]',
+  ) as HTMLElement;
   const actions = root.querySelector('[data-role="actions"]') as HTMLElement;
   const queue = root.querySelector('[data-role="queue"]') as HTMLElement;
   const queueFill = root.querySelector('[data-role="queue-fill"]') as HTMLElement;
@@ -927,6 +1353,7 @@ export function renderSelectionPanel(view: SelectionPanelView): boolean {
       '--kane-sel-accent',
       view.resourceId === 'magic_crystals' ? '#7ec8ff' : '#f0c75e',
     );
+    meterRoot.hidden = true;
     if (structuralChange) {
       const label =
         view.resourceId === 'magic_crystals'
@@ -962,9 +1389,19 @@ export function renderSelectionPanel(view: SelectionPanelView): boolean {
         const abilityHtml = view.abilities
           ? view.abilities.map(abilityButtonHtml).join('')
           : '';
+        const formHtml = view.formation
+          ? formationButtonHtml(view.formation)
+          : '';
+        const rageHtml = view.rage ? rageButtonHtml(view.rage) : '';
+        const mutHtml = view.mutation
+          ? mutationButtonHtml(view.mutation)
+          : '';
         actions.innerHTML = `
         <button type="button" data-act="stop">${t('hud.stop')}</button>
         <button type="button" data-act="attackMove" class="${view.attackMoveArmed ? 'is-armed' : ''}">${view.attackMoveArmed ? t('sel.atkArmed') : t('sel.atkMove')}</button>
+        ${formHtml}
+        ${rageHtml}
+        ${mutHtml}
         ${abilityHtml}
       `;
       } else {
@@ -985,16 +1422,38 @@ export function renderSelectionPanel(view: SelectionPanelView): boolean {
             if (btn) applyAbilityButtonState(btn, a);
           }
         }
+        if (view.formation) {
+          const fb = actions.querySelector(
+            '[data-act="toggleFormation"]',
+          ) as HTMLButtonElement | null;
+          if (fb) applyFormationButtonState(fb, view.formation);
+        }
+        if (view.rage) {
+          const rb = actions.querySelector(
+            '[data-act="toggleRage"]',
+          ) as HTMLButtonElement | null;
+          if (rb) applyRageButtonState(rb, view.rage);
+        }
+        if (view.mutation) {
+          const mb = actions.querySelector(
+            '[data-act="toggleMutation"]',
+          ) as HTMLButtonElement | null;
+          if (mb) applyMutationButtonState(mb, view.mutation);
+        }
       }
+      applyRageMeter(meterRoot, meterFill, meterLabel, view.rage);
       queue.hidden = true;
     } else {
+      meterRoot.hidden = true;
       portrait.classList.add('is-building');
       portrait.classList.remove('is-mixed');
       portrait.style.setProperty('--kane-sel-accent', '#3d7ea6');
       if (structuralChange) {
-        stats.innerHTML = view.trains.length
-          ? `<span>${t('sel.production')}</span>`
-          : `<span>${t('sel.noProductionStat')}</span>`;
+        const bits: string[] = [];
+        if (view.trains.length) bits.push(`<span>${t('sel.production')}</span>`);
+        if (view.places.length) bits.push(`<span>${t('sel.build')}</span>`);
+        if (bits.length === 0) bits.push(`<span>${t('sel.noProductionStat')}</span>`);
+        stats.innerHTML = bits.join('');
         const rallyBtn = view.hasRally
           ? `<button type="button" class="is-rally${view.rallyArmed ? ' is-armed' : ''}" data-act="rally">${view.rallyArmed ? t('sel.rallyArmed') : t('sel.setRally')}</button>`
           : '';
@@ -1003,13 +1462,39 @@ export function renderSelectionPanel(view: SelectionPanelView): boolean {
             ? `<button type="button" class="is-cancel" data-act="cancelQueue" title="${t('sel.cancelTitle')}">${t('sel.cancelLast')}</button>`
             : '';
         actions.innerHTML =
-          rallyBtn + cancelBtn + view.trains.map(trainButtonHtml).join('');
+          rallyBtn +
+          cancelBtn +
+          view.trains.map(trainButtonHtml).join('') +
+          view.places.map(placeButtonHtml).join('');
       } else {
         for (const t of view.trains) {
           const btn = actions.querySelector(
-            `button[data-type-id="${t.typeId}"]`,
+            `button[data-act="train"][data-type-id="${t.typeId}"]`,
           ) as HTMLButtonElement | null;
           if (btn) applyTrainAffordability(btn, t);
+        }
+        for (const p of view.places) {
+          const btn = actions.querySelector(
+            `button[data-act="place"][data-type-id="${p.typeId}"]`,
+          ) as HTMLButtonElement | null;
+          if (!btn) continue;
+          applyTrainAffordability(btn, p);
+          btn.classList.toggle('is-armed', p.armed);
+          const nameEl = btn.querySelector('.kane-sel-train-name');
+          if (nameEl) {
+            nameEl.textContent = p.armed
+              ? t('sel.placeArmed', { name: p.name })
+              : p.name;
+          }
+          if (!p.affordable) {
+            btn.title = !p.canPay
+              ? t('sel.needResources')
+              : t('sel.keepBuilding');
+          } else {
+            btn.title = p.armed
+              ? t('sel.placeArmedTitle')
+              : t('sel.placeTitle', { name: p.name });
+          }
         }
         const rally = actions.querySelector(
           '[data-act="rally"]',

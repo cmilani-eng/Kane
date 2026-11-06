@@ -325,6 +325,12 @@ export class BattlefieldScene extends Phaser.Scene {
         this.cameraCtl.centerOn(result.focus.x, result.focus.y);
       }
     };
+    this.hud.onIdleMilitary = (result) => {
+      this.clearBuildingSelection();
+      if (result.focus) {
+        this.cameraCtl.centerOn(result.focus.x, result.focus.y);
+      }
+    };
     this.hud.onUnderAttackJump = (x, y) => {
       this.cameraCtl.centerOn(x, y);
     };
@@ -345,9 +351,37 @@ export class BattlefieldScene extends Phaser.Scene {
         if (queueTrain(this.world, b, typeId)) playSfx('train');
         else playSfx('ui');
       },
+      placeBuilding: (typeId) => this.armPlacementFromPanel(typeId),
       castAbility: (slot) => {
         if (castHeroAbility(this.world, slot, 'player')) playSfx('ability');
         else playSfx('ui');
+      },
+      toggleFormation: () => {
+        if (this.paused || this.matchResult !== 'ongoing') return;
+        if (this.world.speciesId !== 'nobles') {
+          playSfx('ui');
+          return;
+        }
+        toggleFormationSelected(this.world);
+        playSfx('ui');
+      },
+      toggleRage: () => {
+        if (this.paused || this.matchResult !== 'ongoing') return;
+        if (this.world.speciesId !== 'brutes') {
+          playSfx('ui');
+          return;
+        }
+        toggleRageSelected(this.world);
+        playSfx('ui');
+      },
+      toggleMutation: () => {
+        if (this.paused || this.matchResult !== 'ongoing') return;
+        if (this.world.speciesId !== 'weirdos') {
+          playSfx('ui');
+          return;
+        }
+        toggleMutationSelected(this.world);
+        playSfx('ui');
       },
     });
     this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => {
@@ -983,6 +1017,31 @@ export class BattlefieldScene extends Phaser.Scene {
     this.refreshPlacementGhost();
   }
 
+  /** Selection-panel Keep/hall → arm existing place mode for a building type. */
+  private armPlacementFromPanel(typeId: BuildingTypeId): void {
+    if (this.paused || this.matchResult !== 'ongoing') return;
+    if (this.controlsHelp.isOpen()) return;
+    if (!this.placeables.includes(typeId)) {
+      playSfx('ui');
+      return;
+    }
+    if (this.mode === 'place' && this.placeType === typeId) {
+      this.mode = 'none';
+      this.ghostGfx.clear();
+      playSfx('ui');
+      return;
+    }
+    if (this.mode === 'attackMove') this.clearAttackMoveMode();
+    this.clearRallyMode();
+    this.placeType = typeId;
+    const idx = this.placeables.indexOf(typeId);
+    this.placeIndex = idx >= 0 ? idx : 0;
+    this.mode = 'place';
+    const mid = this.cameras.main.midPoint;
+    this.updateGhostAt(mid.x, mid.y);
+    playSfx('ui');
+  }
+
   private refreshPlacementGhost(): void {
     if (this.mode !== 'place') {
       this.ghostGfx.clear();
@@ -1282,6 +1341,7 @@ export class BattlefieldScene extends Phaser.Scene {
       this.mode === 'attackMove',
       this.mode === 'rally',
       node,
+      this.mode === 'place' ? this.placeType : null,
     );
     const panelOpen = renderSelectionPanel(selView);
     const inset = selectionPanelInsetPx(panelOpen);
@@ -1293,7 +1353,10 @@ export class BattlefieldScene extends Phaser.Scene {
     if (this.mode === 'rally' && b) {
       status = t('hud.rallyStatus', { name: b.name });
     } else if (b) {
-      status = t('hud.buildingSelected', { name: b.name });
+      const hall = getBuildingType(b.typeId).isMainHall;
+      status = hall
+        ? t('hud.buildingBuild', { name: b.name })
+        : t('hud.buildingSelected', { name: b.name });
     } else if (node) {
       const remaining = Math.floor(node.remaining);
       status =

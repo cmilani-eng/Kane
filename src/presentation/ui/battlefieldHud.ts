@@ -18,6 +18,11 @@ import {
   selectOrCycleIdleWorkers,
   type IdleChipResult,
 } from '../../gameplay/battlefield/idleWorkers';
+import {
+  countIdleMilitary,
+  selectOrCycleIdleMilitary,
+  type IdleMilitaryChipResult,
+} from '../../gameplay/battlefield/idleMilitary';
 import { coreHudSummary } from '../../gameplay/battlefield/battlefieldCoreFragments';
 import {
   countVisibleMilitary,
@@ -72,6 +77,8 @@ export class BattlefieldHud {
   readonly armyBtn!: Phaser.GameObjects.Text;
   /** Subtle idle-worker attention chip (hidden when 0). */
   readonly idlePingBtn!: Phaser.GameObjects.Text;
+  /** Idle military chip — cycle + recenter (mirrors idle workers). */
+  readonly idleMilPingBtn!: Phaser.GameObjects.Text;
   /** Critical under-attack chip (Keep/hero) — tap to jump camera. */
   readonly attackPingBtn!: Phaser.GameObjects.Text;
   /** Recenter camera on player keep / hall. */
@@ -94,6 +101,8 @@ export class BattlefieldHud {
   onSelectArmy: (() => void) | null = null;
   /** Scene wires idle-chip select/cycle (clear building + camera). */
   onIdleWorkers: ((result: IdleChipResult) => void) | null = null;
+  /** Scene wires idle-military chip select/cycle (clear building + camera). */
+  onIdleMilitary: ((result: IdleMilitaryChipResult) => void) | null = null;
   /** Scene wires critical under-attack chip → camera jump. */
   onUnderAttackJump: ((x: number, y: number) => void) | null = null;
 
@@ -108,6 +117,7 @@ export class BattlefieldHud {
   private groupFlashColor = '#f0c75e';
   private groupFlashUntil = 0;
   private idlePulseMs = 0;
+  private idleMilPulseMs = 0;
   private attackPulseMs = 0;
   /** Extra lift for DOM selection panel (px from bottom). */
   private bottomInset = 0;
@@ -452,6 +462,25 @@ export class BattlefieldHud {
         this.onIdleWorkers?.(result);
       });
 
+    this.idleMilPingBtn = scene.add
+      .text(12, 138, '', {
+        fontFamily: 'system-ui, sans-serif',
+        fontSize: '12px',
+        color: '#c8e0ff',
+        backgroundColor: '#203040cc',
+        padding: { x: 10, y: 6 },
+      })
+      .setScrollFactor(0)
+      .setDepth(101)
+      .setVisible(false)
+      .setInteractive({ useHandCursor: true })
+      .on('pointerup', () => {
+        const result = selectOrCycleIdleMilitary(this.world);
+        if (result.count <= 0) return;
+        playSfx('select');
+        this.onIdleMilitary?.(result);
+      });
+
     this.attackPingBtn = scene.add
       .text(12, 140, '', {
         fontFamily: 'system-ui, sans-serif',
@@ -566,6 +595,7 @@ export class BattlefieldHud {
       this.stopBtn,
       this.armyBtn,
       this.idlePingBtn,
+      this.idleMilPingBtn,
       this.attackPingBtn,
       this.goldDot,
       this.crystalDot,
@@ -633,11 +663,16 @@ export class BattlefieldHud {
       .setPosition(pad, belowRes)
       .setFontSize(this.narrow ? '11px' : '12px');
     const idleOffset = this.idlePingBtn.visible ? 28 : 0;
-    this.attackPingBtn
+    this.idleMilPingBtn
       .setPosition(pad, belowRes + idleOffset)
       .setFontSize(this.narrow ? '11px' : '12px');
+    const idleMilOffset =
+      idleOffset + (this.idleMilPingBtn.visible ? 28 : 0);
+    this.attackPingBtn
+      .setPosition(pad, belowRes + idleMilOffset)
+      .setFontSize(this.narrow ? '11px' : '12px');
     const alertOffset =
-      idleOffset + (this.attackPingBtn.visible ? 28 : 0);
+      idleMilOffset + (this.attackPingBtn.visible ? 28 : 0);
     this.status
       .setPosition(pad, belowRes + alertOffset)
       .setStyle({ wordWrap: { width: Math.min(520, w - pad * 2) } });
@@ -897,6 +932,33 @@ export class BattlefieldHud {
       this.idlePingBtn.setVisible(false).setAlpha(1);
     }
     if (wasIdleVisible !== this.idlePingBtn.visible) this.layout();
+
+    // Idle military chip — same select-all → cycle pattern as workers
+    this.idleMilPulseMs += dtMs;
+    const idleMilN = countIdleMilitary(this.world);
+    const wasIdleMilVisible = this.idleMilPingBtn.visible;
+    if (idleMilN > 0) {
+      const pulse = 0.72 + 0.28 * Math.sin(this.idleMilPulseMs / 900);
+      const cycling = this.world.units.some(
+        (u) =>
+          u.selected &&
+          u.team === 'player' &&
+          !u.canGather &&
+          u.hp > 0,
+      );
+      const action = cycling ? 'cycle' : 'tap';
+      this.idleMilPingBtn
+        .setVisible(true)
+        .setAlpha(pulse)
+        .setText(
+          this.narrow
+            ? `Idle army ${idleMilN} · ${action}`
+            : `Idle army ${idleMilN} · ${action}`,
+        );
+    } else {
+      this.idleMilPingBtn.setVisible(false).setAlpha(1);
+    }
+    if (wasIdleMilVisible !== this.idleMilPingBtn.visible) this.layout();
 
     // Critical Keep/hero under-attack chip
     this.attackPulseMs += dtMs;
