@@ -38,8 +38,12 @@ export class BattlefieldHud {
   readonly muteBtn!: Phaser.GameObjects.Text;
   /** Mobile/desktop arm control for attack-move. */
   readonly attackMoveBtn!: Phaser.GameObjects.Text;
+  /** Mobile/desktop Stop (S) — clear label for touch. */
+  readonly stopBtn!: Phaser.GameObjects.Text;
   /** Scene wires this to toggle A-move mode. */
   onArmAttackMove: (() => void) | null = null;
+  /** Scene wires this to issue stop + pulse. */
+  onStopSelected: (() => void) | null = null;
 
   private goldDot!: Phaser.GameObjects.Arc;
   private crystalDot!: Phaser.GameObjects.Arc;
@@ -215,6 +219,28 @@ export class BattlefieldHud {
         this.onArmAttackMove?.();
       });
 
+    this.stopBtn = scene.add
+      .text(100, scene.scale.height - 48, 'S · Stop', {
+        fontFamily: 'system-ui, sans-serif',
+        fontSize: '14px',
+        color: '#fff8e8',
+        backgroundColor: '#3a4555',
+        padding: { x: 14, y: 10 },
+      })
+      .setOrigin(0, 1)
+      .setScrollFactor(0)
+      .setDepth(101)
+      .setInteractive({ useHandCursor: true })
+      .on('pointerup', () => {
+        this.onStopSelected?.();
+      })
+      .on('pointerover', () =>
+        this.stopBtn.setStyle({ backgroundColor: '#4a5565' }),
+      )
+      .on('pointerout', () =>
+        this.stopBtn.setStyle({ backgroundColor: '#3a4555' }),
+      );
+
     this.buildAbilityPad(accent);
     this.layout();
     scene.scale.on('resize', () => this.layout());
@@ -299,6 +325,7 @@ export class BattlefieldHud {
       this.menuBtn,
       this.muteBtn,
       this.attackMoveBtn,
+      this.stopBtn,
       this.goldDot,
       this.crystalDot,
       this.resourcePanel,
@@ -369,9 +396,16 @@ export class BattlefieldHud {
       x += btnW + gap;
     }
 
-    this.attackMoveBtn
+    const orderFont = this.narrow ? '13px' : '14px';
+    this.stopBtn
       .setPosition(pad, h - pad)
-      .setFontSize(this.narrow ? '13px' : '14px')
+      .setFontSize(orderFont)
+      .setOrigin(0, 1)
+      .setText(this.narrow ? 'Stop' : 'S · Stop');
+    const stopW = this.stopBtn.width;
+    this.attackMoveBtn
+      .setPosition(pad + stopW + 8, h - pad)
+      .setFontSize(orderFont)
       .setOrigin(0, 1);
     this.applyAttackMoveBtnStyle();
 
@@ -380,6 +414,14 @@ export class BattlefieldHud {
       .setFontSize(this.narrow ? '11px' : '12px')
       .setStyle({ wordWrap: { width: Math.min(w - 24, 640) } })
       .setColor(this.attackMoveArmed ? '#ffb8b8' : '#b8c9d9');
+  }
+
+  /** Brief highlight when Stop is issued (mobile clarity). */
+  flashStopButton(): void {
+    this.stopBtn.setStyle({ backgroundColor: '#8a7030', color: '#fff8e8' });
+    this.scene.time.delayedCall(220, () => {
+      this.stopBtn.setStyle({ backgroundColor: '#3a4555', color: '#fff8e8' });
+    });
   }
 
   /** Visual state for A-move armed (tint button + hint). */
