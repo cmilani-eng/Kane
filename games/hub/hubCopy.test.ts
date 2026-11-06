@@ -57,4 +57,10 @@ describe('hub copy', () => {
     setLocale('pt-BR');
     expect(t('hub.liveAria')).toBe('Estado: Ao vivo');
   });
+
+  it('localizes the Soft launch badge accessible label', () => {
+    expect(t('hub.experimentalAria')).toBe('Status: Soft launch');
+    setLocale('es');
+    expect(t('hub.experimentalAria')).toBe('Estado: Prelanzamiento');
+  });
 });
