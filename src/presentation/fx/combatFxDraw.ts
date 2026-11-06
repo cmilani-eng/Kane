@@ -11,7 +11,46 @@ export function drawCombatFxList(g: G, list: CombatFx[]): void {
     const t = Math.max(0, fx.lifeMs / fx.maxLifeMs);
     if (fx.kind === 'hit') drawHit(g, fx, t);
     else if (fx.kind === 'building_hit') drawBuildingHit(g, fx, t);
+    else if (fx.kind === 'core_pulse') drawCorePulse(g, fx, t);
+    else if (fx.kind === 'core_burst') drawCoreBurst(g, fx, t);
     else drawDeath(g, fx, t);
+  }
+}
+
+function drawCorePulse(g: G, fx: CombatFx, t: number): void {
+  const a = t * 0.9;
+  const r = fx.radius * (0.85 + (1 - t) * 0.7);
+  g.lineStyle(2.5, fx.color, a);
+  g.strokeCircle(fx.x, fx.y, r);
+  g.fillStyle(fx.color, a * 0.15);
+  g.fillCircle(fx.x, fx.y, r * 0.5);
+}
+
+function drawCoreBurst(g: G, fx: CombatFx, t: number): void {
+  const a = Math.max(0.1, t);
+  const expand = 1 + (1 - t) * 1.8;
+  g.fillStyle(0xffffff, a * 0.35);
+  g.fillCircle(fx.x, fx.y, fx.radius * 0.4 * expand);
+  g.lineStyle(3, fx.color, a);
+  g.strokeCircle(fx.x, fx.y, fx.radius * expand);
+  g.lineStyle(1.5, 0xfff8e8, a * 0.7);
+  g.strokeCircle(fx.x, fx.y, fx.radius * expand * 0.65);
+  const shards = 6;
+  for (let i = 0; i < shards; i++) {
+    const ang = (i / shards) * Math.PI * 2 + (fx.seed % 3) * 0.15;
+    const d = fx.radius * (0.5 + (1 - t) * 1.5);
+    const cx = fx.x + Math.cos(ang) * d;
+    const cy = fx.y + Math.sin(ang) * d;
+    const s = 5 + (1 - t) * 4;
+    g.fillStyle(fx.color, a * 0.95);
+    g.fillTriangle(
+      cx,
+      cy - s,
+      cx + s * 0.7,
+      cy + s * 0.5,
+      cx - s * 0.7,
+      cy + s * 0.5,
+    );
   }
 }
 

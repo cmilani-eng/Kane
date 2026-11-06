@@ -4,7 +4,12 @@
  */
 import type { BattlefieldWorld } from './battlefieldWorld';
 
-export type CombatFxKind = 'hit' | 'death' | 'building_hit';
+export type CombatFxKind =
+  | 'hit'
+  | 'death'
+  | 'building_hit'
+  | 'core_pulse'
+  | 'core_burst';
 
 export interface CombatFx {
   kind: CombatFxKind;

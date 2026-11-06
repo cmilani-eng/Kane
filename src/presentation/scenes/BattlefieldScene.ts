@@ -35,6 +35,7 @@ import {
   tickMutations,
   toggleMutationSelected,
 } from '../../gameplay/battlefield/battlefieldMutations';
+import { tickCoreFragments } from '../../gameplay/battlefield/battlefieldCoreFragments';
 import { BattlefieldHud } from '../ui/battlefieldHud';
 import { Minimap } from '../ui/minimap';
 import { TutorialCoach } from '../ui/tutorialCoach';
@@ -100,6 +101,7 @@ import { createSkirmishMap } from '../maps/mapManager';
 import { FogOverlay } from '../ui/fogOverlay';
 import { showKaneEndScreen } from '../ui/endScreen';
 import { drawCombatFxList } from '../fx/combatFxDraw';
+import { drawCoreFragments } from '../fx/coreFragmentDraw';
 import { drawFormationVisuals } from '../fx/formationVisual';
 import { drawMutationVisuals } from '../fx/mutationVisual';
 import {
@@ -496,10 +498,14 @@ export class BattlefieldScene extends Phaser.Scene {
       tickHeroes(this.world, delta);
       tickBattlefieldAi(this.world, this.ai, delta);
       tickFog(this.world, this.world.fog);
+      tickCoreFragments(this.world, delta);
       tickBattlefieldCombat(this.world, delta);
       // Attack flash just set (~120) — one SFX per frame max.
       if (this.world.units.some((u) => u.lastAttackFlashMs > 100)) {
         playSfx('attack');
+      }
+      if (this.world.coreClaimFlashMs > 180) {
+        playSfx('ability');
       }
       tickTutorial(this.world, this.tutorial, delta);
       const result = evaluateMatch(this.world);
@@ -624,6 +630,7 @@ export class BattlefieldScene extends Phaser.Scene {
       g.fillCircle(v.x, v.y, v.radius * (1.05 - a * 0.2));
     }
 
+    drawCoreFragments(g, this.world, this.animTimeMs);
     drawCombatFxList(g, this.world.combatFx);
     drawFormationVisuals(g, this.world, this.animTimeMs);
     drawMutationVisuals(g, this.world, this.animTimeMs);
