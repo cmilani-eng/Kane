@@ -1,10 +1,11 @@
 /**
- * In-match pause overlay — resume, mute, quit to menu.
+ * In-match pause overlay — resume, mute, volume, quit to menu.
  * ScrollFactor 0; ignore on the zoomed world camera.
  */
 import Phaser from 'phaser';
 import { BRAND } from '../../config/brand';
 import { isSfxMuted, playSfx, setSfxMuted } from '../audio/sfx';
+import { createVolumeSlider, type VolumeSliderHandle } from './volumeSlider';
 
 export interface PauseMenuOpts {
   scene: Phaser.Scene;
@@ -20,6 +21,7 @@ export class PauseMenu {
   private readonly ignoreOnMain: (objs: Phaser.GameObjects.GameObject[]) => void;
   private root: Phaser.GameObjects.GameObject[] = [];
   private muteLabel: Phaser.GameObjects.Text | null = null;
+  private volume: VolumeSliderHandle | null = null;
   private open = false;
 
   constructor(opts: PauseMenuOpts) {
@@ -44,6 +46,8 @@ export class PauseMenu {
     if (!this.open) return;
     this.open = false;
     this.scene.scale.off('resize', this.onResize, this);
+    this.volume?.destroy();
+    this.volume = null;
     for (const o of this.root) o.destroy();
     this.root = [];
     this.muteLabel = null;
@@ -51,6 +55,8 @@ export class PauseMenu {
 
   private onResize = (): void => {
     if (!this.open) return;
+    this.volume?.destroy();
+    this.volume = null;
     for (const o of this.root) o.destroy();
     this.root = [];
     this.muteLabel = null;
@@ -60,7 +66,7 @@ export class PauseMenu {
   private build(): void {
     const { width, height } = this.scene.scale;
     const panelW = Math.min(360, width - 40);
-    const panelH = Math.min(300, height * 0.52);
+    const panelH = Math.min(360, height * 0.62);
     const cx = width / 2;
     const cy = height * 0.48;
 
@@ -79,7 +85,7 @@ export class PauseMenu {
     this.root.push(panel);
 
     const title = this.scene.add
-      .text(cx, cy - panelH * 0.36, 'Paused', {
+      .text(cx, cy - panelH * 0.4, 'Paused', {
         fontFamily: 'Georgia, "Times New Roman", serif',
         fontSize: Math.min(32, width * 0.08) + 'px',
         color: '#f5e6c8',
@@ -88,7 +94,7 @@ export class PauseMenu {
       .setScrollFactor(0)
       .setDepth(222);
     const brand = this.scene.add
-      .text(cx, cy - panelH * 0.22, BRAND.name, {
+      .text(cx, cy - panelH * 0.28, BRAND.name, {
         fontFamily: 'system-ui, sans-serif',
         fontSize: '13px',
         color: '#9eb4c8',
@@ -98,8 +104,8 @@ export class PauseMenu {
       .setDepth(222);
     this.root.push(title, brand);
 
-    const btnY0 = cy - 8;
-    const gap = Math.min(56, panelH * 0.2);
+    const btnY0 = cy - panelH * 0.12;
+    const gap = Math.min(52, panelH * 0.16);
     this.root.push(
       this.makeBtn(cx, btnY0, 'Resume', () => {
         this.hide();
@@ -109,13 +115,25 @@ export class PauseMenu {
     this.muteLabel = this.makeBtn(cx, btnY0 + gap, this.muteText(), () => {
       setSfxMuted(!isSfxMuted());
       this.muteLabel?.setText(this.muteText());
+      this.volume?.refresh();
       if (!isSfxMuted()) playSfx('ui');
     });
     this.root.push(this.muteLabel);
+
+    this.volume = createVolumeSlider({
+      scene: this.scene,
+      x: cx,
+      y: btnY0 + gap * 2 + 8,
+      width: Math.min(260, panelW - 48),
+      depth: 222,
+      scrollFactor: 0,
+    });
+    this.root.push(...this.volume.objects);
+
     this.root.push(
       this.makeBtn(
         cx,
-        btnY0 + gap * 2,
+        btnY0 + gap * 3 + 16,
         'Quit to Menu',
         () => {
           playSfx('ui');

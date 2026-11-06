@@ -1,9 +1,49 @@
 /**
- * Shared Web Audio context + mute flag for SFX and ambient BGM.
+ * Shared Web Audio context + mute + master volume for SFX and ambient BGM.
+ * Volume persists in localStorage; mute is session-scoped and still zeros output.
  */
+const VOLUME_KEY = 'kane.masterVolume.v1';
+
 let ctx: AudioContext | null = null;
 let muted = false;
+/** 0–1; applied when unmuted. */
+let masterVolume = loadStoredVolume();
 const muteListeners = new Set<() => void>();
+const volumeListeners = new Set<() => void>();
+
+function canStore(): boolean {
+  try {
+    return typeof localStorage !== 'undefined';
+  } catch {
+    return false;
+  }
+}
+
+function loadStoredVolume(): number {
+  if (!canStore()) return 1;
+  try {
+    const raw = localStorage.getItem(VOLUME_KEY);
+    if (raw == null) return 1;
+    const n = Number(raw);
+    if (!Number.isFinite(n)) return 1;
+    return clamp01(n);
+  } catch {
+    return 1;
+  }
+}
+
+function clamp01(n: number): number {
+  return Math.min(1, Math.max(0, n));
+}
+
+function persistVolume(v: number): void {
+  if (!canStore()) return;
+  try {
+    localStorage.setItem(VOLUME_KEY, String(v));
+  } catch {
+    // ignore
+  }
+}
 
 /** Shared Web Audio context (resumes if suspended). */
 export function getAudioContext(): AudioContext | null {
@@ -43,4 +83,36 @@ export function setSfxMuted(value: boolean): void {
 export function onMuteChange(fn: () => void): () => void {
   muteListeners.add(fn);
   return () => muteListeners.delete(fn);
+}
+
+/** Stored master volume 0–1 (still applied only when unmuted). */
+export function getMasterVolume(): number {
+  return masterVolume;
+}
+
+export function setMasterVolume(value: number): void {
+  const next = clamp01(value);
+  if (next === masterVolume) {
+    persistVolume(next);
+    return;
+  }
+  masterVolume = next;
+  persistVolume(next);
+  for (const fn of volumeListeners) {
+    try {
+      fn();
+    } catch {
+      // ignore
+    }
+  }
+}
+
+export function onVolumeChange(fn: () => void): () => void {
+  volumeListeners.add(fn);
+  return () => volumeListeners.delete(fn);
+}
+
+/** Effective gain multiplier: 0 when muted, else master volume. */
+export function effectiveMasterGain(): number {
+  return muted ? 0 : masterVolume;
 }

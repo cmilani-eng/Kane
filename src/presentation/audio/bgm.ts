@@ -4,8 +4,10 @@
  */
 import {
   getAudioContext,
+  getMasterVolume,
   isSfxMuted,
   onMuteChange,
+  onVolumeChange,
 } from './audioContext';
 
 const BGM_GAIN = 0.016;
@@ -15,13 +17,14 @@ let master: GainNode | null = null;
 const nodes: AudioNode[] = [];
 const oscillators: OscillatorNode[] = [];
 let unsubscribeMute: (() => void) | null = null;
+let unsubscribeVolume: (() => void) | null = null;
 
-/** Apply current mute to the ambient bus (gain 0 when muted). */
+/** Apply mute + master volume to the ambient bus. */
 export function syncAmbientBgmMute(): void {
   if (!master) return;
   const ac = getAudioContext();
   if (!ac) return;
-  const target = isSfxMuted() ? 0 : BGM_GAIN;
+  const target = isSfxMuted() ? 0 : BGM_GAIN * getMasterVolume();
   try {
     master.gain.cancelScheduledValues(ac.currentTime);
     master.gain.setTargetAtTime(target, ac.currentTime, 0.05);
@@ -45,7 +48,7 @@ export function ensureAmbientBgm(): void {
 
   try {
     master = ac.createGain();
-    master.gain.value = isSfxMuted() ? 0 : BGM_GAIN;
+    master.gain.value = isSfxMuted() ? 0 : BGM_GAIN * getMasterVolume();
     master.connect(ac.destination);
 
     // Low drone + fifth + soft high shimmer — calm skirmish bed
@@ -84,6 +87,9 @@ export function ensureAmbientBgm(): void {
 
     if (!unsubscribeMute) {
       unsubscribeMute = onMuteChange(syncAmbientBgmMute);
+    }
+    if (!unsubscribeVolume) {
+      unsubscribeVolume = onVolumeChange(syncAmbientBgmMute);
     }
     started = true;
     syncAmbientBgmMute();

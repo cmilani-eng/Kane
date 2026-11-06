@@ -5,11 +5,19 @@
  */
 import {
   getAudioContext,
+  getMasterVolume,
   isSfxMuted,
+  setMasterVolume,
   setSfxMuted,
 } from './audioContext';
 
-export { getAudioContext, isSfxMuted, setSfxMuted };
+export {
+  getAudioContext,
+  getMasterVolume,
+  isSfxMuted,
+  setMasterVolume,
+  setSfxMuted,
+};
 
 export type SfxKey =
   | 'select'
@@ -99,6 +107,8 @@ export function playEndFanfare(win: boolean): void {
 function playToneSequence(tones: Tone[]): void {
   const ac = getAudioContext();
   if (!ac) return;
+  const vol = getMasterVolume();
+  if (vol <= 0) return;
   let t0 = ac.currentTime;
   for (const tone of tones) {
     try {
@@ -106,7 +116,7 @@ function playToneSequence(tones: Tone[]): void {
       const gain = ac.createGain();
       osc.type = tone.type ?? 'sine';
       osc.frequency.value = tone.freq;
-      const g = tone.gain ?? 0.04;
+      const g = (tone.gain ?? 0.04) * vol;
       gain.gain.setValueAtTime(g, t0);
       gain.gain.exponentialRampToValueAtTime(0.001, t0 + tone.dur);
       osc.connect(gain);
