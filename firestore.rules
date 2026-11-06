@@ -1,27 +1,53 @@
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
-    // Soft-launch: closed by default. Profiles / match summaries unlock with Auth.
+    // Deny-by-default. Soft-launch: no open collections.
     match /{document=**} {
       allow read, write: if false;
     }
 
+    function signedIn() {
+      return request.auth != null;
+    }
+
+    function isSelf(uid) {
+      return signedIn() && request.auth.uid == uid;
+    }
+
+    // Own profile only — mirrors RTDB profiles/$uid assumptions.
     match /profiles/{uid} {
-      allow read: if request.auth != null && request.auth.uid == uid;
-      allow write: if request.auth != null
-        && request.auth.uid == uid
+      allow read: if isSelf(uid);
+      allow create, update: if isSelf(uid)
         && request.resource.data.keys().hasOnly([
           'displayName',
           'ageGateOk',
           'updatedAt',
           'cosmetics'
-        ]);
+        ])
+        && request.resource.data.displayName is string
+        && request.resource.data.displayName.size() > 0
+        && request.resource.data.displayName.size() <= 32
+        && request.resource.data.ageGateOk is bool
+        && request.resource.data.updatedAt is timestamp;
+      allow delete: if false;
     }
 
+    // Per-match summaries — client create denied (Function stub / Admin SDK).
     match /matchSummaries/{id} {
-      allow read: if request.auth != null
+      allow read: if signedIn()
         && request.auth.uid in resource.data.playerUids;
-      allow create: if false; // Cloud Function only (future)
+      allow create, update, delete: if false;
+    }
+
+    // Daily rollups — authenticated read; writes Function/Admin only.
+    match /dailyRollups/{day} {
+      allow read: if signedIn();
+      allow write: if false;
+    }
+
+    // Moderation log — no client access until Custom Claims land.
+    match /moderationEvents/{id} {
+      allow read, write: if false;
     }
   }
 }
