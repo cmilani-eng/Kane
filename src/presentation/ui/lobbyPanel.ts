@@ -6,6 +6,7 @@
 import Phaser from 'phaser';
 import { BRAND } from '../../config/brand';
 import { loadMatchPrefs } from '../../database/matchPrefs';
+import { loadMatchSummaries } from '../../database/matchSummary';
 import { difficultyCopy, mapCopy, speciesName, t } from '../../i18n';
 import { getLobbyStub } from '../../networking/lobbySingleton';
 import type { LobbyStatus } from '../../networking/lobbyStub';
@@ -38,6 +39,20 @@ export function lobbySetupLine(): string {
     map: mapCopy(prefs.mapId).label,
     difficulty: difficultyCopy(prefs.difficulty).label,
   });
+}
+
+/**
+ * Estimated match length from recent local summaries (rounded minutes).
+ * Falls back to a quiet default when no history yet.
+ */
+export function lobbyMatchLengthTipLine(limit = 8): string {
+  const recent = loadMatchSummaries().summaries.slice(0, limit);
+  if (recent.length === 0) return t('lobby.matchLengthDefault');
+  const avgMs =
+    recent.reduce((sum, s) => sum + Math.max(0, s.durationMs), 0) /
+    recent.length;
+  const mins = Math.max(1, Math.round(avgMs / 60_000));
+  return t('lobby.matchLengthAvg', { n: mins });
 }
 
 export function showLobbyPanel(scene: Phaser.Scene, onClose: () => void): void {
@@ -97,14 +112,19 @@ export function showLobbyPanel(scene: Phaser.Scene, onClose: () => void): void {
     .setDepth(302);
 
   const mapTip = scene.add
-    .text(cx, top + 106, `${lobbySetupLine()}\n${lobbyMapTipLine()}`, {
-      fontFamily: 'system-ui, sans-serif',
-      fontSize: '12px',
-      color: '#a8c8c0',
-      align: 'center',
-      wordWrap: { width: panelW - 40 },
-      lineSpacing: 4,
-    })
+    .text(
+      cx,
+      top + 106,
+      `${lobbySetupLine()}\n${lobbyMapTipLine()}\n${lobbyMatchLengthTipLine()}`,
+      {
+        fontFamily: 'system-ui, sans-serif',
+        fontSize: '12px',
+        color: '#a8c8c0',
+        align: 'center',
+        wordWrap: { width: panelW - 40 },
+        lineSpacing: 4,
+      },
+    )
     .setOrigin(0.5)
     .setDepth(302);
 
