@@ -97,6 +97,7 @@ describe('account copy', () => {
     expect(profile).toContain('Comandante  ·  Ada');
     expect(profile).toContain('ada@example.com');
     expect(profile).toContain('Los Raros');
+    expect(profile).toMatch(/Los Raros · /);
     expect(profile).toContain('Difícil');
     expect(profile).toContain('Cresta');
     expect(profile).toMatch(/Cresta · /);
