@@ -19,10 +19,13 @@ export interface ScoutPulse {
   sector: MapSectorId;
 }
 
-/** Brief HUD chip after a scout pulse lands. */
+/** Brief HUD / minimap callout after a scout pulse lands. */
 export interface ScoutSectorHint {
   sector: MapSectorId;
   lifeMs: number;
+  /** World position of the pulse that armed the hint (minimap label anchor). */
+  x: number;
+  y: number;
 }
 
 const MAX_FX = 10;
@@ -70,7 +73,7 @@ export function spawnScoutPulsesFromFog(
   const list = world.scoutPulses;
   const step = Math.max(1, Math.ceil(n / MAX_SPAWN_PER_TICK));
   let spawned = 0;
-  let lastSector: MapSectorId | null = null;
+  let last: { sector: MapSectorId; x: number; y: number } | null = null;
   for (let k = 0; k < n && spawned < MAX_SPAWN_PER_TICK; k += step) {
     const cell = fog.newExploreIdx[k]!;
     const cx = cell % FOG_COLS;
@@ -86,13 +89,15 @@ export function spawnScoutPulsesFromFog(
       maxLifeMs: LIFE_MS,
       sector,
     });
-    lastSector = sector;
+    last = { sector, x, y };
     spawned++;
   }
-  if (lastSector) {
+  if (last) {
     world.scoutSectorHint = {
-      sector: lastSector,
+      sector: last.sector,
       lifeMs: SCOUT_SECTOR_HINT_MS,
+      x: last.x,
+      y: last.y,
     };
   }
 }

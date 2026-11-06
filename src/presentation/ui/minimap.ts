@@ -42,6 +42,10 @@ import {
   minimapPingDenyFlashAlpha,
 } from './minimapPingCooldown';
 import { minimapSelectedUnitBlip } from './minimapSelectedBlip';
+import {
+  minimapScoutPulseLabelAlpha,
+  minimapScoutPulseLabelText,
+} from './minimapScoutPulseLabel';
 
 export class Minimap {
   private readonly scene: Phaser.Scene;
@@ -50,6 +54,8 @@ export class Minimap {
   private readonly gfx: Phaser.GameObjects.Graphics;
   private readonly hit: Phaser.GameObjects.Rectangle;
   private readonly frame: Phaser.GameObjects.Rectangle;
+  /** Short sector label when fog scout pulse lands. */
+  private readonly scoutLabel: Phaser.GameObjects.Text;
 
   private mapX = 0;
   private mapY = 0;
@@ -92,6 +98,19 @@ export class Minimap {
       .setOrigin(0, 0);
 
     this.gfx = scene.add.graphics().setScrollFactor(0).setDepth(111);
+
+    this.scoutLabel = scene.add
+      .text(0, 0, '', {
+        fontFamily: 'Segoe UI, system-ui, sans-serif',
+        fontSize: '11px',
+        color: '#b8e8ff',
+        stroke: '#0a1018',
+        strokeThickness: 3,
+      })
+      .setScrollFactor(0)
+      .setDepth(113)
+      .setOrigin(0.5, 1)
+      .setVisible(false);
 
     this.hit = scene.add
       .rectangle(0, 0, this.mapW, this.mapH, 0x000000, 0.001)
@@ -155,7 +174,7 @@ export class Minimap {
   }
 
   objects(): Phaser.GameObjects.GameObject[] {
-    return [this.frame, this.gfx, this.hit];
+    return [this.frame, this.gfx, this.hit, this.scoutLabel];
   }
 
   setBottomInset(px: number): void {
@@ -256,6 +275,10 @@ export class Minimap {
     }
     if (this.pingDenyFlashMs > 0) {
       this.pingDenyFlashMs = Math.max(0, this.pingDenyFlashMs - dtMs);
+      this.refreshAcc = MOBILE_PERF.minimapMs;
+    }
+    if ((this.world.scoutSectorHint?.lifeMs ?? 0) > 0) {
+      // Keep redrawing while the scout label fades.
       this.refreshAcc = MOBILE_PERF.minimapMs;
     }
     this.refreshAcc += dtMs;
@@ -416,6 +439,36 @@ export class Minimap {
       g.strokeCircle(x, y, r);
       g.fillStyle(0xfff8e8, a * 0.9);
       g.fillCircle(x, y, 2.6 * Math.max(0.35, life));
+    }
+
+    // Fog scout reveal pulses — ice rings + short sector label on the minimap
+    for (const fx of this.world.scoutPulses ?? []) {
+      const life = Math.max(0.05, fx.lifeMs / fx.maxLifeMs);
+      const x = this.mapX + fx.x * sx;
+      const y = this.mapY + fx.y * sy;
+      const a = life * 0.75;
+      g.lineStyle(1.5, 0x7ec8ff, a);
+      g.strokeCircle(x, y, 4 + (1 - life) * 3);
+    }
+    const hint = this.world.scoutSectorHint;
+    if (hint && hint.lifeMs > 0) {
+      const x = Phaser.Math.Clamp(
+        this.mapX + hint.x * sx,
+        this.mapX + 10,
+        this.mapX + this.mapW - 10,
+      );
+      const y = Phaser.Math.Clamp(
+        this.mapY + hint.y * sy,
+        this.mapY + 12,
+        this.mapY + this.mapH - 2,
+      );
+      this.scoutLabel
+        .setText(minimapScoutPulseLabelText(hint.sector))
+        .setPosition(x, y - 6)
+        .setAlpha(minimapScoutPulseLabelAlpha(hint.lifeMs))
+        .setVisible(true);
+    } else {
+      this.scoutLabel.setVisible(false).setAlpha(1);
     }
 
     // Camera viewport — gold frame + soft fill so it reads at a glance
