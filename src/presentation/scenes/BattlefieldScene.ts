@@ -56,6 +56,7 @@ import {
 } from '../../gameplay/battlefield/battlefieldTutorial';
 import {
   buildingBlocks,
+  canAfford,
   findBuildingAt,
   placeBuilding,
   snapBuildingWorld,
@@ -71,6 +72,7 @@ import {
   findNodeAt,
   issueGatherSelected,
   tickBattlefieldEconomy,
+  walletOf,
 } from '../../gameplay/battlefield/battlefieldEconomy';
 import { tickEconomyFx } from '../../gameplay/battlefield/battlefieldEconomyFx';
 import {
@@ -890,12 +892,15 @@ export class BattlefieldScene extends Phaser.Scene {
       this.ghostGfx.clear();
       return;
     }
+    const def = getBuildingType(this.placeType);
+    const affordable = canAfford(walletOf(this.world, 'player'), def.cost);
     this.ghostGfx.clear();
     drawPlacementGhost(this.ghostGfx, {
       x: this.ghostPos.x,
       y: this.ghostPos.y,
       typeId: this.placeType,
       valid: this.ghostValid,
+      affordable,
       timeMs: this.animTimeMs,
       accent: this.playerSkinAccent,
     });
@@ -1200,11 +1205,25 @@ export class BattlefieldScene extends Phaser.Scene {
 
     const placing = this.mode === 'place';
     const def = placing ? getBuildingType(this.placeType) : null;
+    if (placing && def) {
+      const gold = def.cost.gold ?? 0;
+      const crystals = def.cost.magic_crystals ?? 0;
+      const canPay = canAfford(walletOf(this.world, 'player'), def.cost);
+      this.hud.setPlacementCost({
+        name: def.name,
+        gold,
+        crystals,
+        canPay,
+      });
+    } else {
+      this.hud.setPlacementCost(null);
+    }
     const hint = this.hud.controlHint(
       placing,
       def?.name,
       def?.cost.gold ?? 0,
       this.mode === 'attackMove',
+      def?.cost.magic_crystals ?? 0,
     );
     this.hud.refresh(status, hint, dtMs);
   }
