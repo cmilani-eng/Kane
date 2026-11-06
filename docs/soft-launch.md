@@ -79,6 +79,7 @@ This doc is the honest gate before any public preview URL.
 | Building HP max tip | **OK** — building selection stats show catalog Max HP tip | `buildingHpMax`, `sel.hpMaxTip` |
 | Building armor tip | **OK** — building selection stats show Armor · Structure tip | `buildingArmorClass`, `sel.armor.structure` |
 | Building build cost tip | **OK** — building selection stats show catalog Build gold/crystal cost (omitted for free halls) | `buildingBuildCost`, `sel.buildCost*` |
+| Building build time tip | **OK** — building selection stats show catalog full build seconds (distinct from live remain) | `buildingBuildTime`, `sel.buildTimeTip` |
 | Unit atk CD tip | **OK** — selection stats show catalog attack cooldown in seconds (same-type only) | `unitAttackCooldown`, `sel.atkCdTip` |
 | Unit supply tip | **OK** — selection stats show catalog supply cost (1 slot per unit, same-type only) | `unitSupplyCost`, `sel.supplyTip` |
 | Unit train gold tip | **OK** — selection stats show catalog train gold cost (same-type only) | `unitTrainGold`, `sel.trainGoldTip` |

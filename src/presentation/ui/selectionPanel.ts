@@ -19,6 +19,7 @@ import { unitArmorClass } from '../../data/unitArmorClass';
 import { getUnitType, type UnitTypeId } from '../../data/units';
 import { buildingArmorClassLabel } from './buildingArmorClass';
 import { buildingBuildCostLabel } from './buildingBuildCost';
+import { buildingBuildTimeLabel } from './buildingBuildTime';
 import { buildingHpMaxLabel } from './buildingHpMax';
 import {
   sharedUnitAttackCooldownLabel,
@@ -254,6 +255,8 @@ export type SelectionPanelView =
       armorClass: string | null;
       /** Catalog build gold/crystal cost tip (omitted when free). */
       buildCostTip: string | null;
+      /** Catalog full build-time tip (omitted when buildMs is 0). */
+      buildTimeTip: string | null;
       /** Building finished construction (can start training). */
       ready: boolean;
       /** 0–1 construction progress while incomplete. */
@@ -568,6 +571,7 @@ export function buildSelectionView(
       hpMaxTip: buildingHpMaxLabel(b.typeId),
       armorClass: buildingArmorClassLabel(b.typeId),
       buildCostTip: buildingBuildCostLabel(b.typeId),
+      buildTimeTip: buildingBuildTimeLabel(b.typeId),
       ready,
       buildPct,
       buildRemainSec: buildRemain,
@@ -1031,6 +1035,7 @@ function structureSignature(view: SelectionPanelView): string {
     view.hpMaxTip ?? '',
     view.armorClass ?? '',
     view.buildCostTip ?? '',
+    view.buildTimeTip ?? '',
     view.trains
       .map((t) => `${t.typeId}:${t.canPay ? 1 : 0}:${t.affordable ? 1 : 0}`)
       .join(','),
@@ -1634,6 +1639,9 @@ export function renderSelectionPanel(view: SelectionPanelView): boolean {
         if (view.buildCostTip) {
           bits.push(`<span>${escapeHtml(view.buildCostTip)}</span>`);
         }
+        if (view.buildTimeTip) {
+          bits.push(`<span>${escapeHtml(view.buildTimeTip)}</span>`);
+        }
         if (view.trains.length) bits.push(`<span>${t('sel.production')}</span>`);
         if (view.places.length) bits.push(`<span>${t('sel.build')}</span>`);
         if (bits.length === 0) bits.push(`<span>${t('sel.noProductionStat')}</span>`);
@@ -1715,6 +1723,9 @@ export function renderSelectionPanel(view: SelectionPanelView): boolean {
             view.buildCostTip
               ? `<span>${escapeHtml(view.buildCostTip)}</span>`
               : '',
+            view.buildTimeTip
+              ? `<span>${escapeHtml(view.buildTimeTip)}</span>`
+              : '',
           ].join('');
           stats.innerHTML = `<span>${t('sel.hpStat', {
             hp: Math.ceil(view.hp),
@@ -1748,6 +1759,10 @@ export function renderSelectionPanel(view: SelectionPanelView): boolean {
           }
           if (spans[tipIdx] && view.buildCostTip) {
             spans[tipIdx].textContent = view.buildCostTip;
+            tipIdx += 1;
+          }
+          if (spans[tipIdx] && view.buildTimeTip) {
+            spans[tipIdx].textContent = view.buildTimeTip;
           }
         }
       } else if (view.trains.length === 0) {
