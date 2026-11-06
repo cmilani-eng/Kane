@@ -131,6 +131,10 @@ export type SelectionPanelView =
       mutation: SelectionMutationView | null;
       /** Unit-specific control hint (e.g. Grabber / Weirdos hero). */
       controlHint: string | null;
+      /** Live worker cargo line when carrying > 0. */
+      carryLine: string | null;
+      /** Tint carry line for magic crystals. */
+      carryCrystal: boolean;
     }
   | {
       kind: 'building';
@@ -190,6 +194,7 @@ export function ensureSelectionPanel(): HTMLElement {
             <div class="kane-sel-hp-track"><div class="kane-sel-hp-fill" data-role="hp-fill"></div></div>
             <span class="kane-sel-hp-text" data-role="hp-text"></span>
           </div>
+          <div class="kane-sel-carry" data-role="carry" hidden></div>
           <div class="kane-sel-stats" data-role="stats"></div>
           <div class="kane-sel-meter" data-role="meter" hidden>
             <div class="kane-sel-meter-track">
@@ -367,6 +372,16 @@ function injectStyles(): void {
     }
     #kane-selection-panel .kane-sel-hp-fill.is-low {
       background: linear-gradient(90deg, #8a3030, #e87a7a);
+    }
+    #kane-selection-panel .kane-sel-carry {
+      margin-top: 4px;
+      font-size: 12px;
+      font-weight: 600;
+      color: #f0c75e;
+      letter-spacing: 0.02em;
+    }
+    #kane-selection-panel .kane-sel-carry.is-crystal {
+      color: #7ec8ff;
     }
     #kane-selection-panel .kane-sel-hp-text {
       flex: 0 0 auto;
@@ -712,8 +727,10 @@ export function selectionPanelInsetPx(visible: boolean): number {
   if (!visible) return 0;
   const narrow =
     typeof window !== 'undefined' ? window.innerWidth < 720 : false;
-  // Slightly taller: train cost rows + always-on queue strip for producers.
-  // Hero ability row adds a second action line on narrow.
+  const short =
+    typeof window !== 'undefined' ? window.innerHeight < 500 : false;
+  // iPhone 17 landscape is only ~402px tall, so the panel stays shorter.
+  if (short) return 120;
   return narrow ? 188 : 172;
 }
 
@@ -812,16 +829,12 @@ export function buildSelectionView(
     }
     if (u.mutated) tags.push(t(u.mutationLocked ? 'sel.mutatedLock' : 'sel.mutated'));
     if (u.enraged) tags.push(t(u.rageLocked ? 'sel.rageLock' : 'sel.rage'));
-    // Cargo is live-updated via flavor so button DOM is not rebuilt each tick.
-    const cargo =
-      u.carrying > 0
-        ? t('sel.cargo', { n: u.carrying, resource: u.carryingResource ?? '' })
-        : '';
+    const carry = carryLineFor(alive);
     return {
       kind: 'units',
       count: 1,
       title: u.name,
-      flavor: `${species.name} · ${matchupLine(u.speciesId)}${cargo}`,
+      flavor: `${species.name} · ${matchupLine(u.speciesId)}`,
       hp: u.hp,
       maxHp: u.maxHp,
       dmg: u.dmg,
@@ -833,6 +846,8 @@ export function buildSelectionView(
       rage: rageViewFor(alive),
       mutation: mutationViewFor(alive),
       controlHint: controlHintFor(alive),
+      carryLine: carry.line,
+      carryCrystal: carry.crystal,
     };
   }
 
@@ -862,6 +877,7 @@ export function buildSelectionView(
   if (mutated) tags.push(t('sel.mutCount', { n: mutated }));
   if (enraged) tags.push(t('sel.rageCount', { n: enraged }));
 
+  const carry = carryLineFor(alive);
   return {
     kind: 'units',
     count: alive.length,
@@ -878,6 +894,36 @@ export function buildSelectionView(
     rage: rageViewFor(alive),
     mutation: mutationViewFor(alive),
     controlHint: controlHintFor(alive),
+    carryLine: carry.line,
+    carryCrystal: carry.crystal,
+  };
+}
+
+/** Visible cargo readout for selected workers (single or group). */
+export function carryLineFor(
+  units: BattlefieldUnit[],
+): { line: string | null; crystal: boolean } {
+  const carriers = units.filter(
+    (u) => u.hp > 0 && u.carrying > 0 && u.carryingResource,
+  );
+  if (carriers.length === 0) return { line: null, crystal: false };
+  const total = carriers.reduce((s, u) => s + u.carrying, 0);
+  const resources = new Set(
+    carriers.map((u) => u.carryingResource).filter(Boolean),
+  );
+  if (resources.size === 1) {
+    const id = carriers[0]!.carryingResource!;
+    return {
+      line: t('sel.cargo', {
+        n: Math.floor(total),
+        resource: RESOURCES[id].label,
+      }),
+      crystal: id === 'magic_crystals',
+    };
+  }
+  return {
+    line: t('sel.cargoMixed', { n: Math.floor(total) }),
+    crystal: false,
   };
 }
 
@@ -1353,6 +1399,7 @@ export function renderSelectionPanel(view: SelectionPanelView): boolean {
   const flavorEl = root.querySelector('[data-role="flavor"]') as HTMLElement;
   const hpFill = root.querySelector('[data-role="hp-fill"]') as HTMLElement;
   const hpText = root.querySelector('[data-role="hp-text"]') as HTMLElement;
+  const carryEl = root.querySelector('[data-role="carry"]') as HTMLElement;
   const stats = root.querySelector('[data-role="stats"]') as HTMLElement;
   const meterRoot = root.querySelector('[data-role="meter"]') as HTMLElement;
   const meterFill = root.querySelector(
@@ -1378,6 +1425,8 @@ export function renderSelectionPanel(view: SelectionPanelView): boolean {
   flavorEl.textContent = view.flavor;
 
   if (view.kind === 'resource') {
+    carryEl.hidden = true;
+    carryEl.textContent = '';
     const remPct =
       view.maxAmount > 0
         ? Math.min(1, Math.max(0, view.remaining / view.maxAmount))
@@ -1416,6 +1465,15 @@ export function renderSelectionPanel(view: SelectionPanelView): boolean {
     hpText.textContent = `${Math.ceil(view.hp)}/${Math.ceil(view.maxHp)}`;
 
     if (view.kind === 'units') {
+      if (view.carryLine) {
+        carryEl.hidden = false;
+        carryEl.textContent = view.carryLine;
+        carryEl.classList.toggle('is-crystal', view.carryCrystal);
+      } else {
+        carryEl.hidden = true;
+        carryEl.textContent = '';
+        carryEl.classList.remove('is-crystal');
+      }
       portrait.classList.toggle('is-building', false);
       portrait.classList.toggle('is-mixed', view.count > 1 && view.dmg == null);
       portrait.style.setProperty('--kane-sel-accent', '#f0c75e');
@@ -1490,6 +1548,8 @@ export function renderSelectionPanel(view: SelectionPanelView): boolean {
       }
       queue.hidden = true;
     } else {
+      carryEl.hidden = true;
+      carryEl.textContent = '';
       meterRoot.hidden = true;
       controlHintEl.hidden = true;
       portrait.classList.add('is-building');
