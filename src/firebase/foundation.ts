@@ -54,8 +54,10 @@ export function createFirebaseFoundation(): FirebaseFoundation {
 
 export {
   confirmAgeGate,
+  blockUnder13,
   clearAgeGate,
   loadAgeGate,
+  canEnterGame,
   canUseOnlineFeatures,
   ageGateLabel,
 } from './ageGate';

@@ -1,4 +1,5 @@
 import Phaser from 'phaser';
+import { canEnterGame, loadAgeGate } from '../../firebase/ageGate';
 import { registerUnitAnims } from '../animations/unitAnims';
 import {
   generatePropTextures,
@@ -16,6 +17,9 @@ export class BootScene extends Phaser.Scene {
     generateUnitSpriteSheets(this);
     generatePropTextures(this);
     registerUnitAnims(this);
-    this.scene.start('Menu');
+
+    const gate = loadAgeGate();
+    // First-run or under-13 → AgeGate; 13+ confirmed → Menu (SP unlocked).
+    this.scene.start(canEnterGame(gate) ? 'Menu' : 'AgeGate');
   }
 }

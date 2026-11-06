@@ -1,11 +1,17 @@
 /**
- * 13+ age gate for future online features — localStorage only.
- * Does not block local SP vs AI.
+ * 13+ age gate — first-run boot confirm, localStorage only.
+ * Under-13 is blocked from Menu / SP. Ads stay off (see flags).
  */
 import { flags } from '../config/flags';
-import type { AgeGateState } from './types';
+import type { AgeGateState, AgeGateStatus } from './types';
 
-const KEY = 'kane.ageGate.v1';
+const KEY = 'kane.ageGate.v2';
+/** In-memory fallback when localStorage is unavailable. */
+let memory: AgeGateState | null = null;
+
+function pending(): AgeGateState {
+  return { status: 'pending', ok: false, confirmedAtMs: null };
+}
 
 function canStore(): boolean {
   try {
@@ -15,55 +21,112 @@ function canStore(): boolean {
   }
 }
 
-export function loadAgeGate(): AgeGateState {
-  if (!canStore()) return { ok: false, confirmedAtMs: null };
-  try {
-    const raw = localStorage.getItem(KEY);
-    if (!raw) return { ok: false, confirmedAtMs: null };
-    const parsed = JSON.parse(raw) as Partial<AgeGateState>;
-    return {
-      ok: !!parsed.ok,
-      confirmedAtMs:
-        typeof parsed.confirmedAtMs === 'number' ? parsed.confirmedAtMs : null,
-    };
-  } catch {
-    return { ok: false, confirmedAtMs: null };
+function normalize(raw: Partial<AgeGateState> & { ok?: boolean }): AgeGateState {
+  let status: AgeGateStatus = 'pending';
+  if (raw.status === 'ok' || raw.status === 'blocked' || raw.status === 'pending') {
+    status = raw.status;
+  } else if (raw.ok === true) {
+    // Migrate v1 `{ ok: true }` shapes.
+    status = 'ok';
   }
+  return {
+    status,
+    ok: status === 'ok',
+    confirmedAtMs:
+      typeof raw.confirmedAtMs === 'number' ? raw.confirmedAtMs : null,
+  };
 }
 
-export function confirmAgeGate(): AgeGateState {
-  const state: AgeGateState = { ok: true, confirmedAtMs: Date.now() };
+function persist(state: AgeGateState): AgeGateState {
+  memory = state;
   if (canStore()) {
     try {
       localStorage.setItem(KEY, JSON.stringify(state));
     } catch {
-      // private mode — keep in-memory only for this session
+      // private mode — memory only
     }
   }
   return state;
 }
 
+export function loadAgeGate(): AgeGateState {
+  if (memory) return memory;
+  if (!canStore()) return pending();
+  try {
+    const raw = localStorage.getItem(KEY);
+    if (!raw) {
+      // One-shot migrate from v1 key if present.
+      const v1 = localStorage.getItem('kane.ageGate.v1');
+      if (v1) {
+        const migrated = normalize(JSON.parse(v1) as Partial<AgeGateState>);
+        return persist(migrated);
+      }
+      return pending();
+    }
+    const state = normalize(JSON.parse(raw) as Partial<AgeGateState>);
+    memory = state;
+    return state;
+  } catch {
+    return pending();
+  }
+}
+
+/** Player confirms they are 13+ — unlocks Menu / SP. */
+export function confirmAgeGate(): AgeGateState {
+  return persist({
+    status: 'ok',
+    ok: true,
+    confirmedAtMs: Date.now(),
+  });
+}
+
+/** Player indicates under-13 — stay on blocked screen. */
+export function blockUnder13(): AgeGateState {
+  return persist({
+    status: 'blocked',
+    ok: false,
+    confirmedAtMs: Date.now(),
+  });
+}
+
 export function clearAgeGate(): AgeGateState {
-  const state: AgeGateState = { ok: false, confirmedAtMs: null };
+  memory = null;
   if (canStore()) {
     try {
       localStorage.removeItem(KEY);
+      localStorage.removeItem('kane.ageGate.v1');
     } catch {
       // ignore
     }
   }
-  return state;
+  return pending();
 }
 
-/** Online path may proceed only after 13+ confirm. SP ignores this. */
+/** True once the player has answered (ok or blocked). */
+export function isAgeGateResolved(
+  gate: AgeGateState = loadAgeGate(),
+): boolean {
+  return gate.status === 'ok' || gate.status === 'blocked';
+}
+
+/** Menu / battlefield allowed only after 13+ confirm. */
+export function canEnterGame(gate: AgeGateState = loadAgeGate()): boolean {
+  return gate.status === 'ok';
+}
+
+/** Online lobby stubs also require 13+. */
 export function canUseOnlineFeatures(
   gate: AgeGateState = loadAgeGate(),
 ): boolean {
-  return gate.ok && flags.ageGateMinYears >= 13;
+  return gate.status === 'ok' && flags.ageGateMinYears >= 13;
 }
 
 export function ageGateLabel(gate: AgeGateState = loadAgeGate()): string {
-  return gate.ok
-    ? `Age ${flags.ageGateMinYears}+ confirmed`
-    : `Age ${flags.ageGateMinYears}+ gate pending (online only)`;
+  if (gate.status === 'ok') {
+    return `Age ${flags.ageGateMinYears}+ confirmed`;
+  }
+  if (gate.status === 'blocked') {
+    return `Under ${flags.ageGateMinYears} — play blocked`;
+  }
+  return `Age ${flags.ageGateMinYears}+ gate pending`;
 }
