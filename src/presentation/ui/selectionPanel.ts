@@ -23,6 +23,8 @@ export type SelectionPanelHandlers = {
   train: (typeId: UnitTypeId) => void;
   /** Arm rally-set mode for the selected production building. */
   rally: () => void;
+  /** Cancel a queue slot (omit index = last item). */
+  cancelQueue: (index?: number) => void;
 };
 
 export type SelectionPanelView =
@@ -118,7 +120,14 @@ export function ensureSelectionPanel(): HTMLElement {
     if (act === 'stop') handlers.stop();
     else if (act === 'attackMove') handlers.attackMove();
     else if (act === 'rally') handlers.rally();
-    else if (act === 'train' && btn.dataset.typeId) {
+    else if (act === 'cancelQueue') {
+      const raw = btn.dataset.queueIndex;
+      const idx =
+        raw != null && raw !== '' ? Number.parseInt(raw, 10) : undefined;
+      handlers.cancelQueue(
+        Number.isFinite(idx as number) ? (idx as number) : undefined,
+      );
+    } else if (act === 'train' && btn.dataset.typeId) {
       handlers.train(btn.dataset.typeId as UnitTypeId);
     }
   });
@@ -300,6 +309,10 @@ function injectStyles(): void {
       border-color: #f0c75e;
       color: #fff8e8;
     }
+    #kane-selection-panel button.is-cancel {
+      background: #5a3a3a;
+      border-color: #e87a7a;
+    }
     #kane-selection-panel button.is-train {
       background: #3d7ea6;
       flex: 1 1 100px;
@@ -370,8 +383,11 @@ function injectStyles(): void {
       align-items: center;
     }
     #kane-selection-panel .kane-sel-qicon {
-      width: 28px;
-      height: 28px;
+      width: 32px;
+      height: 32px;
+      min-width: 32px;
+      min-height: 32px;
+      padding: 0;
       border-radius: 4px;
       border: 1.5px solid #7ec8ff;
       background: #1a2838;
@@ -382,11 +398,18 @@ function injectStyles(): void {
       font-weight: 700;
       color: #f5e6c8;
       position: relative;
+      cursor: pointer;
+      touch-action: manipulation;
+      -webkit-tap-highlight-color: transparent;
     }
     #kane-selection-panel .kane-sel-qicon.is-active {
       border-color: #f0c75e;
       box-shadow: 0 0 0 1px rgba(240,199,94,0.55);
       color: #fff8e8;
+    }
+    #kane-selection-panel .kane-sel-qicon:active {
+      border-color: #e87a7a;
+      background: #3a2430;
     }
     #kane-selection-panel .kane-sel-qicon .kane-sel-qnum {
       position: absolute;
@@ -653,13 +676,14 @@ function queueLabelText(
   }
   const pct = Math.floor(view.progressPct * 100);
   const waiting = view.queue.length - 1;
+  const cancelHint = ' · tap icon or Cancel last to refund';
   if (view.headName && waiting > 0) {
-    return `Training ${view.headName} · ${pct}% · ${waiting} waiting`;
+    return `Training ${view.headName} · ${pct}% · ${waiting} waiting${cancelHint}`;
   }
   if (view.headName) {
-    return `Training ${view.headName} · ${pct}%`;
+    return `Training ${view.headName} · ${pct}%${cancelHint}`;
   }
-  return `Queue ${view.queue.length}`;
+  return `Queue ${view.queue.length}${cancelHint}`;
 }
 
 export function renderSelectionPanel(view: SelectionPanelView): boolean {
@@ -738,8 +762,14 @@ export function renderSelectionPanel(view: SelectionPanelView): boolean {
       const rallyBtn = view.hasRally
         ? `<button type="button" class="is-rally${view.rallyArmed ? ' is-armed' : ''}" data-act="rally">${view.rallyArmed ? 'Rally · Tap map' : 'Set rally'}</button>`
         : '';
+      const cancelBtn =
+        view.queue.length > 0
+          ? `<button type="button" class="is-cancel" data-act="cancelQueue" title="Cancel last queued unit (full refund)">Cancel last</button>`
+          : '';
       actions.innerHTML =
-        rallyBtn + view.trains.map(trainButtonHtml).join('');
+        rallyBtn +
+        cancelBtn +
+        view.trains.map(trainButtonHtml).join('');
     } else {
       for (const t of view.trains) {
         const btn = actions.querySelector(
@@ -776,11 +806,11 @@ export function renderSelectionPanel(view: SelectionPanelView): boolean {
               .map((id, i) => {
                 const u = getUnitType(id);
                 const label = u.name.slice(0, 2).toUpperCase();
-                return `<div class="kane-sel-qicon${i === 0 ? ' is-active' : ''}" title="${escapeHtml(u.name)}">${label}<span class="kane-sel-qnum">${i + 1}</span></div>`;
+                return `<button type="button" class="kane-sel-qicon${i === 0 ? ' is-active' : ''}" data-act="cancelQueue" data-queue-index="${i}" title="Cancel ${escapeHtml(u.name)} (refund)">${label}<span class="kane-sel-qnum">${i + 1}</span></button>`;
               })
               .join('') +
             (overflow > 0
-              ? `<div class="kane-sel-qicon" title="+${overflow} more">+${overflow}</div>`
+              ? `<span class="kane-sel-qicon" title="+${overflow} more" style="cursor:default">+${overflow}</span>`
               : '');
         }
       }

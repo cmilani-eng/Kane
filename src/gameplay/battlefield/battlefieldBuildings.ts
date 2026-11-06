@@ -36,6 +36,15 @@ export function pay(
   return true;
 }
 
+/** Refund gold / crystals (e.g. cancelled production). */
+export function refund(
+  wallet: ResourceWallet,
+  cost: Partial<ResourceWallet>,
+): void {
+  wallet.gold += cost.gold ?? 0;
+  wallet.magic_crystals += cost.magic_crystals ?? 0;
+}
+
 export function buildingBlocks(
   world: BattlefieldWorld,
   x: number,
