@@ -41,6 +41,7 @@ import {
   MINIMAP_PING_DENY_FLASH_MS,
   minimapPingDenyFlashAlpha,
 } from './minimapPingCooldown';
+import { minimapSelectedUnitBlip } from './minimapSelectedBlip';
 
 export class Minimap {
   private readonly scene: Phaser.Scene;
@@ -366,10 +367,10 @@ export class Minimap {
       }
     }
 
-    // Units
+    // Units — unselected base dots (+ idle rings); selected drawn last on top
     const idlePulse = 0.35 + 0.25 * Math.sin(this.pulseMs / 850);
     for (const u of this.world.units) {
-      if (u.hp <= 0) continue;
+      if (u.hp <= 0 || u.selected) continue;
       if (u.team === 'enemy' && !enemyRevealed(fog, u.x, u.y)) continue;
       const x = this.mapX + u.x * sx;
       const y = this.mapY + u.y * sy;
@@ -378,16 +379,8 @@ export class Minimap {
         g.lineStyle(1.5, u.carrying > 0 ? 0xffc857 : 0xf0c75e, idlePulse);
         g.strokeCircle(x, y, 5.5);
       }
-      if (u.selected) {
-        // Selection ring — high-contrast for mobile glance
-        g.lineStyle(2, 0xfff8e8, selPulse);
-        g.strokeCircle(x, y, 6.5);
-        g.fillStyle(player ? 0x8aee95 : 0xff8a8a, 1);
-        g.fillCircle(x, y, 3.8);
-      } else {
-        g.fillStyle(player ? 0x5dce6a : 0xe85a5a, 1);
-        g.fillCircle(x, y, 2.4);
-      }
+      g.fillStyle(player ? 0x5dce6a : 0xe85a5a, 1);
+      g.fillCircle(x, y, 2.4);
     }
 
     // Order pings — move / attack-move waypoints
@@ -439,5 +432,22 @@ export class Minimap {
     g.strokeRect(vx, vy, vwM, vhM);
     g.lineStyle(1, 0xfff8e8, 0.55);
     g.strokeRect(vx + 1.5, vy + 1.5, Math.max(0, vwM - 3), Math.max(0, vhM - 3));
+
+    // Selected unit blips — on top of camera/order so selection never hides
+    for (const u of this.world.units) {
+      if (u.hp <= 0 || !u.selected) continue;
+      if (u.team === 'enemy' && !enemyRevealed(fog, u.x, u.y)) continue;
+      const x = this.mapX + u.x * sx;
+      const y = this.mapY + u.y * sy;
+      const blip = minimapSelectedUnitBlip(u.team === 'player');
+      if (isIdleWorker(u)) {
+        g.lineStyle(1.5, u.carrying > 0 ? 0xffc857 : 0xf0c75e, idlePulse);
+        g.strokeCircle(x, y, 5.5);
+      }
+      g.lineStyle(2, blip.ring, selPulse);
+      g.strokeCircle(x, y, blip.ringR);
+      g.fillStyle(blip.fill, 1);
+      g.fillCircle(x, y, blip.r);
+    }
   }
 }

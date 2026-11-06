@@ -42,6 +42,7 @@ This doc is the honest gate before any public preview URL.
 | CORE hold progress tick | **OK** — hold banner progress bar + per-second clock tick | `coreHoldProgress`, `CoreVictoryBanner` |
 | Idle army count | **OK** — Idle army chip leads with idle combat unit count | `battlefieldHud`, `hud.idleArmy`, `countIdleMilitary` |
 | Minimap double-tap flash | **OK** — brief gold wash when double-tap recenters on selection/order | `minimap`, `MINIMAP_FOCUS_FLASH_MS` |
+| Minimap select blips | **OK** — selected units draw gold/cream blips above camera/order layers | `minimapSelectedUnitBlip`, `minimap` |
 | Help species hotkeys | **OK** — Controls help lists Formation/Mutation/Rage only for the current species | `controlsHelpPanel`, `help.formation` / `mutation` / `rage` |
 | Formation count tip | **OK** — Nobles selection hint shows F + formed/eligible count | `selectionPanel` `formationCountTip` |
 | Stance hotkey echo | **OK** — F / R / M flashes the matching stance button on the selection panel | `flashStanceHotkey` |
