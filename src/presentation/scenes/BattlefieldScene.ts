@@ -111,6 +111,7 @@ import { createSkirmishMap } from '../maps/mapManager';
 import { FogOverlay } from '../ui/fogOverlay';
 import { showKaneEndScreen } from '../ui/endScreen';
 import { drawBuildingSilhouette } from '../buildings/buildingSilhouette';
+import { drawProductionQueueFeedback } from '../buildings/productionQueueFeedback';
 import { drawResourceNodeSilhouette } from '../resources/resourceNodeSilhouette';
 import { drawCombatFxList } from '../fx/combatFxDraw';
 import { drawCoreFragments } from '../fx/coreFragmentDraw';
@@ -743,15 +744,7 @@ export class BattlefieldScene extends Phaser.Scene {
         selected: !!b.selected,
         timeMs: this.animTimeMs,
       });
-      if (b.trainQueue.length > 0) {
-        const tw = b.radius * 2;
-        const udef = getUnitType(b.trainQueue[0]!);
-        const tp = Math.min(1, b.trainProgressMs / udef.trainMs);
-        g.fillStyle(0x1a1a1a, 0.8);
-        g.fillRect(b.x - b.radius, b.y + b.radius + 10, tw, 4);
-        g.fillStyle(0x7ec8ff, 1);
-        g.fillRect(b.x - b.radius, b.y + b.radius + 10, tw * tp, 4);
-      }
+      drawProductionQueueFeedback(g, b, this.animTimeMs);
       if (!b.complete) {
         const bw = b.radius * 2;
         g.fillStyle(0x222222, 0.8);
