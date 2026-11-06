@@ -1404,7 +1404,10 @@ export class BattlefieldScene extends Phaser.Scene {
       this.mode === 'place' ? this.placeType : null,
     );
     const panelOpen = renderSelectionPanel(selView);
-    const inset = selectionPanelInsetPx(panelOpen);
+    const inset = selectionPanelInsetPx(
+      panelOpen,
+      selView.kind === 'empty',
+    );
     this.hud.setBottomInset(inset);
     this.minimap.setBottomInset(inset);
 
