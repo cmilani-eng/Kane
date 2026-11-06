@@ -40,7 +40,7 @@ The site is a game picker at `/`. Each game lives in its own folder under `games
 | KANE | `games/kane/` (code in `src/`) | `/kane/` | `vite` | Live |
 | Blob Evolution 3D | `games/blob-evolution/` | `/blob-evolution/` | `static` | Experimental |
 
-`games/games.json` is the list of games. The hub cards, the Vite build inputs and the registry test all read it.
+`games/games.json` is the list of games. The hub cards, the Vite build inputs and the registry test all read it. The path contract — which URL is canonical, and that Kane's client stays in `src/` — is [`games/PATHS.md`](games/PATHS.md).
 
 - **`vite`** games are bundled from `games/<id>/index.html` (TypeScript, npm packages, lint and tests).
 - **`static`** games are copied to `dist/<id>/` untouched, so a single self-contained HTML file (CDN scripts, import maps) works as-is.
