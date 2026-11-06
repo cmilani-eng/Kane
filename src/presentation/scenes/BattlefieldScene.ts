@@ -117,6 +117,11 @@ import { drawCombatFxList } from '../fx/combatFxDraw';
 import { drawCoreFragments } from '../fx/coreFragmentDraw';
 import { drawEconomyFxList } from '../fx/economyFxDraw';
 import { drawFormationVisuals } from '../fx/formationVisual';
+import {
+  drawAttackMoveReticle,
+  drawAttackMoveScreenTint,
+  setAttackMoveCursor,
+} from '../fx/attackMoveFeedback';
 import { drawHeroAbilityVfxList } from '../fx/heroAbilityVfx';
 import { drawMutationVisuals } from '../fx/mutationVisual';
 import { drawRageVisuals } from '../fx/rageVisual';
@@ -140,11 +145,14 @@ export class BattlefieldScene extends Phaser.Scene {
   private boxGfx!: Phaser.GameObjects.Graphics;
   private unitGfx!: Phaser.GameObjects.Graphics;
   private ghostGfx!: Phaser.GameObjects.Graphics;
+  private amoveTintGfx!: Phaser.GameObjects.Graphics;
+  private amoveReticleGfx!: Phaser.GameObjects.Graphics;
   private fogOverlay!: FogOverlay;
   private mode: PointerMode = 'none';
   private pointerStart = { x: 0, y: 0 };
   private worldStart = { x: 0, y: 0 };
   private cameraStart = { x: 0, y: 0 };
+  private amovePointer = { x: 0, y: 0 };
   private hud!: BattlefieldHud;
   private minimap!: Minimap;
   private tutorial!: TutorialState;
@@ -197,12 +205,18 @@ export class BattlefieldScene extends Phaser.Scene {
     this.unitGfx = this.add.graphics().setDepth(10);
 
     this.ghostGfx = this.add.graphics().setDepth(40);
+    this.amoveReticleGfx = this.add.graphics().setDepth(45);
+    this.amoveTintGfx = this.add
+      .graphics()
+      .setScrollFactor(0)
+      .setDepth(90);
     this.fogOverlay = new FogOverlay(this);
     tickFog(this.world, this.world.fog);
     this.fogOverlay.refresh(this.world.fog);
 
     this.hud = new BattlefieldHud(this, this.world);
     this.hud.menuBtn.on('pointerup', () => this.scene.start('Menu'));
+    this.hud.onArmAttackMove = () => this.toggleAttackMoveMode();
     this.minimap = new Minimap(this, this.world, this.cameraCtl);
     this.tutorial = createTutorialState();
     this.coach = new TutorialCoach(this, this.tutorial);
@@ -211,6 +225,7 @@ export class BattlefieldScene extends Phaser.Scene {
       this.boxGfx,
       this.unitGfx,
       this.ghostGfx,
+      this.amoveReticleGfx,
       this.fogOverlay.gfx,
     ]);
     const onResize = (): void => {
@@ -257,6 +272,7 @@ export class BattlefieldScene extends Phaser.Scene {
     this.input.on('pointerup', this.onUp, this);
     this.input.keyboard?.on('keydown-ESC', () => {
       if (this.mode === 'place' || this.mode === 'attackMove') {
+        this.clearAttackMoveMode();
         this.mode = 'none';
         this.ghostGfx.clear();
       } else {
@@ -271,6 +287,7 @@ export class BattlefieldScene extends Phaser.Scene {
         this.drawGhost();
         return;
       }
+      if (this.mode === 'attackMove') this.clearAttackMoveMode();
       this.mode = this.mode === 'place' ? 'none' : 'place';
       if (this.mode === 'place' && this.placeables.length) {
         this.placeType = this.placeables[this.placeIndex]!;
@@ -310,10 +327,7 @@ export class BattlefieldScene extends Phaser.Scene {
       if (stopSelected(this.world) > 0) playSfx('ui');
     });
     this.input.keyboard?.on('keydown-A', () => {
-      if (selectedCount(this.world) > 0) {
-        this.mode = 'attackMove';
-        playSfx('ui');
-      }
+      this.toggleAttackMoveMode();
     });
 
     const digitEvents = [
@@ -387,7 +401,7 @@ export class BattlefieldScene extends Phaser.Scene {
 
     if (this.mode === 'attackMove' && pointer.leftButtonDown()) {
       if (issueAttackMoveSelected(this.world, wp.x, wp.y) > 0) playSfx('attack');
-      this.mode = 'none';
+      this.clearAttackMoveMode();
       return;
     }
 
@@ -415,6 +429,7 @@ export class BattlefieldScene extends Phaser.Scene {
     }
     if (pointer.rightButtonDown()) {
       if (this.mode === 'place' || this.mode === 'attackMove') {
+        this.clearAttackMoveMode();
         this.mode = 'none';
         this.ghostGfx.clear();
         return;
@@ -437,6 +452,11 @@ export class BattlefieldScene extends Phaser.Scene {
 
   private onMove(pointer: Phaser.Input.Pointer): void {
     const wp = this.cameraCtl.worldPoint(pointer.x, pointer.y);
+    if (this.mode === 'attackMove') {
+      this.amovePointer = { x: wp.x, y: wp.y };
+      this.drawAttackMoveFeedback();
+      return;
+    }
     if (this.mode === 'place') {
       const def = getBuildingType(this.placeType);
       this.ghostPos = { x: wp.x, y: wp.y };
@@ -524,6 +544,50 @@ export class BattlefieldScene extends Phaser.Scene {
     this.ghostGfx.strokeCircle(this.ghostPos.x, this.ghostPos.y, def.radius);
   }
 
+  private toggleAttackMoveMode(): void {
+    if (this.mode === 'attackMove') {
+      this.clearAttackMoveMode();
+      playSfx('ui');
+      return;
+    }
+    if (selectedCount(this.world) <= 0) {
+      playSfx('ui');
+      return;
+    }
+    if (this.mode === 'place') this.ghostGfx.clear();
+    this.mode = 'attackMove';
+    const mid = this.cameras.main.midPoint;
+    this.amovePointer = { x: mid.x, y: mid.y };
+    this.hud.setAttackMoveArmed(true);
+    setAttackMoveCursor(this.game.canvas, true);
+    this.drawAttackMoveFeedback();
+    playSfx('ui');
+  }
+
+  private clearAttackMoveMode(): void {
+    if (this.mode === 'attackMove') this.mode = 'none';
+    this.hud.setAttackMoveArmed(false);
+    setAttackMoveCursor(this.game.canvas, false);
+    this.amoveTintGfx.clear();
+    this.amoveReticleGfx.clear();
+  }
+
+  private drawAttackMoveFeedback(): void {
+    if (this.mode !== 'attackMove') return;
+    drawAttackMoveScreenTint(
+      this.amoveTintGfx,
+      this.scale.width,
+      this.scale.height,
+      this.animTimeMs,
+    );
+    drawAttackMoveReticle(
+      this.amoveReticleGfx,
+      this.amovePointer.x,
+      this.amovePointer.y,
+      this.animTimeMs,
+    );
+  }
+
   update(_t: number, delta: number): void {
     this.animTimeMs += delta;
     this.cameraCtl.update(delta);
@@ -574,6 +638,7 @@ export class BattlefieldScene extends Phaser.Scene {
       cam.height / cam.zoom,
     );
     this.drawWorld();
+    if (this.mode === 'attackMove') this.drawAttackMoveFeedback();
     this.fogOverlay.refresh(this.world.fog, cam);
     this.refreshHud();
     this.coach.refresh();
@@ -584,7 +649,7 @@ export class BattlefieldScene extends Phaser.Scene {
     if (this.matchResult !== 'ongoing') return;
     if (result === 'ongoing') return;
     this.matchResult = result;
-    this.mode = 'none';
+    this.clearAttackMoveMode();
     this.ghostGfx.clear();
     this.cameraCtl.suppressPan = true;
     playSfx(result === 'victory' ? 'victory' : 'defeat');
