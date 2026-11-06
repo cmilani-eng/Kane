@@ -36,6 +36,7 @@ describe('hub copy', () => {
     expect(chrome.documentTitle).toBe('KANE · Selector de juegos');
     expect(chrome.meta).toBe('KANE · Selector de juegos — RTS de fantasía y más.');
     expect(chrome.play).toBe('Jugar');
+    expect(chrome.subtitle).toContain('Enter');
     expect(chrome.live).toBe('En vivo');
     expect(chrome.experimental).toBe('Prelanzamiento');
     expect(chrome.privacy).toBe('Privacidad');
