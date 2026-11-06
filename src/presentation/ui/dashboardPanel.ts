@@ -97,6 +97,7 @@ export function accountProfileText(opts: {
   const accountKind = opts.anonymous
     ? t('account.guestAnon')
     : opts.email?.trim() || t('account.signedIn');
+  const map = mapCopy(opts.mapId);
   return [
     t('account.commander', {
       name: accountShownName(opts.name, opts.anonymous),
@@ -106,8 +107,9 @@ export function accountProfileText(opts: {
     t('account.prefs', {
       species: speciesName(opts.species),
       difficulty: difficultyCopy(opts.difficulty).label,
-      map: mapCopy(opts.mapId).label,
+      map: map.label,
     }),
+    t('menu.mapTip', { label: map.label, blurb: map.blurb }),
     t('account.skins', {
       brutes: shortSkin(opts.skins.brutes),
       nobles: shortSkin(opts.skins.nobles),

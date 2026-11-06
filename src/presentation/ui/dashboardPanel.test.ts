@@ -99,6 +99,7 @@ describe('account copy', () => {
     expect(profile).toContain('Los Raros');
     expect(profile).toContain('Difícil');
     expect(profile).toContain('Cresta');
+    expect(profile).toMatch(/Cresta · /);
     expect(profile).toContain('Aspectos');
     expect(profile).not.toContain('Prefs');
 
