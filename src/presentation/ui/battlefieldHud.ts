@@ -26,6 +26,11 @@ import {
 import { coreHudModel } from '../../gameplay/battlefield/battlefieldCoreFragments';
 import { CORE_TONE_COLOR, formatCoreLine, formatHeroLine } from './matchStatusCopy';
 import {
+  SUPPLY_TONE_COLOR,
+  SUPPLY_TONE_DOT,
+  supplyTone,
+} from './supplyTone';
+import {
   countVisibleMilitary,
   selectAllVisibleMilitary,
 } from '../../gameplay/battlefield/selectMilitary';
@@ -877,16 +882,9 @@ export class BattlefieldHud {
     const cap = flags.unitCap;
     this.supplyText.setText(t('pause.supply', { current: pop, cap }));
     this.fitResourceStrip();
-    if (pop >= cap) {
-      this.supplyText.setColor('#e87aa8');
-      this.supplyDot.setFillStyle(0xe87aa8);
-    } else if (pop >= Math.floor(cap * 0.85)) {
-      this.supplyText.setColor('#f0c75e');
-      this.supplyDot.setFillStyle(0xf0c75e);
-    } else {
-      this.supplyText.setColor('#d7e6f2');
-      this.supplyDot.setFillStyle(0xb8c9d9);
-    }
+    const tone = supplyTone(pop, cap);
+    this.supplyText.setColor(SUPPLY_TONE_COLOR[tone]);
+    this.supplyDot.setFillStyle(SUPPLY_TONE_DOT[tone]);
     this.status.setText(statusText);
     this.heroLine.setText(formatHeroLine(heroHudState(this.world)));
     const core = coreHudModel(this.world);
