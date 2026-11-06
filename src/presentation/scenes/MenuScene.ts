@@ -250,7 +250,7 @@ export class MenuScene extends Phaser.Scene {
     this.add
       .text(
         width / 2,
-        height * 0.94,
+        height * 0.92,
         'RAGE (R) · FORMATIONS (F) · MUTATION (M) · Heroes (H, Q/W/E)',
         {
           fontFamily: 'system-ui, sans-serif',
@@ -259,6 +259,32 @@ export class MenuScene extends Phaser.Scene {
         },
       )
       .setOrigin(0.5);
+
+    const legalY = height * 0.97;
+    const privacy = this.add
+      .text(width / 2 - 48, legalY, 'Privacy', {
+        fontFamily: 'system-ui, sans-serif',
+        fontSize: '11px',
+        color: '#7ec8ff',
+      })
+      .setOrigin(0.5)
+      .setInteractive({ useHandCursor: true });
+    privacy.on('pointerup', () => {
+      playSfx('ui');
+      if (typeof window !== 'undefined') window.open('/privacy.html', '_blank');
+    });
+    const terms = this.add
+      .text(width / 2 + 48, legalY, 'Terms', {
+        fontFamily: 'system-ui, sans-serif',
+        fontSize: '11px',
+        color: '#7ec8ff',
+      })
+      .setOrigin(0.5)
+      .setInteractive({ useHandCursor: true });
+    terms.on('pointerup', () => {
+      playSfx('ui');
+      if (typeof window !== 'undefined') window.open('/terms.html', '_blank');
+    });
   }
 
   private drawDifficultyRow(width: number, y: number): void {
