@@ -38,7 +38,7 @@ This doc is the honest gate before any public preview URL.
 | Minimap double-tap flash | **OK** — brief gold wash when double-tap recenters on selection/order | `minimap`, `MINIMAP_FOCUS_FLASH_MS` |
 | Help species hotkeys | **OK** — Controls help lists Formation/Mutation/Rage only for the current species | `controlsHelpPanel`, `help.formation` / `mutation` / `rage` |
 | End share line | **OK** — end screen Copy result pastes one-line KANE summary (result/species/map/difficulty/clock/standing) | `endShareLine`, `end.share*` |
-| Empty selection tip | **OK** — bottom panel shows brief select tip when nothing is selected | `selectionPanel` `kind: empty`, `sel.empty*` |
+| Empty selection tip | **OK** — bottom panel shows brief select tip (Army / Idle / Home) when nothing is selected | `selectionPanel` `kind: empty`, `sel.empty*` |
 | Placement Esc hint | **OK** — place-mode cost strip + armed title mention Esc to cancel | `hud.place`, `sel.placeArmedTitle`, `hud.hintPlace` |
 | Critical alert chip | **OK** — Keep/hero under-attack chip auto-dismisses ~3.2s (does not refresh every hit) | `battlefieldUnderAttack` `chipLifeMs` |
 | Menu map tip | **OK** — selected skirmish map shows a one-line flavor blurb under the map row (tall + short menus) | `MenuScene`, `menu.mapTip` |
