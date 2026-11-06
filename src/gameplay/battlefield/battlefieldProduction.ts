@@ -1,6 +1,7 @@
 /**
  * Unit production — train from completed buildings, spend Gold/Crystals.
  */
+import { flags } from '../../config/flags';
 import { getBuildingType } from '../../data/buildings';
 import { getUnitType, type UnitTypeId } from '../../data/units';
 import { SPECIES } from '../../data/speciesStub';
@@ -24,6 +25,7 @@ export function queueTrain(
   const bdef = getBuildingType(building.typeId);
   if (!bdef.trains.includes(typeId)) return false;
   const udef = getUnitType(typeId);
+  if (teamHeadcount(world, building.team) >= flags.unitCap) return false;
   const wallet = walletOf(world, building.team);
   const cost = { gold: udef.costGold, magic_crystals: udef.costCrystals };
   if (!canAfford(wallet, cost)) return false;
@@ -68,6 +70,8 @@ export function tickProduction(world: BattlefieldWorld, dtMs: number): void {
     }
     const next = b.trainQueue[0]!;
     const def = getUnitType(next);
+    const alive = world.units.filter((u) => u.team === b.team).length;
+    if (alive >= flags.unitCap) continue;
     b.trainProgressMs += dtMs;
     if (b.trainProgressMs >= def.trainMs) {
       b.trainQueue.shift();
@@ -75,6 +79,19 @@ export function tickProduction(world: BattlefieldWorld, dtMs: number): void {
       spawnNear(world, b, next);
     }
   }
+}
+
+/** Living units plus every queued train for that team. */
+function teamHeadcount(
+  world: BattlefieldWorld,
+  team: BattlefieldTeam,
+): number {
+  const alive = world.units.filter((u) => u.team === team).length;
+  let queued = 0;
+  for (const b of world.buildings) {
+    if (b.team === team) queued += b.trainQueue.length;
+  }
+  return alive + queued;
 }
 
 function spawnNear(

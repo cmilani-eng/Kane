@@ -19,17 +19,17 @@ Open `http://localhost:5173` (use the LAN URL for phones).
 
 Checks: `npm run lint` (ESLint), `npm test` (Vitest), `npm run build` (type-check + bundle).
 
-## Current milestone — combat skirmish
+## Current milestone — single-player rematch
 
-Playable **battlefield** (select / move / attack):
+Playable **battlefield** (select / move / attack / build / train):
 
-- Camera: **WASD** / arrows, **edge scroll**, **Q/E** + wheel zoom
-- **Player Brutes** (Bonkers + Rock Throwers) vs **enemy** placeholders
+- Camera: **WASD** / arrows, **edge scroll**, wheel zoom
+- Menu picks **Brutes**, **Nobles**, or **Weirdos**, plus Easy / Normal / Hard, then Rematch
+- Brutes train Bonkers and Rock Throwers from the Bonker Hut, Wolf Riders and Big Bonkers from the Beast Pen, Stompers and Boom Goblins from Scrap Works
 - **LMB** select · **Shift** add/toggle · **drag** box · **RMB** attack enemy or move
 - Health bars, attack range when selected, death removal, no friendly fire
-- Menu → **Enter Battlefield**
 
-**Not in this milestone:** buildings, Scrap/Core economy, production, full AI, multiplayer.
+**Parked:** live multiplayer, Firebase friend lobby, ads, offline service worker.
 
 ## Architecture
 
@@ -40,7 +40,7 @@ Playable **battlefield** (select / move / attack):
 | **KANE GAME CLIENT** (Phaser 4 + TS) | `src/game/`, `src/gameplay/`, `src/presentation/` | Yes |
 | → Gameplay | `src/gameplay/` (+ `battlefield/` for M1) | Yes |
 | → Presentation | `src/presentation/` | Yes |
-| Species / units | `src/data/speciesStub.ts`, `src/data/units.ts` | Brutes combat stats |
+| Species / units | `src/data/speciesStub.ts`, `src/data/units.ts` | Brutes, Nobles, Weirdos |
 | Resources (later) | `src/data/resources.ts` | Stub — Scrap + Core IDs |
 | Battlefield combat | `src/gameplay/battlefield/` | Select/move + combat |
 | Online connection | `src/networking/` | Stub (lobby codes local-only) |
@@ -48,7 +48,7 @@ Playable **battlefield** (select / move / attack):
 | Database | `src/database/` | Local stats + persistence stub |
 | Firebase foundation | `src/firebase/` | Email + anonymous Auth + Firestore account path (opt-in via env); 13+ positioning (no in-game gate); no live MP |
 
-Gameplay does not import presentation. Full skirmish systems under `gameplay/` remain for later milestones; **M1 wires only** `battlefield/` + `BattlefieldScene`.
+Gameplay does not import presentation. The skirmish loop lives in `gameplay/battlefield/` and `BattlefieldScene`.
 
 ## Controls (battlefield)
 
@@ -79,4 +79,4 @@ Full list, and how each key maps to StarCraft, Age of Empires and C&C: [docs/hot
 
 ## What’s next
 
-Phase 6: Firebase emulators + friend lobby (stubs landed; SDK + live sync later). Keep ads off.
+Phase 6 (Firebase emulators + live friend lobby) stays parked. Match writes are still client-trusted. Next content slice is one new map. Ads stay off.

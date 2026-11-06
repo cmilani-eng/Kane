@@ -31,6 +31,10 @@ function roleOf(typeId: BuildingTypeId): Role {
     case 'barracks':
     case 'blob_factory':
       return 'barracks';
+    case 'beast_pen':
+      return 'stable';
+    case 'scrap_works':
+      return 'siege';
     case 'archery_hall':
     case 'eye_nest':
       return 'ranged';
@@ -98,6 +102,18 @@ function drawBruteBody(g: G, opts: BuildingDrawOpts, role: Role): void {
       const a = -Math.PI / 2 + (i - 1) * 0.55;
       g.fillCircle(x + Math.cos(a) * r * 0.85, y - r * 0.2 + Math.sin(a) * r * 0.3, r * 0.16);
     }
+  } else if (role === 'stable') {
+    g.fillStyle(0x1a2218, alpha);
+    g.fillRect(x - r * 0.7, y + r * 0.05, r * 1.4, r * 0.7);
+    g.fillStyle(accent, alpha);
+    g.fillRect(x - r * 0.85, y - r * 0.15, r * 0.18, r * 0.9);
+    g.fillRect(x + r * 0.67, y - r * 0.15, r * 0.18, r * 0.9);
+  } else if (role === 'siege') {
+    g.fillStyle(accent, alpha);
+    g.fillRect(x - r * 0.55, y - r * 0.15, r * 1.1, r * 0.35);
+    g.fillRect(x - r * 0.35, y - r * 0.55, r * 0.7, r * 0.35);
+    g.fillStyle(0xf0c75e, alpha);
+    g.fillCircle(x + r * 0.45, y - r * 0.7, r * 0.16);
   } else {
     g.fillStyle(accent, alpha);
     g.fillCircle(x, y - r * 0.45, r * 0.32);
