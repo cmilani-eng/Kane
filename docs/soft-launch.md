@@ -28,6 +28,7 @@ This doc is the honest gate before any public preview URL.
 | Fog last-seen | **OK** — brief fade silhouette for enemy buildings after leaving vision (~1s) | `buildingLastSeenGhost`, drawWorld |
 | Incomplete build panel | **OK** — selection shows HP + live build % while a structure is under construction | `selectionPanel`, `sel.buildingPct` |
 | Hero hotkey tip | **OK** — selecting a hero shows Q/W/E ability names on the selection panel | `selectionPanel`, `sel.heroHotkeys` |
+| Hero ability CD | **OK** — selection tip appends live remaining cooldown; ability buttons show Cooldown Ns | `selectionPanel`, `hud.heroCd`, `sel.cooldown` |
 | Full-load deposit | **OK** — full workers show deposit-at-Keep hint on the carry line | `selectionPanel`, `sel.cargoFull` |
 | Multi-select counts | **OK** — mixed selection title lists unit types × counts | `selectionPanel`, `sel.typeCount` |
 | Queue cancel flash | **OK** — canceling a train flashes the queue row + refund copy with Gold / Crystal amounts | `flashQueueCancel`, `formatQueueCancelFlash` |

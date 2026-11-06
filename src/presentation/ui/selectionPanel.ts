@@ -555,7 +555,7 @@ export function buildSelectionView(
       formation: formationViewFor(alive),
       rage: rageViewFor(alive),
       mutation: mutationViewFor(alive),
-      controlHint: controlHintFor(alive),
+      controlHint: controlHintFor(world, alive),
       carryLine: carry.line,
       carryCrystal: carry.crystal,
       carryFull: carry.full,
@@ -609,7 +609,7 @@ export function buildSelectionView(
     formation: formationViewFor(alive),
     rage: rageViewFor(alive),
     mutation: mutationViewFor(alive),
-    controlHint: controlHintFor(alive),
+    controlHint: controlHintFor(world, alive),
     carryLine: carry.line,
     carryCrystal: carry.crystal,
     carryFull: carry.full,
@@ -690,7 +690,15 @@ function formationCountTip(f: SelectionFormationView): string {
   return `${t('sel.formationTip')} · ${count}`;
 }
 
-function controlHintFor(units: BattlefieldUnit[]): string | null {
+/** Append live remaining cooldown when the hero ability is recharging. */
+function abilityNameWithCd(name: string, cdSec: number): string {
+  return cdSec > 0 ? `${name} (${t('hud.heroCd', { sec: cdSec })})` : name;
+}
+
+function controlHintFor(
+  world: BattlefieldWorld,
+  units: BattlefieldUnit[],
+): string | null {
   const player = units.filter((u) => u.team === 'player' && u.hp > 0);
   if (player.length === 0) return null;
   const hasGrabber = player.some((u) => u.typeId === 'grabber');
@@ -702,13 +710,17 @@ function controlHintFor(units: BattlefieldUnit[]): string | null {
       const q = def.abilities.ability1;
       const w = def.abilities.ability2;
       const e = def.abilities.ultimate;
+      const cds = heroAbilityViews(world, hero);
+      const qCd = cds?.find((a) => a.slot === 'ability1')?.cdSec ?? 0;
+      const wCd = cds?.find((a) => a.slot === 'ability2')?.cdSec ?? 0;
+      const eCd = cds?.find((a) => a.slot === 'ultimate')?.cdSec ?? 0;
       let tip = t('sel.heroHotkeys', {
         q: q.hotkey,
-        qName: q.name,
+        qName: abilityNameWithCd(q.name, qCd),
         w: w.hotkey,
-        wName: w.name,
+        wName: abilityNameWithCd(w.name, wCd),
         e: e.hotkey,
-        eName: e.name,
+        eName: abilityNameWithCd(e.name, eCd),
       });
       if (hero.speciesId === 'weirdos' && hasGrabber) {
         tip = `${tip} · ${t('sel.grabberMutTip')}`;
@@ -918,7 +930,7 @@ function abilityButtonHtml(a: SelectionAbilityView): string {
   if (!a.canPay) classes.push('is-unaffordable');
   const castable = a.ready && a.canPay;
   const cdLabel = !a.ready
-    ? `${a.cdSec}s`
+    ? t('sel.cooldown', { n: a.cdSec })
     : !a.canPay
       ? t('sel.needShort', { n: a.costCrystals })
       : t('sel.ready');
@@ -927,7 +939,7 @@ function abilityButtonHtml(a: SelectionAbilityView): string {
     : !a.canPay
       ? ` title="${t('sel.needCrystals', { n: a.costCrystals })}"`
       : ` title="${escapeHtml(t('sel.cast', { name: a.name, hotkey: a.hotkey }))}"`;
-  return `<button type="button" class="${classes.join(' ')}" data-act="castAbility" data-slot="${a.slot}"${castable ? '' : ' disabled'}${title}><span class="kane-sel-ability-name">${escapeHtml(a.hotkey)} · ${escapeHtml(a.name)}</span><span class="kane-sel-ability-cd">${cdLabel}</span></button>`;
+  return `<button type="button" class="${classes.join(' ')}" data-act="castAbility" data-slot="${a.slot}"${castable ? '' : ' disabled'}${title}><span class="kane-sel-ability-name">${escapeHtml(a.hotkey)} · ${escapeHtml(a.name)}</span><span class="kane-sel-ability-cd">${escapeHtml(cdLabel)}</span></button>`;
 }
 
 function applyAbilityButtonState(
@@ -941,7 +953,7 @@ function applyAbilityButtonState(
   const cd = btn.querySelector('.kane-sel-ability-cd');
   if (cd) {
     cd.textContent = !a.ready
-      ? `${a.cdSec}s`
+      ? t('sel.cooldown', { n: a.cdSec })
       : !a.canPay
         ? t('sel.needShort', { n: a.costCrystals })
         : t('sel.ready');
