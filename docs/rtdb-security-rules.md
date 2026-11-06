@@ -20,7 +20,7 @@ Local Vite / SP vs AI **never** talks to RTDB today (lobby + stats are localStor
 ## Assumptions
 
 1. **Firebase Auth** is required for any non-denied path (`auth != null`). Anonymous Auth is enough for lobby spikes.
-2. **Age gate (13+)** stays a **client** concern (`kane.ageGate.v2`). RTDB cannot prove age; online features should still refuse UI before writing.
+2. **Age positioning (13+)** is a product/legal framing concern, not an in-game gate. RTDB cannot prove age; `profiles.ageGateOk` remains a mirror flag only.
 3. **Lobby codes** are `A–Z0–9`, length 4–8 (matches local stub generator).
 4. **Command writes** are per-uid under `matches/$id/commands/$tick/$uid` — players cannot forge another uid’s commands.
 5. **Desync hashes** follow the same per-uid write rule under `hashes/$tick/$uid`.

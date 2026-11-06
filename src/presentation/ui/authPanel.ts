@@ -165,7 +165,7 @@ export function showAuthPanel(opts: AuthPanelOpts): void {
         : 'Add VITE_FIREBASE_* in .env.local (or use guest play)';
     } else if (mode === 'signup') {
       titleEl.textContent = 'Create account';
-      subEl.textContent = '13+ · ads off · skins only — never pay-to-win';
+      subEl.textContent = '13+ · skins only — never pay-to-win';
     } else {
       titleEl.textContent = 'Reset password';
       subEl.textContent = 'We will email a reset link if the account exists';

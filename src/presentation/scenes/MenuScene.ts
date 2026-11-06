@@ -1,11 +1,14 @@
 import Phaser from 'phaser';
 import { BRAND } from '../../config/brand';
-import { recordGameStarted, wantsAdminPanel } from '../../database/localStats';
+import {
+  recordGameStarted,
+  wantsAdminPanel,
+  wantsStatsPanel,
+} from '../../database/localStats';
 import {
   loadMatchPrefs,
   rememberMatchPrefs,
 } from '../../database/matchPrefs';
-import { canEnterGame, loadAgeGate } from '../../firebase/ageGate';
 import {
   getCurrentAuthUser,
   isCloudAccount,
@@ -53,10 +56,6 @@ export class MenuScene extends Phaser.Scene {
 
   create(): void {
     hideDomHud();
-    if (!canEnterGame(loadAgeGate())) {
-      this.scene.start('AgeGate');
-      return;
-    }
     const prefs = loadMatchPrefs();
     this.difficulty = prefs.difficulty;
     this.lastSpecies = prefs.species;
@@ -79,8 +78,8 @@ export class MenuScene extends Phaser.Scene {
       hideAuthPanel();
       hideMenuBannerStub();
     });
-    if (wantsAdminPanel()) {
-      this.openStats();
+    if (wantsStatsPanel()) {
+      this.openStats(wantsAdminPanel());
     }
   }
 
@@ -128,13 +127,17 @@ export class MenuScene extends Phaser.Scene {
     );
   }
 
-  private openStats(): void {
+  private openStats(adminTools = false): void {
     if (this.anyOverlayOpen()) return;
     this.statsOpen = true;
     playSfx('ui');
-    showStatsPanel(this, () => {
-      this.statsOpen = false;
-    });
+    showStatsPanel(
+      this,
+      () => {
+        this.statsOpen = false;
+      },
+      { adminTools },
+    );
   }
 
   private openLobby(): void {

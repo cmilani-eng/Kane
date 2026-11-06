@@ -46,7 +46,7 @@ Playable **battlefield** (select / move / attack):
 | Online connection | `src/networking/` | Stub (lobby codes local-only) |
 | Multiplayer server | `src/server/` | Stub |
 | Database | `src/database/` | Local stats + persistence stub |
-| Firebase foundation | `src/firebase/` | Email + anonymous Auth + Firestore account path (opt-in via env); age gate local; no live MP |
+| Firebase foundation | `src/firebase/` | Email + anonymous Auth + Firestore account path (opt-in via env); 13+ positioning (no in-game gate); no live MP |
 
 Gameplay does not import presentation. Full skirmish systems under `gameplay/` remain for later milestones; **M1 wires only** `battlefield/` + `BattlefieldScene`.
 
