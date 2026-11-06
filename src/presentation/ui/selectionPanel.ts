@@ -19,6 +19,10 @@ import { unitArmorClass } from '../../data/unitArmorClass';
 import { getUnitType, type UnitTypeId } from '../../data/units';
 import { attackRangeLabel } from './unitAttackRange';
 import { sharedUnitDpsLabel, unitDpsLabel } from './unitDps';
+import {
+  sharedUnitMoveSpeedLabel,
+  unitMoveSpeedLabel,
+} from './unitMoveSpeed';
 import type {
   BattlefieldBuilding,
   BattlefieldUnit,
@@ -160,6 +164,8 @@ export type SelectionPanelView =
       armorClass: string | null;
       /** Catalog DPS tip when selection shares one unit type. */
       dpsTip: string | null;
+      /** Catalog move-speed tip when selection shares one unit type. */
+      speedTip: string | null;
       tags: string[];
       attackMoveArmed: boolean;
       /** Present when a single player hero is selected. */
@@ -572,6 +578,7 @@ export function buildSelectionView(
       range: u.range,
       armorClass: armorClassLabel(u.typeId),
       dpsTip: unitDpsLabel(u.typeId),
+      speedTip: unitMoveSpeedLabel(u.typeId),
       tags,
       attackMoveArmed,
       abilities: heroAbilityViews(world, u),
@@ -627,6 +634,7 @@ export function buildSelectionView(
     range,
     armorClass: sharedArmorClassLabel(alive),
     dpsTip: sharedUnitDpsLabel(alive.map((u) => u.typeId)),
+    speedTip: sharedUnitMoveSpeedLabel(alive.map((u) => u.typeId)),
     tags,
     attackMoveArmed,
     abilities: null,
@@ -894,6 +902,7 @@ function structureSignature(view: SelectionPanelView): string {
       view.range ?? '-',
       view.armorClass ?? '',
       view.dpsTip ?? '',
+      view.speedTip ?? '',
       view.tags.join(','),
       view.attackMoveArmed ? 1 : 0,
       abs,
@@ -1404,6 +1413,9 @@ export function renderSelectionPanel(view: SelectionPanelView): boolean {
         }
         if (view.dpsTip) {
           bits.push(`<span>${escapeHtml(view.dpsTip)}</span>`);
+        }
+        if (view.speedTip) {
+          bits.push(`<span>${escapeHtml(view.speedTip)}</span>`);
         }
         if (view.armorClass) {
           bits.push(`<span>${escapeHtml(view.armorClass)}</span>`);
