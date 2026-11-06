@@ -113,6 +113,7 @@ import { drawResourceNodeSilhouette } from '../resources/resourceNodeSilhouette'
 import { drawCombatFxList } from '../fx/combatFxDraw';
 import { drawCoreFragments } from '../fx/coreFragmentDraw';
 import { drawFormationVisuals } from '../fx/formationVisual';
+import { drawHeroAbilityVfxList } from '../fx/heroAbilityVfx';
 import { drawMutationVisuals } from '../fx/mutationVisual';
 import { drawRageVisuals } from '../fx/rageVisual';
 import {
@@ -707,15 +708,7 @@ export class BattlefieldScene extends Phaser.Scene {
     g.clear();
     const view = this.viewCull;
 
-    for (const v of this.world.vfx) {
-      if (view && !inView(view, v.x, v.y)) continue;
-      const a = Math.max(0.15, v.lifeMs / v.maxLifeMs);
-      g.lineStyle(3, v.color, a);
-      g.strokeCircle(v.x, v.y, v.radius * (1.15 - a * 0.3));
-      g.fillStyle(v.color, a * 0.12);
-      g.fillCircle(v.x, v.y, v.radius * (1.05 - a * 0.2));
-    }
-
+    drawHeroAbilityVfxList(g, this.world.vfx, view);
     drawCoreFragments(g, this.world, this.animTimeMs, view);
     drawCombatFxList(g, this.world.combatFx, view);
     drawFormationVisuals(g, this.world, this.animTimeMs);
