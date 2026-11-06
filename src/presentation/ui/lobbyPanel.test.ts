@@ -6,6 +6,7 @@ import {
 } from '../../database/matchSummary';
 import { resetLocaleForTests, setLocale } from '../../i18n';
 import {
+  lobbyDifficultyTipLine,
   lobbyFactionTipLine,
   lobbyMapTipLine,
   lobbyMatchLengthTipLine,
@@ -73,6 +74,16 @@ describe('lobby status copy', () => {
     expect(tip).toContain('WE KNOW WHAT WE ARE DOING');
     setLocale('pt-BR');
     expect(lobbyFactionTipLine()).toContain('Os Doidos');
+  });
+
+  it('surfaces the selected difficulty label · blurb tip', () => {
+    rememberMatchPrefs('nobles', 'easy', 'ridge');
+    setLocale('en-GB');
+    const tip = lobbyDifficultyTipLine();
+    expect(tip).toContain('Easy');
+    expect(tip).toContain('Newcomer cushion');
+    setLocale('es');
+    expect(lobbyDifficultyTipLine()).toMatch(/Fácil|Margen/);
   });
 
   it('estimates match length from recent summaries, else a default tip', () => {
