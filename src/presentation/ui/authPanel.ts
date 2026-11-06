@@ -2,7 +2,9 @@
  * Email/password auth sheet — DOM overlay (reliable mobile inputs).
  * Modes: login | signup | reset. Guest continue optional for Start Game gate
  * (Firebase anonymous when SDK configured; local-only fallback otherwise).
+ * Visual language matches Friend lobby + Stats (navy / gold / cream).
  */
+import { BRAND } from '../../config/brand';
 import { flags } from '../../config/flags';
 import {
   authErrorMessage,
@@ -40,27 +42,40 @@ function ensureStyle(): void {
     #${ROOT_ID} {
       position: fixed; inset: 0; z-index: 10000;
       display: flex; align-items: center; justify-content: center;
-      background: rgba(6, 10, 18, 0.82);
+      background: rgba(10, 18, 32, 0.84);
       font-family: system-ui, sans-serif;
       padding: 16px;
     }
     #${ROOT_ID} .kane-auth-card {
+      position: relative;
       width: min(400px, 100%);
-      background: #152238;
-      border: 2px solid rgba(240, 199, 94, 0.9);
+      background: #122033;
+      border: 2px solid rgba(240, 199, 94, 0.85);
       border-radius: 4px;
       padding: 22px 20px 18px;
       color: #d7e6f2;
       box-sizing: border-box;
     }
+    #${ROOT_ID} .kane-auth-card::before {
+      content: '';
+      position: absolute; left: 2px; right: 2px; top: 2px;
+      height: 4px; background: rgba(240, 199, 94, 0.9);
+      pointer-events: none;
+    }
+    #${ROOT_ID} .kane-auth-brand {
+      margin: 4px 0 2px;
+      font-family: Georgia, "Times New Roman", serif;
+      font-size: 13px; font-weight: bold; color: #f0c75e;
+      text-align: center; letter-spacing: 0.04em;
+    }
     #${ROOT_ID} h2 {
       margin: 0 0 4px;
       font-family: Georgia, "Times New Roman", serif;
-      font-size: 22px; font-weight: normal; color: #f5e6c8;
+      font-size: 26px; font-weight: normal; color: #f5e6c8;
       text-align: center;
     }
     #${ROOT_ID} .kane-auth-sub {
-      margin: 0 0 14px; font-size: 12px; color: #9eb4c8; text-align: center;
+      margin: 0 0 14px; font-size: 13px; color: #9eb4c8; text-align: center;
     }
     #${ROOT_ID} label {
       display: block; font-size: 11px; color: #9eb4c8; margin: 10px 0 4px;
@@ -83,18 +98,21 @@ function ensureStyle(): void {
       display: flex; flex-direction: column; gap: 8px; margin-top: 14px;
     }
     #${ROOT_ID} button {
-      font-family: Georgia, "Times New Roman", serif;
-      font-size: 15px; padding: 11px 14px; cursor: pointer;
-      border: none; color: #fff8e8; background: #2a3a28;
+      font-family: system-ui, sans-serif;
+      font-size: 14px; padding: 11px 14px; cursor: pointer;
+      border: none; color: #fff8e8; background: #2a3a50;
     }
     #${ROOT_ID} button.primary { background: #3a5530; color: #f0c75e; }
-    #${ROOT_ID} button.ghost { background: #3a4555; font-family: system-ui, sans-serif; font-size: 13px; }
+    #${ROOT_ID} button.ghost { background: #3a4555; font-size: 13px; }
     #${ROOT_ID} button.linkish {
-      background: transparent; color: #7ec8ff; font-family: system-ui, sans-serif;
+      background: transparent; color: #7ec8ff;
       font-size: 12px; padding: 6px;
     }
     #${ROOT_ID} button:disabled { opacity: 0.55; cursor: wait; }
     #${ROOT_ID} .kane-auth-row { display: flex; justify-content: space-between; gap: 8px; }
+    #${ROOT_ID} .kane-auth-quiet {
+      margin: 10px 0 0; font-size: 11px; color: #6a7f94; text-align: center;
+    }
   `;
   document.head.appendChild(style);
 }
@@ -115,12 +133,14 @@ export function showAuthPanel(opts: AuthPanelOpts): void {
   root.id = ROOT_ID;
   root.innerHTML = `
     <div class="kane-auth-card" role="dialog" aria-modal="true" aria-labelledby="kane-auth-title">
+      <div class="kane-auth-brand">${BRAND.name}</div>
       <h2 id="kane-auth-title">Account</h2>
       <p class="kane-auth-sub" id="kane-auth-sub"></p>
       <div id="kane-auth-fields"></div>
       <p class="kane-auth-err" id="kane-auth-err" hidden></p>
       <p class="kane-auth-ok" id="kane-auth-ok" hidden></p>
       <div class="kane-auth-actions" id="kane-auth-actions"></div>
+      <p class="kane-auth-quiet" id="kane-auth-quiet"></p>
     </div>
   `;
   document.body.appendChild(root);
@@ -131,6 +151,7 @@ export function showAuthPanel(opts: AuthPanelOpts): void {
   const errEl = root.querySelector('#kane-auth-err') as HTMLElement;
   const okEl = root.querySelector('#kane-auth-ok') as HTMLElement;
   const actionsEl = root.querySelector('#kane-auth-actions') as HTMLElement;
+  const quietEl = root.querySelector('#kane-auth-quiet') as HTMLElement;
 
   const setErr = (msg: string | null): void => {
     if (!msg) {
@@ -163,12 +184,15 @@ export function showAuthPanel(opts: AuthPanelOpts): void {
       subEl.textContent = sdk
         ? 'Email & password · progress saves to your account'
         : 'Add VITE_FIREBASE_* in .env.local (or use guest play)';
+      quietEl.textContent = 'Skins only · never pay-to-win';
     } else if (mode === 'signup') {
       titleEl.textContent = 'Create account';
-      subEl.textContent = '13+ · skins only — never pay-to-win';
+      subEl.textContent = 'Keep progress across devices · skins only';
+      quietEl.textContent = '13+ framing · no in-game age gate';
     } else {
       titleEl.textContent = 'Reset password';
       subEl.textContent = 'We will email a reset link if the account exists';
+      quietEl.textContent = '';
     }
 
     fieldsEl.innerHTML = '';
