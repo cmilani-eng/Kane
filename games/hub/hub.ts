@@ -103,7 +103,7 @@ function render(): void {
   applyDocumentLanguage();
   const chrome = hubChrome();
   document.title = chrome.documentTitle;
-  document.querySelector('meta[name="description"]')?.setAttribute('content', chrome.meta);
+  text('hub-meta').setAttribute('content', chrome.meta);
   text('hub-locale-label').textContent = chrome.language;
   text('hub-title').textContent = chrome.title;
   text('hub-subtitle').textContent = chrome.subtitle;
