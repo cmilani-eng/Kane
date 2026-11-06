@@ -876,12 +876,16 @@ export function buildSelectionView(
 
   const types = new Set(alive.map((u) => u.typeId));
   const mixed = types.size > 1;
+  const typeCounts = typeCountLine(alive, 3);
   const title = mixed
-    ? t('sel.mixed', { n: alive.length })
+    ? typeCounts
     : `${alive[0]!.name} ×${alive.length}`;
   const speciesIds = new Set(alive.map((u) => u.speciesId));
-  const flavor =
-    speciesIds.size === 1
+  const flavor = mixed
+    ? speciesIds.size === 1
+      ? `${speciesName(alive[0]!.speciesId)} · ${t('sel.selected', { n: alive.length })} · ${matchupLine(alive[0]!.speciesId)}`
+      : `${t('sel.mixedSpecies', { n: alive.length })} · ${typeCounts}`
+    : speciesIds.size === 1
       ? `${speciesName(alive[0]!.speciesId)} · ${t('sel.selected', { n: alive.length })} · ${matchupLine(alive[0]!.speciesId)}`
       : t('sel.mixedSpecies', { n: alive.length });
   const hp = alive.reduce((s, u) => s + u.hp, 0);
@@ -921,6 +925,31 @@ export function buildSelectionView(
     carryCrystal: carry.crystal,
     carryFull: carry.full,
   };
+}
+
+/** Compact “Name ×n · …” breakdown for multi-select. */
+export function typeCountLine(
+  units: BattlefieldUnit[],
+  maxTypes = 4,
+): string {
+  const counts = new Map<string, { name: string; n: number }>();
+  for (const u of units) {
+    if (u.hp <= 0) continue;
+    const cur = counts.get(u.typeId);
+    if (cur) cur.n += 1;
+    else counts.set(u.typeId, { name: u.name, n: 1 });
+  }
+  const parts = [...counts.values()].sort((a, b) => b.n - a.n || a.name.localeCompare(b.name));
+  if (parts.length === 0) return t('sel.mixed', { n: 0 });
+  const shown = parts.slice(0, maxTypes);
+  const overflow = parts.length - shown.length;
+  let line = shown
+    .map((p) => t('sel.typeCount', { name: p.name, n: p.n }))
+    .join(' · ');
+  if (overflow > 0) {
+    line += ` · ${t('sel.typeOverflow', { n: overflow })}`;
+  }
+  return line;
 }
 
 /** Visible cargo readout for selected workers (single or group). */
