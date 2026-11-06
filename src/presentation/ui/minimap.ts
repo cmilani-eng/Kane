@@ -32,6 +32,18 @@ import type { RtsCamera } from '../camera/rtsCamera';
 import { playSfx } from '../audio/sfx';
 import { MOBILE_PERF } from '../perf/mobileBudget';
 
+/** Brief gold wash after a successful double-tap recenter. */
+export const MINIMAP_FOCUS_FLASH_MS = 280;
+
+/** 1 at flash start → 0 at expiry. */
+export function minimapFocusFlashAlpha(
+  remainMs: number,
+  totalMs = MINIMAP_FOCUS_FLASH_MS,
+): number {
+  if (totalMs <= 0 || remainMs <= 0) return 0;
+  return Math.min(1, remainMs / totalMs);
+}
+
 export class Minimap {
   private readonly scene: Phaser.Scene;
   private readonly world: BattlefieldWorld;
@@ -57,6 +69,8 @@ export class Minimap {
   private holdTimer: Phaser.Time.TimerEvent | null = null;
   private holdStartX = 0;
   private holdStartY = 0;
+  /** Remaining ms of double-tap recenter flash. */
+  private focusFlashMs = 0;
 
   constructor(
     scene: Phaser.Scene,
@@ -101,6 +115,7 @@ export class Minimap {
         if (focus) {
           this.dragging = false;
           this.cameraCtl.centerOn(focus.x, focus.y);
+          this.focusFlashMs = MINIMAP_FOCUS_FLASH_MS;
           playSfx('ui');
           // Consume the double so a third tap starts a fresh pair.
           this.lastTapMs = 0;
@@ -222,6 +237,11 @@ export class Minimap {
   ): void {
     this.selectedBuilding = selectedBuilding;
     this.pulseMs += dtMs;
+    if (this.focusFlashMs > 0) {
+      this.focusFlashMs = Math.max(0, this.focusFlashMs - dtMs);
+      // Keep redrawing while the flash fades.
+      this.refreshAcc = MOBILE_PERF.minimapMs;
+    }
     this.refreshAcc += dtMs;
     if (this.refreshAcc < MOBILE_PERF.minimapMs) return;
     this.refreshAcc = 0;
@@ -232,9 +252,20 @@ export class Minimap {
     const g = this.gfx;
     g.clear();
 
+    const flash = minimapFocusFlashAlpha(this.focusFlashMs);
+    this.frame.setStrokeStyle(
+      flash > 0 ? 2.75 : 2,
+      flash > 0 ? 0xfff8e8 : 0xf0c75e,
+      flash > 0 ? 0.55 + 0.45 * flash : 0.9,
+    );
+
     // Terrain fill (explored tint)
     g.fillStyle(0x0a1018, 1);
     g.fillRect(this.mapX, this.mapY, this.mapW, this.mapH);
+    if (flash > 0) {
+      g.fillStyle(0xf0c75e, 0.2 * flash);
+      g.fillRect(this.mapX, this.mapY, this.mapW, this.mapH);
+    }
 
     const sx = this.mapW / MAP.width;
     const sy = this.mapH / MAP.height;
