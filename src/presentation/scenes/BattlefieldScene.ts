@@ -97,6 +97,7 @@ import {
 import {
   groupCenter,
   GroupTapTracker,
+  shouldCountGroupHotkey,
 } from '../../gameplay/battlefield/battlefieldGroupFocus';
 import { selectsWholeType } from '../../gameplay/battlefield/battlefieldSelectClick';
 import {
@@ -588,15 +589,16 @@ export class BattlefieldScene extends Phaser.Scene {
 
   /**
    * `now` is the key event's DOM timestamp (ms), used to spot a double-tap.
-   * `repeat` marks OS auto-repeat while the key is held; it must not recall a
-   * group again or count as a double-tap (holding 1-3 still keeps training).
+   * Repeats must not recall a group or centre the camera. Holding 1–3 still
+   * keeps training when a production building is selected.
    */
   private onDigitHotkey(slot: number, now: number, repeat: boolean): void {
     if (this.paused || this.matchResult !== 'ongoing') return;
+    const countKey = shouldCountGroupHotkey(repeat);
     // Alt+N is a fallback: browsers can reserve Ctrl+digit for tab switching.
     if (this.ctrlHeld() || this.altHeld()) {
       this.groupTaps.reset();
-      if (!repeat && assignControlGroup(this.world, this.controlGroups, slot)) {
+      if (countKey && assignControlGroup(this.world, this.controlGroups, slot)) {
         spawnControlGroupAssignFx(this.world, slot);
         this.hud.flashControlGroup(slot, 'assign');
         playSfx('select');
@@ -614,7 +616,7 @@ export class BattlefieldScene extends Phaser.Scene {
       playSfx('train');
       return;
     }
-    if (repeat) return;
+    if (!countKey) return;
     this.clearBuildingSelection();
     if (
       recallControlGroup(

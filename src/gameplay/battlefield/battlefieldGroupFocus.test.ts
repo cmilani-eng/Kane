@@ -3,6 +3,7 @@ import {
   groupCenter,
   GroupTapTracker,
   isGroupDoubleTap,
+  shouldCountGroupHotkey,
   GROUP_DOUBLE_TAP_MS,
 } from './battlefieldGroupFocus';
 import {
@@ -19,6 +20,13 @@ import {
 } from './battlefieldWorld';
 
 const army = (w: BattlefieldWorld) => w.units.filter(isMilitaryUnit);
+
+describe('shouldCountGroupHotkey', () => {
+  it('counts the initial keydown and ignores auto-repeat', () => {
+    expect(shouldCountGroupHotkey(false)).toBe(true);
+    expect(shouldCountGroupHotkey(true)).toBe(false);
+  });
+});
 
 describe('isGroupDoubleTap', () => {
   it('needs the same slot inside the window', () => {
