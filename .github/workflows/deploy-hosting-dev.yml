@@ -8,9 +8,12 @@ on:
     branches:
       - dev
 
+# Deploys queue instead of cancelling: a run cancelled by a newer push is marked
+# "cancelled" even when it already released to Hosting. A waiting run is replaced
+# by the newest one, which contains the older commits, so the last push still wins.
 concurrency:
   group: deploy-hosting-dev
-  cancel-in-progress: true
+  cancel-in-progress: false
 
 permissions:
   contents: read
