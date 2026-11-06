@@ -1,10 +1,13 @@
 /**
- * Victory / defeat — keep destroyed or army wiped.
+ * Victory / defeat — keep destroyed, army wiped, or CORE hold win.
  */
+import { CORE_FRAGMENT } from './battlefieldCoreFragments';
 import { keepAlive, livingByTeam } from './battlefieldCombat';
 import type { BattlefieldWorld } from './battlefieldWorld';
 
 export type MatchResult = 'ongoing' | 'victory' | 'defeat';
+
+export type MatchEndReason = 'keep' | 'wipe' | 'core_hold' | null;
 
 export function evaluateMatch(world: BattlefieldWorld): MatchResult {
   const playerKeep = keepAlive(world, 'player');
@@ -12,9 +15,6 @@ export function evaluateMatch(world: BattlefieldWorld): MatchResult {
   const playerUnits = livingByTeam(world, 'player');
   const enemyUnits = livingByTeam(world, 'enemy');
 
-  if (!playerKeep || (playerUnits === 0 && !playerKeep)) {
-    // keepAlive false means keep gone
-  }
   if (!playerKeep) return 'defeat';
   if (!enemyKeep) return 'victory';
 
@@ -28,5 +28,26 @@ export function evaluateMatch(world: BattlefieldWorld): MatchResult {
   if (playerUnits === 0 && !playerProd) return 'defeat';
   if (enemyUnits === 0 && !enemyProd) return 'victory';
 
+  const winMs = CORE_FRAGMENT.holdWinMs;
+  if ((world.playerCoreHoldMs ?? 0) >= winMs) return 'victory';
+  if ((world.enemyCoreHoldMs ?? 0) >= winMs) return 'defeat';
+
   return 'ongoing';
+}
+
+/** Why the match ended (for end-screen copy). */
+export function matchEndReason(
+  world: BattlefieldWorld,
+  result: Exclude<MatchResult, 'ongoing'>,
+): MatchEndReason {
+  const winMs = CORE_FRAGMENT.holdWinMs;
+  if (result === 'victory' && (world.playerCoreHoldMs ?? 0) >= winMs) {
+    return 'core_hold';
+  }
+  if (result === 'defeat' && (world.enemyCoreHoldMs ?? 0) >= winMs) {
+    return 'core_hold';
+  }
+  if (result === 'victory' && !keepAlive(world, 'enemy')) return 'keep';
+  if (result === 'defeat' && !keepAlive(world, 'player')) return 'keep';
+  return 'wipe';
 }

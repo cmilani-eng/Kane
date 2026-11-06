@@ -147,6 +147,10 @@ export interface BattlefieldWorld {
   coreFragments: import('./battlefieldCoreFragments').CoreFragment[];
   /** Presentation cue — claim SFX window. */
   coreClaimFlashMs: number;
+  /** Player CORE victory-hold accumulator (ms). */
+  playerCoreHoldMs: number;
+  /** Enemy CORE victory-hold accumulator (ms). */
+  enemyCoreHoldMs: number;
   /** Player under-attack edge alert (enemy damage on friendlies). */
   underAttackAlert: import('./battlefieldUnderAttack').UnderAttackAlert;
   /** Player fog of war (explored / visible). */
@@ -419,6 +423,8 @@ export function createBattlefieldWorld(
     waypointMarkers: [],
     coreFragments: [],
     coreClaimFlashMs: 0,
+    playerCoreHoldMs: 0,
+    enemyCoreHoldMs: 0,
     underAttackAlert: {
       lifeMs: 0,
       maxLifeMs: 520,

@@ -47,6 +47,7 @@ import {
   selectionPanelInsetPx,
   unmountSelectionPanel,
 } from '../ui/selectionPanel';
+import { CoreVictoryBanner } from '../ui/coreVictoryBanner';
 import { TutorialCoach } from '../ui/tutorialCoach';
 import {
   createTutorialState,
@@ -80,6 +81,7 @@ import {
 } from '../../gameplay/battlefield/battlefieldProduction';
 import {
   evaluateMatch,
+  matchEndReason,
   type MatchResult,
 } from '../../gameplay/battlefield/battlefieldVictory';
 import {
@@ -221,6 +223,7 @@ export class BattlefieldScene extends Phaser.Scene {
   private minimap!: Minimap;
   private tutorial!: TutorialState;
   private coach!: TutorialCoach;
+  private coreBanner!: CoreVictoryBanner;
   private shiftKey: Phaser.Input.Keyboard.Key | null = null;
   private ctrlKey: Phaser.Input.Keyboard.Key | null = null;
   private altKey: Phaser.Input.Keyboard.Key | null = null;
@@ -346,6 +349,7 @@ export class BattlefieldScene extends Phaser.Scene {
     this.minimap = new Minimap(this, this.world, this.cameraCtl);
     this.tutorial = createTutorialState();
     this.coach = new TutorialCoach(this, this.tutorial);
+    this.coreBanner = new CoreVictoryBanner(this, this.world);
     this.splitHudCamera([
       layer,
       this.boxGfx,
@@ -357,6 +361,7 @@ export class BattlefieldScene extends Phaser.Scene {
     const onResize = (): void => {
       this.hud.layout();
       this.coach.layout();
+      this.coreBanner.layout();
       this.minimap.layout();
       this.hudCam.setSize(this.scale.width, this.scale.height);
     };
@@ -1059,6 +1064,7 @@ export class BattlefieldScene extends Phaser.Scene {
     this.fogOverlay.refresh(this.world.fog, cam);
     this.refreshHud(delta);
     this.coach.refresh();
+    this.coreBanner.refresh(delta);
     this.minimap.refresh(delta);
   }
 
@@ -1082,6 +1088,7 @@ export class BattlefieldScene extends Phaser.Scene {
       scene: this,
       win: result === 'victory',
       speciesId: this.world.speciesId,
+      reason: matchEndReason(this.world, result),
       onMenu: () => this.scene.start('Menu'),
       onRematch: () => this.rematchSameSkirmish(),
       ignoreOnMain: (objs) => {
