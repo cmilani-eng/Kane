@@ -85,3 +85,39 @@ describe('map coach tip', () => {
     expect(state.step).toBe('select');
   });
 });
+
+describe('practice coach tip', () => {
+  it('explains that Practice never attacks, then moves on', () => {
+    setLocale('en-GB');
+    const world = createBattlefieldWorld('brutes', 'practice', 'crossing');
+    const state = createTutorialState();
+    tickTutorial(world, state, 4501);
+    expect(state.step).toBe('map');
+    tickTutorial(world, state, 5501);
+    expect(state.step).toBe('practice');
+    expect(tutorialStepLabel(state, 'practice')).toBe('Tip 3/9');
+    expect(tutorialTip(state)).toContain('never attacks');
+    expect(tutorialTip(state)).toContain('Rematch keeps Practice');
+    tickTutorial(world, state, 5501);
+    expect(state.step).toBe('select');
+  });
+
+  it('uses the locale name for Practice', () => {
+    const state = createTutorialState();
+    state.step = 'practice';
+    setLocale('pt-BR');
+    expect(tutorialTip(state)).toContain('Treino');
+    setLocale('es');
+    expect(tutorialTip(state)).toContain('Práctica');
+    setLocale('en-GB');
+  });
+
+  it('advances from the map tip into Practice', () => {
+    const state = createTutorialState();
+    state.step = 'map';
+    advanceTutorial(state, 'practice');
+    expect(state.step).toBe('practice');
+    advanceTutorial(state, 'practice');
+    expect(state.step).toBe('select');
+  });
+});

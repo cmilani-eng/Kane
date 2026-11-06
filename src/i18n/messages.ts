@@ -38,6 +38,8 @@ export const enGB = {
     'Crossing: your base is south and the CORE is in the middle. Rematch keeps this map.',
   'tutorial.map.ridge':
     'Ridge: you start north-west, the enemy south-east. Rematch keeps this map.',
+  'tutorial.practice':
+    'Practice: the enemy builds and gathers, but never attacks. Destroy their base to win. Rematch keeps Practice.',
   'species.brutes.name': 'The Brutes',
   'species.brutes.motto': 'WHY BUILD WALL WHEN ENEMY WALL?',
   'species.brutes.mechanic': 'RAGE',
@@ -285,6 +287,8 @@ export const ptBR = {
     'Travessia: sua base fica no sul e o CORE no meio. A revanche mantém este mapa.',
   'tutorial.map.ridge':
     'Cume: você começa no noroeste e o inimigo no sudeste. A revanche mantém este mapa.',
+  'tutorial.practice':
+    'Treino: o inimigo constrói e coleta, mas nunca ataca. Destrua a base para vencer. A revanche mantém Treino.',
   'species.brutes.name': 'Os Brutos',
   'species.brutes.motto': 'PRA QUE MURO SE O INIMIGO TEM MURO?',
   'species.brutes.mechanic': 'FÚRIA',
@@ -528,6 +532,8 @@ export const es = {
     'Cruce: tu base está al sur y el CORE en el centro. La revancha conserva este mapa.',
   'tutorial.map.ridge':
     'Cresta: empiezas al noroeste y el enemigo al sureste. La revancha conserva este mapa.',
+  'tutorial.practice':
+    'Práctica: el enemigo construye y recolecta, pero nunca ataca. Destruye su base para ganar. La revancha conserva Práctica.',
   'species.brutes.name': 'Los Brutos',
   'species.brutes.motto': '¿PA QUÉ MURO SI EL ENEMIGO TIENE MURO?',
   'species.brutes.mechanic': 'FURIA',

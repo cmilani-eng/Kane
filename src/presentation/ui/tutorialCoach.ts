@@ -3,6 +3,7 @@
  */
 import Phaser from 'phaser';
 import type { SkirmishMapId } from '../../data/skirmishMaps';
+import type { AiDifficultyId } from '../../gameplay/battlefield/aiDifficulty';
 import {
   advanceTutorial,
   dismissTutorial,
@@ -26,6 +27,7 @@ export class TutorialCoach {
     scene: Phaser.Scene,
     state: TutorialState,
     private readonly mapId: () => SkirmishMapId = () => 'crossing',
+    private readonly difficulty: () => AiDifficultyId = () => 'normal',
   ) {
     this.scene = scene;
     this.state = state;
@@ -70,7 +72,7 @@ export class TutorialCoach {
       .setInteractive({ useHandCursor: true })
       .on('pointerup', () => {
         playSfx('ui');
-        advanceTutorial(this.state);
+        advanceTutorial(this.state, this.difficulty());
       });
 
     this.skipBtn = scene.add
@@ -133,7 +135,7 @@ export class TutorialCoach {
       if ('setVisible' in o) (o as Phaser.GameObjects.GameObject & { setVisible: (v: boolean) => void }).setVisible(show);
     }
     if (!show) return;
-    this.label.setText(tutorialStepLabel(this.state));
+    this.label.setText(tutorialStepLabel(this.state, this.difficulty()));
     this.body.setText(tutorialTip(this.state, this.mapId()));
     this.nextBtn.setText(
       this.state.step === 'heroes' ? t('tutorial.finish') : t('tutorial.next'),

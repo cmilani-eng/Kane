@@ -4,6 +4,7 @@
  * Copy covers rematch, Idle chip, Army, pause, and Home.
  */
 import type { SkirmishMapId } from '../../data/skirmishMaps';
+import type { AiDifficultyId } from './aiDifficulty';
 import type { BattlefieldWorld } from './battlefieldWorld';
 import { selectedCount } from './battlefieldWorld';
 import { getBuildingType } from '../../data/buildings';
@@ -13,6 +14,7 @@ import { t, type MessageKey } from '../../i18n';
 export type TutorialStepId =
   | 'welcome'
   | 'map'
+  | 'practice'
   | 'select'
   | 'gather'
   | 'build'
@@ -34,16 +36,25 @@ export interface TutorialState {
   seenHero: boolean;
 }
 
-const STEP_ORDER: Exclude<TutorialStepId, 'done'>[] = [
-  'welcome',
-  'map',
-  'select',
-  'gather',
-  'build',
-  'attack',
-  'hud',
-  'heroes',
-];
+/** Practice inserts one extra tip after the map. Other difficulties stay at eight. */
+export function tutorialSteps(
+  difficulty: AiDifficultyId = 'normal',
+): Exclude<TutorialStepId, 'done'>[] {
+  const steps: Exclude<TutorialStepId, 'done'>[] = ['welcome', 'map'];
+  if (difficulty === 'practice') steps.push('practice');
+  steps.push('select', 'gather', 'build', 'attack', 'hud', 'heroes');
+  return steps;
+}
+
+function nextTutorialStep(
+  step: Exclude<TutorialStepId, 'done'>,
+  difficulty: AiDifficultyId,
+): TutorialStepId {
+  const steps = tutorialSteps(difficulty);
+  const i = steps.indexOf(step);
+  if (i < 0 || i >= steps.length - 1) return 'done';
+  return steps[i + 1];
+}
 
 export function createTutorialState(): TutorialState {
   return {
@@ -58,7 +69,7 @@ export function createTutorialState(): TutorialState {
   };
 }
 
-function tipKey(step: Exclude<TutorialStepId, 'done' | 'map'>): MessageKey {
+function tipKey(step: Exclude<TutorialStepId, 'done' | 'map' | 'practice'>): MessageKey {
   switch (step) {
     case 'welcome':
       return 'tutorial.welcome';
@@ -85,14 +96,19 @@ export function tutorialTip(
   if (state.step === 'map') {
     return mapId === 'ridge' ? t('tutorial.map.ridge') : t('tutorial.map.crossing');
   }
+  if (state.step === 'practice') return t('tutorial.practice');
   return t(tipKey(state.step));
 }
 
-export function tutorialStepLabel(state: TutorialState): string {
+export function tutorialStepLabel(
+  state: TutorialState,
+  difficulty: AiDifficultyId = 'normal',
+): string {
   if (!state.visible || state.step === 'done') return '';
-  const i = STEP_ORDER.indexOf(state.step);
+  const steps = tutorialSteps(difficulty);
+  const i = steps.indexOf(state.step);
   return i >= 0
-    ? t('tutorial.step', { n: i + 1, total: STEP_ORDER.length })
+    ? t('tutorial.step', { n: i + 1, total: steps.length })
     : '';
 }
 
@@ -101,21 +117,14 @@ export function dismissTutorial(t: TutorialState): void {
   t.step = 'done';
 }
 
-export function advanceTutorial(t: TutorialState): void {
-  if (!t.visible || t.step === 'done') return;
-  const next: Record<Exclude<TutorialStepId, 'done'>, TutorialStepId> = {
-    welcome: 'map',
-    map: 'select',
-    select: 'gather',
-    gather: 'build',
-    build: 'attack',
-    attack: 'hud',
-    hud: 'heroes',
-    heroes: 'done',
-  };
-  t.step = next[t.step];
-  t.elapsedMs = 0;
-  if (t.step === 'done') t.visible = false;
+export function advanceTutorial(
+  state: TutorialState,
+  difficulty: AiDifficultyId = 'normal',
+): void {
+  if (!state.visible || state.step === 'done') return;
+  state.step = nextTutorialStep(state.step, difficulty);
+  state.elapsedMs = 0;
+  if (state.step === 'done') state.visible = false;
 }
 
 /** Observe world actions and auto-advance tips. */
@@ -168,7 +177,12 @@ export function tickTutorial(
     return;
   }
   if (t.step === 'map' && t.elapsedMs > 5500) {
-    t.step = 'select';
+    t.step = nextTutorialStep('map', world.aiDifficulty);
+    t.elapsedMs = 0;
+    return;
+  }
+  if (t.step === 'practice' && t.elapsedMs > 5500) {
+    t.step = nextTutorialStep('practice', world.aiDifficulty);
     t.elapsedMs = 0;
     return;
   }
