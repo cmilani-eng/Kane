@@ -9,9 +9,16 @@ import {
   enemyRevealed,
   isExplored,
 } from '../../gameplay/battlefield/battlefieldFog';
+import {
+  MINIMAP_DOUBLE_TAP_MS,
+  selectionOrOrderFocus,
+} from '../../gameplay/battlefield/battlefieldMinimapFocus';
 import { buildingCanRally } from '../../gameplay/battlefield/battlefieldRally';
 import { isIdleWorker } from '../../gameplay/battlefield/idleWorkers';
-import type { BattlefieldWorld } from '../../gameplay/battlefield/battlefieldWorld';
+import type {
+  BattlefieldBuilding,
+  BattlefieldWorld,
+} from '../../gameplay/battlefield/battlefieldWorld';
 import type { RtsCamera } from '../camera/rtsCamera';
 import { playSfx } from '../audio/sfx';
 import { MOBILE_PERF } from '../perf/mobileBudget';
@@ -31,6 +38,9 @@ export class Minimap {
   /** Extra padding around the map for fat-finger pan. */
   private hitPad = 10;
   private dragging = false;
+  private dragMoved = false;
+  private lastTapMs = 0;
+  private selectedBuilding: BattlefieldBuilding | null = null;
   private pulseMs = 0;
   /** Extra lift when DOM selection panel is open. */
   private bottomInset = 0;
@@ -61,12 +71,38 @@ export class Minimap {
       .setInteractive({ useHandCursor: true });
 
     this.hit.on('pointerdown', (p: Phaser.Input.Pointer) => {
+      const now = this.scene.time.now;
+      const quick =
+        this.lastTapMs > 0 &&
+        now - this.lastTapMs <= MINIMAP_DOUBLE_TAP_MS &&
+        !this.dragMoved;
+      this.lastTapMs = now;
+      this.dragMoved = false;
+
+      if (quick) {
+        const focus = selectionOrOrderFocus(
+          this.world,
+          this.selectedBuilding,
+        );
+        if (focus) {
+          this.dragging = false;
+          this.cameraCtl.centerOn(focus.x, focus.y);
+          playSfx('ui');
+          // Consume the double so a third tap starts a fresh pair.
+          this.lastTapMs = 0;
+          return;
+        }
+      }
+
       this.dragging = true;
       this.panToPointer(p);
       playSfx('ui');
     });
     this.hit.on('pointermove', (p: Phaser.Input.Pointer) => {
-      if (this.dragging && p.isDown) this.panToPointer(p);
+      if (this.dragging && p.isDown) {
+        this.dragMoved = true;
+        this.panToPointer(p);
+      }
     });
     this.hit.on('pointerup', () => {
       this.dragging = false;
@@ -124,7 +160,11 @@ export class Minimap {
   private refreshAcc = 999;
 
   /** Throttled redraw — call every frame; paints on cadence. */
-  refresh(dtMs = 16): void {
+  refresh(
+    dtMs = 16,
+    selectedBuilding: BattlefieldBuilding | null = null,
+  ): void {
+    this.selectedBuilding = selectedBuilding;
     this.pulseMs += dtMs;
     this.refreshAcc += dtMs;
     if (this.refreshAcc < MOBILE_PERF.minimapMs) return;

@@ -1080,7 +1080,7 @@ export class BattlefieldScene extends Phaser.Scene {
     this.refreshHud(delta);
     this.coach.refresh();
     this.coreBanner.refresh(delta);
-    this.minimap.refresh(delta);
+    this.minimap.refresh(delta, this.selectedBuilding);
   }
 
   private showEndScreen(result: MatchResult): void {
