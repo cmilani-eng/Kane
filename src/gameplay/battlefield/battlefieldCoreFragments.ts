@@ -152,17 +152,35 @@ function formatHoldClock(ms: number): string {
   return `${m}:${s.toString().padStart(2, '0')}`;
 }
 
-/** Compact HUD line for CORE ownership + active hold/contest. */
-export function coreHudSummary(world: BattlefieldWorld): string {
+/** Why the CORE line is gold, pink, or blue. Presentation translates the words. */
+export type CoreHudTone =
+  | 'win'
+  | 'lose'
+  | 'capture'
+  | 'contest'
+  | 'enemyCapture'
+  | 'idle';
+
+export interface CoreHudModel {
+  ours: number;
+  theirs: number;
+  open: number;
+  tone: CoreHudTone;
+  pct: number;
+  owned: number;
+  needed: number;
+  clock: string;
+}
+
+/** Compact HUD facts for CORE ownership + active hold/contest. */
+export function coreHudModel(world: BattlefieldWorld): CoreHudModel | null {
   const list = world.coreFragments ?? [];
-  if (list.length === 0) return '';
+  if (list.length === 0) return null;
 
   let ours = 0;
   let theirs = 0;
   let open = 0;
-  let best:
-    | { priority: number; text: string }
-    | null = null;
+  let best: CoreHudEvent | null = null;
 
   for (const f of list) {
     if (f.owner === 'player') ours++;
@@ -171,39 +189,71 @@ export function coreHudSummary(world: BattlefieldWorld): string {
 
     const { player, enemy } = teamPresent(world, f);
     if (player > 0 && enemy > 0) {
-      const text = 'Contested';
-      if (!best || best.priority < 3) best = { priority: 3, text };
+      best = preferCoreEvent(best, 3, { tone: 'contest', pct: 0, owned: 0, needed: 0, clock: '' });
       continue;
     }
     if (f.captureTeam === 'player' && f.captureProgress > 0.02) {
-      const pct = Math.floor(f.captureProgress * 100);
-      const text = `Capturing ${pct}%`;
-      if (!best || best.priority < 2) best = { priority: 2, text };
+      best = preferCoreEvent(best, 2, {
+        tone: 'capture',
+        pct: Math.floor(f.captureProgress * 100),
+        owned: 0,
+        needed: 0,
+        clock: '',
+      });
       continue;
     }
     if (f.captureTeam === 'enemy' && f.captureProgress > 0.02) {
-      const pct = Math.floor(f.captureProgress * 100);
-      const text = `Enemy capture ${pct}%`;
-      if (!best || best.priority < 1) best = { priority: 1, text };
+      best = preferCoreEvent(best, 1, {
+        tone: 'enemyCapture',
+        pct: Math.floor(f.captureProgress * 100),
+        owned: 0,
+        needed: 0,
+        clock: '',
+      });
     }
   }
 
   const banner = coreHoldBannerState(world);
   if (banner.visible && banner.side === 'player') {
-    best = {
-      priority: 4,
-      text: `Win hold ${banner.owned}/${banner.needed} · ${formatHoldClock(banner.remainMs)}`,
-    };
+    best = preferCoreEvent(best, 4, {
+      tone: 'win',
+      pct: 0,
+      owned: banner.owned,
+      needed: banner.needed,
+      clock: formatHoldClock(banner.remainMs),
+    });
   } else if (banner.visible && banner.side === 'enemy') {
-    best = {
-      priority: 4,
-      text: `Enemy win ${banner.owned}/${banner.needed} · ${formatHoldClock(banner.remainMs)}`,
-    };
+    best = preferCoreEvent(best, 4, {
+      tone: 'lose',
+      pct: 0,
+      owned: banner.owned,
+      needed: banner.needed,
+      clock: formatHoldClock(banner.remainMs),
+    });
   }
 
-  const ownership = `You ${ours} · Enemy ${theirs}${open > 0 ? ` · ${open} open` : ''}`;
-  if (best) return `CORE  ·  ${ownership}  ·  ${best.text}`;
-  return `CORE  ·  ${ownership}`;
+  const patch = best?.patch ?? {
+    tone: 'idle' as const,
+    pct: 0,
+    owned: 0,
+    needed: 0,
+    clock: '',
+  };
+  return { ours, theirs, open, ...patch };
+}
+
+type CoreHudEvent = {
+  priority: number;
+  patch: Omit<CoreHudModel, 'ours' | 'theirs' | 'open'>;
+};
+
+function preferCoreEvent(
+  best: CoreHudEvent | null,
+  priority: number,
+  patch: CoreHudEvent['patch'],
+): CoreHudEvent {
+  if (!best || best.priority < priority) return { priority, patch };
+  return best;
 }
 
 function claimBurst(
