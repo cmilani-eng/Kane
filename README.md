@@ -17,6 +17,8 @@ npm run dev
 
 Open `http://localhost:5173` (use the LAN URL for phones).
 
+Checks: `npm run lint` (ESLint), `npm test` (Vitest), `npm run build` (type-check + bundle).
+
 ## Current milestone — combat skirmish
 
 Playable **battlefield** (select / move / attack):
@@ -53,15 +55,23 @@ Gameplay does not import presentation. Full skirmish systems under `gameplay/` r
 | Input | Action |
 |-------|--------|
 | LMB | Select unit |
+| Double-click a unit (or Ctrl/Cmd+click) | Select every unit of that type |
 | Shift+LMB | Add / toggle select |
 | LMB drag | Multi-select box |
+| Ctrl+A | Select all army |
 | RMB on enemy | Attack |
 | RMB on ground | Move selected |
+| A, then click | Attack-move |
+| S | Stop |
+| Ctrl+0-9 (or Alt+0-9) | Save the selection as a control group |
+| 0-9 | Select a group (Shift adds); press twice to centre the camera |
 | WASD / arrows | Pan |
 | Edge of screen | Pan |
-| Q / E / wheel | Zoom |
-| Esc | Clear selection |
+| Wheel / `[` `]` | Zoom |
+| Esc | Cancel, then pause |
 | Menu | Back to title |
+
+Full list, and how each key maps to StarCraft, Age of Empires and C&C: [docs/hotkeys.md](docs/hotkeys.md).
 
 ## Brand
 
