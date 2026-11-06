@@ -20,6 +20,7 @@ import {
 } from '../../gameplay/battlefield/idleWorkers';
 import {
   countIdleMilitary,
+  isIdleMilitary,
   selectOrCycleIdleMilitary,
   type IdleMilitaryChipResult,
 } from '../../gameplay/battlefield/idleMilitary';
@@ -933,18 +934,14 @@ export class BattlefieldHud {
     }
     if (wasIdleVisible !== this.idlePingBtn.visible) this.layout();
 
-    // Idle military chip — same select-all → cycle pattern as workers
+    // Idle military chip — count-first label, select-all → cycle like workers
     this.idleMilPulseMs += dtMs;
     const idleMilN = countIdleMilitary(this.world);
     const wasIdleMilVisible = this.idleMilPingBtn.visible;
     if (idleMilN > 0) {
       const pulse = 0.72 + 0.28 * Math.sin(this.idleMilPulseMs / 900);
       const cycling = this.world.units.some(
-        (u) =>
-          u.selected &&
-          u.team === 'player' &&
-          !u.canGather &&
-          u.hp > 0,
+        (u) => u.selected && isIdleMilitary(u),
       );
       const action = t(cycling ? 'hud.idleCycle' : 'hud.idleTap');
       this.idleMilPingBtn
