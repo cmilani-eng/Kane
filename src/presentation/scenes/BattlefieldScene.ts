@@ -104,6 +104,7 @@ import {
 } from '../../database/matchSummary';
 import { getEquippedSkin } from '../../database/cosmeticsLoadout';
 import { writeMatchSummaryFunctionStub } from '../../server/matchSummaryFunctionStub';
+import { ensureAmbientBgm } from '../audio/bgm';
 import { playSfx } from '../audio/sfx';
 import { RtsCamera } from '../camera/rtsCamera';
 import { createSkirmishMap } from '../maps/mapManager';
@@ -229,6 +230,8 @@ export class BattlefieldScene extends Phaser.Scene {
     this.controlGroups = createControlGroups();
 
     this.bindInput();
+    ensureAmbientBgm();
+    this.input.once('pointerdown', () => ensureAmbientBgm());
     if (flags.adsEnabled) {
       console.warn(`[${BRAND.name}] ads should stay off`);
     }

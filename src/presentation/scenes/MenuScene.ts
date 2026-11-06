@@ -12,6 +12,7 @@ import {
   hideMenuBannerStub,
   showMenuBannerStub,
 } from '../../ads/adsSdkStub';
+import { ensureAmbientBgm } from '../audio/bgm';
 import { playSfx } from '../audio/sfx';
 import { hideDomHud } from '../ui/domHud';
 import { showCosmeticsPanel } from '../ui/cosmeticsPanel';
@@ -44,6 +45,8 @@ export class MenuScene extends Phaser.Scene {
     this.previewSlots = [];
     this.buildLayout(true);
     showMenuBannerStub();
+    // Ambient BGM needs a user gesture for autoplay policy.
+    this.input.once('pointerdown', () => ensureAmbientBgm());
     this.scale.on('resize', this.onResize, this);
     this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => {
       this.scale.off('resize', this.onResize, this);
