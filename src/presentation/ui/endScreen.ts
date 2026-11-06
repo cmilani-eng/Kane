@@ -60,10 +60,24 @@ export function showKaneEndScreen(opts: EndScreenOpts): void {
     .setAlpha(0);
   root.push(dim);
 
-  const panelW = Math.min(440, width - 32);
-  const panelH = Math.min(420, height * 0.7);
+  const short = height < 500;
+  const panelW = short ? Math.min(720, width - 24) : Math.min(440, width - 32);
+  const panelH = short ? height - 16 : Math.min(420, height * 0.7);
+  const cy = short ? height / 2 : height * 0.48;
+  const top = cy - panelH / 2;
+  const yBrand = short ? top + 18 : cy - panelH * 0.38;
+  const yTitle = short ? top + 62 : cy - panelH * 0.12;
+  const yTag = short ? top + 96 : cy + panelH * 0.08;
+  const ySub = short ? top + 120 : cy + panelH * 0.18;
+  const yMeta = short ? top + 144 : cy + panelH * 0.26;
+  const yRecap = short ? top + 166 : cy + panelH * 0.34;
+  const yActions = top + panelH - 36;
+  const yRematch = short ? yActions : cy + panelH * 0.44;
+  const yMenu = short ? yActions : cy + panelH * 0.58;
+  const xRematch = short ? width / 2 - 110 : width / 2;
+  const xMenu = short ? width / 2 + 110 : width / 2;
   const panel = scene.add
-    .rectangle(width / 2, height * 0.48, panelW, panelH, wash, 0.92)
+    .rectangle(width / 2, cy, panelW, panelH, wash, 0.92)
     .setStrokeStyle(2, accent, 0.85)
     .setScrollFactor(0)
     .setDepth(201)
@@ -95,7 +109,7 @@ export function showKaneEndScreen(opts: EndScreenOpts): void {
   root.push(orbA, orbB);
 
   const brand = scene.add
-    .text(width / 2, height * 0.48 - panelH * 0.38, BRAND.name, {
+    .text(width / 2, yBrand, BRAND.name, {
       fontFamily: 'Georgia, "Times New Roman", serif',
       fontSize: Math.min(28, width * 0.07) + 'px',
       color: '#f5e6c8',
@@ -109,9 +123,9 @@ export function showKaneEndScreen(opts: EndScreenOpts): void {
   root.push(brand);
 
   const title = scene.add
-    .text(width / 2, height * 0.48 - panelH * 0.12, win ? t('end.victory') : t('end.defeat'), {
+    .text(width / 2, yTitle, win ? t('end.victory') : t('end.defeat'), {
       fontFamily: 'Georgia, "Times New Roman", serif',
-      fontSize: Math.min(58, width * 0.14) + 'px',
+      fontSize: (short ? 28 : Math.min(58, width * 0.14)) + 'px',
       color: accentHex,
       stroke: '#0a1220',
       strokeThickness: 8,
@@ -124,7 +138,7 @@ export function showKaneEndScreen(opts: EndScreenOpts): void {
   root.push(title);
 
   const tag = scene.add
-    .text(width / 2, height * 0.48 + panelH * 0.08, BRAND.tagline, {
+    .text(width / 2, yTag, BRAND.tagline, {
       fontFamily: 'system-ui, sans-serif',
       fontSize: '13px',
       color: accentHex,
@@ -149,7 +163,7 @@ export function showKaneEndScreen(opts: EndScreenOpts): void {
   const sub = scene.add
     .text(
       width / 2,
-      height * 0.48 + panelH * 0.18,
+      ySub,
       subtitle,
       {
         fontFamily: 'system-ui, sans-serif',
@@ -173,7 +187,7 @@ export function showKaneEndScreen(opts: EndScreenOpts): void {
       ? t('end.meta', { map: mapLabel, clock })
       : mapLabel || clock;
   const meta = scene.add
-    .text(width / 2, height * 0.48 + panelH * 0.26, metaText, {
+    .text(width / 2, yMeta, metaText, {
       fontFamily: 'system-ui, sans-serif',
       fontSize: '13px',
       color: '#9eb4c8',
@@ -195,7 +209,7 @@ export function showKaneEndScreen(opts: EndScreenOpts): void {
       })
     : '';
   const recap = scene.add
-    .text(width / 2, height * 0.48 + panelH * 0.34, recapText, {
+    .text(width / 2, yRecap, recapText, {
       fontFamily: 'system-ui, sans-serif',
       fontSize: '13px',
       color: '#b8c9d9',
@@ -209,12 +223,12 @@ export function showKaneEndScreen(opts: EndScreenOpts): void {
   root.push(recap);
 
   const rematchBtn = scene.add
-    .text(width / 2, height * 0.48 + panelH * 0.44, t('end.rematch'), {
+    .text(xRematch, yRematch, t('end.rematch'), {
       fontFamily: 'Georgia, "Times New Roman", serif',
-      fontSize: '18px',
+      fontSize: short ? '16px' : '18px',
       color: '#fff8e8',
       backgroundColor: win ? '#3a5530' : '#553040',
-      padding: { x: 28, y: 12 },
+      padding: { x: short ? 16 : 28, y: short ? 8 : 12 },
     })
     .setOrigin(0.5)
     .setScrollFactor(0)
@@ -230,12 +244,12 @@ export function showKaneEndScreen(opts: EndScreenOpts): void {
   root.push(rematchBtn);
 
   const menuBtn = scene.add
-    .text(width / 2, height * 0.48 + panelH * 0.58, t('end.menu'), {
+    .text(xMenu, yMenu, t('end.menu'), {
       fontFamily: 'Georgia, "Times New Roman", serif',
       fontSize: '16px',
       color: '#fff8e8',
       backgroundColor: win ? '#2a3a28' : '#3a2430',
-      padding: { x: 22, y: 10 },
+      padding: { x: short ? 16 : 22, y: short ? 8 : 10 },
     })
     .setOrigin(0.5)
     .setScrollFactor(0)
