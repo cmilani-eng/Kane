@@ -15,12 +15,20 @@ describe('pause map line', () => {
     );
   });
 
-  it('pairs map + difficulty on the pause setup line', () => {
+  it('pairs species, map, and difficulty on the pause setup line', () => {
     expect(
-      translate('en-GB', 'pause.setup', { map: 'Gap', difficulty: 'Hard' }),
-    ).toBe('Gap  ·  Hard');
+      translate('en-GB', 'pause.setup', {
+        species: 'The Brutes',
+        map: 'Gap',
+        difficulty: 'Hard',
+      }),
+    ).toBe('The Brutes  ·  Gap  ·  Hard');
     expect(
-      translate('pt-BR', 'pause.setup', { map: 'Brecha', difficulty: 'Difícil' }),
-    ).toBe('Brecha  ·  Difícil');
+      translate('pt-BR', 'pause.setup', {
+        species: 'Os Brutos',
+        map: 'Brecha',
+        difficulty: 'Difícil',
+      }),
+    ).toBe('Os Brutos  ·  Brecha  ·  Difícil');
   });
 });

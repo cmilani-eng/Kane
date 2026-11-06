@@ -6,8 +6,9 @@
 import Phaser from 'phaser';
 import { BRAND } from '../../config/brand';
 import { isReduceMotion, setReduceMotion } from '../../database/motionPrefs';
-import { difficultyCopy, mapCopy, subscribeLocale, t } from '../../i18n';
+import { difficultyCopy, mapCopy, speciesName, subscribeLocale, t } from '../../i18n';
 import type { SkirmishMapId } from '../../data/skirmishMaps';
+import type { SpeciesId } from '../../data/speciesStub';
 import type { AiDifficultyId } from '../../gameplay/battlefield/aiDifficulty';
 import { isSfxMuted, playSfx, setSfxMuted } from '../audio/sfx';
 import { formatMatchClock } from './battlefieldHud';
@@ -24,6 +25,7 @@ export interface PauseMenuSnapshot {
   supplyCap: number;
   mapId: SkirmishMapId;
   difficulty: AiDifficultyId;
+  speciesId: SpeciesId;
 }
 
 export interface PauseMenuOpts {
@@ -53,6 +55,7 @@ export class PauseMenu {
     supplyCap: 36,
     mapId: 'crossing',
     difficulty: 'normal',
+    speciesId: 'nobles',
   };
 
   constructor(opts: PauseMenuOpts) {
@@ -149,6 +152,7 @@ export class PauseMenu {
 
     const clock = formatMatchClock(this.snapshot.elapsedMs);
     const setupLine = t('pause.setup', {
+      species: speciesName(this.snapshot.speciesId),
       map: mapCopy(this.snapshot.mapId).label,
       difficulty: difficultyCopy(this.snapshot.difficulty).label,
     });

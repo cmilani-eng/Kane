@@ -49,9 +49,9 @@ describe('lobby status copy', () => {
     expect(lobbyMapTipLine()).toContain('Cume');
   });
 
-  it('pairs map and difficulty for lobby setup context', () => {
+  it('pairs species, map, and difficulty for lobby setup context', () => {
     rememberMatchPrefs('brutes', 'hard', 'gap');
     setLocale('en-GB');
-    expect(lobbySetupLine()).toBe('Gap  ·  Hard');
+    expect(lobbySetupLine()).toBe('The Brutes  ·  Gap  ·  Hard');
   });
 });

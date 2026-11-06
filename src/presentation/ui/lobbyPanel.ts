@@ -6,7 +6,7 @@
 import Phaser from 'phaser';
 import { BRAND } from '../../config/brand';
 import { loadMatchPrefs } from '../../database/matchPrefs';
-import { difficultyCopy, mapCopy, t } from '../../i18n';
+import { difficultyCopy, mapCopy, speciesName, t } from '../../i18n';
 import { getLobbyStub } from '../../networking/lobbySingleton';
 import type { LobbyStatus } from '../../networking/lobbyStub';
 import { playSfx } from '../audio/sfx';
@@ -30,10 +30,11 @@ export function lobbyMapTipLine(): string {
   return t('menu.mapTip', { label: map.label, blurb: map.blurb });
 }
 
-/** Map · difficulty — same shape as pause.setup for rematch context. */
+/** Species · map · difficulty — same shape as pause.setup for rematch context. */
 export function lobbySetupLine(): string {
   const prefs = loadMatchPrefs();
   return t('pause.setup', {
+    species: speciesName(prefs.species),
     map: mapCopy(prefs.mapId).label,
     difficulty: difficultyCopy(prefs.difficulty).label,
   });
