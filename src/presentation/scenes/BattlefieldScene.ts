@@ -145,6 +145,7 @@ import {
 } from '../../database/matchSummary';
 import { getEquippedSkin } from '../../database/cosmeticsLoadout';
 import { rememberMatchPrefs } from '../../database/matchPrefs';
+import { isCoachSeen } from '../../database/coachPrefs';
 import { isReduceMotion } from '../../database/motionPrefs';
 import { rematchPrefsFromWorld } from '../../gameplay/battlefield/rematchPrefs';
 import { recordGameStarted } from '../../database/localStats';
@@ -439,6 +440,10 @@ export class BattlefieldScene extends Phaser.Scene {
     });
     this.minimap = new Minimap(this, this.world, this.cameraCtl);
     this.tutorial = createTutorialState();
+    if (isCoachSeen()) {
+      this.tutorial.visible = false;
+      this.tutorial.step = 'done';
+    }
     this.coach = new TutorialCoach(
       this,
       this.tutorial,
