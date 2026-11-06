@@ -26,6 +26,7 @@ export const enGB = {
   'lobby.joining':
     'Joining {code} locally.\nLive match sync is not connected yet.',
   'lobby.unavailable': 'Lobby unavailable.',
+  'lobby.codeShort': 'Lobby code too short',
   'lobby.quiet': 'Local stub · no live sync yet',
   'lobby.create': 'Create code',
   'lobby.join': 'Join code…',
@@ -390,6 +391,7 @@ export const ptBR = {
   'lobby.joining':
     'Entrando em {code} neste aparelho.\nA partida ao vivo ainda não está ligada.',
   'lobby.unavailable': 'Saguão indisponível.',
+  'lobby.codeShort': 'Código curto demais',
   'lobby.quiet': 'Local · ainda sem sincronia ao vivo',
   'lobby.create': 'Criar código',
   'lobby.join': 'Entrar…',
@@ -750,6 +752,7 @@ export const es = {
   'lobby.joining':
     'Uniéndote a {code} en este aparato.\nLa partida en vivo aún no está conectada.',
   'lobby.unavailable': 'Sala no disponible.',
+  'lobby.codeShort': 'El código es demasiado corto',
   'lobby.quiet': 'Local · aún sin sincronía en vivo',
   'lobby.create': 'Crear código',
   'lobby.join': 'Unirse…',
