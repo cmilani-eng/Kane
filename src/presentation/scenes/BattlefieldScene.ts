@@ -247,6 +247,12 @@ export class BattlefieldScene extends Phaser.Scene {
     this.hud.onRecenterBase = () => this.recenterOnPlayerBase();
     this.hud.onPause = () => this.togglePause();
     this.hud.onSelectArmy = () => this.clearBuildingSelection();
+    this.hud.onIdleWorkers = (result) => {
+      this.clearBuildingSelection();
+      if (result.focus) {
+        this.cameraCtl.centerOn(result.focus.x, result.focus.y);
+      }
+    };
     this.pauseMenu = new PauseMenu({
       scene: this,
       onResume: () => this.setPaused(false),

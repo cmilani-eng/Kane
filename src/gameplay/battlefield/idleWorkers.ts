@@ -19,7 +19,7 @@ export function isIdleWorker(u: BattlefieldUnit): boolean {
 }
 
 export function listIdleWorkers(world: BattlefieldWorld): BattlefieldUnit[] {
-  return world.units.filter(isIdleWorker);
+  return world.units.filter(isIdleWorker).sort((a, b) => a.id - b.id);
 }
 
 export function countIdleWorkers(world: BattlefieldWorld): number {
@@ -37,4 +37,37 @@ export function selectIdleWorkers(world: BattlefieldWorld): number {
   clearSelection(world);
   for (const u of idles) u.selected = true;
   return idles.length;
+}
+
+export type IdleChipResult = {
+  count: number;
+  mode: 'all' | 'cycle';
+  /** Focus unit for camera (first of all, or the cycled one). */
+  focus: BattlefieldUnit | null;
+};
+
+/**
+ * Idle chip: first tap selects all idle workers; further taps cycle one-by-one.
+ */
+export function selectOrCycleIdleWorkers(world: BattlefieldWorld): IdleChipResult {
+  const idles = listIdleWorkers(world);
+  if (idles.length === 0) {
+    return { count: 0, mode: 'all', focus: null };
+  }
+
+  const anyIdleSelected = idles.some((u) => u.selected);
+  if (!anyIdleSelected) {
+    clearSelection(world);
+    for (const u of idles) u.selected = true;
+    return { count: idles.length, mode: 'all', focus: idles[0] ?? null };
+  }
+
+  let last = -1;
+  for (let i = 0; i < idles.length; i++) {
+    if (idles[i]!.selected) last = i;
+  }
+  const next = idles[(last + 1) % idles.length]!;
+  clearSelection(world);
+  next.selected = true;
+  return { count: 1, mode: 'cycle', focus: next };
 }
