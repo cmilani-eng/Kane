@@ -16,8 +16,11 @@ This doc is the honest gate before any public preview URL.
 | Cosmetics | **OK** — skins catalog, local equip, in-match tint; **not purchasable**, no combat stats | `cosmeticsCatalog`, Cosmetics menu, `skinAccent` |
 | Legal stubs | **OK** — Privacy / Terms placeholders linked from menu | `public/privacy.html`, `public/terms.html` |
 | RTDB / Firestore rules drafts | **OK** — deny-by-default drafts documented | `database.rules.json`, `firestore.rules` |
-| SP rematch loop | **OK** — three species, AI difficulties, end screen → menu | Battlefield + Menu |
+| SP rematch loop | **OK** — species + difficulty prefs; end-screen **Rematch** (same setup) or Return to Menu | `endScreen`, `matchPrefs`, Battlefield |
 | PWA manifest + icons | **OK** — Add to Home Screen stubs; **no** offline service worker yet | `public/manifest.webmanifest`, `public/icons/`, `docs/pwa.md` |
+| Master volume | **OK** — mute-aware slider on menu + pause; persists `kane.masterVolume.v1` | `audioContext`, `volumeSlider`, pause/menu |
+| Easy AI cushion | **OK** — Easy gives player start gold/crystal cushion + slower AI eco; Normal/Hard unchanged | `aiDifficulty`, `createBattlefieldWorld` |
+| In-match tips | **OK** — coach copy covers Pause/Esc, Home, Army, Idle chip, Rematch | `battlefieldTutorial`, `tutorialCoach` |
 
 ## Remaining gaps (honest)
 
@@ -37,7 +40,11 @@ This doc is the honest gate before any public preview URL.
 
 - [ ] Ads still `false` on the build you deploy
 - [ ] Age gate blocks under-13 on a clean profile
-- [ ] SP match + rematch works on a mid-range phone over LAN Vite (or preview URL)
+- [ ] SP match + **Rematch** works on a mid-range phone over LAN Vite (or preview URL)
+- [ ] Easy start shows player cushion; Normal/Hard feel unchanged
+- [ ] Menu/pause volume persists across reload; mute still silences
+- [ ] PWA manifest + icons load (Add to Home Screen when HTTPS/localhost)
+- [ ] In-match tips mention Pause, Home, Army, Idle, Rematch
 - [ ] `#/admin` readable; destructive reset understood
 - [ ] Cosmetics equip visible in-match; no power change
 - [ ] Privacy/Terms links open
@@ -45,4 +52,4 @@ This doc is the honest gate before any public preview URL.
 
 ## Menu status strip
 
-The title menu shows a one-line soft-launch strip (ads · age · hosting · admin · cosmetics) built by `src/presentation/ui/softLaunchStatus.ts`, so a playtester can see posture without opening docs.
+The title menu shows a one-line soft-launch strip (ads · age · hosting · admin · cosmetics · vol · pwa) built by `src/presentation/ui/softLaunchStatus.ts`, so a playtester can see posture without opening docs.
