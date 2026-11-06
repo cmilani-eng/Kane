@@ -9,6 +9,11 @@ import { loadCosmeticsLoadout } from '../../database/cosmeticsLoadout';
 import { HOSTING_PREVIEW } from '../../firebase/hostingPreview';
 import { getMasterVolume } from '../audio/sfx';
 
+/** Canonical Kane soft-launch play path tip for the menu strip. */
+export function softLaunchKanePathTip(path = '/kane/'): string {
+  return path;
+}
+
 /** Compact one-liner for the title menu. */
 export function softLaunchStatusStrip(): string {
   const hostBit = flags.hostingPreviewConfig
@@ -21,7 +26,7 @@ export function softLaunchStatusStrip(): string {
   const pwaBit = 'pwa';
   // Hub picker + canonical Kane / Blob play URLs (see games/PATHS.md).
   const hubBit = 'hub /';
-  const playBit = '/kane';
+  const playBit = softLaunchKanePathTip();
   const blobBit = '/blob-evolution';
   return `${hostBit} · ${adminBit} · ${cosBit} · ${volBit} · ${pwaBit} · ${hubBit} · ${playBit} · ${blobBit}`;
 }
