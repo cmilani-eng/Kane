@@ -1,6 +1,7 @@
 /**
  * Skirmish AI difficulty — Easy / Normal / Hard.
  * Tunables: economy rate + aggression (attack thresholds / think speed).
+ * Easy adds a newcomer player cushion; Normal/Hard stay near parity.
  */
 
 export type AiDifficultyId = 'easy' | 'normal' | 'hard';
@@ -15,6 +16,10 @@ export interface AiDifficultyProfile {
   startGoldBonus: number;
   /** Starting crystal bonus for the enemy. */
   startCrystalBonus: number;
+  /** Extra starting gold for the player (Easy newcomer cushion). */
+  playerStartGoldBonus: number;
+  /** Extra starting crystals for the player. */
+  playerStartCrystalBonus: number;
   /** AI think interval in ms (lower = reacts faster). */
   thinkMs: number;
   /** Army size that triggers attack phase. */
@@ -33,15 +38,17 @@ export const AI_DIFFICULTIES: Record<AiDifficultyId, AiDifficultyProfile> = {
   easy: {
     id: 'easy',
     label: 'Easy',
-    blurb: 'Soft economy · late rushes',
-    economyRate: 0.7,
-    startGoldBonus: -40,
-    startCrystalBonus: -10,
-    thinkMs: 1400,
-    attackArmyMin: 8,
-    armyPhaseMin: 5,
-    workerTarget: 3,
-    armyCap: 8,
+    blurb: 'Newcomer cushion · slow AI eco',
+    economyRate: 0.55,
+    startGoldBonus: -60,
+    startCrystalBonus: -15,
+    playerStartGoldBonus: 80,
+    playerStartCrystalBonus: 15,
+    thinkMs: 1800,
+    attackArmyMin: 10,
+    armyPhaseMin: 6,
+    workerTarget: 2,
+    armyCap: 7,
     pokeChance: 0,
   },
   normal: {
@@ -51,6 +58,8 @@ export const AI_DIFFICULTIES: Record<AiDifficultyId, AiDifficultyProfile> = {
     economyRate: 1,
     startGoldBonus: 0,
     startCrystalBonus: 0,
+    playerStartGoldBonus: 0,
+    playerStartCrystalBonus: 0,
     thinkMs: 900,
     attackArmyMin: 5,
     armyPhaseMin: 3,
@@ -65,6 +74,8 @@ export const AI_DIFFICULTIES: Record<AiDifficultyId, AiDifficultyProfile> = {
     economyRate: 1.35,
     startGoldBonus: 80,
     startCrystalBonus: 20,
+    playerStartGoldBonus: 0,
+    playerStartCrystalBonus: 0,
     thinkMs: 550,
     attackArmyMin: 3,
     armyPhaseMin: 2,
