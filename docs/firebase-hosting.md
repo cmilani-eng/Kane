@@ -13,7 +13,7 @@
 | RTDB / Firestore rules drafts | `database.rules.json`, `firestore.rules` |
 | Auth / age gate / lobby stubs | `src/firebase/`, `src/networking/` |
 | Match summary write | `src/database/matchSummary.ts` → `#/admin` |
-| Admin allowlist stub | `src/database/adminAllowlist.ts` (reset gate) |
+| Admin allowlist stub | `src/database/adminAllowlist.ts` — `#/admin` open or allowlist + deny UI |
 | Env placeholders | `.env.example` |
 
 ## Local SP (primary — unchanged)
@@ -70,3 +70,4 @@ Emulator UI: `http://127.0.0.1:4000` · Auth `9099` · RTDB `9000` · Firestore 
 - `flags.hostingPreviewConfig` — documents preview stubs; does not auto-deploy
 - Local Vite remains the day-to-day SP path
 - Age gate still gates first boot; under-13 blocked
+- `#/admin` — `adminAccessMode=open` locally; set `allowlist` (+ `kane.adminAllowlist.v1`) for a clear deny path

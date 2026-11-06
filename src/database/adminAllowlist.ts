@@ -1,12 +1,15 @@
 /**
- * Phase 7 admin allowlist stub — local only until Auth UIDs exist.
- * Non-allowlisted clients still see Stats; destructive actions can gate later.
+ * Phase 7 admin allowlist stub for #/admin.
+ * Modes: `open` (local-dev default) or `allowlist` (configurable deny).
  */
 import { flags } from '../config/flags';
 
-const KEY = 'kane.adminAllowlist.v1';
+const LIST_KEY = 'kane.adminAllowlist.v1';
+const MODE_KEY = 'kane.adminAccessMode.v1';
 
-/** Dev stub emails / local uids — replace with real Auth UIDs post-emulator. */
+export type AdminAccessMode = 'open' | 'allowlist';
+
+/** Dev stub ids — replace with Auth UIDs when emulator Auth lands. */
 export const DEFAULT_ADMIN_ALLOWLIST = [
   'local-commander',
   'cassio@local.dev',
@@ -14,7 +17,6 @@ export const DEFAULT_ADMIN_ALLOWLIST = [
 
 export interface AdminAllowlistState {
   version: 1;
-  /** Lowercased ids (email or local uid). */
   ids: string[];
 }
 
@@ -30,6 +32,30 @@ function normalizeId(id: string): string {
   return id.trim().toLowerCase();
 }
 
+/** Effective mode: localStorage override → env → flags default (open). */
+export function getAdminAccessMode(): AdminAccessMode {
+  if (canStore()) {
+    try {
+      const raw = localStorage.getItem(MODE_KEY);
+      if (raw === 'open' || raw === 'allowlist') return raw;
+    } catch {
+      // ignore
+    }
+  }
+  const env = import.meta.env.VITE_ADMIN_ACCESS_MODE;
+  if (env === 'open' || env === 'allowlist') return env;
+  return flags.adminAccessMode;
+}
+
+export function setAdminAccessMode(mode: AdminAccessMode): void {
+  if (!canStore()) return;
+  try {
+    localStorage.setItem(MODE_KEY, mode);
+  } catch {
+    // ignore
+  }
+}
+
 export function loadAdminAllowlist(): AdminAllowlistState {
   const fallback: AdminAllowlistState = {
     version: 1,
@@ -37,7 +63,7 @@ export function loadAdminAllowlist(): AdminAllowlistState {
   };
   if (!canStore()) return fallback;
   try {
-    const raw = localStorage.getItem(KEY);
+    const raw = localStorage.getItem(LIST_KEY);
     if (!raw) return fallback;
     const parsed = JSON.parse(raw) as Partial<AdminAllowlistState>;
     const ids = Array.isArray(parsed.ids)
@@ -53,7 +79,7 @@ export function saveAdminAllowlist(state: AdminAllowlistState): void {
   if (!canStore()) return;
   try {
     localStorage.setItem(
-      KEY,
+      LIST_KEY,
       JSON.stringify({
         version: 1,
         ids: state.ids.map(normalizeId),
@@ -64,12 +90,14 @@ export function saveAdminAllowlist(state: AdminAllowlistState): void {
   }
 }
 
-export function isAllowlistedAdmin(id: string): boolean {
-  if (!flags.adminAllowlistStub) return true;
-  const needle = normalizeId(id);
-  if (loadAdminAllowlist().ids.includes(needle)) return true;
-  // Soft-launch: anonymous local-* stubs count as admin on this device.
-  return needle.startsWith('local-');
+export function addAdminAllowlistId(id: string): AdminAllowlistState {
+  const state = loadAdminAllowlist();
+  const n = normalizeId(id);
+  if (n && !state.ids.includes(n)) {
+    state.ids.push(n);
+    saveAdminAllowlist(state);
+  }
+  return state;
 }
 
 /** Local anonymous / stub identity used before Firebase Auth. */
@@ -83,16 +111,44 @@ export function localAdminCandidateId(): string {
   return 'local-commander';
 }
 
+export function isAllowlistedAdmin(id: string): boolean {
+  const needle = normalizeId(id);
+  if (loadAdminAllowlist().ids.includes(needle)) return true;
+  // Device anonymous stubs still match soft local-* entries.
+  return needle.startsWith('local-');
+}
+
+/**
+ * Can open #/admin (and reset)?
+ * - open: always (local-dev default)
+ * - allowlist: must be on list / local-*
+ */
+export function canAccessAdmin(
+  id: string = localAdminCandidateId(),
+): boolean {
+  if (!flags.adminAllowlistStub) return true;
+  if (getAdminAccessMode() === 'open') return true;
+  return isAllowlistedAdmin(id);
+}
+
+export function adminDenyReason(
+  id: string = localAdminCandidateId(),
+): string | null {
+  if (canAccessAdmin(id)) return null;
+  return `Denied — ${id} is not on the admin allowlist (mode=allowlist). Set localStorage kane.adminAccessMode.v1=open for local-dev, or add your id to kane.adminAllowlist.v1.`;
+}
+
 export function formatAdminAllowlist(
   state: AdminAllowlistState = loadAdminAllowlist(),
 ): string {
+  const mode = getAdminAccessMode();
+  const you = localAdminCandidateId();
   const lines = [
-    `Admin allowlist stub (${state.ids.length}):`,
+    `Admin access mode: ${mode}${mode === 'open' ? ' (local-dev open)' : ''}`,
+    `Allowlist (${state.ids.length}):`,
     ...state.ids.map((id) => `  - ${id}`),
     '',
-    `You: ${localAdminCandidateId()} · ${
-      isAllowlistedAdmin(localAdminCandidateId()) ? 'allowed' : 'not on list'
-    }`,
+    `You: ${you} · ${canAccessAdmin(you) ? 'allowed' : 'DENIED'}`,
   ];
   return lines.join('\n');
 }
