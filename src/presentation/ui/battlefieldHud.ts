@@ -858,6 +858,8 @@ export class BattlefieldHud {
       gold: number;
       crystals: number;
       canPay: boolean;
+      cols: number;
+      rows: number;
     } | null,
   ): void {
     if (!info) {
@@ -867,6 +869,7 @@ export class BattlefieldHud {
     const crystalBit =
       info.crystals > 0 ? t('hud.placeCrystal', { n: info.crystals }) : '';
     const payBit = info.canPay ? '' : t('hud.placeNeed');
+    const foot = t('hud.placeFoot', { cols: info.cols, rows: info.rows });
     this.placeCostStrip
       .setVisible(true)
       .setText(
@@ -875,6 +878,7 @@ export class BattlefieldHud {
           gold: info.gold,
           crystal: crystalBit,
           pay: payBit,
+          foot,
         }),
       )
       .setColor(info.canPay ? '#fff8e8' : '#ffb8b8')

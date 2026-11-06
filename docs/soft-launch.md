@@ -42,6 +42,7 @@ This doc is the honest gate before any public preview URL.
 | End share line | **OK** — end screen Copy result pastes one-line KANE summary (result/species/map/difficulty/clock/standing) | `endShareLine`, `end.share*` |
 | Empty selection tip | **OK** — bottom panel shows brief select tip (Army / Idle / Home) when nothing is selected | `selectionPanel` `kind: empty`, `sel.empty*` |
 | Placement Esc hint | **OK** — place-mode cost strip + armed title mention Esc to cancel | `hud.place`, `sel.placeArmedTitle`, `hud.hintPlace` |
+| Placement footprint | **OK** — place strip shows tile footprint size (cols×rows) with the ghost wash | `placementFootprintSize`, `hud.placeFoot` |
 | Critical alert chip | **OK** — Keep/hero under-attack chip auto-dismisses ~3.2s (does not refresh every hit) | `battlefieldUnderAttack` `chipLifeMs` |
 | Menu map tip | **OK** — selected skirmish map shows a one-line flavor blurb under the map row (tall + short menus) | `MenuScene`, `menu.mapTip` |
 | Account match clock | **OK** — dashboard (and Stats) recent matches show duration as mm:ss | `dashboardPanel`, `formatMatchClock`, `stats.matchLine` |
