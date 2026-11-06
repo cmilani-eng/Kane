@@ -120,6 +120,8 @@ export type SelectionPanelView =
       rage: SelectionRageView | null;
       /** Weirdos mutate-capable selection — mutation role lock. */
       mutation: SelectionMutationView | null;
+      /** Unit-specific control hint (e.g. Grabber / Weirdos hero). */
+      controlHint: string | null;
     }
   | {
       kind: 'building';
@@ -186,6 +188,7 @@ export function ensureSelectionPanel(): HTMLElement {
             </div>
             <span class="kane-sel-meter-label" data-role="meter-label"></span>
           </div>
+          <div class="kane-sel-control-hint" data-role="control-hint" hidden></div>
         </div>
       </div>
       <div class="kane-sel-actions" data-role="actions"></div>
@@ -564,6 +567,16 @@ function injectStyles(): void {
       color: #e8b090;
       line-height: 1.25;
     }
+    #kane-selection-panel .kane-sel-control-hint {
+      margin-top: 6px;
+      padding: 5px 8px;
+      border-radius: 3px;
+      border: 1px solid #5a4a78;
+      background: rgba(40, 28, 64, 0.65);
+      font-size: 11px;
+      color: #c8b8e8;
+      line-height: 1.3;
+    }
     #kane-selection-panel button:disabled {
       cursor: default;
     }
@@ -806,6 +819,7 @@ export function buildSelectionView(
       formation: formationViewFor(alive),
       rage: rageViewFor(alive),
       mutation: mutationViewFor(alive),
+      controlHint: controlHintFor(alive),
     };
   }
 
@@ -850,7 +864,27 @@ export function buildSelectionView(
     formation: formationViewFor(alive),
     rage: rageViewFor(alive),
     mutation: mutationViewFor(alive),
+    controlHint: controlHintFor(alive),
   };
+}
+
+function controlHintFor(units: BattlefieldUnit[]): string | null {
+  const player = units.filter((u) => u.team === 'player' && u.hp > 0);
+  if (player.length === 0) return null;
+  const hasGrabber = player.some((u) => u.typeId === 'grabber');
+  const hasWeirdHero = player.some(
+    (u) => u.speciesId === 'weirdos' && !!getUnitType(u.typeId).isHero,
+  );
+  if (hasWeirdHero && hasGrabber) {
+    return 'ZOGGLE · Q/W/E abilities · Grabber · M Mutation role · cluster for auto Mut';
+  }
+  if (hasWeirdHero) {
+    return 'ZOGGLE · Q Brain Zap · W Portal Trick · E Chaos · M Mutation role';
+  }
+  if (hasGrabber) {
+    return 'Grabber · tanky melee · M locks Mutation · cluster allies for auto Mut';
+  }
+  return null;
 }
 
 function formationViewFor(
@@ -979,6 +1013,7 @@ function structureSignature(view: SelectionPanelView): string {
       form,
       rage,
       mut,
+      view.controlHint ?? '',
     ].join('|');
   }
   if (view.kind === 'resource') {
@@ -1312,6 +1347,9 @@ export function renderSelectionPanel(view: SelectionPanelView): boolean {
   const meterLabel = root.querySelector(
     '[data-role="meter-label"]',
   ) as HTMLElement;
+  const controlHintEl = root.querySelector(
+    '[data-role="control-hint"]',
+  ) as HTMLElement;
   const actions = root.querySelector('[data-role="actions"]') as HTMLElement;
   const queue = root.querySelector('[data-role="queue"]') as HTMLElement;
   const queueFill = root.querySelector('[data-role="queue-fill"]') as HTMLElement;
@@ -1340,6 +1378,7 @@ export function renderSelectionPanel(view: SelectionPanelView): boolean {
       view.resourceId === 'magic_crystals' ? '#7ec8ff' : '#f0c75e',
     );
     meterRoot.hidden = true;
+    controlHintEl.hidden = true;
     if (structuralChange) {
       const label =
         view.resourceId === 'magic_crystals' ? 'Crystals left' : 'Gold left';
@@ -1422,9 +1461,17 @@ export function renderSelectionPanel(view: SelectionPanelView): boolean {
         }
       }
       applyRageMeter(meterRoot, meterFill, meterLabel, view.rage);
+      if (view.controlHint) {
+        controlHintEl.hidden = false;
+        controlHintEl.textContent = view.controlHint;
+      } else {
+        controlHintEl.hidden = true;
+        controlHintEl.textContent = '';
+      }
       queue.hidden = true;
     } else {
       meterRoot.hidden = true;
+      controlHintEl.hidden = true;
       portrait.classList.add('is-building');
       portrait.classList.remove('is-mixed');
       portrait.style.setProperty('--kane-sel-accent', '#3d7ea6');
