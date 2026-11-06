@@ -51,6 +51,9 @@ export class BattlefieldHud {
   private abilityBtns: AbilityBtn[] = [];
   private narrow = false;
   private attackMoveArmed = false;
+  private groupFlashText: string | null = null;
+  private groupFlashColor = '#f0c75e';
+  private groupFlashUntil = 0;
 
   constructor(scene: Phaser.Scene, world: BattlefieldWorld) {
     this.scene = scene;
@@ -424,6 +427,15 @@ export class BattlefieldHud {
     });
   }
 
+  /** Brief HUD cue for Ctrl+# assign / # recall. */
+  flashControlGroup(slot: number, kind: 'assign' | 'recall'): void {
+    this.groupFlashText =
+      kind === 'assign' ? `Group ${slot} saved` : `Group ${slot} selected`;
+    this.groupFlashColor = kind === 'assign' ? '#6ecfbf' : '#f0c75e';
+    this.groupFlashUntil = this.scene.time.now + 700;
+    this.hint.setText(this.groupFlashText).setColor(this.groupFlashColor);
+  }
+
   /** Visual state for A-move armed (tint button + hint). */
   setAttackMoveArmed(armed: boolean): void {
     this.attackMoveArmed = armed;
@@ -447,7 +459,14 @@ export class BattlefieldHud {
     this.crystalText.setText(`Crystals  ${Math.floor(w.magic_crystals)}`);
     this.status.setText(statusText);
     this.heroLine.setText(heroHudLine(this.world));
-    this.hint.setText(hintText);
+    if (this.groupFlashText && this.scene.time.now < this.groupFlashUntil) {
+      this.hint.setText(this.groupFlashText).setColor(this.groupFlashColor);
+    } else {
+      this.groupFlashText = null;
+      this.hint
+        .setText(hintText)
+        .setColor(this.attackMoveArmed ? '#ffb8b8' : '#b8c9d9');
+    }
 
     // Brutes: live Rage count on match line
     if (this.speciesId === 'brutes') {

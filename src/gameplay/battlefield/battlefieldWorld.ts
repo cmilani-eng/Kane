@@ -132,6 +132,8 @@ export interface BattlefieldWorld {
   economyFx: import('./battlefieldEconomyFx').EconomyFx[];
   /** Brief halt rings when S / Stop is issued. */
   stopFx: import('./battlefieldStopFx').StopFx[];
+  /** Control-group assign/recall rings. */
+  controlGroupFx: import('./battlefieldControlGroupFx').ControlGroupFx[];
   /** Capturable CORE fragments (shattered KANE CORE). */
   coreFragments: import('./battlefieldCoreFragments').CoreFragment[];
   /** Presentation cue — claim SFX window. */
@@ -397,6 +399,7 @@ export function createBattlefieldWorld(
     combatFx: [],
     economyFx: [],
     stopFx: [],
+    controlGroupFx: [],
     coreFragments: [],
     coreClaimFlashMs: 0,
     fog: createFogState(),
