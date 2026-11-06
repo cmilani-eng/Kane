@@ -11,10 +11,13 @@ import {
 import { playSfx } from '../audio/sfx';
 import { hideDomHud } from '../ui/domHud';
 import { showStatsPanel } from '../ui/statsPanel';
+import { drawSpeciesPreview } from '../units/unitSilhouette';
 
 export class MenuScene extends Phaser.Scene {
   private statsOpen = false;
   private difficulty: AiDifficultyId = 'normal';
+  private previewGfx: Phaser.GameObjects.Graphics | null = null;
+  private previewSlots: { id: SpeciesId; x: number; y: number }[] = [];
 
   constructor() {
     super('Menu');
@@ -23,6 +26,7 @@ export class MenuScene extends Phaser.Scene {
   create(): void {
     hideDomHud();
     this.statsOpen = false;
+    this.previewSlots = [];
     this.buildLayout(true);
     this.scale.on('resize', this.onResize, this);
     this.events.once(Phaser.Scenes.Events.SHUTDOWN, () =>
@@ -38,7 +42,21 @@ export class MenuScene extends Phaser.Scene {
     if (this.statsOpen) return;
     this.tweens.killAll();
     this.children.removeAll(true);
+    this.previewGfx = null;
+    this.previewSlots = [];
     this.buildLayout(false);
+  }
+
+  update(_t: number, _dt: number): void {
+    if (this.statsOpen || !this.previewGfx || this.previewSlots.length === 0) {
+      return;
+    }
+    const g = this.previewGfx;
+    g.clear();
+    const now = this.time.now;
+    for (const s of this.previewSlots) {
+      drawSpeciesPreview(g, s.id, s.x, s.y, now, 1.05);
+    }
   }
 
   private openStats(): void {
@@ -52,9 +70,11 @@ export class MenuScene extends Phaser.Scene {
 
   private buildLayout(intro: boolean): void {
     const { width, height } = this.scale;
+    this.previewSlots = [];
     const bg = this.add.graphics();
     bg.fillGradientStyle(0x0f1a2e, 0x0f1a2e, 0x1a3a4a, 0x243a28, 1);
     bg.fillRect(0, 0, width, height);
+    this.previewGfx = this.add.graphics().setDepth(20);
 
     const orb = this.add.circle(width * 0.72, height * 0.22, 90, 0x3d7ea6, 0.18);
     this.tweens.add({
@@ -141,6 +161,7 @@ export class MenuScene extends Phaser.Scene {
       cards.forEach((c, i) => {
         const s = SPECIES[c.id];
         this.makeSpeciesCard(
+          c.id,
           width / 2,
           startY + i * 108,
           s.name,
@@ -159,6 +180,7 @@ export class MenuScene extends Phaser.Scene {
       cards.forEach((c, i) => {
         const s = SPECIES[c.id];
         this.makeSpeciesCard(
+          c.id,
           width / 2 + (i - 1) * gap,
           cardY,
           s.name,
@@ -243,6 +265,8 @@ export class MenuScene extends Phaser.Scene {
         playSfx('ui');
         this.tweens.killAll();
         this.children.removeAll(true);
+        this.previewGfx = null;
+        this.previewSlots = [];
         this.buildLayout(false);
       });
     });
@@ -258,6 +282,7 @@ export class MenuScene extends Phaser.Scene {
   }
 
   private makeSpeciesCard(
+    speciesId: SpeciesId,
     x: number,
     y: number,
     name: string,
@@ -275,15 +300,16 @@ export class MenuScene extends Phaser.Scene {
       .rectangle(x, y, w, h, fill, 1)
       .setStrokeStyle(3, stroke)
       .setInteractive({ useHandCursor: true });
+    this.previewSlots.push({ id: speciesId, x, y: y - 28 });
     this.add
-      .text(x, y - 40, name, {
+      .text(x, y - 52, name, {
         fontFamily: 'Georgia, "Times New Roman", serif',
-        fontSize: '18px',
+        fontSize: '16px',
         color: '#fff8e8',
       })
       .setOrigin(0.5);
     this.add
-      .text(x, y - 8, motto, {
+      .text(x, y + 8, motto, {
         fontFamily: 'system-ui, sans-serif',
         fontSize: '10px',
         color: '#e8f0f8',
