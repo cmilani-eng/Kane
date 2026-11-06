@@ -6,6 +6,7 @@ import {
 } from '../../database/matchSummary';
 import { resetLocaleForTests, setLocale } from '../../i18n';
 import {
+  lobbyFactionTipLine,
   lobbyMapTipLine,
   lobbyMatchLengthTipLine,
   lobbySetupLine,
@@ -62,6 +63,16 @@ describe('lobby status copy', () => {
     rememberMatchPrefs('brutes', 'hard', 'gap');
     setLocale('en-GB');
     expect(lobbySetupLine()).toBe('The Brutes  ·  Gap  ·  Hard');
+  });
+
+  it('surfaces the selected faction motto as a blurb tip', () => {
+    rememberMatchPrefs('weirdos', 'normal', 'crossing');
+    setLocale('en-GB');
+    const tip = lobbyFactionTipLine();
+    expect(tip).toContain('The Weirdos');
+    expect(tip).toContain('WE KNOW WHAT WE ARE DOING');
+    setLocale('pt-BR');
+    expect(lobbyFactionTipLine()).toContain('Os Doidos');
   });
 
   it('estimates match length from recent summaries, else a default tip', () => {
