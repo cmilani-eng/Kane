@@ -83,6 +83,7 @@ This doc is the honest gate before any public preview URL.
 | Place build secs | **OK** — place-mode cost strip shows full construction seconds when buildMs > 0 | `hud.placeBuild`, `setPlacementCost` |
 | Stock supply tone | **OK** — DOM stock strip uses the same near-cap/full supply tones as HUD/pause | `stockStrip`, `supplyTone` |
 | Stock income rate | **OK** — stock strip shows rolling gold/crystal +n/m from deposits (60s window) | `stockIncome`, `hud.incomeRate`, `matchUiStore` |
+| Stock deposit tip | **OK** — stock strip shows quiet Deposit at Keep reminder | `stockDepositTipLine`, `hud.depositTip` |
 | End meta difficulty | **OK** — end screen meta line shows map · difficulty · mm:ss | `endScreen`, `end.meta` |
 | End duration tip | **OK** — end screen shows dedicated Duration mm:ss tip under meta | `endDurationTipLine`, `end.durationTip` |
 | Easy AI cushion | **OK** — Easy gives player start gold/crystal cushion + slower AI eco; menu shows a short tip only while Easy is selected | `aiDifficulty`, `MenuScene`, `createBattlefieldWorld` |

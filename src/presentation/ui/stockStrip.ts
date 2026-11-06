@@ -8,6 +8,7 @@ import {
   subscribeMatchStock,
   type MatchStock,
 } from './matchUiStore';
+import { stockDepositTipLine } from './stockDepositTip';
 import {
   formatSupplyLine,
   supplyTone,
@@ -58,6 +59,8 @@ function paint(root: HTMLElement, stock: MatchStock): void {
   if (supply) {
     supply.textContent = formatSupplyLine(stock.supply, stock.supplyCap);
   }
+  const depositTip = root.querySelector('[data-deposit-tip]');
+  if (depositTip) depositTip.textContent = stockDepositTipLine();
   const supplySlot = root.querySelector('[data-slot="supply"]');
   if (supplySlot instanceof HTMLElement) {
     for (const cls of Object.values(STOCK_SUPPLY_CLASS)) {
@@ -92,6 +95,7 @@ export function mountStockStrip(): void {
       <span class="size-3 shrink-0 rounded-full bg-kane-fog" aria-hidden="true"></span>
       <span data-value></span>
     </div>
+    <span data-deposit-tip class="text-xs font-medium text-kane-quiet"></span>
   `;
   document.body.appendChild(root);
 
