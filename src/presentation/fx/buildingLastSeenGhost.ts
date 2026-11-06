@@ -3,7 +3,8 @@
  * Presentation-only — does not change fog targeting / minimap.
  */
 
-export const BUILDING_LAST_SEEN_MS = 1100;
+/** Fade window — long enough to read whole-second last-seen age. */
+export const BUILDING_LAST_SEEN_MS = 2500;
 
 export function noteEnemyBuildingVisible(
   map: Map<number, number>,
@@ -11,6 +12,32 @@ export function noteEnemyBuildingVisible(
   nowMs: number,
 ): void {
   map.set(buildingId, nowMs);
+}
+
+/** Milliseconds since last vision; null when no active ghost. */
+export function enemyBuildingGhostAgeMs(
+  map: Map<number, number>,
+  buildingId: number,
+  nowMs: number,
+  lifeMs = BUILDING_LAST_SEEN_MS,
+): number | null {
+  const last = map.get(buildingId);
+  if (last == null) return null;
+  const age = nowMs - last;
+  if (age < 0 || age >= lifeMs) return null;
+  return age;
+}
+
+/** Whole seconds since last vision while the ghost is still alive. */
+export function enemyBuildingGhostAgeSec(
+  map: Map<number, number>,
+  buildingId: number,
+  nowMs: number,
+  lifeMs = BUILDING_LAST_SEEN_MS,
+): number | null {
+  const age = enemyBuildingGhostAgeMs(map, buildingId, nowMs, lifeMs);
+  if (age == null) return null;
+  return Math.floor(age / 1000);
 }
 
 /**
@@ -23,10 +50,8 @@ export function enemyBuildingGhostAlpha(
   nowMs: number,
   lifeMs = BUILDING_LAST_SEEN_MS,
 ): number {
-  const last = map.get(buildingId);
-  if (last == null) return 0;
-  const age = nowMs - last;
-  if (age >= lifeMs) {
+  const age = enemyBuildingGhostAgeMs(map, buildingId, nowMs, lifeMs);
+  if (age == null) {
     map.delete(buildingId);
     return 0;
   }
