@@ -1320,10 +1320,24 @@ export class BattlefieldScene extends Phaser.Scene {
       reason: matchEndReason(this.world, result),
       onMenu: () => this.scene.start('Menu'),
       onRematch: () => this.rematchSameSkirmish(),
+      difficulty: this.world.aiDifficulty,
+      onStepUp:
+        result === 'victory' && this.world.aiDifficulty === 'practice'
+          ? () => this.stepUpFromPractice()
+          : undefined,
       ignoreOnMain: (objs) => {
         this.cameras.main.ignore(this.add.container(0, 0, objs));
       },
     });
+  }
+
+  /** Practice win — same species and map, one step up to Easy. */
+  private stepUpFromPractice(): void {
+    const { species, mapId } = rematchPrefsFromWorld(this.world);
+    rememberMatchPrefs(species, 'easy', mapId);
+    recordGameStarted(species);
+    void maybeRecordCloudGameStarted(species);
+    this.scene.start('Battlefield', { species, difficulty: 'easy', mapId });
   }
 
   /** End-screen Rematch — same species + difficulty + map, no menu hop. */

@@ -7,7 +7,9 @@ import { showPostMatchInterstitialStub } from '../../ads/adsSdkStub';
 import { BRAND } from '../../config/brand';
 import type { SkirmishMapId } from '../../data/skirmishMaps';
 import type { SpeciesId } from '../../data/speciesStub';
-import { mapCopy, speciesName, t } from '../../i18n';
+import type { AiDifficultyId } from '../../gameplay/battlefield/aiDifficulty';
+import { offerPracticeStepUp } from '../../gameplay/battlefield/practiceStepUp';
+import { difficultyCopy, mapCopy, speciesName, t } from '../../i18n';
 import { playEndFanfare, playSfx } from '../audio/sfx';
 import { formatMatchClock } from './matchClock';
 import { copyEndShareLine, formatEndShareLine } from './endShareLine';
@@ -27,6 +29,10 @@ export interface EndScreenOpts {
   onMenu: () => void;
   /** Restart skirmish with the same species + difficulty. */
   onRematch: () => void;
+  /** Difficulty just played. A Practice win can offer Easy. */
+  difficulty?: AiDifficultyId;
+  /** Start Easy with the same species and map. Shown only after a Practice win. */
+  onStepUp?: () => void;
   /** Ignore these objects on the zoomed main camera. */
   ignoreOnMain: (objs: Phaser.GameObjects.GameObject[]) => void;
   /** Optional end reason for subtitle copy. */
@@ -46,7 +52,11 @@ export function showKaneEndScreen(opts: EndScreenOpts): void {
     onRematch,
     ignoreOnMain,
     reason,
+    difficulty,
+    onStepUp,
   } = opts;
+  const stepUp =
+    offerPracticeStepUp(win, difficulty ?? 'normal') && onStepUp != null;
   const { width, height } = scene.scale;
   const accent = win ? 0xf0c75e : 0xe85a5a;
   const accentHex = win ? '#f0c75e' : '#e87a7a';
@@ -63,7 +73,9 @@ export function showKaneEndScreen(opts: EndScreenOpts): void {
 
   const short = height < 500;
   const panelW = short ? Math.min(720, width - 24) : Math.min(440, width - 32);
-  const panelH = short ? height - 16 : Math.min(460, height * 0.74);
+  const panelH = short
+    ? height - 16
+    : Math.min(stepUp ? 520 : 460, height * (stepUp ? 0.82 : 0.74));
   const cy = short ? height / 2 : height * 0.48;
   const top = cy - panelH / 2;
   const yBrand = short ? top + 18 : cy - panelH * 0.4;
@@ -72,10 +84,11 @@ export function showKaneEndScreen(opts: EndScreenOpts): void {
   const ySub = short ? top + 112 : cy + panelH * 0.12;
   const yMeta = short ? top + 134 : cy + panelH * 0.2;
   const yRecap = short ? top + 154 : cy + panelH * 0.28;
-  const yShare = short ? top + 176 : cy + panelH * 0.36;
-  const yActions = top + panelH - 36;
-  const yRematch = short ? yActions : cy + panelH * 0.48;
-  const yMenu = short ? yActions : cy + panelH * 0.6;
+  const yShare = short ? top + (stepUp ? 158 : 176) : cy + panelH * 0.34;
+  const yStep = short ? top + panelH - 72 : cy + panelH * 0.44;
+  const yActions = top + panelH - (short ? 28 : 36);
+  const yRematch = short ? yActions : cy + panelH * (stepUp ? 0.56 : 0.48);
+  const yMenu = short ? yActions : cy + panelH * (stepUp ? 0.68 : 0.6);
   const xRematch = short ? width / 2 - 110 : width / 2;
   const xMenu = short ? width / 2 + 110 : width / 2;
   const panel = scene.add
@@ -265,6 +278,37 @@ export function showKaneEndScreen(opts: EndScreenOpts): void {
     });
   root.push(shareBtn);
 
+  let stepBtn: Phaser.GameObjects.Text | null = null;
+  if (stepUp && onStepUp) {
+    const startEasy = onStepUp;
+    const btn = scene.add
+      .text(
+        width / 2,
+        yStep,
+        t('end.tryEasy', { difficulty: difficultyCopy('easy').label }),
+        {
+          fontFamily: 'Georgia, "Times New Roman", serif',
+          fontSize: short ? '16px' : '18px',
+          color: '#fff8e8',
+          backgroundColor: '#3a5530',
+          padding: { x: short ? 16 : 28, y: short ? 8 : 12 },
+        },
+      )
+      .setOrigin(0.5)
+      .setScrollFactor(0)
+      .setDepth(202)
+      .setAlpha(0)
+      .setInteractive({ useHandCursor: true })
+      .on('pointerover', () => btn.setStyle({ color: accentHex }))
+      .on('pointerout', () => btn.setStyle({ color: '#fff8e8' }))
+      .on('pointerup', () => {
+        playSfx('ui');
+        startEasy();
+      });
+    stepBtn = btn;
+    root.push(btn);
+  }
+
   const rematchBtn = scene.add
     .text(xRematch, yRematch, t('end.rematch'), {
       fontFamily: 'Georgia, "Times New Roman", serif',
@@ -329,7 +373,17 @@ export function showKaneEndScreen(opts: EndScreenOpts): void {
     ease: 'Back.easeOut',
   });
   scene.tweens.add({
-    targets: [brand, tag, sub, meta, recap, shareBtn, rematchBtn, menuBtn],
+    targets: [
+      brand,
+      tag,
+      sub,
+      meta,
+      recap,
+      shareBtn,
+      ...(stepBtn ? [stepBtn] : []),
+      rematchBtn,
+      menuBtn,
+    ],
     alpha: 1,
     duration: 400,
     delay: 180,
