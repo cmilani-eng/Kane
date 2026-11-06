@@ -15,6 +15,7 @@ import {
 } from '../../gameplay/battlefield/battlefieldHeroes';
 import {
   countIdleWorkers,
+  nearestIdleGatherResource,
   selectOrCycleIdleWorkers,
   type IdleChipResult,
 } from '../../gameplay/battlefield/idleWorkers';
@@ -940,12 +941,26 @@ export class BattlefieldHud {
         (u) => u.selected && u.team === 'player' && u.canGather && u.hp > 0,
       );
       const action = t(cycling ? 'hud.idleCycle' : 'hud.idleTap');
+      const gatherId = holding ? null : nearestIdleGatherResource(this.world);
+      const gatherLabel =
+        gatherId === 'gold'
+          ? t('hud.resourceGold')
+          : gatherId === 'magic_crystals'
+            ? t('hud.resourceCrystals')
+            : null;
+      const idleText = holding
+        ? t('hud.idleCargo', { n: idleN, action })
+        : gatherLabel
+          ? t('hud.idleGather', {
+              n: idleN,
+              action,
+              resource: gatherLabel,
+            })
+          : t('hud.idle', { n: idleN, action });
       this.idlePingBtn
         .setVisible(true)
         .setAlpha(pulse)
-        .setText(
-          t(holding ? 'hud.idleCargo' : 'hud.idle', { n: idleN, action }),
-        );
+        .setText(idleText);
     } else {
       this.idlePingBtn.setVisible(false).setAlpha(1);
     }
