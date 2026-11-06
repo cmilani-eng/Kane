@@ -46,10 +46,14 @@ export class BattlefieldHud {
   readonly stopBtn!: Phaser.GameObjects.Text;
   /** Subtle idle-worker attention chip (hidden when 0). */
   readonly idlePingBtn!: Phaser.GameObjects.Text;
+  /** Recenter camera on player keep / hall. */
+  readonly baseBtn!: Phaser.GameObjects.Text;
   /** Scene wires this to toggle A-move mode. */
   onArmAttackMove: (() => void) | null = null;
   /** Scene wires this to issue stop + pulse. */
   onStopSelected: (() => void) | null = null;
+  /** Scene wires this to snap camera to base. */
+  onRecenterBase: (() => void) | null = null;
 
   private goldDot!: Phaser.GameObjects.Arc;
   private crystalDot!: Phaser.GameObjects.Arc;
@@ -213,6 +217,28 @@ export class BattlefieldHud {
         if (!isSfxMuted()) playSfx('ui');
       });
 
+    this.baseBtn = scene.add
+      .text(scene.scale.width - 12, 92, 'Base', {
+        fontFamily: 'system-ui, sans-serif',
+        fontSize: '13px',
+        color: '#fff8e8',
+        backgroundColor: '#2a4050',
+        padding: { x: 12, y: 8 },
+      })
+      .setOrigin(1, 0)
+      .setScrollFactor(0)
+      .setDepth(101)
+      .setInteractive({ useHandCursor: true })
+      .on('pointerup', () => {
+        this.onRecenterBase?.();
+      })
+      .on('pointerover', () =>
+        this.baseBtn.setStyle({ backgroundColor: '#3a5565' }),
+      )
+      .on('pointerout', () =>
+        this.baseBtn.setStyle({ backgroundColor: '#2a4050' }),
+      );
+
     this.attackMoveBtn = scene.add
       .text(12, scene.scale.height - 48, 'A · Atk', {
         fontFamily: 'system-ui, sans-serif',
@@ -350,6 +376,7 @@ export class BattlefieldHud {
       this.hint,
       this.menuBtn,
       this.muteBtn,
+      this.baseBtn,
       this.attackMoveBtn,
       this.stopBtn,
       this.idlePingBtn,
@@ -410,6 +437,10 @@ export class BattlefieldHud {
       .setPosition(w - pad, pad + (this.narrow ? 36 : 42))
       .setFontSize(this.narrow ? '12px' : '13px')
       .setText(isSfxMuted() ? 'Sound: Off' : 'Sound: On');
+    this.baseBtn
+      .setPosition(w - pad, pad + (this.narrow ? 70 : 80))
+      .setFontSize(this.narrow ? '12px' : '13px')
+      .setText(this.narrow ? 'Base' : 'Home · Base');
 
     const btnW = this.narrow ? Math.min(78, (w - pad * 2 - 18) / 4) : 92;
     const btnH = this.narrow ? 52 : 58;
@@ -585,12 +616,12 @@ export class BattlefieldHud {
       return `Place ${placeName ?? 'building'} (${placeCost ?? 0}g) · tap map · B cycle · Esc cancel`;
     }
     if (this.narrow) {
-      return 'Ctrl+1-0 groups · S stop · A attack-move · pads H/Q/W/E';
+      return 'Home base · S stop · A attack-move · pads H/Q/W/E';
     }
     return this.speciesId === 'nobles'
-      ? 'Ctrl+1-0 groups · 1-0 recall · S stop · A attack-move · F · H/Q/W/E'
+      ? 'Home base · Ctrl+1-0 · S stop · A attack-move · F · H/Q/W/E'
       : this.speciesId === 'weirdos'
-        ? 'Ctrl+1-0 groups · S stop · A attack-move · M · H/Q/W/E'
-        : 'Ctrl+1-0 groups · S stop · A attack-move · R rage · B build · H/Q/W/E';
+        ? 'Home base · Ctrl+1-0 · S stop · A attack-move · M · H/Q/W/E'
+        : 'Home base · Ctrl+1-0 · S stop · A attack-move · R · B · H/Q/W/E';
   }
 }

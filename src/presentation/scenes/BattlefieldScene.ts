@@ -93,6 +93,7 @@ import {
   tickStopFx,
 } from '../../gameplay/battlefield/battlefieldStopFx';
 import { tickWaypointMarkers } from '../../gameplay/battlefield/battlefieldWaypointMarkers';
+import { findPlayerBasePoint } from '../../gameplay/battlefield/playerBase';
 import {
   clearSelection,
   createBattlefieldWorld,
@@ -237,6 +238,7 @@ export class BattlefieldScene extends Phaser.Scene {
     this.hud.menuBtn.on('pointerup', () => this.scene.start('Menu'));
     this.hud.onArmAttackMove = () => this.toggleAttackMoveMode();
     this.hud.onStopSelected = () => this.issueStopCommand();
+    this.hud.onRecenterBase = () => this.recenterOnPlayerBase();
     this.minimap = new Minimap(this, this.world, this.cameraCtl);
     this.tutorial = createTutorialState();
     this.coach = new TutorialCoach(this, this.tutorial);
@@ -350,6 +352,9 @@ export class BattlefieldScene extends Phaser.Scene {
     });
     this.input.keyboard?.on('keydown-A', () => {
       this.toggleAttackMoveMode();
+    });
+    this.input.keyboard?.on('keydown-HOME', () => {
+      this.recenterOnPlayerBase();
     });
 
     const digitEvents = [
@@ -622,6 +627,14 @@ export class BattlefieldScene extends Phaser.Scene {
     if (n <= 0) return;
     spawnStopPulses(this.world);
     this.hud.flashStopButton();
+    playSfx('ui');
+  }
+
+  /** Home / Base HUD — snap camera to player keep. */
+  private recenterOnPlayerBase(): void {
+    const pt = findPlayerBasePoint(this.world);
+    if (!pt) return;
+    this.cameraCtl.centerOn(pt.x, pt.y);
     playSfx('ui');
   }
 
