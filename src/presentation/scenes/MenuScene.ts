@@ -15,8 +15,18 @@ import {
   subscribeAuth,
 } from '../../firebase/auth';
 import { maybeRecordCloudGameStarted } from '../../firebase/cloudProgression';
+import {
+  SKIRMISH_MAP_ORDER,
+  type SkirmishMapId,
+} from '../../data/skirmishMaps';
 import type { SpeciesId } from '../../data/speciesStub';
-import { difficultyCopy, speciesCopy, subscribeLocale, t } from '../../i18n';
+import {
+  difficultyCopy,
+  mapCopy,
+  speciesCopy,
+  subscribeLocale,
+  t,
+} from '../../i18n';
 import {
   AI_DIFFICULTY_ORDER,
   type AiDifficultyId,
@@ -46,6 +56,7 @@ export class MenuScene extends Phaser.Scene {
   private authUnsub: (() => void) | null = null;
   private accountLabel: Phaser.GameObjects.Text | null = null;
   private difficulty: AiDifficultyId = 'normal';
+  private mapId: SkirmishMapId = 'crossing';
   /** Last played / remembered species — highlighted on the menu. */
   private lastSpecies: SpeciesId = 'nobles';
   private previewGfx: Phaser.GameObjects.Graphics | null = null;
@@ -60,6 +71,7 @@ export class MenuScene extends Phaser.Scene {
     hideDomHud();
     const prefs = loadMatchPrefs();
     this.difficulty = prefs.difficulty;
+    this.mapId = prefs.mapId;
     this.lastSpecies = prefs.species;
     this.statsOpen = false;
     this.lobbyOpen = false;
@@ -266,10 +278,20 @@ export class MenuScene extends Phaser.Scene {
       })
       .setOrigin(0.5);
 
-    this.drawDifficultyRow(width, height * 0.31);
+    this.drawDifficultyRow(width, height * 0.29);
 
     this.add
-      .text(width / 2, height * 0.365, t('menu.pickSpecies'), {
+      .text(width / 2, height * 0.335, t('menu.map'), {
+        fontFamily: 'system-ui, sans-serif',
+        fontSize: '13px',
+        color: '#b8c9d9',
+      })
+      .setOrigin(0.5);
+
+    this.drawMapRow(width, height * 0.38);
+
+    this.add
+      .text(width / 2, height * 0.43, t('menu.pickSpecies'), {
         fontFamily: 'system-ui, sans-serif',
         fontSize: '14px',
         color: '#b8c9d9',
@@ -289,7 +311,7 @@ export class MenuScene extends Phaser.Scene {
       { id: 'weirdos', fill: 0x7a4aa8, stroke: 0x6ecfbf },
     ];
     if (narrow) {
-      const startY = height * 0.44;
+      const startY = height * 0.49;
       cards.forEach((c, i) => {
         const s = speciesCopy(c.id);
         this.makeSpeciesCard(
@@ -309,7 +331,7 @@ export class MenuScene extends Phaser.Scene {
       });
     } else {
       const gap = Math.min(200, width * 0.28);
-      const cardY = height * 0.56;
+      const cardY = height * 0.58;
       cards.forEach((c, i) => {
         const s = speciesCopy(c.id);
         this.makeSpeciesCard(
@@ -468,7 +490,47 @@ export class MenuScene extends Phaser.Scene {
       bg.on('pointerup', () => {
         if (this.difficulty === id) return;
         this.difficulty = id;
-        rememberMatchPrefs(this.lastSpecies, this.difficulty);
+        rememberMatchPrefs(this.lastSpecies, this.difficulty, this.mapId);
+        playSfx('ui');
+        this.tweens.killAll();
+        this.children.removeAll(true);
+        this.previewGfx = null;
+        this.previewSlots = [];
+        this.buildLayout(false);
+      });
+    });
+  }
+
+  private drawMapRow(width: number, y: number): void {
+    const gap = Math.min(150, width * 0.4);
+    SKIRMISH_MAP_ORDER.forEach((id, i) => {
+      const m = mapCopy(id);
+      const selected = this.mapId === id;
+      const x = width / 2 + (i - 0.5) * gap;
+      const bg = this.add
+        .rectangle(x, y, Math.min(140, gap - 10), 44, selected ? 0x2a2838 : 0x1a2433, 0.95)
+        .setStrokeStyle(2, selected ? 0x6ecfbf : 0x3a4555)
+        .setInteractive({ useHandCursor: true });
+      this.add
+        .text(x, y - 8, m.label, {
+          fontFamily: 'Georgia, "Times New Roman", serif',
+          fontSize: '15px',
+          color: selected ? '#6ecfbf' : '#fff8e8',
+        })
+        .setOrigin(0.5);
+      this.add
+        .text(x, y + 12, m.blurb, {
+          fontFamily: 'system-ui, sans-serif',
+          fontSize: '9px',
+          color: '#9eb4c8',
+          align: 'center',
+          wordWrap: { width: Math.min(130, gap - 12) },
+        })
+        .setOrigin(0.5);
+      bg.on('pointerup', () => {
+        if (this.mapId === id) return;
+        this.mapId = id;
+        rememberMatchPrefs(this.lastSpecies, this.difficulty, this.mapId);
         playSfx('ui');
         this.tweens.killAll();
         this.children.removeAll(true);
@@ -481,13 +543,14 @@ export class MenuScene extends Phaser.Scene {
 
   private launchMatch(species: SpeciesId): void {
     this.lastSpecies = species;
-    rememberMatchPrefs(species, this.difficulty);
+    rememberMatchPrefs(species, this.difficulty, this.mapId);
     recordGameStarted(species);
     void maybeRecordCloudGameStarted(species);
     playSfx('ui');
     this.scene.start('Battlefield', {
       species,
       difficulty: this.difficulty,
+      mapId: this.mapId,
     });
   }
 

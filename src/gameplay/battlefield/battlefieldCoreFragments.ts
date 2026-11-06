@@ -29,13 +29,18 @@ export interface CoreFragment {
   captureProgress: number;
 }
 
-export function seedCoreFragments(world: BattlefieldWorld): void {
-  const spots = [
-    { x: MAP.width * 0.42, y: MAP.height * 0.48 },
-    { x: MAP.width * 0.58, y: MAP.height * 0.42 },
-    { x: MAP.width * 0.5, y: MAP.height * 0.62 },
-  ];
-  world.coreFragments = spots.map((p, i) => ({
+export function seedCoreFragments(
+  world: BattlefieldWorld,
+  spots?: Array<{ x: number; y: number }>,
+): void {
+  const list =
+    spots ??
+    [
+      { x: MAP.width * 0.42, y: MAP.height * 0.48 },
+      { x: MAP.width * 0.58, y: MAP.height * 0.42 },
+      { x: MAP.width * 0.5, y: MAP.height * 0.62 },
+    ];
+  world.coreFragments = list.map((p, i) => ({
     id: 9000 + i,
     x: p.x,
     y: p.y,

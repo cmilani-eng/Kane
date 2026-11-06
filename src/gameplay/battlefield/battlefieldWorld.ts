@@ -9,6 +9,10 @@ import {
   type ResourceWallet,
 } from '../../data/resources';
 import { getBuildingType, type BuildingTypeId } from '../../data/buildings';
+import {
+  getSkirmishMap,
+  type SkirmishMapId,
+} from '../../data/skirmishMaps';
 import { SPECIES, type SpeciesId } from '../../data/speciesStub';
 import { getUnitType, type UnitTypeId } from '../../data/units';
 import { clamp, dist, moveToward } from '../math';
@@ -157,6 +161,8 @@ export interface BattlefieldWorld {
   fog: import('./battlefieldFog').FogState;
   /** Skirmish AI difficulty for this match. */
   aiDifficulty: import('./aiDifficulty').AiDifficultyId;
+  /** Selected skirmish map layout. */
+  mapId: SkirmishMapId;
 }
 
 function seedHall(
@@ -393,9 +399,11 @@ function seedArmy(
 export function createBattlefieldWorld(
   playerSpecies: SpeciesId = 'brutes',
   difficulty: AiDifficultyId = 'normal',
+  mapId?: string | null,
 ): BattlefieldWorld {
   const enemySpecies = oppositePlayable(playerSpecies);
   const ai = getAiDifficulty(difficulty);
+  const layout = getSkirmishMap(mapId);
   const world: BattlefieldWorld = {
     nextId: 1,
     units: [],
@@ -437,12 +445,13 @@ export function createBattlefieldWorld(
     },
     fog: createFogState(),
     aiDifficulty: ai.id,
+    mapId: layout.id,
   };
 
-  const baseX = 420;
-  const baseY = MAP.height - 420;
-  const ex = MAP.width * 0.55;
-  const ey = MAP.height * 0.45;
+  const baseX = layout.playerBase.x;
+  const baseY = layout.playerBase.y;
+  const ex = layout.enemyBase.x;
+  const ey = layout.enemyBase.y;
 
   seedHall(
     world,
@@ -462,8 +471,8 @@ export function createBattlefieldWorld(
   seedArmy(world, 'player', playerSpecies, baseX, baseY);
   seedArmy(world, 'enemy', enemySpecies, ex, ey);
 
-  createDefaultNodes(world);
-  seedCoreFragments(world);
+  createDefaultNodes(world, layout.nodes);
+  seedCoreFragments(world, layout.cores);
   return world;
 }
 
