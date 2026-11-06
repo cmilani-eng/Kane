@@ -43,7 +43,7 @@ This doc is the honest gate before any public preview URL.
 - [ ] Boot splash → Menu with **no** age-gate / 13+ confirmation screen
 - [ ] SP match + **Rematch** works on a mid-range phone over LAN Vite (or preview URL)
 - [ ] Easy start shows player cushion; Normal/Hard feel unchanged
-- [ ] Menu/pause volume persists across reload; mute still silences
+- [x] Menu/pause volume persists across reload; mute still silences (`kane.masterVolume.v1`; pause Sound toggle + master volume slider)
 - [ ] PWA manifest + icons load (Add to Home Screen when HTTPS/localhost)
 - [ ] In-match tips mention Pause, Home, Army, Idle, Rematch
 - [ ] Menu **Stats** shows player record; `#/admin` shows admin tools when allowed
