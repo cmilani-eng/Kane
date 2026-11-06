@@ -31,10 +31,10 @@ export function lobbyStatusLine(status: LobbyStatus, code: string | null): strin
   }
 }
 
-/** Selected skirmish map tip — mirrors menu.mapTip for lobby parity. */
+/** Selected skirmish map tip — label · blurb from match prefs. */
 export function lobbyMapTipLine(): string {
   const map = mapCopy(loadMatchPrefs().mapId);
-  return t('menu.mapTip', { label: map.label, blurb: map.blurb });
+  return t('lobby.mapTip', { label: map.label, blurb: map.blurb });
 }
 
 /** Selected faction motto tip — name · blurb from match prefs. */

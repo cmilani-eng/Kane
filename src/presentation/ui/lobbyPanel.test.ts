@@ -4,7 +4,7 @@ import {
   resetMatchSummaries,
   writeMatchSummary,
 } from '../../database/matchSummary';
-import { resetLocaleForTests, setLocale } from '../../i18n';
+import { mapCopy, resetLocaleForTests, setLocale, t } from '../../i18n';
 import {
   lobbyDifficultyTipLine,
   lobbyFactionTipLine,
@@ -50,12 +50,15 @@ describe('lobby status copy', () => {
     expect(lobbyStatusLine('blocked', null)).toBe('El código es demasiado corto');
   });
 
-  it('surfaces the selected skirmish map flavor like the menu tip', () => {
+  it('surfaces the selected skirmish map label · blurb tip', () => {
     rememberMatchPrefs('nobles', 'normal', 'ridge');
     setLocale('en-GB');
-    const tip = lobbyMapTipLine();
-    expect(tip).toContain('Ridge');
-    expect(tip).toContain('Diagonal bases');
+    const map = mapCopy('ridge');
+    expect(lobbyMapTipLine()).toBe(
+      t('lobby.mapTip', { label: map.label, blurb: map.blurb }),
+    );
+    expect(lobbyMapTipLine()).toContain('Ridge');
+    expect(lobbyMapTipLine()).toContain('Diagonal bases');
     setLocale('pt-BR');
     expect(lobbyMapTipLine()).toContain('Cume');
   });
