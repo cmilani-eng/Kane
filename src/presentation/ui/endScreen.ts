@@ -6,19 +6,21 @@ import Phaser from 'phaser';
 import { showPostMatchInterstitialStub } from '../../ads/adsSdkStub';
 import { BRAND } from '../../config/brand';
 import { SPECIES, type SpeciesId } from '../../data/speciesStub';
-import { playEndFanfare } from '../audio/sfx';
+import { playEndFanfare, playSfx } from '../audio/sfx';
 
 export interface EndScreenOpts {
   scene: Phaser.Scene;
   win: boolean;
   speciesId: SpeciesId;
   onMenu: () => void;
+  /** Restart skirmish with the same species + difficulty. */
+  onRematch: () => void;
   /** Ignore these objects on the zoomed main camera. */
   ignoreOnMain: (objs: Phaser.GameObjects.GameObject[]) => void;
 }
 
 export function showKaneEndScreen(opts: EndScreenOpts): void {
-  const { scene, win, speciesId, onMenu, ignoreOnMain } = opts;
+  const { scene, win, speciesId, onMenu, onRematch, ignoreOnMain } = opts;
   const { width, height } = scene.scale;
   const species = SPECIES[speciesId];
   const accent = win ? 0xf0c75e : 0xe85a5a;
@@ -35,7 +37,7 @@ export function showKaneEndScreen(opts: EndScreenOpts): void {
   root.push(dim);
 
   const panelW = Math.min(440, width - 32);
-  const panelH = Math.min(320, height * 0.55);
+  const panelH = Math.min(360, height * 0.62);
   const panel = scene.add
     .rectangle(width / 2, height * 0.48, panelW, panelH, wash, 0.92)
     .setStrokeStyle(2, accent, 0.85)
@@ -131,23 +133,47 @@ export function showKaneEndScreen(opts: EndScreenOpts): void {
     .setAlpha(0);
   root.push(sub);
 
-  const btn = scene.add
-    .text(width / 2, height * 0.48 + panelH * 0.4, 'Return to Menu', {
+  const rematchBtn = scene.add
+    .text(width / 2, height * 0.48 + panelH * 0.34, 'Rematch', {
       fontFamily: 'Georgia, "Times New Roman", serif',
       fontSize: '18px',
       color: '#fff8e8',
-      backgroundColor: win ? '#2a3a28' : '#3a2430',
-      padding: { x: 22, y: 12 },
+      backgroundColor: win ? '#3a5530' : '#553040',
+      padding: { x: 28, y: 12 },
     })
     .setOrigin(0.5)
     .setScrollFactor(0)
     .setDepth(202)
     .setAlpha(0)
     .setInteractive({ useHandCursor: true })
-    .on('pointerover', () => btn.setStyle({ color: accentHex }))
-    .on('pointerout', () => btn.setStyle({ color: '#fff8e8' }))
-    .on('pointerup', onMenu);
-  root.push(btn);
+    .on('pointerover', () => rematchBtn.setStyle({ color: accentHex }))
+    .on('pointerout', () => rematchBtn.setStyle({ color: '#fff8e8' }))
+    .on('pointerup', () => {
+      playSfx('ui');
+      onRematch();
+    });
+  root.push(rematchBtn);
+
+  const menuBtn = scene.add
+    .text(width / 2, height * 0.48 + panelH * 0.48, 'Return to Menu', {
+      fontFamily: 'Georgia, "Times New Roman", serif',
+      fontSize: '16px',
+      color: '#fff8e8',
+      backgroundColor: win ? '#2a3a28' : '#3a2430',
+      padding: { x: 22, y: 10 },
+    })
+    .setOrigin(0.5)
+    .setScrollFactor(0)
+    .setDepth(202)
+    .setAlpha(0)
+    .setInteractive({ useHandCursor: true })
+    .on('pointerover', () => menuBtn.setStyle({ color: accentHex }))
+    .on('pointerout', () => menuBtn.setStyle({ color: '#fff8e8' }))
+    .on('pointerup', () => {
+      playSfx('ui');
+      onMenu();
+    });
+  root.push(menuBtn);
 
   ignoreOnMain(root);
 
@@ -171,7 +197,7 @@ export function showKaneEndScreen(opts: EndScreenOpts): void {
     ease: 'Back.easeOut',
   });
   scene.tweens.add({
-    targets: [brand, tag, sub, btn],
+    targets: [brand, tag, sub, rematchBtn, menuBtn],
     alpha: 1,
     duration: 400,
     delay: 180,
