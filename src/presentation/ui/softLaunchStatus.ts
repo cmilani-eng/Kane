@@ -19,7 +19,8 @@ export function softLaunchStatusStrip(): string {
   const cosBit = `skin ${loadout.equipped.nobles.replace(/^skin_/, '').slice(0, 8)}`;
   const volBit = `vol ${Math.round(getMasterVolume() * 100)}`;
   const pwaBit = 'pwa';
-  // Canonical play URL after the multi-game hub (see games/PATHS.md).
+  // Hub picker + canonical Kane play URL (see games/PATHS.md).
+  const hubBit = 'hub /';
   const playBit = '/kane';
-  return `${hostBit} · ${adminBit} · ${cosBit} · ${volBit} · ${pwaBit} · ${playBit}`;
+  return `${hostBit} · ${adminBit} · ${cosBit} · ${volBit} · ${pwaBit} · ${hubBit} · ${playBit}`;
 }

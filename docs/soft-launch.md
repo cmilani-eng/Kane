@@ -53,6 +53,7 @@ This doc is the honest gate before any public preview URL.
 | Hub → Kane path | **OK** — picker cards link `./kane/`; hash forward + manifest start_url match `games/PATHS.md` | `hub.gamePlayHref`, `games/registry.test.ts` |
 | Hub → Blob path | **OK** — picker cards link `./blob-evolution/`; Vite entry `main.js` guarded in registry tests | `hubLinks`, `games/PATHS.md` |
 | Hub legal footer | **OK** — Privacy / Terms footer hrefs stay `/privacy.html` and `/terms.html` after the games/ move | `hubLegalHref`, `games/privacy.html` |
+| Kane → hub back | **OK** — soft-launch strip shows `hub /`; menu ← Games returns to the picker | `softLaunchStatusStrip`, `MenuScene` `menu.games` |
 
 ## Remaining gaps (honest)
 
@@ -85,4 +86,4 @@ This doc is the honest gate before any public preview URL.
 
 ## Menu status strip
 
-The title menu shows a one-line soft-launch strip (hosting · admin · cosmetics · vol · pwa · /kane) built by `src/presentation/ui/softLaunchStatus.ts`. Ads and age-gate flags stay out of that strip so the main experience stays clean.
+The title menu shows a one-line soft-launch strip (hosting · admin · cosmetics · vol · pwa · hub / · /kane) built by `src/presentation/ui/softLaunchStatus.ts`. Ads and age-gate flags stay out of that strip so the main experience stays clean. A ← Games footer link returns to the hub picker at `/`.
