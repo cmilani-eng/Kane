@@ -24,7 +24,7 @@ Checks: `npm run lint` (ESLint), `npm test` (Vitest), `npm run build` (type-chec
 Playable **battlefield** (select / move / attack / build / train):
 
 - Camera: **WASD** / arrows, **edge scroll**, wheel or **`[` `]`** zoom
-- Menu picks **Brutes**, **Nobles**, or **Weirdos**, plus Easy / Normal / Hard, then Rematch
+- Menu picks **Brutes**, **Nobles**, or **Weirdos**, **Meadow** or **Ford**, plus Easy / Normal / Hard, then Rematch keeps that map
 - Brutes train Bonkers and Rock Throwers from the Bonker Hut, Wolf Riders and Big Bonkers from the Beast Pen, Stompers and Boom Goblins from Scrap Works
 - **LMB** select · **Shift** add/toggle · **drag** box · **RMB** attack enemy or move
 - Health bars, attack range when selected, death removal, no friendly fire
@@ -79,4 +79,4 @@ Full list, and how each key maps to StarCraft, Age of Empires and C&C: [docs/hot
 
 ## What’s next
 
-Phase 6 (Firebase emulators + live friend lobby) stays parked. Match writes are still client-trusted. Next content slice is one new map. Ads stay off.
+Phase 6 (Firebase emulators + live friend lobby) stays parked. Match writes are still client-trusted. Next content slice is a deeper in-match tutorial. Ads stay off.

@@ -16,7 +16,8 @@ import {
 } from '../../firebase/auth';
 import { maybeRecordCloudGameStarted } from '../../firebase/cloudProgression';
 import type { SpeciesId } from '../../data/speciesStub';
-import { difficultyCopy, speciesCopy, subscribeLocale, t } from '../../i18n';
+import { SKIRMISH_MAP_ORDER, type SkirmishMapId } from '../../data/skirmishMaps';
+import { difficultyCopy, mapCopy, speciesCopy, subscribeLocale, t } from '../../i18n';
 import {
   AI_DIFFICULTY_ORDER,
   type AiDifficultyId,
@@ -46,6 +47,7 @@ export class MenuScene extends Phaser.Scene {
   private authUnsub: (() => void) | null = null;
   private accountLabel: Phaser.GameObjects.Text | null = null;
   private difficulty: AiDifficultyId = 'normal';
+  private mapId: SkirmishMapId = 'meadow';
   /** Last played / remembered species — highlighted on the menu. */
   private lastSpecies: SpeciesId = 'nobles';
   private previewGfx: Phaser.GameObjects.Graphics | null = null;
@@ -60,6 +62,7 @@ export class MenuScene extends Phaser.Scene {
     hideDomHud();
     const prefs = loadMatchPrefs();
     this.difficulty = prefs.difficulty;
+    this.mapId = prefs.map;
     this.lastSpecies = prefs.species;
     this.statsOpen = false;
     this.lobbyOpen = false;
@@ -200,6 +203,7 @@ export class MenuScene extends Phaser.Scene {
 
   private buildLayout(intro: boolean): void {
     const { width, height } = this.scale;
+    const short = height < 500;
     this.previewSlots = [];
     const bg = this.add.graphics();
     bg.fillGradientStyle(0x0f1a2e, 0x0f1a2e, 0x1a3a4a, 0x243a28, 1);
@@ -234,9 +238,9 @@ export class MenuScene extends Phaser.Scene {
     });
 
     const title = this.add
-      .text(width / 2, height * 0.12, BRAND.name, {
+      .text(width / 2, short ? 22 : height * 0.12, BRAND.name, {
         fontFamily: 'Georgia, "Times New Roman", serif',
-        fontSize: Math.min(72, width * 0.16) + 'px',
+        fontSize: (short ? 32 : Math.min(72, width * 0.16)) + 'px',
         color: '#f5e6c8',
         stroke: '#1a2a4a',
         strokeThickness: 8,
@@ -250,9 +254,9 @@ export class MenuScene extends Phaser.Scene {
     }
 
     this.add
-      .text(width / 2, height * 0.22, BRAND.tagline, {
+      .text(width / 2, short ? 48 : height * 0.22, BRAND.tagline, {
         fontFamily: 'system-ui, sans-serif',
-        fontSize: Math.min(18, width * 0.045) + 'px',
+        fontSize: (short ? 12 : Math.min(18, width * 0.045)) + 'px',
         color: '#f0c75e',
         fontStyle: 'bold',
       })
@@ -266,10 +270,11 @@ export class MenuScene extends Phaser.Scene {
       })
       .setOrigin(0.5);
 
-    this.drawDifficultyRow(width, height * 0.31);
+    this.drawDifficultyRow(width, short ? 86 : height * 0.31, !short);
+    this.drawMapRow(width, short ? 124 : height * 0.38);
 
     this.add
-      .text(width / 2, height * 0.365, t('menu.pickSpecies'), {
+      .text(width / 2, short ? 148 : height * 0.43, t('menu.pickSpecies'), {
         fontFamily: 'system-ui, sans-serif',
         fontSize: '14px',
         color: '#b8c9d9',
@@ -278,7 +283,7 @@ export class MenuScene extends Phaser.Scene {
       })
       .setOrigin(0.5);
 
-    const narrow = width < 700;
+    const narrow = width < 700 && !short;
     const cards: {
       id: SpeciesId;
       fill: number;
@@ -289,7 +294,7 @@ export class MenuScene extends Phaser.Scene {
       { id: 'weirdos', fill: 0x7a4aa8, stroke: 0x6ecfbf },
     ];
     if (narrow) {
-      const startY = height * 0.44;
+      const startY = height * 0.5;
       cards.forEach((c, i) => {
         const s = speciesCopy(c.id);
         this.makeSpeciesCard(
@@ -307,9 +312,31 @@ export class MenuScene extends Phaser.Scene {
           c.id === this.lastSpecies,
         );
       });
+    } else if (short) {
+      const cardH = 108;
+      const cardW = Math.min(240, (width - 36) / 3);
+      const step = cardW + 10;
+      const cardY = 86 + 78 + cardH / 2;
+      cards.forEach((c, i) => {
+        const s = speciesCopy(c.id);
+        this.makeSpeciesCard(
+          c.id,
+          width / 2 + (i - 1) * step,
+          cardY,
+          s.name,
+          s.motto,
+          s.mechanic,
+          c.fill,
+          c.stroke,
+          () => this.startMatch(c.id),
+          cardW,
+          cardH,
+          c.id === this.lastSpecies,
+        );
+      });
     } else {
       const gap = Math.min(200, width * 0.28);
-      const cardY = height * 0.56;
+      const cardY = height * 0.58;
       cards.forEach((c, i) => {
         const s = speciesCopy(c.id);
         this.makeSpeciesCard(
@@ -332,7 +359,7 @@ export class MenuScene extends Phaser.Scene {
     createVolumeSlider({
       scene: this,
       x: width / 2,
-      y: height * 0.76,
+      y: short ? height - 100 : height * 0.76,
       width: Math.min(280, width * 0.7),
       depth: 30,
     });
@@ -354,7 +381,7 @@ export class MenuScene extends Phaser.Scene {
 
     const gap = Math.min(88, width * 0.22);
     this.add
-      .text(width / 2 - gap * 1.5, height * 0.855, t('menu.friends'), {
+      .text(width / 2 - gap * 1.5, short ? height - 46 : height * 0.855, t('menu.friends'), {
         fontFamily: 'system-ui, sans-serif',
         fontSize: '12px',
         color: '#fff8e8',
@@ -365,7 +392,7 @@ export class MenuScene extends Phaser.Scene {
       .setInteractive({ useHandCursor: true })
       .on('pointerup', () => this.openLobby());
     this.add
-      .text(width / 2 - gap * 0.5, height * 0.855, t('menu.cosmetics'), {
+      .text(width / 2 - gap * 0.5, short ? height - 46 : height * 0.855, t('menu.cosmetics'), {
         fontFamily: 'system-ui, sans-serif',
         fontSize: '12px',
         color: '#fff8e8',
@@ -376,7 +403,7 @@ export class MenuScene extends Phaser.Scene {
       .setInteractive({ useHandCursor: true })
       .on('pointerup', () => this.openCosmetics());
     this.accountLabel = this.add
-      .text(width / 2 + gap * 0.5, height * 0.855, t('menu.account'), {
+      .text(width / 2 + gap * 0.5, short ? height - 46 : height * 0.855, t('menu.account'), {
         fontFamily: 'system-ui, sans-serif',
         fontSize: '12px',
         color: '#fff8e8',
@@ -388,7 +415,7 @@ export class MenuScene extends Phaser.Scene {
       .on('pointerup', () => this.openAccount());
     this.refreshAccountChip();
     this.add
-      .text(width / 2 + gap * 1.5, height * 0.855, t('menu.stats'), {
+      .text(width / 2 + gap * 1.5, short ? height - 46 : height * 0.855, t('menu.stats'), {
         fontFamily: 'system-ui, sans-serif',
         fontSize: '12px',
         color: '#fff8e8',
@@ -439,24 +466,31 @@ export class MenuScene extends Phaser.Scene {
     });
   }
 
-  private drawDifficultyRow(width: number, y: number): void {
+  private drawDifficultyRow(width: number, y: number, showBlurb = true): void {
     const gap = Math.min(118, width * 0.28);
     AI_DIFFICULTY_ORDER.forEach((id, i) => {
       const d = difficultyCopy(id);
       const selected = this.difficulty === id;
       const x = width / 2 + (i - 1) * gap;
       const bg = this.add
-        .rectangle(x, y, Math.min(108, gap - 8), 44, selected ? 0x2a3a28 : 0x1a2433, 0.95)
+        .rectangle(
+          x,
+          y,
+          Math.min(108, gap - 8),
+          showBlurb ? 44 : 36,
+          selected ? 0x2a3a28 : 0x1a2433,
+          0.95,
+        )
         .setStrokeStyle(2, selected ? 0xf0c75e : 0x3a4555)
         .setInteractive({ useHandCursor: true });
       this.add
-        .text(x, y - 8, d.label, {
+        .text(x, showBlurb ? y - 8 : y, d.label, {
           fontFamily: 'Georgia, "Times New Roman", serif',
           fontSize: '15px',
           color: selected ? '#f0c75e' : '#fff8e8',
         })
         .setOrigin(0.5);
-      this.add
+      if (showBlurb) this.add
         .text(x, y + 12, d.blurb, {
           fontFamily: 'system-ui, sans-serif',
           fontSize: '9px',
@@ -468,7 +502,38 @@ export class MenuScene extends Phaser.Scene {
       bg.on('pointerup', () => {
         if (this.difficulty === id) return;
         this.difficulty = id;
-        rememberMatchPrefs(this.lastSpecies, this.difficulty);
+        rememberMatchPrefs(this.lastSpecies, this.difficulty, this.mapId);
+        playSfx('ui');
+        this.tweens.killAll();
+        this.children.removeAll(true);
+        this.previewGfx = null;
+        this.previewSlots = [];
+        this.buildLayout(false);
+      });
+    });
+  }
+
+  private drawMapRow(width: number, y: number): void {
+    const gap = Math.min(160, width * 0.36);
+    SKIRMISH_MAP_ORDER.forEach((id, i) => {
+      const copy = mapCopy(id);
+      const selected = this.mapId === id;
+      const x = width / 2 + (i - 0.5) * gap;
+      const bg = this.add
+        .rectangle(x, y, Math.min(148, gap - 12), 36, selected ? 0x2a3a28 : 0x1a2433, 0.95)
+        .setStrokeStyle(2, selected ? 0xf0c75e : 0x3a4555)
+        .setInteractive({ useHandCursor: true });
+      this.add
+        .text(x, y, copy.name, {
+          fontFamily: 'Georgia, "Times New Roman", serif',
+          fontSize: '15px',
+          color: selected ? '#f0c75e' : '#fff8e8',
+        })
+        .setOrigin(0.5);
+      bg.on('pointerup', () => {
+        if (this.mapId === id) return;
+        this.mapId = id;
+        rememberMatchPrefs(this.lastSpecies, this.difficulty, this.mapId);
         playSfx('ui');
         this.tweens.killAll();
         this.children.removeAll(true);
@@ -481,13 +546,14 @@ export class MenuScene extends Phaser.Scene {
 
   private launchMatch(species: SpeciesId): void {
     this.lastSpecies = species;
-    rememberMatchPrefs(species, this.difficulty);
+    rememberMatchPrefs(species, this.difficulty, this.mapId);
     recordGameStarted(species);
     void maybeRecordCloudGameStarted(species);
     playSfx('ui');
     this.scene.start('Battlefield', {
       species,
       difficulty: this.difficulty,
+      map: this.mapId,
     });
   }
 
@@ -537,7 +603,7 @@ export class MenuScene extends Phaser.Scene {
   ): void {
     const w = cardW ?? Math.min(190, this.scale.width * 0.28);
     const h = cardH ?? 150;
-    const compact = h <= 100;
+    const compact = h <= 120;
     const bg = this.add
       .rectangle(x, y, w, h, fill, 1)
       .setStrokeStyle(remembered ? 4 : 3, remembered ? 0xf0c75e : stroke)

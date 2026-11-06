@@ -9,6 +9,7 @@ import {
   type ResourceWallet,
 } from '../../data/resources';
 import { getBuildingType, type BuildingTypeId } from '../../data/buildings';
+import { getSkirmishMap, type SkirmishMapId } from '../../data/skirmishMaps';
 import { SPECIES, type SpeciesId } from '../../data/speciesStub';
 import { getUnitType, type UnitTypeId } from '../../data/units';
 import { clamp, dist, moveToward } from '../math';
@@ -125,6 +126,8 @@ export interface BattlefieldWorld {
   enemyWallet: ResourceWallet;
   /** Player species for this match. */
   speciesId: SpeciesId;
+  /** Layout used for bases, nodes, and Core. */
+  mapId: SkirmishMapId;
   /** Enemy species (the other playable faction). */
   enemySpeciesId: SpeciesId;
   /** Hero runtime + ability VFX (see battlefieldHeroes). */
@@ -393,6 +396,7 @@ function seedArmy(
 export function createBattlefieldWorld(
   playerSpecies: SpeciesId = 'brutes',
   difficulty: AiDifficultyId = 'normal',
+  mapId: SkirmishMapId = 'meadow',
 ): BattlefieldWorld {
   const enemySpecies = oppositePlayable(playerSpecies);
   const ai = getAiDifficulty(difficulty);
@@ -411,6 +415,7 @@ export function createBattlefieldWorld(
       magic_crystals: Math.max(0, 30 + ai.startCrystalBonus),
     }),
     speciesId: playerSpecies,
+    mapId: getSkirmishMap(mapId).id,
     enemySpeciesId: enemySpecies,
     heroRuntime: null,
     enemyHeroRuntime: null,
@@ -439,10 +444,11 @@ export function createBattlefieldWorld(
     aiDifficulty: ai.id,
   };
 
-  const baseX = 420;
-  const baseY = MAP.height - 420;
-  const ex = MAP.width * 0.55;
-  const ey = MAP.height * 0.45;
+  const layout = getSkirmishMap(mapId);
+  const baseX = layout.playerBase.x;
+  const baseY = layout.playerBase.y;
+  const ex = layout.enemyBase.x;
+  const ey = layout.enemyBase.y;
 
   seedHall(
     world,
@@ -462,8 +468,8 @@ export function createBattlefieldWorld(
   seedArmy(world, 'player', playerSpecies, baseX, baseY);
   seedArmy(world, 'enemy', enemySpecies, ex, ey);
 
-  createDefaultNodes(world);
-  seedCoreFragments(world);
+  createDefaultNodes(world, layout.nodes);
+  seedCoreFragments(world, layout.cores);
   return world;
 }
 

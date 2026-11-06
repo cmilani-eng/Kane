@@ -150,6 +150,8 @@ import {
 import { ensureAmbientBgm } from '../audio/bgm';
 import { playSfx } from '../audio/sfx';
 import { RtsCamera } from '../camera/rtsCamera';
+import { getSkirmishMap, type SkirmishMapId } from '../../data/skirmishMaps';
+import { mapCopy } from '../../i18n';
 import { createSkirmishMap } from '../maps/mapManager';
 import { FogOverlay } from '../ui/fogOverlay';
 import { showKaneEndScreen } from '../ui/endScreen';
@@ -270,7 +272,11 @@ export class BattlefieldScene extends Phaser.Scene {
     super('Battlefield');
   }
 
-  create(data?: { species?: SpeciesId; difficulty?: AiDifficultyId }): void {
+  create(data?: {
+    species?: SpeciesId;
+    difficulty?: AiDifficultyId;
+    map?: SkirmishMapId;
+  }): void {
     this.input.mouse?.disableContextMenu();
 
     const playerSpecies: SpeciesId =
@@ -278,10 +284,11 @@ export class BattlefieldScene extends Phaser.Scene {
         ? data.species
         : 'brutes';
     const difficulty = getAiDifficulty(data?.difficulty).id;
+    const mapId = getSkirmishMap(data?.map).id;
     this.playerSkinAccent = getEquippedSkin(playerSpecies).accent;
 
-    const { layer } = createSkirmishMap(this);
-    this.world = createBattlefieldWorld(playerSpecies, difficulty);
+    const { layer } = createSkirmishMap(this, mapId);
+    this.world = createBattlefieldWorld(playerSpecies, difficulty, mapId);
     this.placeables = placeableBuildings(playerSpecies);
     this.placeIndex = 0;
     this.placeType = this.placeables[0] ?? 'bonker_hut';
@@ -1205,14 +1212,15 @@ export class BattlefieldScene extends Phaser.Scene {
     });
   }
 
-  /** End-screen Rematch — same species + difficulty, no menu hop. */
+  /** End-screen Rematch — same species, map, and difficulty, no menu hop. */
   private rematchSameSkirmish(): void {
     const species = this.world.speciesId;
     const difficulty = this.world.aiDifficulty;
-    rememberMatchPrefs(species, difficulty);
+    const map = this.world.mapId;
+    rememberMatchPrefs(species, difficulty, map);
     recordGameStarted(species);
     void maybeRecordCloudGameStarted(species);
-    this.scene.start('Battlefield', { species, difficulty });
+    this.scene.start('Battlefield', { species, difficulty, map });
   }
 
   /**
@@ -1298,7 +1306,7 @@ export class BattlefieldScene extends Phaser.Scene {
         node.resourceId === 'magic_crystals' ? 'Crystals' : 'Gold';
       status = `${label} node · ${Math.floor(node.remaining)} remaining`;
     } else if (n === 0) {
-      status = `Alive ${friends} vs ${foes}  ·  Select a unit or building`;
+      status = `${mapCopy(this.world.mapId).name}  ·  Alive ${friends} vs ${foes}`;
     } else if (n === 1) {
       status = `${sel[0]!.name} selected · orders below`;
     } else {

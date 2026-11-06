@@ -2,7 +2,7 @@
  * CORE fragments — capturable map relics (GDD: shattered KANE CORE).
  * Claiming fires pulse/burst FX for presentation.
  */
-import { MAP } from '../../config/balance';
+import { SKIRMISH_MAPS, type MapPoint } from '../../data/skirmishMaps';
 import { dist } from '../math';
 import { pushCombatFx } from './battlefieldCombatFx';
 import { walletOf } from './battlefieldEconomy';
@@ -29,12 +29,10 @@ export interface CoreFragment {
   captureProgress: number;
 }
 
-export function seedCoreFragments(world: BattlefieldWorld): void {
-  const spots = [
-    { x: MAP.width * 0.42, y: MAP.height * 0.48 },
-    { x: MAP.width * 0.58, y: MAP.height * 0.42 },
-    { x: MAP.width * 0.5, y: MAP.height * 0.62 },
-  ];
+export function seedCoreFragments(
+  world: BattlefieldWorld,
+  spots: MapPoint[] = SKIRMISH_MAPS.meadow.cores,
+): void {
   world.coreFragments = spots.map((p, i) => ({
     id: 9000 + i,
     x: p.x,

@@ -118,6 +118,13 @@ export function speciesName(id: SpeciesId): string {
   return speciesCopy(id).name;
 }
 
+export function mapCopy(id: 'meadow' | 'ford'): { name: string; blurb: string } {
+  if (id === 'ford') {
+    return { name: t('map.ford.name'), blurb: t('map.ford.blurb') };
+  }
+  return { name: t('map.meadow.name'), blurb: t('map.meadow.blurb') };
+}
+
 export function difficultyCopy(id: DifficultyId): { label: string; blurb: string } {
   switch (id) {
     case 'easy':

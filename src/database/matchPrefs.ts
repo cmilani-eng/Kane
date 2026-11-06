@@ -1,7 +1,8 @@
 /**
- * Last skirmish prefs — species + AI difficulty in localStorage.
+ * Last skirmish prefs — species, map, and AI difficulty in localStorage.
  * Restored on the title menu for rematch convenience.
  */
+import { getSkirmishMap, type SkirmishMapId } from '../data/skirmishMaps';
 import type { SpeciesId } from '../data/speciesStub';
 import {
   getAiDifficulty,
@@ -15,6 +16,7 @@ const SPECIES_IDS: SpeciesId[] = ['brutes', 'nobles', 'weirdos'];
 export interface MatchPrefs {
   version: 1;
   species: SpeciesId;
+  map: SkirmishMapId;
   difficulty: AiDifficultyId;
 }
 
@@ -31,7 +33,7 @@ function isSpeciesId(v: unknown): v is SpeciesId {
 }
 
 export function defaultMatchPrefs(): MatchPrefs {
-  return { version: 1, species: 'nobles', difficulty: 'normal' };
+  return { version: 1, species: 'nobles', map: 'meadow', difficulty: 'normal' };
 }
 
 export function loadMatchPrefs(): MatchPrefs {
@@ -44,6 +46,7 @@ export function loadMatchPrefs(): MatchPrefs {
     return {
       version: 1,
       species: isSpeciesId(parsed.species) ? parsed.species : base.species,
+      map: getSkirmishMap(parsed.map).id,
       difficulty: getAiDifficulty(parsed.difficulty).id,
     };
   } catch {
@@ -57,6 +60,7 @@ export function saveMatchPrefs(prefs: MatchPrefs): void {
     const next: MatchPrefs = {
       version: 1,
       species: isSpeciesId(prefs.species) ? prefs.species : 'nobles',
+      map: getSkirmishMap(prefs.map).id,
       difficulty: getAiDifficulty(prefs.difficulty).id,
     };
     localStorage.setItem(KEY, JSON.stringify(next));
@@ -65,12 +69,13 @@ export function saveMatchPrefs(prefs: MatchPrefs): void {
   }
 }
 
-/** Persist both fields (start match or menu change). */
+/** Persist species, map, and difficulty (start match or menu change). */
 export function rememberMatchPrefs(
   species: SpeciesId,
   difficulty: AiDifficultyId,
+  map: SkirmishMapId,
 ): void {
-  saveMatchPrefs({ version: 1, species, difficulty });
+  saveMatchPrefs({ version: 1, species, map: getSkirmishMap(map).id, difficulty });
   // Cloud sync when signed in (best-effort; guest stays local).
   void import('../firebase/cloudProgression')
     .then((m) => m.maybeSyncPrefs(species, difficulty))

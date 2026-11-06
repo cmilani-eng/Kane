@@ -4,6 +4,7 @@
  */
 import Phaser from 'phaser';
 import { MAP } from '../../config/balance';
+import { getSkirmishMap, type SkirmishMapId } from '../../data/skirmishMaps';
 import { TILE } from './tilesetAssets';
 
 export interface MapHandle {
@@ -12,7 +13,10 @@ export interface MapHandle {
 }
 
 /** Build a blank procedural tilemap from the generated tileset. */
-export function createSkirmishMap(scene: Phaser.Scene): MapHandle {
+export function createSkirmishMap(
+  scene: Phaser.Scene,
+  mapId: SkirmishMapId = 'meadow',
+): MapHandle {
   const tileW = MAP.tile;
   const tileH = MAP.tile;
   const cols = Math.ceil(MAP.width / tileW);
@@ -37,18 +41,33 @@ export function createSkirmishMap(scene: Phaser.Scene): MapHandle {
     for (let tx = 0; tx < cols; tx++) {
       const wx = tx * tileW + tileW / 2;
       const wy = ty * tileH + tileH / 2;
-      const mid =
-        Math.hypot(wx - MAP.width / 2, wy - MAP.height / 2) < 280;
-      const path = (tx + ty) % 5 === 0;
-      let id: number = TILE.grass;
-      if (mid) id = TILE.dirt;
-      else if (path) id = TILE.path;
-      else if ((tx * 13 + ty * 7) % 17 === 0) id = TILE.crystal;
-      else if ((tx * 13 + ty * 7) % 11 === 0) id = TILE.moss;
-      layer.putTileAt(id, tx, ty);
+      layer.putTileAt(groundTile(getSkirmishMap(mapId).id, wx, wy, tx, ty), tx, ty);
     }
   }
 
   layer.setDepth(0);
   return { map, layer };
+}
+
+function groundTile(
+  mapId: SkirmishMapId,
+  wx: number,
+  wy: number,
+  tx: number,
+  ty: number,
+): number {
+  if (mapId === 'ford') {
+    const band = Math.abs(wy - MAP.height * 0.5);
+    if (band < 40) return TILE.path;
+    if (band < 160) return TILE.dirt;
+    if ((tx * 13 + ty * 7) % 19 === 0) return TILE.moss;
+    return TILE.grass;
+  }
+  const mid = Math.hypot(wx - MAP.width / 2, wy - MAP.height / 2) < 280;
+  const path = (tx + ty) % 5 === 0;
+  if (mid) return TILE.dirt;
+  if (path) return TILE.path;
+  if ((tx * 13 + ty * 7) % 17 === 0) return TILE.crystal;
+  if ((tx * 13 + ty * 7) % 11 === 0) return TILE.moss;
+  return TILE.grass;
 }
