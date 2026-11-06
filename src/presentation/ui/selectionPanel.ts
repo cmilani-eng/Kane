@@ -601,10 +601,20 @@ export function carryLineFor(
   };
 }
 
+/** Quiet F-hotkey tip with formed/eligible count for Nobles. */
+function formationCountTip(f: SelectionFormationView): string {
+  const count =
+    f.eligible === 1
+      ? t(f.formed ? 'sel.inFormation' : 'sel.notFormed')
+      : t('sel.formedCount', { formed: f.formed, eligible: f.eligible });
+  return `${t('sel.formationTip')} · ${count}`;
+}
+
 function controlHintFor(units: BattlefieldUnit[]): string | null {
   const player = units.filter((u) => u.team === 'player' && u.hp > 0);
   if (player.length === 0) return null;
   const hasGrabber = player.some((u) => u.typeId === 'grabber');
+  const formation = formationViewFor(units);
   const hero = player.find((u) => !!getUnitType(u.typeId).isHero);
   if (hero) {
     const def = heroForSpecies(hero.speciesId);
@@ -625,7 +635,9 @@ function controlHintFor(units: BattlefieldUnit[]): string | null {
       } else if (hero.speciesId === 'weirdos') {
         tip = `${tip} · ${t('sel.mutationTip')}`;
       } else if (hero.speciesId === 'nobles') {
-        tip = `${tip} · ${t('sel.formationTip')}`;
+        tip = formation
+          ? `${tip} · ${formationCountTip(formation)}`
+          : `${tip} · ${t('sel.formationTip')}`;
       } else if (hero.speciesId === 'brutes') {
         tip = `${tip} · ${t('sel.rageTip')}`;
       }
@@ -634,6 +646,9 @@ function controlHintFor(units: BattlefieldUnit[]): string | null {
   }
   if (hasGrabber) {
     return t('sel.grabberTip');
+  }
+  if (formation) {
+    return formationCountTip(formation);
   }
   return null;
 }
