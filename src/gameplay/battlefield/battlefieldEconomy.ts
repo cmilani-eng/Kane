@@ -144,27 +144,37 @@ export function tickBattlefieldEconomy(world: BattlefieldWorld): void {
   }
 }
 
-export function createDefaultNodes(world: BattlefieldWorld): void {
-  const spots: Array<{
+export function createDefaultNodes(
+  world: BattlefieldWorld,
+  spots?: Array<{
     x: number;
     y: number;
     resourceId: ResourceId;
     amount: number;
-  }> = [
-    { x: 520, y: MAP.height - 280, resourceId: 'gold', amount: 120 },
-    { x: 700, y: MAP.height - 520, resourceId: 'gold', amount: 100 },
-    { x: 300, y: MAP.height - 600, resourceId: 'gold', amount: 90 },
-    { x: 900, y: MAP.height - 360, resourceId: 'magic_crystals', amount: 60 },
-    { x: 1100, y: MAP.height - 500, resourceId: 'magic_crystals', amount: 50 },
-    { x: MAP.width * 0.65, y: MAP.height * 0.55, resourceId: 'gold', amount: 100 },
-    {
-      x: MAP.width * 0.7,
-      y: MAP.height * 0.35,
-      resourceId: 'magic_crystals',
-      amount: 55,
-    },
-  ];
-  for (const s of spots) {
+  }>,
+): void {
+  const list =
+    spots ??
+    ([
+      { x: 520, y: MAP.height - 280, resourceId: 'gold', amount: 120 },
+      { x: 700, y: MAP.height - 520, resourceId: 'gold', amount: 100 },
+      { x: 300, y: MAP.height - 600, resourceId: 'gold', amount: 90 },
+      { x: 900, y: MAP.height - 360, resourceId: 'magic_crystals', amount: 60 },
+      { x: 1100, y: MAP.height - 500, resourceId: 'magic_crystals', amount: 50 },
+      {
+        x: MAP.width * 0.65,
+        y: MAP.height * 0.55,
+        resourceId: 'gold',
+        amount: 100,
+      },
+      {
+        x: MAP.width * 0.7,
+        y: MAP.height * 0.35,
+        resourceId: 'magic_crystals',
+        amount: 55,
+      },
+    ] as const);
+  for (const s of list) {
     world.nodes.push({
       id: world.nextId++,
       x: s.x,

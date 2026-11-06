@@ -22,6 +22,7 @@ export const LOCALE_CHOICES: { id: LocaleId; short: string; label: string }[] = 
 type Vars = Record<string, string | number>;
 type SpeciesId = 'brutes' | 'nobles' | 'weirdos';
 type DifficultyId = 'easy' | 'normal' | 'hard';
+type MapId = 'crossing' | 'ridge';
 
 const listeners = new Set<() => void>();
 let sessionLocale: LocaleId | null = null;
@@ -126,5 +127,14 @@ export function difficultyCopy(id: DifficultyId): { label: string; blurb: string
       return { label: t('difficulty.normal.label'), blurb: t('difficulty.normal.blurb') };
     case 'hard':
       return { label: t('difficulty.hard.label'), blurb: t('difficulty.hard.blurb') };
+  }
+}
+
+export function mapCopy(id: MapId): { label: string; blurb: string } {
+  switch (id) {
+    case 'crossing':
+      return { label: t('map.crossing.label'), blurb: t('map.crossing.blurb') };
+    case 'ridge':
+      return { label: t('map.ridge.label'), blurb: t('map.ridge.blurb') };
   }
 }

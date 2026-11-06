@@ -1,7 +1,12 @@
 /**
- * Last skirmish prefs — species + AI difficulty in localStorage.
+ * Last skirmish prefs — species + AI difficulty + map in localStorage.
  * Restored on the title menu for rematch convenience.
  */
+import {
+  DEFAULT_SKIRMISH_MAP,
+  isSkirmishMapId,
+  type SkirmishMapId,
+} from '../data/skirmishMaps';
 import type { SpeciesId } from '../data/speciesStub';
 import {
   getAiDifficulty,
@@ -16,6 +21,7 @@ export interface MatchPrefs {
   version: 1;
   species: SpeciesId;
   difficulty: AiDifficultyId;
+  mapId: SkirmishMapId;
 }
 
 function canStore(): boolean {
@@ -31,7 +37,12 @@ function isSpeciesId(v: unknown): v is SpeciesId {
 }
 
 export function defaultMatchPrefs(): MatchPrefs {
-  return { version: 1, species: 'nobles', difficulty: 'normal' };
+  return {
+    version: 1,
+    species: 'nobles',
+    difficulty: 'normal',
+    mapId: DEFAULT_SKIRMISH_MAP,
+  };
 }
 
 export function loadMatchPrefs(): MatchPrefs {
@@ -45,6 +56,7 @@ export function loadMatchPrefs(): MatchPrefs {
       version: 1,
       species: isSpeciesId(parsed.species) ? parsed.species : base.species,
       difficulty: getAiDifficulty(parsed.difficulty).id,
+      mapId: isSkirmishMapId(parsed.mapId) ? parsed.mapId : base.mapId,
     };
   } catch {
     return base;
@@ -58,6 +70,7 @@ export function saveMatchPrefs(prefs: MatchPrefs): void {
       version: 1,
       species: isSpeciesId(prefs.species) ? prefs.species : 'nobles',
       difficulty: getAiDifficulty(prefs.difficulty).id,
+      mapId: isSkirmishMapId(prefs.mapId) ? prefs.mapId : DEFAULT_SKIRMISH_MAP,
     };
     localStorage.setItem(KEY, JSON.stringify(next));
   } catch {
@@ -65,13 +78,15 @@ export function saveMatchPrefs(prefs: MatchPrefs): void {
   }
 }
 
-/** Persist both fields (start match or menu change). */
+/** Persist prefs (start match or menu change). */
 export function rememberMatchPrefs(
   species: SpeciesId,
   difficulty: AiDifficultyId,
+  mapId: SkirmishMapId = DEFAULT_SKIRMISH_MAP,
 ): void {
-  saveMatchPrefs({ version: 1, species, difficulty });
+  saveMatchPrefs({ version: 1, species, difficulty, mapId });
   // Cloud sync when signed in (best-effort; guest stays local).
+  // Cloud profile still stores species + difficulty only.
   void import('../firebase/cloudProgression')
     .then((m) => m.maybeSyncPrefs(species, difficulty))
     .catch(() => undefined);

@@ -270,7 +270,11 @@ export class BattlefieldScene extends Phaser.Scene {
     super('Battlefield');
   }
 
-  create(data?: { species?: SpeciesId; difficulty?: AiDifficultyId }): void {
+  create(data?: {
+    species?: SpeciesId;
+    difficulty?: AiDifficultyId;
+    mapId?: string;
+  }): void {
     this.input.mouse?.disableContextMenu();
 
     const playerSpecies: SpeciesId =
@@ -280,8 +284,8 @@ export class BattlefieldScene extends Phaser.Scene {
     const difficulty = getAiDifficulty(data?.difficulty).id;
     this.playerSkinAccent = getEquippedSkin(playerSpecies).accent;
 
-    const { layer } = createSkirmishMap(this);
-    this.world = createBattlefieldWorld(playerSpecies, difficulty);
+    const { layer } = createSkirmishMap(this, data?.mapId);
+    this.world = createBattlefieldWorld(playerSpecies, difficulty, data?.mapId);
     this.placeables = placeableBuildings(playerSpecies);
     this.placeIndex = 0;
     this.placeType = this.placeables[0] ?? 'bonker_hut';
@@ -1264,14 +1268,15 @@ export class BattlefieldScene extends Phaser.Scene {
     });
   }
 
-  /** End-screen Rematch — same species + difficulty, no menu hop. */
+  /** End-screen Rematch — same species + difficulty + map, no menu hop. */
   private rematchSameSkirmish(): void {
     const species = this.world.speciesId;
     const difficulty = this.world.aiDifficulty;
-    rememberMatchPrefs(species, difficulty);
+    const mapId = this.world.mapId;
+    rememberMatchPrefs(species, difficulty, mapId);
     recordGameStarted(species);
     void maybeRecordCloudGameStarted(species);
-    this.scene.start('Battlefield', { species, difficulty });
+    this.scene.start('Battlefield', { species, difficulty, mapId });
   }
 
   /**
