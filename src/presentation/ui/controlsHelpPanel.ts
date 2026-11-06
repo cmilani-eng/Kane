@@ -2,6 +2,7 @@
  * In-match controls / hotkey cheat sheet.
  * Opens from HUD Help chip or ? / / keys. Mobile-scroll friendly DOM overlay.
  */
+import { t } from '../../i18n';
 import { playSfx } from '../audio/sfx';
 
 const ROOT_ID = 'kane-controls-help';
@@ -107,7 +108,7 @@ function ensureStyle(): void {
       font-size: 11px; color: #6a7f94; text-align: center;
     }
     #${ROOT_ID} button.kane-help-close {
-      min-height: 44px; min-width: 120px;
+      min-height: 48px; min-width: 120px;
       padding: 10px 18px;
       border: none; border-radius: 2px;
       background: #2a3a50; color: #fff8e8;
@@ -127,35 +128,59 @@ function ensureStyle(): void {
   document.head.appendChild(style);
 }
 
-function row(action: string, keys: string): string {
-  return `<div class="kane-help-row"><span class="kane-help-action">${action}</span><span class="kane-help-keys">${keys}</span></div>`;
+function esc(text: string): string {
+  return text.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
 }
 
-function bodyHtml(): string {
-  return `
-    <div class="kane-help-section">Touch</div>
-    ${row('Select / box-select', 'Tap · drag')}
-    ${row('Move / gather', 'Tap ground or node')}
-    ${row('Attack-move', 'Atk chip · then tap')}
-    ${row('Stop', 'Stop chip')}
-    ${row('Train / produce', 'Bottom panel buttons')}
-    ${row('Camera', 'Two-finger pan · Base chip')}
-    ${row('Attention mark', 'Hold minimap')}
-    <div class="kane-help-section">Keyboard</div>
-    ${row('Attack-move', 'A')}
-    ${row('Stop', 'S')}
-    ${row('Select army', 'Ctrl+A')}
-    ${row('Control groups', 'Ctrl/Alt+# save · # recall')}
-    ${row('Train slot 1–3', '1 / 2 / 3 (building)')}
-    ${row('Place building', 'B · Esc cancel')}
-    ${row('Recenter base', 'Home')}
-    ${row('Pause', 'Esc · Pause')}
-    ${row('This help', 'H · ? · Help chip')}
-    <div class="kane-help-section">Hero &amp; species</div>
-    ${row('Recruit hero', 'Ability pad (tap)')}
-    ${row('Abilities', 'Q / W / E')}
-    ${row('Formations / Mutation / Rage', 'F · M · R')}
+function row(action: string, keys: string): string {
+  return `<div class="kane-help-row"><span class="kane-help-action">${esc(action)}</span><span class="kane-help-keys">${esc(keys)}</span></div>`;
+}
+
+function section(label: string): string {
+  return `<div class="kane-help-section">${esc(label)}</div>`;
+}
+
+/** Cheat-sheet copy for the open locale. Key caps stay literal. */
+export function controlsHelpCopy(): {
+  title: string;
+  sub: string;
+  gotIt: string;
+  closeHint: string;
+  close: string;
+  body: string;
+} {
+  const body = `
+    ${section(t('help.touch'))}
+    ${row(t('help.select'), t('help.selectKeys'))}
+    ${row(t('help.move'), t('help.moveKeys'))}
+    ${row(t('help.attackMove'), t('help.attackMoveTouch'))}
+    ${row(t('help.stop'), t('help.stopTouch'))}
+    ${row(t('help.train'), t('help.trainTouch'))}
+    ${row(t('help.camera'), t('help.cameraKeys'))}
+    ${row(t('help.ping'), t('help.pingKeys'))}
+    ${section(t('help.keyboard'))}
+    ${row(t('help.attackMove'), 'A')}
+    ${row(t('help.stop'), 'S')}
+    ${row(t('help.army'), 'Ctrl+A')}
+    ${row(t('help.groups'), t('help.groupsKeys'))}
+    ${row(t('help.slots'), t('help.slotsKeys'))}
+    ${row(t('help.place'), t('help.placeKeys'))}
+    ${row(t('help.base'), 'Home')}
+    ${row(t('help.pause'), t('help.pauseKeys'))}
+    ${row(t('help.sheet'), t('help.sheetKeys'))}
+    ${section(t('help.hero'))}
+    ${row(t('help.recruit'), t('help.recruitKeys'))}
+    ${row(t('help.abilities'), 'Q / W / E')}
+    ${row(t('help.speciesActs'), 'F · M · R')}
   `;
+  return {
+    title: t('help.title'),
+    sub: t('help.sub'),
+    gotIt: t('tutorial.gotIt'),
+    closeHint: t('help.closeHint'),
+    close: t('help.close'),
+    body,
+  };
 }
 
 export function createControlsHelpPanel(opts: {
@@ -186,18 +211,19 @@ export function createControlsHelpPanel(opts: {
     root.setAttribute('role', 'dialog');
     root.setAttribute('aria-modal', 'true');
     root.setAttribute('aria-labelledby', 'kane-help-title');
+    const copy = controlsHelpCopy();
     root.innerHTML = `
       <div class="kane-help-card">
-        <button type="button" class="kane-help-x" aria-label="Close">✕</button>
+        <button type="button" class="kane-help-x" aria-label="${esc(copy.close)}">✕</button>
         <div class="kane-help-head">
           <div class="kane-help-brand">KANE</div>
-          <div class="kane-help-title" id="kane-help-title">Controls</div>
-          <p class="kane-help-sub">Touch + keyboard cheat sheet</p>
+          <div class="kane-help-title" id="kane-help-title">${esc(copy.title)}</div>
+          <p class="kane-help-sub">${esc(copy.sub)}</p>
         </div>
-        <div class="kane-help-body">${bodyHtml()}</div>
+        <div class="kane-help-body">${copy.body}</div>
         <div class="kane-help-foot">
-          <button type="button" class="kane-help-close">Got it</button>
-          <div class="kane-help-quiet">Press ? again or Esc to close</div>
+          <button type="button" class="kane-help-close">${esc(copy.gotIt)}</button>
+          <div class="kane-help-quiet">${esc(copy.closeHint)}</div>
         </div>
       </div>
     `;
