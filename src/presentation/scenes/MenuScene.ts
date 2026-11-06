@@ -1,6 +1,5 @@
 import Phaser from 'phaser';
 import { BRAND } from '../../config/brand';
-import { flags } from '../../config/flags';
 import { recordGameStarted, wantsAdminPanel } from '../../database/localStats';
 import { canEnterGame, loadAgeGate } from '../../firebase/ageGate';
 import { SPECIES, type SpeciesId } from '../../data/speciesStub';
@@ -17,6 +16,7 @@ import { playSfx } from '../audio/sfx';
 import { hideDomHud } from '../ui/domHud';
 import { showCosmeticsPanel } from '../ui/cosmeticsPanel';
 import { showLobbyPanel } from '../ui/lobbyPanel';
+import { softLaunchStatusStrip } from '../ui/softLaunchStatus';
 import { showStatsPanel } from '../ui/statsPanel';
 import { drawSpeciesPreview } from '../units/unitSilhouette';
 
@@ -229,16 +229,11 @@ export class MenuScene extends Phaser.Scene {
     }
 
     this.add
-      .text(
-        width / 2,
-        height * 0.8,
-        `Ages ${flags.ageGateMinYears}+ confirmed  ·  Ads ${flags.adsEnabled ? 'on' : 'off'}  ·  Local-first`,
-        {
-          fontFamily: 'system-ui, sans-serif',
-          fontSize: '12px',
-          color: '#7a8fa3',
-        },
-      )
+      .text(width / 2, height * 0.8, softLaunchStatusStrip(), {
+        fontFamily: 'system-ui, sans-serif',
+        fontSize: '11px',
+        color: '#7a8fa3',
+      })
       .setOrigin(0.5);
 
     const gap = Math.min(120, width * 0.3);
