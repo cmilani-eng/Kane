@@ -36,12 +36,17 @@ export class BattlefieldHud {
   readonly hint!: Phaser.GameObjects.Text;
   readonly menuBtn!: Phaser.GameObjects.Text;
   readonly muteBtn!: Phaser.GameObjects.Text;
+  /** Mobile/desktop arm control for attack-move. */
+  readonly attackMoveBtn!: Phaser.GameObjects.Text;
+  /** Scene wires this to toggle A-move mode. */
+  onArmAttackMove: (() => void) | null = null;
 
   private goldDot!: Phaser.GameObjects.Arc;
   private crystalDot!: Phaser.GameObjects.Arc;
   private resourcePanel!: Phaser.GameObjects.Rectangle;
   private abilityBtns: AbilityBtn[] = [];
   private narrow = false;
+  private attackMoveArmed = false;
 
   constructor(scene: Phaser.Scene, world: BattlefieldWorld) {
     this.scene = scene;
@@ -194,6 +199,22 @@ export class BattlefieldHud {
         if (!isSfxMuted()) playSfx('ui');
       });
 
+    this.attackMoveBtn = scene.add
+      .text(12, scene.scale.height - 48, 'A · Atk', {
+        fontFamily: 'system-ui, sans-serif',
+        fontSize: '14px',
+        color: '#fff8e8',
+        backgroundColor: '#2a3545',
+        padding: { x: 14, y: 10 },
+      })
+      .setOrigin(0, 1)
+      .setScrollFactor(0)
+      .setDepth(101)
+      .setInteractive({ useHandCursor: true })
+      .on('pointerup', () => {
+        this.onArmAttackMove?.();
+      });
+
     this.buildAbilityPad(accent);
     this.layout();
     scene.scale.on('resize', () => this.layout());
@@ -277,6 +298,7 @@ export class BattlefieldHud {
       this.hint,
       this.menuBtn,
       this.muteBtn,
+      this.attackMoveBtn,
       this.goldDot,
       this.crystalDot,
       this.resourcePanel,
@@ -347,10 +369,34 @@ export class BattlefieldHud {
       x += btnW + gap;
     }
 
+    this.attackMoveBtn
+      .setPosition(pad, h - pad)
+      .setFontSize(this.narrow ? '13px' : '14px')
+      .setOrigin(0, 1);
+    this.applyAttackMoveBtnStyle();
+
     this.hint
       .setPosition(w / 2, y - btnH / 2 - 10)
       .setFontSize(this.narrow ? '11px' : '12px')
-      .setStyle({ wordWrap: { width: Math.min(w - 24, 640) } });
+      .setStyle({ wordWrap: { width: Math.min(w - 24, 640) } })
+      .setColor(this.attackMoveArmed ? '#ffb8b8' : '#b8c9d9');
+  }
+
+  /** Visual state for A-move armed (tint button + hint). */
+  setAttackMoveArmed(armed: boolean): void {
+    this.attackMoveArmed = armed;
+    this.applyAttackMoveBtnStyle();
+    this.hint.setColor(armed ? '#ffb8b8' : '#b8c9d9');
+  }
+
+  private applyAttackMoveBtnStyle(): void {
+    this.attackMoveBtn.setStyle({
+      backgroundColor: this.attackMoveArmed ? '#8a3030' : '#2a3545',
+      color: this.attackMoveArmed ? '#ffe0e0' : '#fff8e8',
+    });
+    this.attackMoveBtn.setText(
+      this.attackMoveArmed ? 'A · Armed' : 'A · Atk',
+    );
   }
 
   refresh(statusText: string, hintText: string): void {
