@@ -139,10 +139,15 @@ describe('games registry', () => {
     expect(terms).toContain('id="terms-meta"');
     expect(privacy).toContain('name="description"');
     expect(terms).toContain('name="description"');
+    expect(privacy).toMatch(/id="hub-back"[^>]*href="\/"/);
+    expect(privacy).toContain('← Games');
+    expect(terms).toMatch(/id="hub-back"[^>]*href="\/"/);
+    expect(terms).toContain('← Games');
     const hub = readFileSync(resolve(gamesDir, 'index.html'), 'utf8');
     expect(hub).toContain('id="hub-privacy"');
     expect(hub).toContain('id="hub-terms"');
   });
+
 
   it('forwards old Kane hashes from the picker', () => {
     const hub = readFileSync(resolve(gamesDir, 'index.html'), 'utf8');
