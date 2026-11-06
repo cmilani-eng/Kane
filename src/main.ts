@@ -1,5 +1,5 @@
 import './styles.css';
-import { brandDocumentTitle } from './config/brand';
+import { brandDocumentTitle, brandMetaDescription } from './config/brand';
 import { createKaneGame } from './game/init';
 import { applyDocumentLanguage } from './i18n';
 
@@ -9,5 +9,8 @@ if (!parent) {
 }
 
 document.title = brandDocumentTitle();
+document
+  .getElementById('kane-meta')
+  ?.setAttribute('content', brandMetaDescription());
 applyDocumentLanguage();
 createKaneGame(parent);

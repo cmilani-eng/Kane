@@ -67,6 +67,10 @@ describe('games registry', () => {
     const page = readFileSync(resolve(gamesDir, 'kane/index.html'), 'utf8');
     expect(page).toContain('src="./main.ts"');
     expect(page).toContain('<title>KANE · BUILD. COMMAND. CONQUER.</title>');
+    expect(page).toContain('id="kane-meta"');
+    expect(page).toContain(
+      'KANE · BUILD. COMMAND. CONQUER. — Fantasy Real-Time Strategy Game',
+    );
     const entry = readFileSync(resolve(gamesDir, 'kane/main.ts'), 'utf8');
     expect(entry).toContain("import '../../src/main.ts'");
   });
