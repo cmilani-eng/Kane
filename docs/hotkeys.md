@@ -34,9 +34,10 @@ players use double-click or Cmd+click.
 | Add the selection to a group | Shift+Ctrl+0-9 (SC2) | — | 🔜 |
 
 Alt+0-9 exists because Chrome and Firefox reserve Ctrl+digit for switching tabs
-on some platforms, and a page cannot always override that. It has only been
-tried with scripted key events, not in real browsers. Chrome and Firefox on
-Linux use Alt+digit for tabs too, so saving a group may not work there yet.
+on some platforms, and a page cannot always override that. On Linux, Alt+0-9
+may itself collide with tab shortcuts in Chrome and Firefox. That collision is
+unverified until it is tested in real browsers; so far it has only been tried
+with scripted key events.
 
 With a production building selected, **1 / 2 / 3** train units there instead of
 recalling a group. Select a unit first to use the number for a group.

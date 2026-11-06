@@ -6,6 +6,14 @@ import { isLivingPlayerUnit, type BattlefieldWorld } from './battlefieldWorld';
 
 export const GROUP_DOUBLE_TAP_MS = 350;
 
+/**
+ * Held number keys auto-repeat. Only the first keydown should recall a
+ * group or centre the camera; repeats must be ignored.
+ */
+export function shouldCountGroupHotkey(repeat: boolean): boolean {
+  return !repeat;
+}
+
 export interface GroupTap {
   slot: number;
   time: number;

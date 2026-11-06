@@ -97,8 +97,10 @@ import {
 import {
   groupCenter,
   GroupTapTracker,
+  shouldCountGroupHotkey,
 } from '../../gameplay/battlefield/battlefieldGroupFocus';
 import { selectsWholeType } from '../../gameplay/battlefield/battlefieldSelectClick';
+import { touchLongPressAction } from '../../gameplay/battlefield/touchLongPress';
 import {
   spawnControlGroupAssignFx,
   spawnControlGroupRecallFx,
@@ -233,6 +235,15 @@ export class BattlefieldScene extends Phaser.Scene {
   private controlGroups!: ControlGroups;
   /** Spots a double-tap on a group key, which centres the camera. */
   private groupTaps = new GroupTapTracker();
+  /** Finger-down that may become a move / attack / gather order. */
+  private touchOrderPress: {
+    pointerId: number;
+    sx: number;
+    sy: number;
+    wx: number;
+    wy: number;
+    at: number;
+  } | null = null;
   private placeables: BuildingTypeId[] = [];
   private placeIndex = 0;
   private placeType: BuildingTypeId = 'bonker_hut';
@@ -385,6 +396,7 @@ export class BattlefieldScene extends Phaser.Scene {
     this.controlGroups = createControlGroups();
     // Phaser reuses this scene object between matches.
     this.groupTaps.reset();
+    this.touchOrderPress = null;
 
     this.bindInput();
     ensureAmbientBgm();
@@ -572,6 +584,7 @@ export class BattlefieldScene extends Phaser.Scene {
     this.paused = value;
     if (value) {
       this.clearAttackMoveMode();
+      this.touchOrderPress = null;
       this.mode = 'none';
       this.ghostGfx.clear();
       this.boxGfx.clear();
@@ -588,15 +601,16 @@ export class BattlefieldScene extends Phaser.Scene {
 
   /**
    * `now` is the key event's DOM timestamp (ms), used to spot a double-tap.
-   * `repeat` marks OS auto-repeat while the key is held; it must not recall a
-   * group again or count as a double-tap (holding 1-3 still keeps training).
+   * Repeats must not recall a group or centre the camera. Holding 1–3 still
+   * keeps training when a production building is selected.
    */
   private onDigitHotkey(slot: number, now: number, repeat: boolean): void {
     if (this.paused || this.matchResult !== 'ongoing') return;
+    const countKey = shouldCountGroupHotkey(repeat);
     // Alt+N is a fallback: browsers can reserve Ctrl+digit for tab switching.
     if (this.ctrlHeld() || this.altHeld()) {
       this.groupTaps.reset();
-      if (!repeat && assignControlGroup(this.world, this.controlGroups, slot)) {
+      if (countKey && assignControlGroup(this.world, this.controlGroups, slot)) {
         spawnControlGroupAssignFx(this.world, slot);
         this.hud.flashControlGroup(slot, 'assign');
         playSfx('select');
@@ -614,7 +628,7 @@ export class BattlefieldScene extends Phaser.Scene {
       playSfx('train');
       return;
     }
-    if (repeat) return;
+    if (!countKey) return;
     this.clearBuildingSelection();
     if (
       recallControlGroup(
@@ -725,31 +739,83 @@ export class BattlefieldScene extends Phaser.Scene {
       return;
     }
     if (pointer.rightButtonDown()) {
-      if (
-        this.mode === 'place' ||
-        this.mode === 'attackMove' ||
-        this.mode === 'rally'
-      ) {
-        this.clearAttackMoveMode();
-        this.clearRallyMode();
-        this.mode = 'none';
-        this.ghostGfx.clear();
-        return;
-      }
-      const enemy = findEnemyAt(this.world, wp.x, wp.y, 'player');
-      const node = findNodeAt(this.world, wp.x, wp.y);
-      if (enemy) {
-        issueAttackSelected(this.world, enemy);
-        playSfx('attack');
-      } else if (node) {
-        issueGatherSelected(this.world, node);
-        playSfx('gather');
-      } else issueMoveSelected(this.world, wp.x, wp.y);
-      this.mode = 'none';
+      this.issuePointerOrder(wp.x, wp.y);
       return;
     }
     this.mode = 'select';
     this.cameraCtl.suppressPan = true;
+    if (pointer.wasTouch) {
+      this.touchOrderPress = {
+        pointerId: pointer.pointerId,
+        sx: pointer.x,
+        sy: pointer.y,
+        wx: wp.x,
+        wy: wp.y,
+        at: this.time.now,
+      };
+    }
+  }
+
+  /** Right-click, and a touch long-press, share this move / attack / gather path. */
+  private issuePointerOrder(worldX: number, worldY: number): void {
+    if (
+      this.mode === 'place' ||
+      this.mode === 'attackMove' ||
+      this.mode === 'rally'
+    ) {
+      this.clearAttackMoveMode();
+      this.clearRallyMode();
+      this.mode = 'none';
+      this.ghostGfx.clear();
+      return;
+    }
+    const enemy = findEnemyAt(this.world, worldX, worldY, 'player');
+    const node = findNodeAt(this.world, worldX, worldY);
+    if (enemy) {
+      issueAttackSelected(this.world, enemy);
+      playSfx('attack');
+    } else if (node) {
+      issueGatherSelected(this.world, node);
+      playSfx('gather');
+    } else issueMoveSelected(this.world, worldX, worldY);
+    this.mode = 'none';
+    this.boxGfx.clear();
+    this.cameraCtl.suppressPan = false;
+  }
+
+  private noteTouchOrderMove(pointer: Phaser.Input.Pointer): void {
+    const press = this.touchOrderPress;
+    if (!press || pointer.pointerId !== press.pointerId) return;
+    const moved = Math.hypot(pointer.x - press.sx, pointer.y - press.sy);
+    if (touchLongPressAction(0, moved) === 'cancel' || this.mode === 'box') {
+      this.touchOrderPress = null;
+    }
+  }
+
+  private pollTouchOrder(): void {
+    const press = this.touchOrderPress;
+    if (!press) return;
+    if (this.paused || this.matchResult !== 'ongoing' || this.mode === 'box') {
+      this.touchOrderPress = null;
+      return;
+    }
+    let pointer: Phaser.Input.Pointer | null = null;
+    for (const candidate of this.input.manager.pointers) {
+      if (candidate.pointerId === press.pointerId && candidate.isDown) {
+        pointer = candidate;
+        break;
+      }
+    }
+    if (!pointer) return;
+    const moved = Math.hypot(pointer.x - press.sx, pointer.y - press.sy);
+    const action = touchLongPressAction(this.time.now - press.at, moved);
+    if (action === 'cancel') {
+      this.touchOrderPress = null;
+      return;
+    }
+    if (action !== 'order') return;
+    this.touchOrderPress = null;
+    this.issuePointerOrder(press.wx, press.wy);
   }
 
   private onMove(pointer: Phaser.Input.Pointer): void {
@@ -780,6 +846,7 @@ export class BattlefieldScene extends Phaser.Scene {
     if (this.mode === 'select' && Math.hypot(dx, dy) > 8) {
       this.mode = 'box';
     }
+    this.noteTouchOrderMove(pointer);
 
     if (this.mode === 'box') {
       this.boxGfx.clear();
@@ -795,6 +862,12 @@ export class BattlefieldScene extends Phaser.Scene {
   }
 
   private onUp(pointer: Phaser.Input.Pointer): void {
+    if (
+      this.touchOrderPress &&
+      pointer.pointerId === this.touchOrderPress.pointerId
+    ) {
+      this.touchOrderPress = null;
+    }
     if (this.paused) return;
     this.cameraCtl.suppressPan = false;
     if (this.mode === 'place' || this.mode === 'pan') {
@@ -1005,6 +1078,7 @@ export class BattlefieldScene extends Phaser.Scene {
   }
 
   update(_t: number, delta: number): void {
+    this.pollTouchOrder();
     if (!this.paused) {
       this.animTimeMs += delta;
       this.cameraCtl.update(delta);
