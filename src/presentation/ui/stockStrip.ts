@@ -39,12 +39,22 @@ function flash(slot: Element | null): void {
   slot.classList.add('kane-slot-flash');
 }
 
+function incomeRateText(n: number): string {
+  return n > 0 ? t('hud.incomeRate', { n }) : '';
+}
+
 function paint(root: HTMLElement, stock: MatchStock): void {
   const gold = root.querySelector('[data-slot="gold"] [data-value]');
   const crystals = root.querySelector('[data-slot="crystals"] [data-value]');
   const supply = root.querySelector('[data-slot="supply"] [data-value]');
+  const goldRate = root.querySelector('[data-slot="gold"] [data-rate]');
+  const crystalRate = root.querySelector('[data-slot="crystals"] [data-rate]');
   if (gold) gold.textContent = t('hud.gold', { n: stock.gold });
   if (crystals) crystals.textContent = t('hud.crystals', { n: stock.crystals });
+  if (goldRate) goldRate.textContent = incomeRateText(stock.goldPerMin);
+  if (crystalRate) {
+    crystalRate.textContent = incomeRateText(stock.crystalsPerMin);
+  }
   if (supply) {
     supply.textContent = formatSupplyLine(stock.supply, stock.supplyCap);
   }
@@ -71,10 +81,12 @@ export function mountStockStrip(): void {
     <div data-slot="gold" class="flex items-center gap-1.5">
       <span class="size-3 shrink-0 rounded-full bg-kane-gold" aria-hidden="true"></span>
       <span data-value></span>
+      <span data-rate class="text-xs font-medium text-kane-quiet"></span>
     </div>
     <div data-slot="crystals" class="flex items-center gap-1.5">
       <span class="size-3 shrink-0 rounded-full bg-kane-ice" aria-hidden="true"></span>
       <span data-value></span>
+      <span data-rate class="text-xs font-medium text-kane-quiet"></span>
     </div>
     <div data-slot="supply" class="flex items-center gap-1.5 text-kane-ink">
       <span class="size-3 shrink-0 rounded-full bg-kane-fog" aria-hidden="true"></span>
