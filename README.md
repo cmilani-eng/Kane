@@ -80,4 +80,4 @@ Full list, and how each key maps to StarCraft, Age of Empires and C&C: [docs/hot
 
 ## What’s next
 
-Phase 6 (Firebase emulators + live friend lobby) stays parked. Match writes are still client-trusted. The friend lobby, the stats record, and the CORE hold banner follow the menu language. Ads stay off.
+Phase 6 (Firebase emulators + live friend lobby) stays parked. Match writes are still client-trusted. The coach shows once: finishing or skipping it keeps later matches quiet, and the menu Tips switch turns it back on. Ads stay off.
