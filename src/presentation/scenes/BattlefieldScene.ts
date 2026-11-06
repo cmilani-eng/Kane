@@ -191,7 +191,8 @@ export class BattlefieldScene extends Phaser.Scene {
   private selectedBuilding: BattlefieldBuilding | null = null;
   private ai!: AiState;
   private matchResult: MatchResult = 'ongoing';
-  private matchStartedAtMs = 0;
+  /** Active match time only — does not advance while paused. */
+  private matchElapsedMs = 0;
   private animTimeMs = 0;
   private fogAccMs = 999;
   private viewCull: ViewBounds | null = null;
@@ -222,7 +223,7 @@ export class BattlefieldScene extends Phaser.Scene {
     this.ai = createAiState(difficulty);
     this.matchResult = 'ongoing';
     this.paused = false;
-    this.matchStartedAtMs = Date.now();
+    this.matchElapsedMs = 0;
     this.cameraCtl = new RtsCamera(this);
     const first = this.world.units.find((u) => u.team === 'player');
     if (first) this.cameras.main.centerOn(first.x + 80, first.y - 40);
@@ -770,6 +771,7 @@ export class BattlefieldScene extends Phaser.Scene {
       this.cameraCtl.update(delta);
     }
     if (this.matchResult === 'ongoing' && !this.paused) {
+      this.matchElapsedMs += delta;
       tickBattlefield(this.world, delta);
       tickBattlefieldEconomy(this.world);
       // Mute-aware gather/deposit SFX — fire once while FX is fresh.
@@ -876,7 +878,7 @@ export class BattlefieldScene extends Phaser.Scene {
       id: makeMatchSummaryId(endedAtMs),
       version: 1,
       endedAtMs,
-      durationMs: Math.max(0, endedAtMs - this.matchStartedAtMs),
+      durationMs: Math.max(0, Math.floor(this.matchElapsedMs)),
       result,
       won: result === 'victory',
       species: this.world.speciesId,
@@ -889,6 +891,7 @@ export class BattlefieldScene extends Phaser.Scene {
   }
 
   private refreshHud(dtMs = 16): void {
+    this.hud.setMatchTimer(this.matchElapsedMs);
     const n = selectedCount(this.world);
     const sel = selectedUnits(this.world);
     const friends = livingByTeam(this.world, 'player');

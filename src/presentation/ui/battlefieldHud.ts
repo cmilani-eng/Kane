@@ -31,6 +31,14 @@ type AbilityBtn = {
   sub: Phaser.GameObjects.Text;
 };
 
+/** Match clock — mm:ss (minutes may exceed 59 for long skirmishes). */
+export function formatMatchClock(elapsedMs: number): string {
+  const totalSec = Math.max(0, Math.floor(elapsedMs / 1000));
+  const m = Math.floor(totalSec / 60);
+  const s = totalSec % 60;
+  return `${m}:${s.toString().padStart(2, '0')}`;
+}
+
 export class BattlefieldHud {
   private readonly scene: Phaser.Scene;
   private readonly world: BattlefieldWorld;
@@ -38,6 +46,8 @@ export class BattlefieldHud {
 
   readonly title!: Phaser.GameObjects.Text;
   readonly matchLine!: Phaser.GameObjects.Text;
+  /** Pause-aware match clock (mm:ss). */
+  readonly timerText!: Phaser.GameObjects.Text;
   readonly goldText!: Phaser.GameObjects.Text;
   readonly crystalText!: Phaser.GameObjects.Text;
   readonly status!: Phaser.GameObjects.Text;
@@ -127,6 +137,18 @@ export class BattlefieldHud {
       )
       .setScrollFactor(0)
       .setDepth(100);
+
+    this.timerText = scene.add
+      .text(scene.scale.width / 2, 12, '0:00', {
+        fontFamily: 'system-ui, sans-serif',
+        fontSize: '16px',
+        color: '#f5e6c8',
+        backgroundColor: '#0f1a2ecc',
+        padding: { x: 12, y: 6 },
+      })
+      .setOrigin(0.5, 0)
+      .setScrollFactor(0)
+      .setDepth(101);
 
     this.resourcePanel = scene.add
       .rectangle(12, 68, 280, 36, 0x0f1a2e, 0.85)
@@ -431,6 +453,7 @@ export class BattlefieldHud {
     const list: Phaser.GameObjects.GameObject[] = [
       this.title,
       this.matchLine,
+      this.timerText,
       this.goldText,
       this.crystalText,
       this.status,
@@ -465,6 +488,9 @@ export class BattlefieldHud {
     this.matchLine
       .setFontSize(this.narrow ? '11px' : '12px')
       .setPosition(pad, pad + (this.narrow ? 28 : 34));
+    this.timerText
+      .setPosition(w / 2, pad)
+      .setFontSize(this.narrow ? '14px' : '16px');
 
     const resY = pad + (this.narrow ? 50 : 60);
     this.resourcePanel.setPosition(pad, resY);
@@ -598,6 +624,11 @@ export class BattlefieldHud {
   /** Keep HUD mute chip in sync when pause overlay toggles audio. */
   syncMuteLabel(): void {
     this.muteBtn.setText(isSfxMuted() ? 'Sound: Off' : 'Sound: On');
+  }
+
+  /** Pause-aware match elapsed display (does not advance while paused). */
+  setMatchTimer(elapsedMs: number): void {
+    this.timerText.setText(formatMatchClock(elapsedMs));
   }
 
   private applyAttackMoveBtnStyle(): void {
