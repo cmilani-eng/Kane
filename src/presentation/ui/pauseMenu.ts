@@ -6,7 +6,8 @@
 import Phaser from 'phaser';
 import { BRAND } from '../../config/brand';
 import { isReduceMotion, setReduceMotion } from '../../database/motionPrefs';
-import { subscribeLocale, t } from '../../i18n';
+import { mapCopy, subscribeLocale, t } from '../../i18n';
+import type { SkirmishMapId } from '../../data/skirmishMaps';
 import { isSfxMuted, playSfx, setSfxMuted } from '../audio/sfx';
 import { formatMatchClock } from './battlefieldHud';
 import { addLocalePicker } from './localePicker';
@@ -20,6 +21,7 @@ export interface PauseMenuSnapshot {
   elapsedMs: number;
   supplyCurrent: number;
   supplyCap: number;
+  mapId: SkirmishMapId;
 }
 
 export interface PauseMenuOpts {
@@ -47,6 +49,7 @@ export class PauseMenu {
     elapsedMs: 0,
     supplyCurrent: 0,
     supplyCap: 36,
+    mapId: 'crossing',
   };
 
   constructor(opts: PauseMenuOpts) {
@@ -142,6 +145,7 @@ export class PauseMenu {
       .setDepth(222);
 
     const clock = formatMatchClock(this.snapshot.elapsedMs);
+    const mapLine = t('pause.map', { name: mapCopy(this.snapshot.mapId).label });
     const supply = t('pause.supply', {
       current: this.snapshot.supplyCurrent,
       cap: this.snapshot.supplyCap,
@@ -151,20 +155,26 @@ export class PauseMenu {
       this.snapshot.supplyCap,
     );
     const snap = this.scene.add
-      .text(cx, short ? top + 74 : cy - panelH * 0.27, `${t('pause.match', { clock })}\n${supply}`, {
-        fontFamily: 'system-ui, sans-serif',
-        fontSize: '14px',
-        color: SUPPLY_TONE_COLOR[tone],
-        align: 'center',
-        lineSpacing: 6,
-      })
+      .text(
+        cx,
+        short ? top + 74 : cy - panelH * 0.27,
+        `${t('pause.match', { clock })}\n${mapLine}\n${supply}`,
+        {
+          fontFamily: 'system-ui, sans-serif',
+          fontSize: '14px',
+          color: SUPPLY_TONE_COLOR[tone],
+          align: 'center',
+          lineSpacing: 6,
+        },
+      )
       .setOrigin(0.5)
       .setScrollFactor(0)
       .setDepth(222);
     this.root.push(title, brand, snap);
 
-    const btnY0 = short ? top + 118 : cy - panelH * 0.14;
-    const gap = short ? 40 : Math.min(44, panelH * 0.11);
+    // Short layout: clock + map + supply need a little more room before Resume.
+    const btnY0 = short ? top + 136 : cy - panelH * 0.12;
+    const gap = short ? 36 : Math.min(44, panelH * 0.11);
     this.root.push(
       this.makeBtn(cx, btnY0, t('pause.resume'), () => {
         this.hide();
