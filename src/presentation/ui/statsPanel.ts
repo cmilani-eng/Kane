@@ -14,6 +14,11 @@ import {
   resetMatchSummaries,
 } from '../../database/matchSummary';
 import {
+  formatDailyRollup,
+  loadDailyRollup,
+  resetDailyRollup,
+} from '../../database/dailyStatsRollup';
+import {
   adminDenyReason,
   canAccessAdmin,
   formatAdminAllowlist,
@@ -25,13 +30,16 @@ import {
   recordModerationEvent,
   resetModerationLog,
 } from '../../database/moderationStub';
+import { rollupDailyMatchStatsFunctionStub } from '../../server/dailyRollupFunctionStub';
 import { playSfx } from '../audio/sfx';
 
 function adminBodyText(): string {
   return [
     formatStatsSummary(loadLocalStats()),
     '',
-    formatMatchSummaries(loadMatchSummaries(), 6),
+    formatDailyRollup(loadDailyRollup(), 5),
+    '',
+    formatMatchSummaries(loadMatchSummaries(), 4),
     '',
     formatAdminAllowlist(),
     '',
@@ -185,7 +193,7 @@ export function showStatsPanel(scene: Phaser.Scene, onClose: () => void): void {
   nodes.push(closeBtn);
 
   const resetBtn = scene.add
-    .text(width / 2 - 100, height / 2 + panelH / 2 - 36, 'Reset stats', {
+    .text(width / 2 - 140, height / 2 + panelH / 2 - 36, 'Reset stats', {
       fontFamily: 'system-ui, sans-serif',
       fontSize: '13px',
       color: '#fff8e8',
@@ -205,18 +213,36 @@ export function showStatsPanel(scene: Phaser.Scene, onClose: () => void): void {
       }
       resetLocalStats();
       resetMatchSummaries();
+      resetDailyRollup();
       resetModerationLog();
       refreshBody();
     });
   nodes.push(resetBtn);
 
+  const rollupBtn = scene.add
+    .text(width / 2 + 20, height / 2 + panelH / 2 - 36, 'Rebuild rollup', {
+      fontFamily: 'system-ui, sans-serif',
+      fontSize: '13px',
+      color: '#fff8e8',
+      backgroundColor: '#2a4a38',
+      padding: { x: 10, y: 8 },
+    })
+    .setOrigin(0.5)
+    .setDepth(303)
+    .setInteractive({ useHandCursor: true })
+    .on('pointerup', () => {
+      playSfx('ui');
+      void rollupDailyMatchStatsFunctionStub().then(() => refreshBody());
+    });
+  nodes.push(rollupBtn);
+
   const noteBtn = scene.add
-    .text(width / 2 + 100, height / 2 + panelH / 2 - 36, 'Stub report', {
+    .text(width / 2 + 150, height / 2 + panelH / 2 - 36, 'Stub report', {
       fontFamily: 'system-ui, sans-serif',
       fontSize: '13px',
       color: '#fff8e8',
       backgroundColor: '#3a4555',
-      padding: { x: 12, y: 8 },
+      padding: { x: 10, y: 8 },
     })
     .setOrigin(0.5)
     .setDepth(303)

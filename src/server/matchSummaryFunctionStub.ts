@@ -7,6 +7,7 @@ import {
   writeMatchSummary,
   type MatchSummaryPayload,
 } from '../database/matchSummary';
+import { rollupDailyMatchStatsFunctionStub } from './dailyRollupFunctionStub';
 
 export interface MatchSummaryFunctionResult {
   ok: true;
@@ -16,7 +17,7 @@ export interface MatchSummaryFunctionResult {
 
 /**
  * Mimics `onCall('writeMatchSummary')` — no network.
- * Updates win/loss counters + appends summary for #/admin.
+ * Updates win/loss counters + appends summary + refreshes daily rollup.
  */
 export async function writeMatchSummaryFunctionStub(
   payload: Omit<MatchSummaryPayload, 'sink'> & {
@@ -29,6 +30,7 @@ export async function writeMatchSummaryFunctionStub(
   };
   recordMatchResult(full.species, full.won);
   writeMatchSummary(full);
+  await rollupDailyMatchStatsFunctionStub();
   console.info(
     `[KANE] matchSummary Function stub wrote ${full.id} (${full.result})`,
   );
