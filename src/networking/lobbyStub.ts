@@ -3,7 +3,6 @@
  * Create/join are local-only; SP vs AI never calls this path.
  */
 import type { AuthStub } from '../firebase/authStub';
-import { canUseOnlineFeatures, loadAgeGate } from '../firebase/ageGate';
 
 export type LobbyStatus = 'idle' | 'hosting' | 'joining' | 'blocked';
 
@@ -31,28 +30,12 @@ export function createLobbyStub(auth: AuthStub) {
       return { ...state };
     },
     hostLocal(): LobbyStubState {
-      if (!canUseOnlineFeatures(loadAgeGate())) {
-        state = {
-          status: 'blocked',
-          code: null,
-          reason: 'Confirm 13+ age gate before online lobby',
-        };
-        return this.peek();
-      }
       if (!auth.currentUser()) auth.signInAnonymousLocal();
       state = { status: 'hosting', code: makeCode() };
       console.info('[KANE] lobby stub — hosting local code', state.code);
       return this.peek();
     },
     joinLocal(code: string): LobbyStubState {
-      if (!canUseOnlineFeatures(loadAgeGate())) {
-        state = {
-          status: 'blocked',
-          code: null,
-          reason: 'Confirm 13+ age gate before online lobby',
-        };
-        return this.peek();
-      }
       const cleaned = code.trim().toUpperCase();
       if (cleaned.length < 4) {
         state = {

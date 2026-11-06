@@ -1,6 +1,6 @@
 # Soft-launch readiness checklist
 
-Kane soft-launch posture: **local-first**, **13+**, **`adsEnabled=false`**, cosmetics never pay-to-win.  
+Kane soft-launch posture: **local-first**, framed **13+** (no in-game age-gate screen), **`adsEnabled=false`**, cosmetics never pay-to-win.  
 Primary playtest path remains **`npm run dev`** (Vite). Hosting preview is optional.
 
 This doc is the honest gate before any public preview URL.
@@ -9,10 +9,10 @@ This doc is the honest gate before any public preview URL.
 
 | Area | Status | Where |
 |------|--------|--------|
-| Ads off | **OK** — flag `false`; SDK stub idle (menu/post-match hooks only) | `flags.adsEnabled`, `src/ads/`, `docs/ads-sdk.md` |
-| Age gate | **OK** — first-run 13+ confirm; under-13 blocked; localStorage | `AgeGateScene`, `src/firebase/ageGate.ts` |
+| Ads off | **OK** — flag `false`; SDK stub idle (menu/post-match hooks only); **no player-facing “ads off” chrome** | `flags.adsEnabled`, `src/ads/`, `docs/ads-sdk.md` |
+| Age positioning | **OK** — product framed 13+ / not COPPA child-directed; **in-game AgeGate boot confirmation removed** (product decision) | `flags.ageGateMinYears`, `src/firebase/ageGate.ts` (no-op unlock helpers) |
 | Hosting preview config | **OK** — `kane-web` target + `kane-preview` channel scripts (not auto-deployed) | `firebase.json`, `npm run hosting:preview`, `docs/firebase-hosting.md` |
-| Admin / `#/admin` | **OK** — local stats, match summaries, daily rollup; allowlist mode defaults **open** locally | `statsPanel`, `adminAllowlist`, `dailyStatsRollup` |
+| Admin / `#/admin` | **OK** — local stats, match summaries, daily rollup; allowlist mode defaults **open** locally; menu **Stats** is player-facing | `statsPanel`, `adminAllowlist`, `dailyStatsRollup` |
 | Cosmetics | **OK** — skins catalog, local equip, in-match tint; **not purchasable**, no combat stats | `cosmeticsCatalog`, Cosmetics menu, `skinAccent` |
 | Legal stubs | **OK** — Privacy / Terms placeholders linked from menu | `public/privacy.html`, `public/terms.html` |
 | RTDB / Firestore rules drafts | **OK** — deny-by-default drafts documented | `database.rules.json`, `firestore.rules` |
@@ -21,6 +21,7 @@ This doc is the honest gate before any public preview URL.
 | Master volume | **OK** — mute-aware slider on menu + pause; persists `kane.masterVolume.v1` | `audioContext`, `volumeSlider`, pause/menu |
 | Easy AI cushion | **OK** — Easy gives player start gold/crystal cushion + slower AI eco; Normal/Hard unchanged | `aiDifficulty`, `createBattlefieldWorld` |
 | In-match tips | **OK** — coach copy covers Pause/Esc, Home, Army, Idle chip, Rematch | `battlefieldTutorial`, `tutorialCoach` |
+| Friend lobby UI | **OK** — Create / Join / Leave local stub; quiet “no live sync” note | `lobbyPanel`, `lobbyStub` |
 
 ## Remaining gaps (honest)
 
@@ -28,7 +29,7 @@ This doc is the honest gate before any public preview URL.
 2. **Firebase Auth / player dashboard** — email/password + anonymous guest + Firestore `users/{uid}` path in client; requires Console Email/Password + Anonymous, **rules deploy** (draft only in repo until Cassio asks), and `VITE_FIREBASE_*` in the Hosting build env. Without env, guest SP falls back to local-only.
 3. **No live multiplayer** — lobby codes and command-sync spike are local/transport stubs only.
 4. **Ads SDK not bundled** — flipping `adsEnabled` still shows stub logs only (`docs/ads-sdk.md`).
-5. **Admin allowlist is soft** — default `open` for local-dev; no Custom Claims / server enforcement. Admin **Stats** is separate from player **Account**.
+5. **Admin allowlist is soft** — default `open` for local-dev; no Custom Claims / server enforcement. Admin **`#/admin`** tools are separate from menu **Stats**.
 6. **Match writes are client-trusted** for SP MVP — Functions deferred; local `#/admin` summaries still device-local.
 7. **Legal copy is placeholder** — not counsel-reviewed.
 8. **Content depth** — Phase 8 maps / deeper tutorial / practice arena not started.
@@ -39,17 +40,18 @@ This doc is the honest gate before any public preview URL.
 ## Soft-launch “go” bar (minimum)
 
 - [ ] Ads still `false` on the build you deploy
-- [ ] Age gate blocks under-13 on a clean profile
+- [ ] Boot splash → Menu with **no** age-gate / 13+ confirmation screen
 - [ ] SP match + **Rematch** works on a mid-range phone over LAN Vite (or preview URL)
 - [ ] Easy start shows player cushion; Normal/Hard feel unchanged
 - [ ] Menu/pause volume persists across reload; mute still silences
 - [ ] PWA manifest + icons load (Add to Home Screen when HTTPS/localhost)
 - [ ] In-match tips mention Pause, Home, Army, Idle, Rematch
-- [ ] `#/admin` readable; destructive reset understood
+- [ ] Menu **Stats** shows player record; `#/admin` shows admin tools when allowed
 - [ ] Cosmetics equip visible in-match; no power change
 - [ ] Privacy/Terms links open
 - [ ] Preview channel deploy smoke (when project exists) with **zero** ad network requests
+- [ ] Menu/lobby chrome has **no** “ads off” / age-gate confirmation status dump
 
 ## Menu status strip
 
-The title menu shows a one-line soft-launch strip (ads · age · hosting · admin · cosmetics · vol · pwa) built by `src/presentation/ui/softLaunchStatus.ts`, so a playtester can see posture without opening docs.
+The title menu shows a one-line soft-launch strip (hosting · admin · cosmetics · vol · pwa) built by `src/presentation/ui/softLaunchStatus.ts`. Ads and age-gate flags stay out of that strip so the main experience stays clean.

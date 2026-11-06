@@ -8,7 +8,10 @@ export const flags = {
    * Menu/post-match hooks live in `src/ads/adsSdkStub.ts` — see `docs/ads-sdk.md` to flip later.
    */
   adsEnabled: false as const,
-  /** Age positioning: kid-friendly 13+ (not under-13 / COPPA). */
+  /**
+   * Age positioning: kid-friendly 13+ (not under-13 / COPPA).
+   * No in-game age-gate / boot confirmation screen.
+   */
   ageGateMinYears: 13 as const,
   /** Unit hard cap for browser honesty. */
   unitCap: 36,

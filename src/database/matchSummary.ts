@@ -105,7 +105,7 @@ export function formatMatchSummaries(
     const mins = Math.max(0, Math.round(s.durationMs / 60000));
     const secs = Math.max(0, Math.round((s.durationMs % 60000) / 1000));
     lines.push(
-      `  ${s.won ? 'W' : 'L'} ${s.species}/${s.difficulty} ${mins}m${secs}s · u ${s.playerUnitsLeft}/${s.enemyUnitsLeft} · ${s.sink}`,
+      `  ${s.won ? 'W' : 'L'} ${s.species}/${s.difficulty} ${mins}m${secs}s · u ${s.playerUnitsLeft}/${s.enemyUnitsLeft}`,
     );
   }
   return lines.join('\n');

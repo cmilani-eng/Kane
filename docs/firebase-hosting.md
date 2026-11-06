@@ -12,7 +12,7 @@
 | Client preview constants | `src/firebase/hostingPreview.ts` |
 | RTDB rules draft (deny-by-default) | `database.rules.json` + `docs/rtdb-security-rules.md` |
 | Firestore rules draft | `firestore.rules` + `docs/firestore-security-rules.md` |
-| Auth / age gate / lobby stubs | `src/firebase/`, `src/networking/` |
+| Auth / lobby stubs (13+ positioning, no in-game gate) | `src/firebase/`, `src/networking/` |
 | Match summary write | `src/database/matchSummary.ts` → `#/admin` |
 | Daily stats rollup | `src/database/dailyStatsRollup.ts` + Function stub → `#/admin` |
 | Admin allowlist stub | `src/database/adminAllowlist.ts` — `#/admin` open or allowlist + deny UI |

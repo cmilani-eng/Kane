@@ -165,7 +165,7 @@ export function formatDailyRollup(
     return 'Daily rollup: (none — finish a match or run rebuild)';
   }
   const lines = [
-    `Daily rollup (UTC, last ${Math.min(limit, store.days.length)}) · sink=${store.sink}`,
+    `Daily rollup (UTC, last ${Math.min(limit, store.days.length)})`,
   ];
   for (const d of store.days.slice(0, limit)) {
     const mins = Math.round(d.durationMs / 60000);

@@ -9,7 +9,6 @@ import {
   setDoc,
   updateDoc,
 } from 'firebase/firestore';
-import { loadAgeGate } from '../ageGate';
 import { getFirestoreDb } from '../app';
 import type { KaneAuthUser, UserProfileDoc } from '../types';
 import { emptyLoadout } from '../../database/cosmeticsLoadout';
@@ -33,7 +32,8 @@ export function defaultProfileFromAuth(user: KaneAuthUser): UserProfileDoc {
       user.displayName.slice(0, 32) ||
       (user.isAnonymous ? 'Guest' : 'Commander'),
     email: user.email,
-    ageGateOk: loadAgeGate().ok,
+    // Product framed 13+; no in-game gate — mirror stays true for schema compat.
+    ageGateOk: true,
     createdAtMs: now,
     updatedAtMs: now,
     prefs: { species: prefs.species, difficulty: prefs.difficulty },

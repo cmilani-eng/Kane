@@ -5,7 +5,6 @@
  */
 import Phaser from 'phaser';
 import { BRAND } from '../config/brand';
-import { AgeGateScene } from '../presentation/scenes/AgeGateScene';
 import { BootScene } from '../presentation/scenes/BootScene';
 import { BattlefieldScene } from '../presentation/scenes/BattlefieldScene';
 import { MenuScene } from '../presentation/scenes/MenuScene';
@@ -46,8 +45,8 @@ export function createKaneGame(parent: HTMLElement): Phaser.Game {
       keyboard: true,
       mouse: true,
     },
-    // Boot splash → AgeGate (first run) → Menu → Battlefield. Ads stay off.
-    scene: [BootScene, AgeGateScene, MenuScene, BattlefieldScene],
+    // Boot splash → Menu → Battlefield. Ads stay off (flag only; no player chrome).
+    scene: [BootScene, MenuScene, BattlefieldScene],
   };
 
   const game = new Phaser.Game(config);

@@ -4,7 +4,7 @@
  */
 import { flags } from '../config/flags';
 import { createAuthStub, type AuthStub } from './authStub';
-import { loadAgeGate, ageGateLabel } from './ageGate';
+import { ageGateLabel } from './ageGate';
 import {
   getCurrentAuthUser,
   isCloudAccount,
@@ -65,7 +65,6 @@ export function createFirebaseFoundation(): FirebaseFoundation {
     adsEnabled: false,
     auth,
     describe() {
-      const gate = loadAgeGate();
       const live = getCurrentAuthUser();
       const liveBit = sdkReady
         ? live
@@ -79,7 +78,7 @@ export function createFirebaseFoundation(): FirebaseFoundation {
         `emu=${useEmulators ? emulatorSummary(EMULATOR_ENDPOINTS) : 'off'}`,
         hostingPreviewLabel(),
         `ads=${flags.adsEnabled}`,
-        ageGateLabel(gate),
+        ageGateLabel(),
         liveBit,
       ].join(' · ');
     },

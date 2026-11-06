@@ -3,77 +3,96 @@
  * No RTDB / live MP sync. SP vs AI path stays on Menu species cards.
  */
 import Phaser from 'phaser';
-import { flags } from '../../config/flags';
-import { ageGateLabel, loadAgeGate } from '../../firebase/ageGate';
-import { getFirebaseFoundation } from '../../firebase/foundation';
+import { BRAND } from '../../config/brand';
 import { getLobbyStub } from '../../networking/lobbySingleton';
 import { playSfx } from '../audio/sfx';
 
 export function showLobbyPanel(scene: Phaser.Scene, onClose: () => void): void {
   const { width, height } = scene.scale;
   const lobby = getLobbyStub();
-  const firebase = getFirebaseFoundation();
 
   const overlay = scene.add
-    .rectangle(width / 2, height / 2, width, height, 0x0a1220, 0.82)
+    .rectangle(width / 2, height / 2, width, height, 0x0a1220, 0.84)
     .setDepth(300)
     .setInteractive();
 
-  const panelW = Math.min(460, width - 32);
-  const panelH = Math.min(400, height - 40);
+  const panelW = Math.min(440, width - 28);
+  const panelH = Math.min(380, height - 36);
+  const cx = width / 2;
+  const cy = height / 2;
+  const top = cy - panelH / 2;
+  const bottom = cy + panelH / 2;
+
   const panel = scene.add
-    .rectangle(width / 2, height / 2, panelW, panelH, 0x152238, 0.98)
-    .setStrokeStyle(2, 0x7ec8ff, 0.9)
+    .rectangle(cx, cy, panelW, panelH, 0x122033, 0.98)
+    .setStrokeStyle(2, 0xf0c75e, 0.85)
     .setDepth(301);
 
-  const title = scene.add
-    .text(width / 2, height / 2 - panelH / 2 + 26, 'Friend lobby', {
+  const accent = scene.add
+    .rectangle(cx, top + 3, panelW - 4, 4, 0xf0c75e, 0.9)
+    .setDepth(302);
+
+  const brand = scene.add
+    .text(cx, top + 28, BRAND.name, {
       fontFamily: 'Georgia, "Times New Roman", serif',
-      fontSize: '22px',
+      fontSize: '13px',
+      color: '#f0c75e',
+      fontStyle: 'bold',
+    })
+    .setOrigin(0.5)
+    .setDepth(302);
+
+  const title = scene.add
+    .text(cx, top + 54, 'Friend lobby', {
+      fontFamily: 'Georgia, "Times New Roman", serif',
+      fontSize: '26px',
       color: '#f5e6c8',
     })
     .setOrigin(0.5)
     .setDepth(302);
 
   const subtitle = scene.add
-    .text(
-      width / 2,
-      height / 2 - panelH / 2 + 52,
-      'Create or join a code · local stub · no live sync yet',
-      {
-        fontFamily: 'system-ui, sans-serif',
-        fontSize: '12px',
-        color: '#9eb4c8',
-      },
-    )
+    .text(cx, top + 84, 'Share a code with a friend — coming soon live', {
+      fontFamily: 'system-ui, sans-serif',
+      fontSize: '13px',
+      color: '#9eb4c8',
+    })
     .setOrigin(0.5)
     .setDepth(302);
 
   const codeText = scene.add
-    .text(width / 2, height / 2 - 36, '————', {
-      fontFamily: 'ui-monospace, SFMono-Regular, Menlo, monospace',
-      fontSize: '36px',
-      color: '#7ec8ff',
+    .text(cx, cy - 28, '————', {
+      fontFamily: 'Georgia, "Times New Roman", serif',
+      fontSize: '40px',
+      color: '#f0c75e',
       fontStyle: 'bold',
     })
     .setOrigin(0.5)
     .setDepth(302);
 
   const statusText = scene.add
-    .text(width / 2, height / 2 + 8, '', {
+    .text(cx, cy + 18, '', {
       fontFamily: 'system-ui, sans-serif',
-      fontSize: '13px',
+      fontSize: '14px',
       color: '#d7e6f2',
       align: 'center',
       wordWrap: { width: panelW - 48 },
-      lineSpacing: 4,
+      lineSpacing: 5,
     })
     .setOrigin(0.5, 0)
     .setDepth(302);
 
+  const quietNote = scene.add
+    .text(cx, bottom - 22, 'Local stub · no live sync yet', {
+      fontFamily: 'system-ui, sans-serif',
+      fontSize: '11px',
+      color: '#6a7f94',
+    })
+    .setOrigin(0.5)
+    .setDepth(302);
+
   const refresh = (): void => {
     const st = lobby.peek();
-    const user = firebase.auth.currentUser();
     codeText.setText(st.code ?? '————');
     codeText.setColor(
       st.status === 'hosting'
@@ -82,24 +101,28 @@ export function showLobbyPanel(scene: Phaser.Scene, onClose: () => void): void {
           ? '#7ec8ff'
           : '#6a7f94',
     );
-    const lines = [
-      `Status: ${st.status}`,
-      st.reason ? st.reason : 'SP vs AI is unchanged — use species cards on the menu.',
-      '',
-      ageGateLabel(loadAgeGate()),
-      `Ads ${flags.adsEnabled ? 'on' : 'off'}  ·  Auth ${user ? 'local anon' : 'none'}  ·  Emu ${firebase.useEmulators ? 'on' : 'off'}`,
-    ];
-    statusText.setText(lines.join('\n'));
+    if (st.status === 'idle') {
+      statusText.setText('Create a code to host, or join one from a friend.');
+    } else if (st.status === 'hosting') {
+      statusText.setText('Hosting locally — share this code.\nLive match sync is not connected yet.');
+    } else if (st.status === 'joining') {
+      statusText.setText(`Joining ${st.code} locally.\nLive match sync is not connected yet.`);
+    } else {
+      statusText.setText(st.reason ?? 'Lobby unavailable.');
+    }
   };
   refresh();
 
   const nodes: Phaser.GameObjects.GameObject[] = [
     overlay,
     panel,
+    accent,
+    brand,
     title,
     subtitle,
     codeText,
     statusText,
+    quietNote,
   ];
 
   const mkBtn = (
@@ -115,7 +138,7 @@ export function showLobbyPanel(scene: Phaser.Scene, onClose: () => void): void {
         fontSize: '14px',
         color: '#fff8e8',
         backgroundColor: bg,
-        padding: { x: 14, y: 9 },
+        padding: { x: 16, y: 10 },
       })
       .setOrigin(0.5)
       .setDepth(303)
@@ -128,11 +151,11 @@ export function showLobbyPanel(scene: Phaser.Scene, onClose: () => void): void {
     nodes.push(btn);
   };
 
-  const rowY = height / 2 + panelH / 2 - 88;
-  mkBtn(width / 2 - 100, rowY, 'Create code', '#2a4a38', () => {
+  const rowY = bottom - 78;
+  mkBtn(cx - 110, rowY, 'Create code', '#2a4a38', () => {
     lobby.hostLocal();
   });
-  mkBtn(width / 2 + 100, rowY, 'Join code…', '#2a3a50', () => {
+  mkBtn(cx + 110, rowY, 'Join code…', '#2a3a50', () => {
     const raw =
       typeof window !== 'undefined'
         ? window.prompt('Enter friend lobby code', 'KANE01')
@@ -140,16 +163,16 @@ export function showLobbyPanel(scene: Phaser.Scene, onClose: () => void): void {
     if (raw == null) return;
     lobby.joinLocal(raw);
   });
-  mkBtn(width / 2, rowY + 44, 'Leave lobby', '#3a4555', () => {
+  mkBtn(cx, rowY + 42, 'Leave', '#3a4555', () => {
     lobby.leave();
   });
 
   const closeBtn = scene.add
-    .text(width / 2 + panelW / 2 - 20, height / 2 - panelH / 2 + 14, '✕', {
+    .text(cx + panelW / 2 - 18, top + 14, '✕', {
       fontFamily: 'system-ui, sans-serif',
-      fontSize: '18px',
+      fontSize: '16px',
       color: '#b8c9d9',
-      backgroundColor: '#3a4555',
+      backgroundColor: '#2a3545',
       padding: { x: 10, y: 4 },
     })
     .setOrigin(1, 0)

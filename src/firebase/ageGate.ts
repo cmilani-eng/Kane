@@ -1,16 +1,17 @@
 /**
- * 13+ age gate — first-run boot confirm, localStorage only.
- * Under-13 is blocked from Menu / SP. Ads stay off (see flags).
+ * Age positioning helpers — product is framed 13+ / not COPPA child-directed.
+ * In-game AgeGate boot confirmation was removed (product decision).
+ * Firestore may still mirror `ageGateOk`; no UI blocks on this module.
  */
 import { flags } from '../config/flags';
-import type { AgeGateState, AgeGateStatus } from './types';
+import type { AgeGateState } from './types';
 
 const KEY = 'kane.ageGate.v2';
-/** In-memory fallback when localStorage is unavailable. */
-let memory: AgeGateState | null = null;
+const LEGACY_KEY = 'kane.ageGate.v1';
 
-function pending(): AgeGateState {
-  return { status: 'pending', ok: false, confirmedAtMs: null };
+/** Always-ok state — gate screen no longer runs. */
+function okState(confirmedAtMs: number | null = null): AgeGateState {
+  return { status: 'ok', ok: true, confirmedAtMs };
 }
 
 function canStore(): boolean {
@@ -21,112 +22,62 @@ function canStore(): boolean {
   }
 }
 
-function normalize(raw: Partial<AgeGateState> & { ok?: boolean }): AgeGateState {
-  let status: AgeGateStatus = 'pending';
-  if (raw.status === 'ok' || raw.status === 'blocked' || raw.status === 'pending') {
-    status = raw.status;
-  } else if (raw.ok === true) {
-    // Migrate v1 `{ ok: true }` shapes.
-    status = 'ok';
-  }
-  return {
-    status,
-    ok: status === 'ok',
-    confirmedAtMs:
-      typeof raw.confirmedAtMs === 'number' ? raw.confirmedAtMs : null,
-  };
-}
-
-function persist(state: AgeGateState): AgeGateState {
-  memory = state;
-  if (canStore()) {
-    try {
-      localStorage.setItem(KEY, JSON.stringify(state));
-    } catch {
-      // private mode — memory only
-    }
-  }
-  return state;
-}
-
-export function loadAgeGate(): AgeGateState {
-  if (memory) return memory;
-  if (!canStore()) return pending();
+/** Clear legacy gate keys so blocked/pending devices are not stuck. */
+function clearLegacyKeys(): void {
+  if (!canStore()) return;
   try {
-    const raw = localStorage.getItem(KEY);
-    if (!raw) {
-      // One-shot migrate from v1 key if present.
-      const v1 = localStorage.getItem('kane.ageGate.v1');
-      if (v1) {
-        const migrated = normalize(JSON.parse(v1) as Partial<AgeGateState>);
-        return persist(migrated);
-      }
-      return pending();
-    }
-    const state = normalize(JSON.parse(raw) as Partial<AgeGateState>);
-    memory = state;
-    return state;
+    localStorage.removeItem(KEY);
+    localStorage.removeItem(LEGACY_KEY);
   } catch {
-    return pending();
+    // ignore
   }
 }
 
-/** Player confirms they are 13+ — unlocks Menu / SP. */
-export function confirmAgeGate(): AgeGateState {
-  return persist({
-    status: 'ok',
-    ok: true,
-    confirmedAtMs: Date.now(),
-  });
+/**
+ * Returns an always-ok gate. Legacy localStorage answers are discarded so
+ * a prior under-13 block cannot strand the player after the UI was removed.
+ */
+export function loadAgeGate(): AgeGateState {
+  clearLegacyKeys();
+  return okState();
 }
 
-/** Player indicates under-13 — stay on blocked screen. */
+/** @deprecated No in-game gate — kept for foundation re-exports / tests. */
+export function confirmAgeGate(): AgeGateState {
+  clearLegacyKeys();
+  return okState(Date.now());
+}
+
+/** @deprecated No under-13 block screen — no-op that keeps play unlocked. */
 export function blockUnder13(): AgeGateState {
-  return persist({
-    status: 'blocked',
-    ok: false,
-    confirmedAtMs: Date.now(),
-  });
+  clearLegacyKeys();
+  return okState(Date.now());
 }
 
 export function clearAgeGate(): AgeGateState {
-  memory = null;
-  if (canStore()) {
-    try {
-      localStorage.removeItem(KEY);
-      localStorage.removeItem('kane.ageGate.v1');
-    } catch {
-      // ignore
-    }
-  }
-  return pending();
+  clearLegacyKeys();
+  return okState();
 }
 
-/** True once the player has answered (ok or blocked). */
 export function isAgeGateResolved(
-  gate: AgeGateState = loadAgeGate(),
+  _gate: AgeGateState = loadAgeGate(),
 ): boolean {
-  return gate.status === 'ok' || gate.status === 'blocked';
+  return true;
 }
 
-/** Menu / battlefield allowed only after 13+ confirm. */
-export function canEnterGame(gate: AgeGateState = loadAgeGate()): boolean {
-  return gate.status === 'ok';
+/** Menu / battlefield always allowed — no boot confirmation. */
+export function canEnterGame(_gate: AgeGateState = loadAgeGate()): boolean {
+  return true;
 }
 
-/** Online lobby stubs also require 13+. */
+/** Online lobby stubs no longer wait on an age confirm. */
 export function canUseOnlineFeatures(
-  gate: AgeGateState = loadAgeGate(),
+  _gate: AgeGateState = loadAgeGate(),
 ): boolean {
-  return gate.status === 'ok' && flags.ageGateMinYears >= 13;
+  return flags.ageGateMinYears >= 13;
 }
 
-export function ageGateLabel(gate: AgeGateState = loadAgeGate()): string {
-  if (gate.status === 'ok') {
-    return `Age ${flags.ageGateMinYears}+ confirmed`;
-  }
-  if (gate.status === 'blocked') {
-    return `Under ${flags.ageGateMinYears} — play blocked`;
-  }
-  return `Age ${flags.ageGateMinYears}+ gate pending`;
+/** Quiet console/docs label — not shown in player-facing chrome. */
+export function ageGateLabel(_gate: AgeGateState = loadAgeGate()): string {
+  return `${flags.ageGateMinYears}+ positioning (no in-game gate)`;
 }
