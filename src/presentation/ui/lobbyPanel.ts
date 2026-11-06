@@ -17,6 +17,7 @@ import {
 import { getLobbyStub } from '../../networking/lobbySingleton';
 import type { LobbyStatus } from '../../networking/lobbyStub';
 import { playSfx } from '../audio/sfx';
+import { lobbyLastFactionTipLine } from './lobbyLastFactionTip';
 
 export function lobbyStatusLine(status: LobbyStatus, code: string | null): string {
   switch (status) {
@@ -129,20 +130,25 @@ export function showLobbyPanel(scene: Phaser.Scene, onClose: () => void): void {
     .setOrigin(0.5)
     .setDepth(302);
 
+  const tipStack = [
+    lobbySetupLine(),
+    lobbyFactionTipLine(),
+    lobbyLastFactionTipLine(),
+    lobbyDifficultyTipLine(),
+    lobbyMapTipLine(),
+    lobbyMatchLengthTipLine(),
+  ]
+    .filter(Boolean)
+    .join('\n');
   const mapTip = scene.add
-    .text(
-      cx,
-      top + 106,
-      `${lobbySetupLine()}\n${lobbyFactionTipLine()}\n${lobbyDifficultyTipLine()}\n${lobbyMapTipLine()}\n${lobbyMatchLengthTipLine()}`,
-      {
-        fontFamily: 'system-ui, sans-serif',
-        fontSize: '12px',
-        color: '#a8c8c0',
-        align: 'center',
-        wordWrap: { width: panelW - 40 },
-        lineSpacing: 4,
-      },
-    )
+    .text(cx, top + 106, tipStack, {
+      fontFamily: 'system-ui, sans-serif',
+      fontSize: '12px',
+      color: '#a8c8c0',
+      align: 'center',
+      wordWrap: { width: panelW - 40 },
+      lineSpacing: 4,
+    })
     .setOrigin(0.5)
     .setDepth(302);
 
