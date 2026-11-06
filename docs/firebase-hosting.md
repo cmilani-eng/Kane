@@ -13,6 +13,7 @@ Local-first Phaser build. **Ads stay off** (`adsEnabled=false`). Local SP Vite p
 | Client stubs | `src/firebase/` (auth, age gate, config) |
 | Lobby stub | `src/networking/lobbyStub.ts` + menu **Friends lobby** UI |
 | Match summary write | `src/database/matchSummary.ts` + Function stub → `#/admin` |
+| Command sync / desync hash | `src/server/commandSyncStub.ts`, `desyncHash.ts` (local only) |
 | Env placeholders | `.env.example` |
 
 ## Local SP (unchanged)

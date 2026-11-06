@@ -22,8 +22,10 @@ export function createKaneGame(parent: HTMLElement): Phaser.Game {
   const db = createDatabaseStub();
   const firebase = createFirebaseFoundation();
   const lobby = getLobbyStub();
+  // Touch sync stub once so the desync-hash path is wired without enabling MP.
+  const bootSnap = server.startMatch('boot');
   console.info(
-    `[${BRAND.name}] Phaser ${Phaser.VERSION} · milestone=sp-rematch · net=${connection.status} · server=${server.enabled} · db=${db.enabled} · lobby=${lobby.enabled} · ads=${flags.adsEnabled}`,
+    `[${BRAND.name}] Phaser ${Phaser.VERSION} · milestone=sp-rematch · net=${connection.status} · server=${server.enabled} · syncHash=${bootSnap.hash} · db=${db.enabled} · lobby=${lobby.enabled} · ads=${flags.adsEnabled}`,
   );
   console.info(`[${BRAND.name}] ${firebase.describe()}`);
 
