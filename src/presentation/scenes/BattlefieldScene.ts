@@ -5,6 +5,7 @@
 import Phaser from 'phaser';
 import { BRAND } from '../../config/brand';
 import { flags } from '../../config/flags';
+import { t } from '../../i18n';
 import { RESOURCES } from '../../data/resources';
 import {
   getBuildingType,
@@ -1354,22 +1355,24 @@ export class BattlefieldScene extends Phaser.Scene {
     // Compact top status — detail lives in the bottom selection panel.
     let status: string;
     if (this.mode === 'rally' && b) {
-      status = `${b.name} · tap map to set rally · Esc cancel`;
+      status = t('hud.rallyStatus', { name: b.name });
     } else if (b) {
       const hall = getBuildingType(b.typeId).isMainHall;
       status = hall
-        ? `${b.name} selected · Train / Build below`
-        : `${b.name} selected · Train / Set rally below`;
+        ? t('hud.buildingBuild', { name: b.name })
+        : t('hud.buildingSelected', { name: b.name });
     } else if (node) {
-      const label =
-        node.resourceId === 'magic_crystals' ? 'Crystals' : 'Gold';
-      status = `${label} node · ${Math.floor(node.remaining)} remaining`;
+      const remaining = Math.floor(node.remaining);
+      status =
+        node.resourceId === 'magic_crystals'
+          ? t('hud.nodeCrystals', { n: remaining })
+          : t('hud.nodeGold', { n: remaining });
     } else if (n === 0) {
-      status = `Alive ${friends} vs ${foes}  ·  Select a unit or building`;
+      status = t('hud.alive', { friends, foes });
     } else if (n === 1) {
-      status = `${sel[0]!.name} selected · orders below`;
+      status = t('hud.unitSelected', { name: sel[0]!.name });
     } else {
-      status = `${n} selected · orders below · RMB`;
+      status = t('hud.manySelected', { n });
     }
 
     const placing = this.mode === 'place';

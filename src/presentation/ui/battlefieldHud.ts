@@ -5,8 +5,8 @@
 import Phaser from 'phaser';
 import { flags } from '../../config/flags';
 import { heroForSpecies, type HeroAbilitySlot } from '../../data/heroes';
-import { SPECIES, type SpeciesId } from '../../data/speciesStub';
-import { getAiDifficulty } from '../../gameplay/battlefield/aiDifficulty';
+import type { SpeciesId } from '../../data/speciesStub';
+import { difficultyCopy, speciesCopy, speciesName, t } from '../../i18n';
 import { livingByTeam } from '../../gameplay/battlefield/battlefieldCombat';
 import {
   castHeroAbility,
@@ -135,7 +135,7 @@ export class BattlefieldHud {
           : '#d4782e';
 
     this.title = scene.add
-      .text(12, 8, `KANE  ·  ${SPECIES[this.speciesId].name}`, {
+      .text(12, 8, `KANE  ·  ${speciesName(this.speciesId)}`, {
         fontFamily: 'Georgia, "Times New Roman", serif',
         fontSize: '18px',
         color: '#f5e6c8',
@@ -145,19 +145,11 @@ export class BattlefieldHud {
       .setScrollFactor(0)
       .setDepth(100);
 
-    const enemy = SPECIES[world.enemySpeciesId];
-    const diff = getAiDifficulty(world.aiDifficulty);
-    const mech =
-      this.speciesId === 'nobles'
-        ? 'FORMATIONS · F'
-        : this.speciesId === 'weirdos'
-          ? 'MUTATION · M'
-          : 'RAGE · R';
     this.matchLine = scene.add
       .text(
         12,
         42,
-        `vs ${enemy.name}  ·  ${diff.label}  ·  ${mech}`,
+        this.matchupLine(),
         {
           fontFamily: 'system-ui, sans-serif',
           fontSize: '12px',
@@ -193,7 +185,7 @@ export class BattlefieldHud {
       .setScrollFactor(0)
       .setDepth(100);
     this.goldText = scene.add
-      .text(42, 76, 'Gold 0', {
+      .text(42, 76, t('hud.gold', { n: 0 }), {
         fontFamily: 'system-ui, sans-serif',
         fontSize: '15px',
         color: '#f5e6c8',
@@ -207,7 +199,7 @@ export class BattlefieldHud {
       .setScrollFactor(0)
       .setDepth(100);
     this.crystalText = scene.add
-      .text(164, 76, 'Crystals 0', {
+      .text(164, 76, t('hud.crystals', { n: 0 }), {
         fontFamily: 'system-ui, sans-serif',
         fontSize: '15px',
         color: '#c8e4ff',
@@ -221,7 +213,7 @@ export class BattlefieldHud {
       .setScrollFactor(0)
       .setDepth(100);
     this.supplyText = scene.add
-      .text(294, 76, `Supply  0 / ${flags.unitCap}`, {
+      .text(294, 76, t('pause.supply', { current: 0, cap: flags.unitCap }), {
         fontFamily: 'system-ui, sans-serif',
         fontSize: '15px',
         color: '#d7e6f2',
@@ -295,7 +287,7 @@ export class BattlefieldHud {
       .setDepth(100);
 
     this.menuBtn = scene.add
-      .text(scene.scale.width - 12, 12, 'Menu', {
+      .text(scene.scale.width - 12, 12, t('hud.menu'), {
         fontFamily: 'system-ui, sans-serif',
         fontSize: '14px',
         color: '#fff8e8',
@@ -308,7 +300,7 @@ export class BattlefieldHud {
       .setInteractive({ useHandCursor: true });
 
     this.muteBtn = scene.add
-      .text(scene.scale.width - 12, 52, isSfxMuted() ? 'Sound: Off' : 'Sound: On', {
+      .text(scene.scale.width - 12, 52, this.soundLabel(), {
         fontFamily: 'system-ui, sans-serif',
         fontSize: '13px',
         color: '#fff8e8',
@@ -321,12 +313,12 @@ export class BattlefieldHud {
       .setInteractive({ useHandCursor: true })
       .on('pointerup', () => {
         setSfxMuted(!isSfxMuted());
-        this.muteBtn.setText(isSfxMuted() ? 'Sound: Off' : 'Sound: On');
+        this.muteBtn.setText(this.soundLabel());
         if (!isSfxMuted()) playSfx('ui');
       });
 
     this.pauseBtn = scene.add
-      .text(scene.scale.width - 12, 92, 'Pause', {
+      .text(scene.scale.width - 12, 92, t('hud.pause'), {
         fontFamily: 'system-ui, sans-serif',
         fontSize: '13px',
         color: '#fff8e8',
@@ -348,7 +340,7 @@ export class BattlefieldHud {
       );
 
     this.baseBtn = scene.add
-      .text(scene.scale.width - 12, 132, 'Base', {
+      .text(scene.scale.width - 12, 132, t('hud.base'), {
         fontFamily: 'system-ui, sans-serif',
         fontSize: '13px',
         color: '#fff8e8',
@@ -370,7 +362,7 @@ export class BattlefieldHud {
       );
 
     this.helpBtn = scene.add
-      .text(scene.scale.width - 12, 172, 'Help', {
+      .text(scene.scale.width - 12, 172, t('hud.help'), {
         fontFamily: 'system-ui, sans-serif',
         fontSize: '13px',
         color: '#fff8e8',
@@ -392,7 +384,7 @@ export class BattlefieldHud {
       );
 
     this.attackMoveBtn = scene.add
-      .text(12, scene.scale.height - 48, 'A · Atk', {
+      .text(12, scene.scale.height - 48, t('hud.atk'), {
         fontFamily: 'system-ui, sans-serif',
         fontSize: '14px',
         color: '#fff8e8',
@@ -408,7 +400,7 @@ export class BattlefieldHud {
       });
 
     this.stopBtn = scene.add
-      .text(100, scene.scale.height - 48, 'S · Stop', {
+      .text(100, scene.scale.height - 48, t('hud.stopKey'), {
         fontFamily: 'system-ui, sans-serif',
         fontSize: '14px',
         color: '#fff8e8',
@@ -430,7 +422,7 @@ export class BattlefieldHud {
       );
 
     this.armyBtn = scene.add
-      .text(200, scene.scale.height - 48, 'Army', {
+      .text(200, scene.scale.height - 48, t('hud.army'), {
         fontFamily: 'system-ui, sans-serif',
         fontSize: '14px',
         color: '#fff8e8',
@@ -519,7 +511,7 @@ export class BattlefieldHud {
     const entries: { slot: HeroAbilitySlot | 'recruit'; key: string; name: string }[] =
       [
         // H opens Controls help; recruit stays on this pad (tap).
-        { slot: 'recruit', key: '★', name: 'Recruit' },
+        { slot: 'recruit', key: '★', name: t('hud.recruit') },
         {
           slot: 'ability1',
           key: 'Q',
@@ -646,8 +638,8 @@ export class BattlefieldHud {
     const resY = pad + (this.narrow ? 50 : 60);
     this.resourcePanel.setPosition(pad, resY);
     this.resourcePanel.width = this.narrow
-      ? Math.min(w - pad * 2, 300)
-      : 440;
+      ? Math.min(w - pad * 2, 340)
+      : 560;
     this.resourcePanel.height = this.narrow ? 80 : 36;
 
     if (this.narrow) {
@@ -698,23 +690,26 @@ export class BattlefieldHud {
       .setStyle({ wordWrap: { width: Math.min(560, w - pad * 2) } })
       .setFontSize(this.narrow ? '11px' : '12px');
 
-    this.menuBtn.setPosition(w - pad, pad).setFontSize(this.narrow ? '13px' : '14px');
+    this.menuBtn
+      .setPosition(w - pad, pad)
+      .setFontSize(this.narrow ? '13px' : '14px')
+      .setText(t('hud.menu'));
     this.muteBtn
       .setPosition(w - pad, pad + (this.narrow ? 36 : 42))
       .setFontSize(this.narrow ? '12px' : '13px')
-      .setText(isSfxMuted() ? 'Sound: Off' : 'Sound: On');
+      .setText(this.soundLabel());
     this.pauseBtn
       .setPosition(w - pad, pad + (this.narrow ? 70 : 80))
       .setFontSize(this.narrow ? '12px' : '13px')
-      .setText(this.narrow ? 'Pause' : 'Esc · Pause');
+      .setText(this.narrow ? t('hud.pause') : t('hud.pauseKey'));
     this.baseBtn
       .setPosition(w - pad, pad + (this.narrow ? 104 : 118))
       .setFontSize(this.narrow ? '12px' : '13px')
-      .setText(this.narrow ? 'Base' : 'Home · Base');
+      .setText(this.narrow ? t('hud.base') : t('hud.baseKey'));
     this.helpBtn
       .setPosition(w - pad, pad + (this.narrow ? 138 : 156))
       .setFontSize(this.narrow ? '12px' : '13px')
-      .setText(this.narrow ? 'Help' : '? · Help');
+      .setText(this.narrow ? t('hud.help') : t('hud.helpKey'));
 
     const btnW = this.narrow ? Math.min(78, (w - pad * 2 - 18) / 4) : 92;
     const btnH = this.narrow ? 52 : 58;
@@ -743,7 +738,7 @@ export class BattlefieldHud {
       .setPosition(pad, h - pad - inset)
       .setFontSize(orderFont)
       .setOrigin(0, 1)
-      .setText(this.narrow ? 'Stop' : 'S · Stop');
+      .setText(this.narrow ? t('hud.stop') : t('hud.stopKey'));
     const stopW = this.stopBtn.width;
     this.attackMoveBtn
       .setPosition(pad + stopW + 8, h - pad - inset)
@@ -760,15 +755,7 @@ export class BattlefieldHud {
       )
       .setFontSize(orderFont)
       .setOrigin(0, 1)
-      .setText(
-        this.narrow
-          ? armyN > 0
-            ? `Army ${armyN}`
-            : 'Army'
-          : armyN > 0
-            ? `Ctrl+A · Army ${armyN}`
-            : 'Ctrl+A · Army',
-      );
+      .setText(this.armyLabel(armyN));
 
     this.hint
       .setPosition(w / 2, y - btnH / 2 - 10)
@@ -798,7 +785,9 @@ export class BattlefieldHud {
   /** Brief HUD cue for Ctrl+# assign / # recall. */
   flashControlGroup(slot: number, kind: 'assign' | 'recall'): void {
     this.groupFlashText =
-      kind === 'assign' ? `Group ${slot} saved` : `Group ${slot} selected`;
+      kind === 'assign'
+        ? t('hud.groupSaved', { slot })
+        : t('hud.groupSelected', { slot });
     this.groupFlashColor = kind === 'assign' ? '#6ecfbf' : '#f0c75e';
     this.groupFlashUntil = this.scene.time.now + 700;
     this.hint.setText(this.groupFlashText).setColor(this.groupFlashColor);
@@ -813,7 +802,7 @@ export class BattlefieldHud {
 
   /** Keep HUD mute chip in sync when pause overlay toggles audio. */
   syncMuteLabel(): void {
-    this.muteBtn.setText(isSfxMuted() ? 'Sound: Off' : 'Sound: On');
+    this.muteBtn.setText(this.soundLabel());
   }
 
   /** Pause-aware match elapsed display (does not advance while paused). */
@@ -838,11 +827,18 @@ export class BattlefieldHud {
       return;
     }
     const crystalBit =
-      info.crystals > 0 ? `  ·  Crystal ${info.crystals}` : '';
-    const payBit = info.canPay ? '' : '  ·  Need resources';
+      info.crystals > 0 ? t('hud.placeCrystal', { n: info.crystals }) : '';
+    const payBit = info.canPay ? '' : t('hud.placeNeed');
     this.placeCostStrip
       .setVisible(true)
-      .setText(`Place ${info.name}  ·  Gold ${info.gold}${crystalBit}${payBit}`)
+      .setText(
+        t('hud.place', {
+          name: info.name,
+          gold: info.gold,
+          crystal: crystalBit,
+          pay: payBit,
+        }),
+      )
       .setColor(info.canPay ? '#fff8e8' : '#ffb8b8')
       .setBackgroundColor(info.canPay ? '#122033ee' : '#2a1818ee');
   }
@@ -853,17 +849,20 @@ export class BattlefieldHud {
       color: this.attackMoveArmed ? '#ffe0e0' : '#fff8e8',
     });
     this.attackMoveBtn.setText(
-      this.attackMoveArmed ? 'A · Armed' : 'A · Atk',
+      this.attackMoveArmed ? t('hud.atkArmed') : t('hud.atk'),
     );
   }
 
   refresh(statusText: string, hintText: string, dtMs = 16): void {
     const w = this.world.wallet;
-    this.goldText.setText(`Gold  ${Math.floor(w.gold)}`);
-    this.crystalText.setText(`Crystals  ${Math.floor(w.magic_crystals)}`);
+    this.goldText.setText(t('hud.gold', { n: Math.floor(w.gold) }));
+    this.crystalText.setText(
+      t('hud.crystals', { n: Math.floor(w.magic_crystals) }),
+    );
     const pop = livingByTeam(this.world, 'player');
     const cap = flags.unitCap;
-    this.supplyText.setText(`Supply  ${pop} / ${cap}`);
+    this.supplyText.setText(t('pause.supply', { current: pop, cap }));
+    this.fitResourceStrip();
     if (pop >= cap) {
       this.supplyText.setColor('#e87aa8');
       this.supplyDot.setFillStyle(0xe87aa8);
@@ -894,15 +893,7 @@ export class BattlefieldHud {
     }
     if (wasCore !== this.coreLine.visible) this.layout();
     const armyN = countVisibleMilitary(this.world);
-    this.armyBtn.setText(
-      this.narrow
-        ? armyN > 0
-          ? `Army ${armyN}`
-          : 'Army'
-        : armyN > 0
-          ? `Ctrl+A · Army ${armyN}`
-          : 'Ctrl+A · Army',
-    );
+    this.armyBtn.setText(this.armyLabel(armyN));
     if (this.groupFlashText && this.scene.time.now < this.groupFlashUntil) {
       this.hint.setText(this.groupFlashText).setColor(this.groupFlashColor);
     } else {
@@ -930,14 +921,12 @@ export class BattlefieldHud {
       const cycling = this.world.units.some(
         (u) => u.selected && u.team === 'player' && u.canGather && u.hp > 0,
       );
-      const action = cycling ? 'cycle' : 'tap';
+      const action = t(cycling ? 'hud.idleCycle' : 'hud.idleTap');
       this.idlePingBtn
         .setVisible(true)
         .setAlpha(pulse)
         .setText(
-          holding
-            ? `Idle ${idleN} · ${action} (cargo)`
-            : `Idle ${idleN} · ${action}`,
+          t(holding ? 'hud.idleCargo' : 'hud.idle', { n: idleN, action }),
         );
     } else {
       this.idlePingBtn.setVisible(false).setAlpha(1);
@@ -983,10 +972,10 @@ export class BattlefieldHud {
       const pulse = 0.7 + 0.3 * Math.sin(this.attackPulseMs / 220);
       const label =
         alert.kind === 'keep'
-          ? 'Keep under attack · tap'
+          ? t('hud.attackKeep')
           : alert.kind === 'hero'
-            ? 'Hero under attack · tap'
-            : 'Base under attack · tap';
+            ? t('hud.attackHero')
+            : t('hud.attackBase');
       this.attackPingBtn
         .setVisible(true)
         .setAlpha(pulse)
@@ -997,26 +986,14 @@ export class BattlefieldHud {
     if (wasAttackVisible !== this.attackPingBtn.visible) this.layout();
 
     // Brutes: live Rage count on match line
-    if (this.speciesId === 'brutes') {
-      const enemy = SPECIES[this.world.enemySpeciesId];
-      const diff = getAiDifficulty(this.world.aiDifficulty);
-      const hot = this.world.units.filter(
-        (u) => u.team === 'player' && u.enraged && u.hp > 0,
-      ).length;
-      const locked = this.world.units.filter(
-        (u) => u.team === 'player' && u.rageLocked && u.hp > 0,
-      ).length;
-      this.matchLine.setText(
-        `vs ${enemy.name}  ·  ${diff.label}  ·  RAGE · R  ·  ${hot} hot${locked ? ` (${locked} lock)` : ''}`,
-      );
-    }
+    this.matchLine.setText(this.matchupLine());
 
     const rt = this.world.heroRuntime;
     for (const b of this.abilityBtns) {
       if (b.slot === 'recruit') {
         const ready = !rt;
         b.bg.setAlpha(ready ? 1 : 0.45);
-        b.sub.setText(ready ? 'Recruit' : 'Recruited');
+        b.sub.setText(ready ? t('hud.recruit') : t('hud.recruited'));
         continue;
       }
       if (!rt) {
@@ -1051,23 +1028,77 @@ export class BattlefieldHud {
     attackMove = false,
     placeCostCrystals = 0,
   ): string {
-    if (attackMove) {
-      return 'Attack-move: click ground to march & fight · Esc/RMB cancel';
-    }
+    if (attackMove) return t('hud.hintAttack');
     if (placing) {
       const g = placeCostGold ?? 0;
       const c = placeCostCrystals;
-      const cost =
-        c > 0 ? `${g}g / ${c}c` : `${g}g`;
-      return `Place ${placeName ?? 'building'} (${cost}) · tap map · B cycle · Esc cancel`;
+      const cost = c > 0 ? `${g}g / ${c}c` : `${g}g`;
+      return t('hud.hintPlace', { name: placeName ?? 'building', cost });
     }
-    if (this.narrow) {
-      return 'Help · Home · S stop · A atk-move · Army · pads H/Q/W/E';
-    }
+    if (this.narrow) return t('hud.hintNarrow');
     return this.speciesId === 'nobles'
-      ? '? Help · Home · Ctrl+1-0 · Ctrl+A · S · A · F · H/Q/W/E'
+      ? t('hud.hintNobles')
       : this.speciesId === 'weirdos'
-        ? '? Help · Home · Ctrl+1-0 · Ctrl+A · S · A · M · H/Q/W/E'
-        : '? Help · Home · Ctrl+1-0 · Ctrl+A · S · A · R · B · H/Q/W/E';
+        ? t('hud.hintWeirdos')
+        : t('hud.hintBrutes');
+  }
+
+  private soundLabel(): string {
+    return isSfxMuted() ? t('pause.soundOff') : t('pause.soundOn');
+  }
+
+  private armyLabel(n: number): string {
+    if (this.narrow) return n > 0 ? t('hud.armyCount', { n }) : t('hud.army');
+    return n > 0 ? t('hud.armyKeyCount', { n }) : t('hud.armyKey');
+  }
+
+  /** Keep Gold / Crystals / Supply from overlapping when the words get longer. */
+  private fitResourceStrip(): void {
+    if (this.narrow) {
+      const widest = Math.max(
+        this.goldText.width,
+        this.crystalText.width,
+        this.supplyText.width,
+      );
+      const pad = 8;
+      this.resourcePanel.width = Math.min(
+        this.scene.scale.width - pad * 2,
+        Math.max(160, widest + 44),
+      );
+      return;
+    }
+    const gap = 22;
+    const crystalX = this.goldText.x + this.goldText.width + gap;
+    this.crystalDot.setX(crystalX);
+    this.crystalText.setX(crystalX + 14);
+    const supplyX = this.crystalText.x + this.crystalText.width + gap;
+    this.supplyDot.setX(supplyX);
+    this.supplyText.setX(supplyX + 14);
+    const end = this.supplyText.x + this.supplyText.width + 16;
+    this.resourcePanel.width = Math.max(280, end - this.resourcePanel.x);
+  }
+
+  private matchupLine(): string {
+    const enemy = speciesName(this.world.enemySpeciesId);
+    const difficulty = difficultyCopy(this.world.aiDifficulty).label;
+    const letter =
+      this.speciesId === 'nobles' ? 'F' : this.speciesId === 'weirdos' ? 'M' : 'R';
+    const mechanic = `${speciesCopy(this.speciesId).mechanic} · ${letter}`;
+    if (this.speciesId !== 'brutes') {
+      return t('hud.vs', { enemy, difficulty, mechanic });
+    }
+    const hot = this.world.units.filter(
+      (u) => u.team === 'player' && u.enraged && u.hp > 0,
+    ).length;
+    const locked = this.world.units.filter(
+      (u) => u.team === 'player' && u.rageLocked && u.hp > 0,
+    ).length;
+    return t('hud.vsRage', {
+      enemy,
+      difficulty,
+      mechanic,
+      hot,
+      lock: locked ? t('hud.rageLock', { n: locked }) : '',
+    });
   }
 }
