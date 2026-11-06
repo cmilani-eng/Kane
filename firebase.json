@@ -35,7 +35,7 @@
           ]
         },
         {
-          "source": "{/,/index.html,/*/,/*/index.html}",
+          "source": "{/,/index.html,/*,/*/,/*/index.html}",
           "headers": [
             {
               "key": "Cache-Control",
