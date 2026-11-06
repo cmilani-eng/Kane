@@ -76,6 +76,12 @@ describe('games registry', () => {
     expect(GAMES.find((game) => game.id === 'blob-evolution')?.build).toBe('vite');
   });
 
+  it('gives Blob Evolution a back link to the hub picker', () => {
+    const page = readFileSync(resolve(gamesDir, 'blob-evolution/index.html'), 'utf8');
+    expect(page).toContain('id="hub-back"');
+    expect(page).toMatch(/id="hub-back"[^>]*href="\/"/);
+  });
+
   it('keeps Privacy and Terms pages under games/ for hub footer links', () => {
     const privacy = readFileSync(resolve(gamesDir, 'privacy.html'), 'utf8');
     const terms = readFileSync(resolve(gamesDir, 'terms.html'), 'utf8');
