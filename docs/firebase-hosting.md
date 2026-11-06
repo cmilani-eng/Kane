@@ -16,6 +16,7 @@
 | Daily stats rollup | `src/database/dailyStatsRollup.ts` + Function stub → `#/admin` |
 | Admin allowlist stub | `src/database/adminAllowlist.ts` — `#/admin` open or allowlist + deny UI |
 | Moderation stubs | `src/database/moderationStub.ts` — local report/mute log |
+| Legal stubs | `public/privacy.html`, `public/terms.html` (menu links) |
 | Env placeholders | `.env.example` |
 
 ## Local SP (primary — unchanged)
