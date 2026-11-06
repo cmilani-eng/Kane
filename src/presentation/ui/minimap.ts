@@ -44,6 +44,10 @@ import {
 import { minimapSelectedUnitBlip } from './minimapSelectedBlip';
 import { minimapCameraViewportLabelText } from './minimapCameraViewportLabel';
 import {
+  minimapCameraSectorAt,
+  minimapCameraSectorTipText,
+} from './minimapCameraSectorTip';
+import {
   minimapPingSectorTipAlpha,
   minimapPingSectorTipText,
 } from './minimapPingSectorTip';
@@ -65,6 +69,8 @@ export class Minimap {
   private readonly pingSectorLabel: Phaser.GameObjects.Text;
   /** Short mark on the camera viewport frame. */
   private readonly camLabel: Phaser.GameObjects.Text;
+  /** 3×3 sector tip for the camera view center (distinct from View). */
+  private readonly camSectorLabel: Phaser.GameObjects.Text;
 
   private mapX = 0;
   private mapY = 0;
@@ -147,6 +153,19 @@ export class Minimap {
       .setOrigin(0.5, 1)
       .setAlpha(0.9);
 
+    this.camSectorLabel = scene.add
+      .text(0, 0, '', {
+        fontFamily: 'Segoe UI, system-ui, sans-serif',
+        fontSize: '10px',
+        color: '#f5e6c8',
+        stroke: '#0a1018',
+        strokeThickness: 3,
+      })
+      .setScrollFactor(0)
+      .setDepth(113)
+      .setOrigin(0.5, 0)
+      .setAlpha(0.9);
+
     this.hit = scene.add
       .rectangle(0, 0, this.mapW, this.mapH, 0x000000, 0.001)
       .setScrollFactor(0)
@@ -216,6 +235,7 @@ export class Minimap {
       this.scoutLabel,
       this.pingSectorLabel,
       this.camLabel,
+      this.camSectorLabel,
     ];
   }
 
@@ -562,6 +582,22 @@ export class Minimap {
     this.camLabel
       .setText(minimapCameraViewportLabelText())
       .setPosition(camLabelX, camLabelY)
+      .setVisible(true);
+    // Cam · sector tip at the bottom of the camera frame (view-center 3×3)
+    const camSector = minimapCameraSectorAt(
+      cam.scrollX,
+      cam.scrollY,
+      vw,
+      vh,
+    );
+    const camSectorY = Phaser.Math.Clamp(
+      vy + vhM + 2,
+      this.mapY + 2,
+      this.mapY + this.mapH - 10,
+    );
+    this.camSectorLabel
+      .setText(minimapCameraSectorTipText(camSector))
+      .setPosition(camLabelX, camSectorY)
       .setVisible(true);
 
     // Selected unit blips — on top of camera/order so selection never hides

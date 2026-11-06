@@ -23,6 +23,7 @@ This doc is the honest gate before any public preview URL.
 | Scout sector label | **OK** — fog scout pulse sets a brief HUD chip with 3×3 sector (NW…SE) | `mapSectorAt`, `scoutSectorHint`, `hud.scoutSector` |
 | Minimap scout pulse label | **OK** — fog scout pulse shows short sector mark on the minimap at the reveal | `minimapScoutPulseLabel`, `hud.minimapScoutPulse` |
 | Minimap camera viewport label | **OK** — gold camera frame on the minimap shows a short View mark | `minimapCameraViewportLabel`, `hud.minimapCamView` |
+| Minimap camera sector tip | **OK** — camera frame shows Cam · sector from view-center 3×3 (distinct from View mark) | `minimapCameraSectorTip`, `hud.minimapCamSector` |
 | Attention ping | **OK** — hold minimap to drop a temporary look-here mark (world + minimap); short cooldown + ice deny flash; help notes double-tap recenter; no chat | `battlefieldAttentionPing`, `minimapPingCooldown`, help |
 | Minimap ping sector tip | **OK** — hold-to-ping arms a brief Mark · sector chip (HUD + minimap), distinct from scout sector | `attentionPingSectorHint`, `minimapPingSectorTip`, `hud.pingSector` |
 | End-screen recap | **OK** — standing units/buildings from match-summary `*Left` counts (no invented deaths) | `endScreen`, `end.recap` |
