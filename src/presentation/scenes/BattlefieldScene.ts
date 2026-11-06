@@ -126,6 +126,10 @@ import {
   tickFog,
 } from '../../gameplay/battlefield/battlefieldFog';
 import {
+  spawnScoutPulsesFromFog,
+  tickScoutPulses,
+} from '../../gameplay/battlefield/battlefieldScoutPulse';
+import {
   makeMatchSummaryId,
 } from '../../database/matchSummary';
 import { getEquippedSkin } from '../../database/cosmeticsLoadout';
@@ -168,6 +172,7 @@ import { drawControlGroupFxList } from '../fx/controlGroupFeedback';
 import { drawStopFxList } from '../fx/stopCommandFeedback';
 import { drawWaypointMarkers } from '../fx/waypointMarkersDraw';
 import { drawBuildingRallyMarkers } from '../fx/rallyMarkerDraw';
+import { drawScoutPulseList } from '../fx/scoutPulseDraw';
 import {
   buildingCanRally,
   setBuildingRally,
@@ -976,7 +981,11 @@ export class BattlefieldScene extends Phaser.Scene {
       if (this.fogAccMs >= MOBILE_PERF.fogMs) {
         this.fogAccMs = 0;
         tickFog(this.world, this.world.fog);
+        if (this.world.fog.exploredDirty) {
+          spawnScoutPulsesFromFog(this.world, this.world.fog);
+        }
       }
+      tickScoutPulses(this.world, delta);
       tickCoreFragments(this.world, delta);
       tickBattlefieldCombat(this.world, delta);
       // Attack flash just set (~120) — one SFX per frame max.
@@ -1164,6 +1173,7 @@ export class BattlefieldScene extends Phaser.Scene {
     drawEconomyFxList(g, this.world.economyFx, view);
     drawStopFxList(g, this.world.stopFx, view);
     drawControlGroupFxList(g, this.world.controlGroupFx, view);
+    drawScoutPulseList(g, this.world.scoutPulses, view);
     drawWaypointMarkers(
       g,
       this.world.waypointMarkers,

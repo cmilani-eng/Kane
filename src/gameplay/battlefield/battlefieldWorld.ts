@@ -139,6 +139,8 @@ export interface BattlefieldWorld {
   stopFx: import('./battlefieldStopFx').StopFx[];
   /** Control-group assign/recall rings. */
   controlGroupFx: import('./battlefieldControlGroupFx').ControlGroupFx[];
+  /** Fog scout reveal pulses (new explored cells). */
+  scoutPulses: import('./battlefieldScoutPulse').ScoutPulse[];
   /** Move / attack-move ground waypoints. */
   waypointMarkers: import('./battlefieldWaypointMarkers').WaypointMarker[];
   /** Capturable CORE fragments (shattered KANE CORE). */
@@ -413,6 +415,7 @@ export function createBattlefieldWorld(
     economyFx: [],
     stopFx: [],
     controlGroupFx: [],
+    scoutPulses: [],
     waypointMarkers: [],
     coreFragments: [],
     coreClaimFlashMs: 0,
