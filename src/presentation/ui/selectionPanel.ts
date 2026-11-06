@@ -37,6 +37,10 @@ import {
   unitRoleLabel,
 } from './unitRole';
 import {
+  sharedUnitNameTipLabel,
+  unitNameTipLabel,
+} from './unitNameTip';
+import {
   sharedUnitSpeciesTipLabel,
   unitSpeciesTipLabel,
 } from './unitSpeciesTip';
@@ -208,6 +212,8 @@ export type SelectionPanelView =
       roleTip: string | null;
       /** Species name tip when selection shares one species. */
       speciesTip: string | null;
+      /** Catalog unit name tip when selection shares one unit type. */
+      nameTip: string | null;
       tags: string[];
       attackMoveArmed: boolean;
       /** Present when a single player hero is selected. */
@@ -629,6 +635,7 @@ export function buildSelectionView(
       trainCrystalTip: unitTrainCrystalLabel(u.typeId),
       roleTip: unitRoleLabel(u.typeId),
       speciesTip: unitSpeciesTipLabel(u.speciesId),
+      nameTip: unitNameTipLabel(u.typeId),
       tags,
       attackMoveArmed,
       abilities: heroAbilityViews(world, u),
@@ -693,6 +700,7 @@ export function buildSelectionView(
     trainCrystalTip: sharedUnitTrainCrystalLabel(alive.map((u) => u.typeId)),
     roleTip: sharedUnitRoleLabel(alive.map((u) => u.typeId)),
     speciesTip: sharedUnitSpeciesTipLabel(alive.map((u) => u.speciesId)),
+    nameTip: sharedUnitNameTipLabel(alive.map((u) => u.typeId)),
     tags,
     attackMoveArmed,
     abilities: null,
@@ -969,6 +977,7 @@ function structureSignature(view: SelectionPanelView): string {
       view.trainCrystalTip ?? '',
       view.roleTip ?? '',
       view.speciesTip ?? '',
+      view.nameTip ?? '',
       view.tags.join(','),
       view.attackMoveArmed ? 1 : 0,
       abs,
@@ -1506,6 +1515,9 @@ export function renderSelectionPanel(view: SelectionPanelView): boolean {
         }
         if (view.speciesTip) {
           bits.push(`<span>${escapeHtml(view.speciesTip)}</span>`);
+        }
+        if (view.nameTip) {
+          bits.push(`<span>${escapeHtml(view.nameTip)}</span>`);
         }
         if (view.armorClass) {
           bits.push(`<span>${escapeHtml(view.armorClass)}</span>`);
