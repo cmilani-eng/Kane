@@ -16,6 +16,7 @@ import {
   selectOrCycleIdleWorkers,
   type IdleChipResult,
 } from '../../gameplay/battlefield/idleWorkers';
+import { coreHudSummary } from '../../gameplay/battlefield/battlefieldCoreFragments';
 import {
   countVisibleMilitary,
   selectAllVisibleMilitary,
@@ -52,6 +53,8 @@ export class BattlefieldHud {
   readonly crystalText!: Phaser.GameObjects.Text;
   readonly status!: Phaser.GameObjects.Text;
   readonly heroLine!: Phaser.GameObjects.Text;
+  /** CORE fragment ownership + capture/contest progress. */
+  readonly coreLine!: Phaser.GameObjects.Text;
   readonly hint!: Phaser.GameObjects.Text;
   readonly menuBtn!: Phaser.GameObjects.Text;
   readonly muteBtn!: Phaser.GameObjects.Text;
@@ -208,6 +211,18 @@ export class BattlefieldHud {
         fontFamily: 'system-ui, sans-serif',
         fontSize: '12px',
         color: accent,
+        backgroundColor: '#0f1a2ecc',
+        padding: { x: 8, y: 6 },
+        wordWrap: { width: 520 },
+      })
+      .setScrollFactor(0)
+      .setDepth(100);
+
+    this.coreLine = scene.add
+      .text(12, 184, '', {
+        fontFamily: 'system-ui, sans-serif',
+        fontSize: '12px',
+        color: '#c8e4ff',
         backgroundColor: '#0f1a2ecc',
         padding: { x: 8, y: 6 },
         wordWrap: { width: 520 },
@@ -487,6 +502,7 @@ export class BattlefieldHud {
       this.crystalText,
       this.status,
       this.heroLine,
+      this.coreLine,
       this.hint,
       this.menuBtn,
       this.muteBtn,
@@ -558,6 +574,15 @@ export class BattlefieldHud {
       .setStyle({ wordWrap: { width: Math.min(520, w - pad * 2) } });
     this.heroLine
       .setPosition(pad, belowRes + idleOffset + (this.narrow ? 44 : 36))
+      .setStyle({ wordWrap: { width: Math.min(560, w - pad * 2) } })
+      .setFontSize(this.narrow ? '11px' : '12px');
+    const coreY =
+      belowRes +
+      idleOffset +
+      (this.narrow ? 44 : 36) +
+      (this.heroLine.visible && this.heroLine.text ? (this.narrow ? 28 : 30) : 0);
+    this.coreLine
+      .setPosition(pad, coreY)
       .setStyle({ wordWrap: { width: Math.min(560, w - pad * 2) } })
       .setFontSize(this.narrow ? '11px' : '12px');
 
@@ -700,6 +725,19 @@ export class BattlefieldHud {
     this.crystalText.setText(`Crystals  ${Math.floor(w.magic_crystals)}`);
     this.status.setText(statusText);
     this.heroLine.setText(heroHudLine(this.world));
+    const coreText = coreHudSummary(this.world);
+    const wasCore = this.coreLine.visible;
+    this.coreLine.setText(coreText).setVisible(!!coreText);
+    if (coreText.includes('Capturing')) {
+      this.coreLine.setColor('#7ec8ff');
+    } else if (coreText.includes('Contested')) {
+      this.coreLine.setColor('#f0c75e');
+    } else if (coreText.includes('Enemy hold')) {
+      this.coreLine.setColor('#e87aa8');
+    } else {
+      this.coreLine.setColor('#c8e4ff');
+    }
+    if (wasCore !== this.coreLine.visible) this.layout();
     const armyN = countVisibleMilitary(this.world);
     this.armyBtn.setText(
       this.narrow
