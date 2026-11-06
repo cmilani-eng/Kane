@@ -1,5 +1,5 @@
 /**
- * In-menu / #/admin Stats panel — localStorage counters, no auth.
+ * In-menu / #/admin Stats panel — counters + match summaries (localStorage).
  */
 import Phaser from 'phaser';
 import {
@@ -7,7 +7,20 @@ import {
   loadLocalStats,
   resetLocalStats,
 } from '../../database/localStats';
+import {
+  formatMatchSummaries,
+  loadMatchSummaries,
+  resetMatchSummaries,
+} from '../../database/matchSummary';
 import { playSfx } from '../audio/sfx';
+
+function adminBodyText(): string {
+  return [
+    formatStatsSummary(loadLocalStats()),
+    '',
+    formatMatchSummaries(loadMatchSummaries(), 6),
+  ].join('\n');
+}
 
 export function showStatsPanel(scene: Phaser.Scene, onClose: () => void): void {
   const { width, height } = scene.scale;
@@ -16,8 +29,8 @@ export function showStatsPanel(scene: Phaser.Scene, onClose: () => void): void {
     .setDepth(300)
     .setInteractive();
 
-  const panelW = Math.min(440, width - 32);
-  const panelH = Math.min(360, height - 48);
+  const panelW = Math.min(460, width - 32);
+  const panelH = Math.min(440, height - 40);
   const panel = scene.add
     .rectangle(width / 2, height / 2, panelW, panelH, 0x152238, 0.98)
     .setStrokeStyle(2, 0xf0c75e, 0.9)
@@ -33,16 +46,22 @@ export function showStatsPanel(scene: Phaser.Scene, onClose: () => void): void {
     .setDepth(302);
 
   const body = scene.add
-    .text(width / 2 - panelW / 2 + 24, height / 2 - panelH / 2 + 56, formatStatsSummary(), {
-      fontFamily: 'ui-monospace, SFMono-Regular, Menlo, monospace',
-      fontSize: '13px',
-      color: '#d7e6f2',
-      lineSpacing: 4,
-    })
+    .text(
+      width / 2 - panelW / 2 + 24,
+      height / 2 - panelH / 2 + 56,
+      adminBodyText(),
+      {
+        fontFamily: 'ui-monospace, SFMono-Regular, Menlo, monospace',
+        fontSize: '12px',
+        color: '#d7e6f2',
+        lineSpacing: 3,
+        wordWrap: { width: panelW - 40 },
+      },
+    )
     .setDepth(302);
 
   const refreshBody = (): void => {
-    body.setText(formatStatsSummary(loadLocalStats()));
+    body.setText(adminBodyText());
   };
 
   const closeBtn = scene.add
@@ -76,6 +95,7 @@ export function showStatsPanel(scene: Phaser.Scene, onClose: () => void): void {
     .on('pointerup', () => {
       playSfx('ui');
       resetLocalStats();
+      resetMatchSummaries();
       refreshBody();
     });
 
