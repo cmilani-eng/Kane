@@ -16,6 +16,7 @@ import {
 import { isFirebaseSdkReady } from '../../firebase/app';
 import { bootstrapCloudAccount } from '../../firebase/cloudProgression';
 import type { KaneAuthUser } from '../../firebase/types';
+import { t } from '../../i18n';
 import { playSfx } from '../audio/sfx';
 
 export type AuthPanelMode = 'login' | 'signup' | 'reset';
@@ -102,6 +103,10 @@ function ensureStyle(): void {
       font-size: 14px; padding: 11px 14px; cursor: pointer;
       border: none; color: #fff8e8; background: #2a3a50;
     }
+    #${ROOT_ID} button.primary,
+    #${ROOT_ID} button.ghost {
+      min-height: 48px; text-align: center; white-space: normal; line-height: 1.25;
+    }
     #${ROOT_ID} button.primary { background: #3a5530; color: #f0c75e; }
     #${ROOT_ID} button.ghost { background: #3a4555; font-size: 13px; }
     #${ROOT_ID} button.linkish {
@@ -180,35 +185,33 @@ export function showAuthPanel(opts: AuthPanelOpts): void {
     setOk(null);
 
     if (mode === 'login') {
-      titleEl.textContent = 'Log in';
-      subEl.textContent = sdk
-        ? 'Email & password · progress saves to your account'
-        : 'Add VITE_FIREBASE_* in .env.local (or use guest play)';
-      quietEl.textContent = 'Skins only · never pay-to-win';
+      titleEl.textContent = t('auth.login');
+      subEl.textContent = sdk ? t('auth.loginSub') : t('auth.loginSubLocal');
+      quietEl.textContent = t('auth.skins');
     } else if (mode === 'signup') {
-      titleEl.textContent = 'Create account';
-      subEl.textContent = 'Keep progress across devices · skins only';
-      quietEl.textContent = '13+ framing · no in-game age gate';
+      titleEl.textContent = t('auth.signup');
+      subEl.textContent = t('auth.signupSub');
+      quietEl.textContent = t('auth.age');
     } else {
-      titleEl.textContent = 'Reset password';
-      subEl.textContent = 'We will email a reset link if the account exists';
+      titleEl.textContent = t('auth.reset');
+      subEl.textContent = t('auth.resetSub');
       quietEl.textContent = '';
     }
 
     fieldsEl.innerHTML = '';
     if (mode === 'signup') {
       fieldsEl.innerHTML += `
-        <label for="kane-auth-name">Display name</label>
-        <input id="kane-auth-name" type="text" maxlength="32" autocomplete="nickname" placeholder="Commander" />
+        <label for="kane-auth-name">${t('auth.displayName')}</label>
+        <input id="kane-auth-name" type="text" maxlength="32" autocomplete="nickname" placeholder="${t('auth.displayPlaceholder')}" />
       `;
     }
     fieldsEl.innerHTML += `
-      <label for="kane-auth-email">Email</label>
+      <label for="kane-auth-email">${t('auth.email')}</label>
       <input id="kane-auth-email" type="email" autocomplete="email" required />
     `;
     if (mode !== 'reset') {
       fieldsEl.innerHTML += `
-        <label for="kane-auth-pass">Password</label>
+        <label for="kane-auth-pass">${t('auth.password')}</label>
         <input id="kane-auth-pass" type="password" autocomplete="${mode === 'signup' ? 'new-password' : 'current-password'}" minlength="6" required />
       `;
     }
@@ -218,7 +221,7 @@ export function showAuthPanel(opts: AuthPanelOpts): void {
     primary.type = 'button';
     primary.className = 'primary';
     primary.textContent =
-      mode === 'login' ? 'Log in' : mode === 'signup' ? 'Create account' : 'Send reset link';
+      mode === 'login' ? t('auth.login') : mode === 'signup' ? t('auth.signup') : t('auth.sendReset');
     primary.disabled = !sdk || busy;
     primary.onclick = () => void submit();
     actionsEl.appendChild(primary);
@@ -228,9 +231,7 @@ export function showAuthPanel(opts: AuthPanelOpts): void {
       guest.type = 'button';
       guest.className = 'ghost';
       guest.disabled = busy;
-      guest.textContent = sdk
-        ? 'Play as guest'
-        : 'Play as guest (local only)';
+      guest.textContent = sdk ? t('auth.guest') : t('auth.guestLocal');
       guest.onclick = () => void continueAsGuest();
       actionsEl.appendChild(guest);
     }
@@ -241,7 +242,7 @@ export function showAuthPanel(opts: AuthPanelOpts): void {
       const toSignup = document.createElement('button');
       toSignup.type = 'button';
       toSignup.className = 'linkish';
-      toSignup.textContent = 'Create account';
+      toSignup.textContent = t('auth.signup');
       toSignup.onclick = () => {
         mode = 'signup';
         render();
@@ -249,7 +250,7 @@ export function showAuthPanel(opts: AuthPanelOpts): void {
       const toReset = document.createElement('button');
       toReset.type = 'button';
       toReset.className = 'linkish';
-      toReset.textContent = 'Forgot password?';
+      toReset.textContent = t('auth.forgot');
       toReset.onclick = () => {
         mode = 'reset';
         render();
@@ -259,7 +260,7 @@ export function showAuthPanel(opts: AuthPanelOpts): void {
       const toLogin = document.createElement('button');
       toLogin.type = 'button';
       toLogin.className = 'linkish';
-      toLogin.textContent = 'Back to log in';
+      toLogin.textContent = t('auth.back');
       toLogin.onclick = () => {
         mode = 'login';
         render();
@@ -271,7 +272,7 @@ export function showAuthPanel(opts: AuthPanelOpts): void {
     const close = document.createElement('button');
     close.type = 'button';
     close.className = 'ghost';
-    close.textContent = 'Cancel';
+    close.textContent = t('auth.cancel');
     close.onclick = () => {
       playSfx('ui');
       destroy();
@@ -280,7 +281,7 @@ export function showAuthPanel(opts: AuthPanelOpts): void {
     actionsEl.appendChild(close);
 
     if (!flags.firebaseAuthUi) {
-      setErr('Auth UI disabled by feature flag.');
+      setErr(t('auth.disabled'));
       primary.disabled = true;
     }
   };
@@ -324,7 +325,7 @@ export function showAuthPanel(opts: AuthPanelOpts): void {
       if (mode === 'reset') {
         await resetPassword(email);
         busy = false;
-        const msg = 'Reset email sent if that address is registered.';
+        const msg = t('auth.resetSent');
         render();
         setOk(msg);
         return;

@@ -14,6 +14,7 @@ import {
   updateProfile,
   type User,
 } from 'firebase/auth';
+import { t, type MessageKey } from '../i18n';
 import { getFirebaseAuth, isFirebaseSdkReady } from './app';
 import type { KaneAuthUser } from './types';
 
@@ -54,37 +55,42 @@ export function isAnonymousGuest(user: KaneAuthUser | null): boolean {
   return !!user && user.isAnonymous && user.provider === 'anonymous';
 }
 
+function authErrorKey(code: string): MessageKey | null {
+  switch (code) {
+    case 'auth/email-already-in-use':
+      return 'auth.errEmailInUse';
+    case 'auth/invalid-email':
+      return 'auth.errInvalidEmail';
+    case 'auth/weak-password':
+      return 'auth.errWeakPassword';
+    case 'auth/user-not-found':
+    case 'auth/wrong-password':
+    case 'auth/invalid-credential':
+      return 'auth.errBadCredential';
+    case 'auth/too-many-requests':
+      return 'auth.errTooMany';
+    case 'auth/network-request-failed':
+      return 'auth.errNetwork';
+    case 'auth/missing-email':
+      return 'auth.errMissingEmail';
+    case 'auth/operation-not-allowed':
+      return 'auth.errNotAllowed';
+    case 'auth/credential-already-in-use':
+      return 'auth.errCredentialInUse';
+    default:
+      return null;
+  }
+}
+
 export function authErrorMessage(err: unknown): string {
   const code =
     err && typeof err === 'object' && 'code' in err
       ? String((err as { code: string }).code)
       : '';
-  switch (code) {
-    case 'auth/email-already-in-use':
-      return 'That email already has an account — try Log in.';
-    case 'auth/invalid-email':
-      return 'Enter a valid email address.';
-    case 'auth/weak-password':
-      return 'Password must be at least 6 characters.';
-    case 'auth/user-not-found':
-    case 'auth/wrong-password':
-    case 'auth/invalid-credential':
-      return 'Email or password is incorrect.';
-    case 'auth/too-many-requests':
-      return 'Too many attempts — wait a moment and try again.';
-    case 'auth/network-request-failed':
-      return 'Network error — check connection or emulator.';
-    case 'auth/missing-email':
-      return 'Enter your email first.';
-    case 'auth/operation-not-allowed':
-      return 'That sign-in method is disabled in Firebase Console.';
-    case 'auth/credential-already-in-use':
-      return 'That email is already linked to another account — try Log in.';
-    default: {
-      if (err instanceof Error && err.message) return err.message;
-      return 'Something went wrong. Try again.';
-    }
-  }
+  const key = authErrorKey(code);
+  if (key) return t(key);
+  if (err instanceof Error && err.message) return err.message;
+  return t('auth.errGeneric');
 }
 
 let cached: KaneAuthUser | null = null;
