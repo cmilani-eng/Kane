@@ -26,6 +26,7 @@ import type {
 } from '../../gameplay/battlefield/battlefieldWorld';
 import { canAfford } from '../../gameplay/battlefield/battlefieldBuildings';
 import { buildingHasCustomRally } from '../../gameplay/battlefield/battlefieldRally';
+import { rallyDistanceTiles } from '../../gameplay/battlefield/rallyDistance';
 
 function matchupLine(id: SpeciesId): string {
   const tip = SPECIES_MATCHUP_TIP[id];
@@ -39,6 +40,12 @@ function matchupLine(id: SpeciesId): string {
 export function armorClassLabel(typeId: UnitTypeId): string {
   const role = unitArmorClass(typeId);
   return t('sel.armorClass', { role: t(`sel.armor.${role}`) });
+}
+
+/** Set-rally / armed button copy with tile distance (panel echo of world flag). */
+export function rallyButtonLabel(armed: boolean, tiles: number): string {
+  const base = armed ? t('sel.rallyArmed') : t('sel.setRally');
+  return `${base} · ${t('hud.rallyDist', { n: tiles })}`;
 }
 
 function sharedArmorClassLabel(
@@ -208,6 +215,8 @@ export type SelectionPanelView =
       hasRally: boolean;
       /** Rally differs from the default march point. */
       hasCustomRally: boolean;
+      /** Tile distance from producer to current rally (panel echo). */
+      rallyDistTiles: number;
     }
   | {
       kind: 'resource';
@@ -500,6 +509,8 @@ export function buildSelectionView(
       hasRally: trains.length > 0,
       hasCustomRally:
         trains.length > 0 && buildingHasCustomRally(b),
+      rallyDistTiles:
+        trains.length > 0 ? rallyDistanceTiles(b) : 0,
     };
   }
 
@@ -910,6 +921,7 @@ function structureSignature(view: SelectionPanelView): string {
     view.hasRally ? 1 : 0,
     view.hasCustomRally ? 1 : 0,
     view.rallyArmed ? 1 : 0,
+    view.rallyDistTiles,
     view.trains
       .map((t) => `${t.typeId}:${t.canPay ? 1 : 0}:${t.affordable ? 1 : 0}`)
       .join(','),
@@ -1471,7 +1483,7 @@ export function renderSelectionPanel(view: SelectionPanelView): boolean {
         if (bits.length === 0) bits.push(`<span>${t('sel.noProductionStat')}</span>`);
         stats.innerHTML = bits.join('');
         const rallyBtn = view.hasRally
-          ? `<button type="button" class="is-rally${view.rallyArmed ? ' is-armed' : ''}" data-act="rally">${view.rallyArmed ? t('sel.rallyArmed') : t('sel.setRally')}</button>`
+          ? `<button type="button" class="is-rally${view.rallyArmed ? ' is-armed' : ''}" data-act="rally">${rallyButtonLabel(view.rallyArmed, view.rallyDistTiles)}</button>`
           : '';
         const clearRallyBtn =
           view.hasRally && view.hasCustomRally
@@ -1522,9 +1534,10 @@ export function renderSelectionPanel(view: SelectionPanelView): boolean {
         ) as HTMLButtonElement | null;
         if (rally) {
           rally.classList.toggle('is-armed', view.rallyArmed);
-          rally.textContent = view.rallyArmed
-            ? t('sel.rallyArmed')
-            : t('sel.setRally');
+          rally.textContent = rallyButtonLabel(
+            view.rallyArmed,
+            view.rallyDistTiles,
+          );
         }
       }
 
