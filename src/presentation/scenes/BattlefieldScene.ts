@@ -165,6 +165,7 @@ import { RtsCamera } from '../camera/rtsCamera';
 import { createSkirmishMap } from '../maps/mapManager';
 import { FogOverlay } from '../ui/fogOverlay';
 import { showKaneEndScreen } from '../ui/endScreen';
+import { resolveMissionObjective } from '../ui/missionObjective';
 import { PauseMenu } from '../ui/pauseMenu';
 import { publishMatchStock, resetMatchStock } from '../ui/matchUiStore';
 import {
@@ -737,6 +738,7 @@ export class BattlefieldScene extends Phaser.Scene {
       mapId: this.world.mapId,
       difficulty: this.world.aiDifficulty,
       speciesId: this.world.speciesId,
+      objectiveId: resolveMissionObjective(this.world.aiDifficulty),
     };
   }
 

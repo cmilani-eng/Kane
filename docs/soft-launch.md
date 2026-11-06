@@ -71,6 +71,7 @@ This doc is the honest gate before any public preview URL.
 | Pause map name | **OK** — pause overlay shows dedicated `Map · {name}` tip plus setup line with clock + supply | `pauseMapTipLine`, `pause.map`, `pause.setup` |
 | Pause species motto | **OK** — pause overlay shows species name · motto tip under the map tip | `pauseSpeciesMottoTipLine`, `pause.speciesMotto` |
 | Pause difficulty tip | **OK** — pause overlay shows dedicated Difficulty · name tip (distinct from setup line) | `pauseDifficultyTipLine`, `pause.difficultyTip` |
+| Pause objective tip | **OK** — pause overlay shows Objective · text from mission state (Keep/CORE or Practice destroy) | `pauseObjectiveTipLine`, `pause.objectiveTip` |
 | Pause elapsed | **OK** — pause shows dedicated Elapsed mm:ss (neutral, not supply-tint) | `pause.elapsed`, `pauseMenu` |
 | Train queue ETA | **OK** — selection train line shows remaining seconds beside % | `trainRemainSec`, `sel.training*` |
 | Train queue total | **OK** — multi-slot queue line appends summed ETA (head remain + waiting full trainSecs) | `trainQueueTotalSec`, `sel.trainingWait` |
