@@ -1,6 +1,7 @@
 /**
  * Cloud progression facade — profile ensure, prefs/cosmetics sync, match write.
- * Only runs for signed-in email accounts. Guest / unsigned stay on localStorage.
+ * Runs for Firebase Auth sessions (email or anonymous). Local-only guests
+ * (no SDK env) stay on localStorage.
  */
 import type { SpeciesId } from '../data/speciesStub';
 import type { AiDifficultyId } from '../gameplay/battlefield/aiDifficulty';

@@ -1,11 +1,13 @@
 /**
  * Email/password auth sheet — DOM overlay (reliable mobile inputs).
- * Modes: login | signup | reset. Guest continue optional for Start Game gate.
+ * Modes: login | signup | reset. Guest continue optional for Start Game gate
+ * (Firebase anonymous when SDK configured; local-only fallback otherwise).
  */
 import { flags } from '../../config/flags';
 import {
   authErrorMessage,
   resetPassword,
+  signInAsGuest,
   signInWithEmail,
   signUpWithEmail,
 } from '../../firebase/auth';
@@ -19,9 +21,10 @@ export type AuthPanelMode = 'login' | 'signup' | 'reset';
 export interface AuthPanelOpts {
   /** Initial mode. */
   mode?: AuthPanelMode;
-  /** Show “Play as guest (local only)” for Start Game gate. */
+  /** Show guest continue for Start Game gate. */
   allowGuest?: boolean;
   onAuthed: (user: KaneAuthUser) => void;
+  /** Local-only guest when Firebase env is missing (or anonymous sign-in fails). */
   onGuest?: () => void;
   onClose: () => void;
 }
@@ -196,16 +199,15 @@ export function showAuthPanel(opts: AuthPanelOpts): void {
     primary.onclick = () => void submit();
     actionsEl.appendChild(primary);
 
-    if (opts.allowGuest && opts.onGuest) {
+    if (opts.allowGuest && (opts.onGuest || sdk)) {
       const guest = document.createElement('button');
       guest.type = 'button';
       guest.className = 'ghost';
-      guest.textContent = 'Play as guest (local only)';
-      guest.onclick = () => {
-        playSfx('ui');
-        destroy();
-        opts.onGuest?.();
-      };
+      guest.disabled = busy;
+      guest.textContent = sdk
+        ? 'Play as guest'
+        : 'Play as guest (local only)';
+      guest.onclick = () => void continueAsGuest();
       actionsEl.appendChild(guest);
     }
 
@@ -256,6 +258,34 @@ export function showAuthPanel(opts: AuthPanelOpts): void {
     if (!flags.firebaseAuthUi) {
       setErr('Auth UI disabled by feature flag.');
       primary.disabled = true;
+    }
+  };
+
+  const continueAsGuest = async (): Promise<void> => {
+    if (busy) return;
+    playSfx('ui');
+    if (!isFirebaseSdkReady()) {
+      destroy();
+      opts.onGuest?.();
+      return;
+    }
+    busy = true;
+    render();
+    try {
+      const user = await signInAsGuest();
+      await bootstrapCloudAccount(user);
+      destroy();
+      opts.onAuthed(user);
+    } catch (err) {
+      console.warn('[KANE] anonymous guest failed; falling back to local', err);
+      busy = false;
+      if (opts.onGuest) {
+        destroy();
+        opts.onGuest();
+        return;
+      }
+      render();
+      setErr(authErrorMessage(err));
     }
   };
 

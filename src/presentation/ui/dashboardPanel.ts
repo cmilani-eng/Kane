@@ -1,6 +1,7 @@
 /**
  * Player Account / Dashboard — profile, real stats (or empty), recent matches, prefs.
  * Never fabricates numbers. Distinct from admin Stats (#/admin).
+ * Works for email and Firebase anonymous guests (empty zeros until they play).
  */
 import Phaser from 'phaser';
 import { SPECIES, type SpeciesId } from '../../data/speciesStub';
@@ -8,10 +9,12 @@ import { loadMatchPrefs } from '../../database/matchPrefs';
 import { loadCosmeticsLoadout } from '../../database/cosmeticsLoadout';
 import {
   getCurrentAuthUser,
+  isAnonymousGuest,
   isCloudAccount,
   signOutAccount,
   subscribeAuth,
 } from '../../firebase/auth';
+import { bootstrapCloudAccount } from '../../firebase/cloudProgression';
 import { listRecentMatches } from '../../firebase/firestore/matches';
 import { getStatsOverview } from '../../firebase/firestore/stats';
 import { getUserProfile } from '../../firebase/firestore/users';
@@ -128,8 +131,41 @@ export function showDashboardPanel(
     });
   nodes.push(closeBtn);
 
+  const guest = isAnonymousGuest(user);
+  const bottomY = height / 2 + panelH / 2 - 36;
+
+  if (guest) {
+    const createBtn = scene.add
+      .text(width / 2 - 110, bottomY, 'Create account', {
+        fontFamily: 'system-ui, sans-serif',
+        fontSize: '13px',
+        color: '#f0c75e',
+        backgroundColor: '#3a5530',
+        padding: { x: 12, y: 8 },
+      })
+      .setOrigin(0.5)
+      .setDepth(303)
+      .setInteractive({ useHandCursor: true })
+      .on('pointerup', () => {
+        playSfx('ui');
+        destroy();
+        showAuthPanel({
+          mode: 'signup',
+          onAuthed: (u) => {
+            void bootstrapCloudAccount(u).finally(() => {
+              showDashboardPanel(scene, onClose);
+            });
+          },
+          onClose: () => {
+            showDashboardPanel(scene, onClose);
+          },
+        });
+      });
+    nodes.push(createBtn);
+  }
+
   const logoutBtn = scene.add
-    .text(width / 2 - 100, height / 2 + panelH / 2 - 36, 'Log out', {
+    .text(guest ? width / 2 + 20 : width / 2 - 100, bottomY, 'Log out', {
       fontFamily: 'system-ui, sans-serif',
       fontSize: '13px',
       color: '#fff8e8',
@@ -149,7 +185,7 @@ export function showDashboardPanel(
   nodes.push(logoutBtn);
 
   const refreshBtn = scene.add
-    .text(width / 2 + 100, height / 2 + panelH / 2 - 36, 'Refresh', {
+    .text(guest ? width / 2 + 130 : width / 2 + 100, bottomY, 'Refresh', {
       fontFamily: 'system-ui, sans-serif',
       fontSize: '13px',
       color: '#fff8e8',
@@ -185,9 +221,12 @@ export function showDashboardPanel(
         overview.gamesStarted === 0 && overview.wins === 0 && overview.losses === 0
           ? '\n(No cloud matches yet — play a skirmish while signed in.)'
           : '';
+      const accountKind = u.isAnonymous
+        ? 'Guest (anonymous) — Create account to keep progress if you clear data'
+        : `Email: ${u.email ?? '—'}`;
       const lines = [
         `Commander: ${profile?.displayName ?? u.displayName}`,
-        `Email: ${u.email ?? '—'}`,
+        accountKind,
         '',
         `Prefs: ${SPECIES[prefs.species].name} · ${AI_DIFFICULTIES[prefs.difficulty].label}`,
         `Skins: B ${cos.brutes.replace(/^skin_/, '')} · N ${cos.nobles.replace(/^skin_/, '')} · W ${cos.weirdos.replace(/^skin_/, '')}`,
@@ -202,10 +241,12 @@ export function showDashboardPanel(
       body.setText(
         [
           `Commander: ${u.displayName}`,
-          `Email: ${u.email ?? '—'}`,
+          u.isAnonymous
+            ? 'Guest (anonymous)'
+            : `Email: ${u.email ?? '—'}`,
           '',
           'Could not load cloud stats (rules not deployed, offline, or config missing).',
-          'Guest/local play still works. Empty states — no fabricated numbers.',
+          'Local play still works. Empty states — no fabricated numbers.',
           '',
           formatOverview(emptyStatsOverview()),
           '',
