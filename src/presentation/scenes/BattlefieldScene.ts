@@ -114,6 +114,12 @@ import {
   drawUnitSilhouette,
   resolveUnitAnimPhase,
 } from '../units/unitSilhouette';
+import {
+  inView,
+  MOBILE_PERF,
+  viewBoundsFromCamera,
+  type ViewBounds,
+} from '../perf/mobileBudget';
 
 type PointerMode = 'none' | 'select' | 'box' | 'pan' | 'place' | 'attackMove';
 
@@ -145,6 +151,8 @@ export class BattlefieldScene extends Phaser.Scene {
   private ai!: AiState;
   private matchResult: MatchResult = 'ongoing';
   private animTimeMs = 0;
+  private fogAccMs = 999;
+  private viewCull: ViewBounds | null = null;
 
   constructor() {
     super('Battlefield');
@@ -511,7 +519,11 @@ export class BattlefieldScene extends Phaser.Scene {
       tickRage(this.world, delta);
       tickHeroes(this.world, delta);
       tickBattlefieldAi(this.world, this.ai, delta);
-      tickFog(this.world, this.world.fog);
+      this.fogAccMs += delta;
+      if (this.fogAccMs >= MOBILE_PERF.fogMs) {
+        this.fogAccMs = 0;
+        tickFog(this.world, this.world.fog);
+      }
       tickCoreFragments(this.world, delta);
       tickBattlefieldCombat(this.world, delta);
       // Attack flash just set (~120) — one SFX per frame max.
@@ -531,11 +543,18 @@ export class BattlefieldScene extends Phaser.Scene {
     ) {
       this.selectedBuilding = null;
     }
+    const cam = this.cameras.main;
+    this.viewCull = viewBoundsFromCamera(
+      cam.scrollX,
+      cam.scrollY,
+      cam.width / cam.zoom,
+      cam.height / cam.zoom,
+    );
     this.drawWorld();
-    this.fogOverlay.refresh(this.world.fog);
+    this.fogOverlay.refresh(this.world.fog, cam);
     this.refreshHud();
     this.coach.refresh();
-    this.minimap.refresh();
+    this.minimap.refresh(delta);
   }
 
   private showEndScreen(result: MatchResult): void {
@@ -647,8 +666,10 @@ export class BattlefieldScene extends Phaser.Scene {
   private drawWorld(): void {
     const g = this.unitGfx;
     g.clear();
+    const view = this.viewCull;
 
     for (const v of this.world.vfx) {
+      if (view && !inView(view, v.x, v.y)) continue;
       const a = Math.max(0.15, v.lifeMs / v.maxLifeMs);
       g.lineStyle(3, v.color, a);
       g.strokeCircle(v.x, v.y, v.radius * (1.15 - a * 0.3));
@@ -656,13 +677,14 @@ export class BattlefieldScene extends Phaser.Scene {
       g.fillCircle(v.x, v.y, v.radius * (1.05 - a * 0.2));
     }
 
-    drawCoreFragments(g, this.world, this.animTimeMs);
-    drawCombatFxList(g, this.world.combatFx);
+    drawCoreFragments(g, this.world, this.animTimeMs, view);
+    drawCombatFxList(g, this.world.combatFx, view);
     drawFormationVisuals(g, this.world, this.animTimeMs);
     drawMutationVisuals(g, this.world, this.animTimeMs);
     drawRageVisuals(g, this.world, this.animTimeMs);
 
     for (const b of this.world.buildings) {
+      if (view && !inView(view, b.x, b.y)) continue;
       if (b.team === 'enemy' && !enemyRevealed(this.world.fog, b.x, b.y)) {
         continue;
       }
@@ -703,6 +725,7 @@ export class BattlefieldScene extends Phaser.Scene {
     }
 
     for (const s of this.world.stockpiles) {
+      if (view && !inView(view, s.x, s.y)) continue;
       if (s.team === 'enemy' && !enemyRevealed(this.world.fog, s.x, s.y)) {
         continue;
       }
@@ -712,6 +735,7 @@ export class BattlefieldScene extends Phaser.Scene {
 
     for (const n of this.world.nodes) {
       if (n.remaining <= 0) continue;
+      if (view && !inView(view, n.x, n.y)) continue;
       if (!isExplored(this.world.fog, n.x, n.y)) continue;
       const def = RESOURCES[n.resourceId];
       const pct = n.remaining / n.maxAmount;
@@ -748,6 +772,7 @@ export class BattlefieldScene extends Phaser.Scene {
     }
 
     for (const u of this.world.units) {
+      if (view && !inView(view, u.x, u.y)) continue;
       if (u.team === 'enemy' && !enemyRevealed(this.world.fog, u.x, u.y)) {
         continue;
       }

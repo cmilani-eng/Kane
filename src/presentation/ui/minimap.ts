@@ -11,6 +11,7 @@ import {
 import type { BattlefieldWorld } from '../../gameplay/battlefield/battlefieldWorld';
 import type { RtsCamera } from '../camera/rtsCamera';
 import { playSfx } from '../audio/sfx';
+import { MOBILE_PERF } from '../perf/mobileBudget';
 
 export class Minimap {
   private readonly scene: Phaser.Scene;
@@ -98,7 +99,17 @@ export class Minimap {
     this.cameraCtl.centerOn(wx, wy);
   }
 
-  refresh(): void {
+  private refreshAcc = 999;
+
+  /** Throttled redraw — call every frame; paints on cadence. */
+  refresh(dtMs = 16): void {
+    this.refreshAcc += dtMs;
+    if (this.refreshAcc < MOBILE_PERF.minimapMs) return;
+    this.refreshAcc = 0;
+    this.redraw();
+  }
+
+  private redraw(): void {
     const g = this.gfx;
     g.clear();
 
