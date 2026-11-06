@@ -15,6 +15,7 @@ import {
 import { RESOURCES } from '../../data/resources';
 import { SPECIES_MATCHUP_TIP, type SpeciesId } from '../../data/speciesStub';
 import { getLocale, speciesCopy, speciesName, t } from '../../i18n';
+import { unitArmorClass } from '../../data/unitArmorClass';
 import { getUnitType, type UnitTypeId } from '../../data/units';
 import type {
   BattlefieldBuilding,
@@ -31,6 +32,23 @@ function matchupLine(id: SpeciesId): string {
     strong: speciesName(tip.strongVs),
     weak: speciesName(tip.weakVs),
   });
+}
+
+/** Localized armor / role class for a unit type (HUD label only). */
+export function armorClassLabel(typeId: UnitTypeId): string {
+  const role = unitArmorClass(typeId);
+  return t('sel.armorClass', { role: t(`sel.armor.${role}`) });
+}
+
+function sharedArmorClassLabel(
+  units: BattlefieldUnit[],
+): string | null {
+  if (units.length === 0) return null;
+  const first = unitArmorClass(units[0]!.typeId);
+  for (let i = 1; i < units.length; i++) {
+    if (unitArmorClass(units[i]!.typeId) !== first) return null;
+  }
+  return armorClassLabel(units[0]!.typeId);
 }
 import {
   GATHER,
@@ -129,6 +147,8 @@ export type SelectionPanelView =
       maxHp: number;
       dmg: number | null;
       range: number | null;
+      /** GDD role / armor class label when selection shares one class. */
+      armorClass: string | null;
       tags: string[];
       attackMoveArmed: boolean;
       /** Present when a single player hero is selected. */
@@ -521,6 +541,7 @@ export function buildSelectionView(
       maxHp: u.maxHp,
       dmg: u.dmg,
       range: u.range,
+      armorClass: armorClassLabel(u.typeId),
       tags,
       attackMoveArmed,
       abilities: heroAbilityViews(world, u),
@@ -574,6 +595,7 @@ export function buildSelectionView(
     maxHp,
     dmg,
     range,
+    armorClass: sharedArmorClassLabel(alive),
     tags,
     attackMoveArmed,
     abilities: null,
@@ -827,6 +849,7 @@ function structureSignature(view: SelectionPanelView): string {
       view.title,
       view.dmg ?? '-',
       view.range ?? '-',
+      view.armorClass ?? '',
       view.tags.join(','),
       view.attackMoveArmed ? 1 : 0,
       abs,
@@ -1284,7 +1307,10 @@ export function renderSelectionPanel(view: SelectionPanelView): boolean {
         const bits: string[] = [];
         if (view.dmg != null) bits.push(`<span>${t('sel.atk')} ${view.dmg}</span>`);
         if (view.range != null) bits.push(`<span>${t('sel.rng')} ${view.range}</span>`);
-        for (const t of view.tags) bits.push(`<span>${escapeHtml(t)}</span>`);
+        if (view.armorClass) {
+          bits.push(`<span>${escapeHtml(view.armorClass)}</span>`);
+        }
+        for (const tag of view.tags) bits.push(`<span>${escapeHtml(tag)}</span>`);
         stats.innerHTML = bits.join('');
         const abilityHtml = view.abilities
           ? view.abilities.map(abilityButtonHtml).join('')
