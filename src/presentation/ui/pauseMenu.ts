@@ -6,8 +6,9 @@
 import Phaser from 'phaser';
 import { BRAND } from '../../config/brand';
 import { isReduceMotion, setReduceMotion } from '../../database/motionPrefs';
-import { mapCopy, subscribeLocale, t } from '../../i18n';
+import { difficultyCopy, mapCopy, subscribeLocale, t } from '../../i18n';
 import type { SkirmishMapId } from '../../data/skirmishMaps';
+import type { AiDifficultyId } from '../../gameplay/battlefield/aiDifficulty';
 import { isSfxMuted, playSfx, setSfxMuted } from '../audio/sfx';
 import { formatMatchClock } from './battlefieldHud';
 import { addLocalePicker } from './localePicker';
@@ -22,6 +23,7 @@ export interface PauseMenuSnapshot {
   supplyCurrent: number;
   supplyCap: number;
   mapId: SkirmishMapId;
+  difficulty: AiDifficultyId;
 }
 
 export interface PauseMenuOpts {
@@ -50,6 +52,7 @@ export class PauseMenu {
     supplyCurrent: 0,
     supplyCap: 36,
     mapId: 'crossing',
+    difficulty: 'normal',
   };
 
   constructor(opts: PauseMenuOpts) {
@@ -145,7 +148,10 @@ export class PauseMenu {
       .setDepth(222);
 
     const clock = formatMatchClock(this.snapshot.elapsedMs);
-    const mapLine = t('pause.map', { name: mapCopy(this.snapshot.mapId).label });
+    const setupLine = t('pause.setup', {
+      map: mapCopy(this.snapshot.mapId).label,
+      difficulty: difficultyCopy(this.snapshot.difficulty).label,
+    });
     const supply = t('pause.supply', {
       current: this.snapshot.supplyCurrent,
       cap: this.snapshot.supplyCap,
@@ -158,7 +164,7 @@ export class PauseMenu {
       .text(
         cx,
         short ? top + 74 : cy - panelH * 0.27,
-        `${t('pause.match', { clock })}\n${mapLine}\n${supply}`,
+        `${t('pause.match', { clock })}\n${setupLine}\n${supply}`,
         {
           fontFamily: 'system-ui, sans-serif',
           fontSize: '14px',
@@ -172,7 +178,7 @@ export class PauseMenu {
       .setDepth(222);
     this.root.push(title, brand, snap);
 
-    // Short layout: clock + map + supply need a little more room before Resume.
+    // Short layout: clock + setup + supply need a little more room before Resume.
     const btnY0 = short ? top + 136 : cy - panelH * 0.12;
     const gap = short ? 36 : Math.min(44, panelH * 0.11);
     this.root.push(

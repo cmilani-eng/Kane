@@ -14,4 +14,13 @@ describe('pause map line', () => {
       'Mapa  ·  Cresta',
     );
   });
+
+  it('pairs map + difficulty on the pause setup line', () => {
+    expect(
+      translate('en-GB', 'pause.setup', { map: 'Gap', difficulty: 'Hard' }),
+    ).toBe('Gap  ·  Hard');
+    expect(
+      translate('pt-BR', 'pause.setup', { map: 'Brecha', difficulty: 'Difícil' }),
+    ).toBe('Brecha  ·  Difícil');
+  });
 });
