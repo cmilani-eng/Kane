@@ -9,7 +9,7 @@ Soft-launch posture: **manifest + icons only**. No offline service worker yet.
 | Web app manifest | `public/manifest.webmanifest` |
 | PNG icons (192 / 512 / apple-touch) | `public/icons/` |
 | SVG mark | `public/icons/icon.svg` |
-| HTML link tags | `index.html` |
+| HTML link tags | `games/kane/index.html` |
 
 Vite copies `public/` to `dist/` as-is. `base: './'` keeps relative icon URLs working on Hosting preview channels.
 

@@ -58,6 +58,21 @@ describe('catalogs', () => {
     expect(translate('es', 'end.victory')).toBe('VICTORIA');
   });
 
+  it('formats the selected map tip from label + blurb', () => {
+    expect(
+      translate('en-GB', 'menu.mapTip', {
+        label: 'Ridge',
+        blurb: 'Diagonal bases · shifted belt',
+      }),
+    ).toBe('Ridge · Diagonal bases · shifted belt');
+    expect(
+      translate('pt-BR', 'menu.mapTip', {
+        label: 'Cume',
+        blurb: 'Bases em diagonal · faixa deslocada',
+      }),
+    ).toBe('Cume · Bases em diagonal · faixa deslocada');
+  });
+
   it('translates the lobby, stats, and CORE hold banner', () => {
     expect(translate('en-GB', 'lobby.title')).toBe('Friend lobby');
     expect(translate('en-GB', 'core.victoryHold', { owned: 2, needed: 3 })).toBe(

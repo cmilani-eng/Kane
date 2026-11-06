@@ -27,7 +27,7 @@ npm install
 npm run dev
 ```
 
-Open `http://localhost:5173` (LAN URL for phones). No Firebase login needed. Do **not** require Hosting to playtest.
+Open `http://localhost:5173/kane/` (LAN URL for phones). No Firebase login needed. Do **not** require Hosting to playtest.
 
 Local static check of the production bundle (still not Firebase):
 

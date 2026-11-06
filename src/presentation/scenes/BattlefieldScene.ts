@@ -719,6 +719,7 @@ export class BattlefieldScene extends Phaser.Scene {
       elapsedMs: this.matchElapsedMs,
       supplyCurrent: livingByTeam(this.world, 'player'),
       supplyCap: flags.unitCap,
+      mapId: this.world.mapId,
     };
   }
 
