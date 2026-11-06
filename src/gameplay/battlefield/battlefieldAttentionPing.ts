@@ -49,3 +49,13 @@ export function spawnAttentionPing(
 
 export const ATTENTION_PING_LIFE_MS = LIFE_MS;
 export const ATTENTION_PING_MAX = MAX_PINGS;
+
+/**
+ * Lifetime opacity factor: 1 at spawn → 0 at expiry.
+ * Squared ease so the final third reads as a clear fade (no hard cut).
+ */
+export function attentionPingFade(lifeMs: number, maxLifeMs: number): number {
+  if (maxLifeMs <= 0 || lifeMs <= 0) return 0;
+  const t = Math.min(1, lifeMs / maxLifeMs);
+  return t * t;
+}
