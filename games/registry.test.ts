@@ -70,6 +70,12 @@ describe('games registry', () => {
     expect(entry).toContain("import '../../src/main.ts'");
   });
 
+  it('loads Blob Evolution from an entry inside the Vite root', () => {
+    const page = readFileSync(resolve(gamesDir, 'blob-evolution/index.html'), 'utf8');
+    expect(page).toContain('src="./main.js"');
+    expect(GAMES.find((game) => game.id === 'blob-evolution')?.build).toBe('vite');
+  });
+
   it('forwards old Kane hashes from the picker', () => {
     const hub = readFileSync(resolve(gamesDir, 'index.html'), 'utf8');
     expect(hub).toContain("location.replace('./kane/' + location.search + location.hash)");
