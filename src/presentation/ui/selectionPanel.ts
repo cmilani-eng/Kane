@@ -172,6 +172,8 @@ export type SelectionPanelView =
       places: SelectionPlaceOption[];
       queue: UnitTypeId[];
       progressPct: number;
+      /** Whole seconds left on the head train slot (ceil). */
+      remainSec: number;
       headName: string | null;
       rallyArmed: boolean;
       hasRally: boolean;
@@ -431,6 +433,10 @@ export function buildSelectionView(
       head && head.trainMs > 0
         ? Math.min(1, Math.max(0, b.trainProgressMs / head.trainMs))
         : 0;
+    const remainSec =
+      head && head.trainMs > 0
+        ? trainRemainSec(head.trainMs, b.trainProgressMs)
+        : 0;
     const buildPct = ready
       ? 1
       : Math.min(1, Math.max(0, b.buildProgress));
@@ -451,6 +457,7 @@ export function buildSelectionView(
       places,
       queue: [...b.trainQueue],
       progressPct,
+      remainSec,
       headName: head?.name ?? null,
       rallyArmed,
       hasRally: trains.length > 0,
@@ -1102,6 +1109,15 @@ function applyTrainAffordability(
   }
 }
 
+/** Whole seconds left on the active train slot (ceil, never negative). */
+export function trainRemainSec(
+  trainMs: number,
+  trainProgressMs: number,
+): number {
+  if (trainMs <= 0) return 0;
+  return Math.max(0, Math.ceil((trainMs - trainProgressMs) / 1000));
+}
+
 function queueLabelText(
   view: Extract<SelectionPanelView, { kind: 'building' }>,
 ): string {
@@ -1117,16 +1133,18 @@ function queueLabelText(
   const pct = Math.floor(view.progressPct * 100);
   const waiting = view.queue.length - 1;
   const hint = t('sel.cancelHint');
+  const sec = view.remainSec;
   if (view.headName && waiting > 0) {
     return t('sel.trainingWait', {
       name: view.headName,
       pct,
+      sec,
       waiting,
       hint,
     });
   }
   if (view.headName) {
-    return t('sel.training', { name: view.headName, pct, hint });
+    return t('sel.training', { name: view.headName, pct, sec, hint });
   }
   return t('sel.queue', { n: view.queue.length, hint });
 }
