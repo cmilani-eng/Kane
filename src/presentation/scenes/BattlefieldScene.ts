@@ -721,6 +721,7 @@ export class BattlefieldScene extends Phaser.Scene {
       supplyCap: flags.unitCap,
       mapId: this.world.mapId,
       difficulty: this.world.aiDifficulty,
+      speciesId: this.world.speciesId,
     };
   }
 
