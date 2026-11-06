@@ -175,6 +175,7 @@ import { drawControlGroupFxList } from '../fx/controlGroupFeedback';
 import { drawStopFxList } from '../fx/stopCommandFeedback';
 import { drawWaypointMarkers } from '../fx/waypointMarkersDraw';
 import { drawBuildingRallyMarkers } from '../fx/rallyMarkerDraw';
+import { drawGatherTargetHighlights } from '../fx/gatherTargetHighlight';
 import { drawScoutPulseList } from '../fx/scoutPulseDraw';
 import {
   buildingCanRally,
@@ -1371,6 +1372,8 @@ export class BattlefieldScene extends Phaser.Scene {
         }
       }
     }
+
+    drawGatherTargetHighlights(g, this.world, this.animTimeMs, view);
   }
 
 }
