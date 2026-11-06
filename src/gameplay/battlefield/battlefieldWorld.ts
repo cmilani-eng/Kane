@@ -19,7 +19,7 @@ import {
 } from './aiDifficulty';
 import { seedCoreFragments } from './battlefieldCoreFragments';
 import { createDefaultNodes } from './battlefieldEconomy';
-import { createFogState } from './battlefieldFog';
+import { createFogState, isVisible } from './battlefieldFog';
 import { setUnitPath } from './battlefieldPathfinding';
 import { mutationSpeedMult } from './battlefieldMutations';
 import { rageSpeedMult } from './battlefieldRage';
@@ -448,16 +448,7 @@ export function selectAt(
   y: number,
   additive = false,
 ): boolean {
-  let best: BattlefieldUnit | null = null;
-  let bestD = Infinity;
-  for (const u of world.units) {
-    if (u.team !== 'player') continue;
-    const d = dist(u.x, u.y, x, y);
-    if (d <= u.radius + 12 && d < bestD) {
-      best = u;
-      bestD = d;
-    }
-  }
+  const best = findPlayerUnitAt(world, x, y);
   if (!additive) clearSelection(world);
   if (best) {
     if (additive) best.selected = !best.selected;
@@ -465,6 +456,44 @@ export function selectAt(
     return true;
   }
   return false;
+}
+
+/** Nearest player unit under a world point (for click / double-tap). */
+export function findPlayerUnitAt(
+  world: BattlefieldWorld,
+  x: number,
+  y: number,
+): BattlefieldUnit | null {
+  let best: BattlefieldUnit | null = null;
+  let bestD = Infinity;
+  for (const u of world.units) {
+    if (u.team !== 'player' || u.hp <= 0) continue;
+    const d = dist(u.x, u.y, x, y);
+    if (d <= u.radius + 12 && d < bestD) {
+      best = u;
+      bestD = d;
+    }
+  }
+  return best;
+}
+
+/**
+ * Double-click / double-tap — select every fog-visible player unit of `typeId`.
+ */
+export function selectAllVisibleSameType(
+  world: BattlefieldWorld,
+  typeId: UnitTypeId,
+): number {
+  clearSelection(world);
+  let n = 0;
+  for (const u of world.units) {
+    if (u.team !== 'player' || u.hp <= 0) continue;
+    if (u.typeId !== typeId) continue;
+    if (!isVisible(world.fog, u.x, u.y)) continue;
+    u.selected = true;
+    n++;
+  }
+  return n;
 }
 
 export function selectInRect(
