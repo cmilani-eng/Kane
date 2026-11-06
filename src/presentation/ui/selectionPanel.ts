@@ -178,6 +178,8 @@ export type SelectionPanelView =
       ready: boolean;
       /** 0–1 construction progress while incomplete. */
       buildPct: number;
+      /** Whole seconds left on construction (ceil); 0 when ready. */
+      buildRemainSec: number;
       trains: {
         typeId: UnitTypeId;
         name: string;
@@ -460,6 +462,9 @@ export function buildSelectionView(
     const buildPct = ready
       ? 1
       : Math.min(1, Math.max(0, b.buildProgress));
+    const buildRemain = ready
+      ? 0
+      : buildRemainSec(b.buildMs, b.buildProgress);
     const flavorBase = `${species.name} · ${species.mechanic} · ${matchupLine(bdef.speciesId)}`;
     return {
       kind: 'building',
@@ -468,11 +473,13 @@ export function buildSelectionView(
         ? flavorBase
         : `${flavorBase} · ${t('sel.buildingPct', {
             pct: Math.floor(buildPct * 100),
+            sec: buildRemain,
           })}`,
       hp: b.hp,
       maxHp: b.maxHp,
       ready,
       buildPct,
+      buildRemainSec: buildRemain,
       trains,
       places,
       queue: [...b.trainQueue],
@@ -1141,11 +1148,24 @@ export function trainRemainSec(
   return Math.max(0, Math.ceil((trainMs - trainProgressMs) / 1000));
 }
 
+/** Whole seconds left on construction from buildMs × remaining progress. */
+export function buildRemainSec(
+  buildMs: number,
+  buildProgress: number,
+): number {
+  if (buildMs <= 0) return 0;
+  const p = Math.min(1, Math.max(0, buildProgress));
+  return Math.max(0, Math.ceil((buildMs * (1 - p)) / 1000));
+}
+
 function queueLabelText(
   view: Extract<SelectionPanelView, { kind: 'building' }>,
 ): string {
   if (!view.ready) {
-    return t('sel.buildingPct', { pct: Math.floor(view.buildPct * 100) });
+    return t('sel.buildingPct', {
+      pct: Math.floor(view.buildPct * 100),
+      sec: view.buildRemainSec,
+    });
   }
   if (view.queue.length === 0) {
     if (view.trains.length) {
@@ -1461,6 +1481,7 @@ export function renderSelectionPanel(view: SelectionPanelView): boolean {
             max: Math.ceil(view.maxHp),
           })}</span><span>${t('sel.buildingPct', {
             pct: Math.floor(view.buildPct * 100),
+            sec: view.buildRemainSec,
           })}</span>`;
         } else {
           const spans = stats.querySelectorAll('span');
@@ -1473,6 +1494,7 @@ export function renderSelectionPanel(view: SelectionPanelView): boolean {
           if (spans[1]) {
             spans[1].textContent = t('sel.buildingPct', {
               pct: Math.floor(view.buildPct * 100),
+              sec: view.buildRemainSec,
             });
           }
         }
