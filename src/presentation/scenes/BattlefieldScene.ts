@@ -163,6 +163,11 @@ import {
   type ControlsHelpHandle,
 } from '../ui/controlsHelpPanel';
 import { drawBuildingSilhouette } from '../buildings/buildingSilhouette';
+import {
+  enemyBuildingGhostAlpha,
+  noteEnemyBuildingVisible,
+  pruneBuildingGhosts,
+} from '../fx/buildingLastSeenGhost';
 import { drawPlacementGhost } from '../buildings/placementGhost';
 import { drawProductionQueueFeedback } from '../buildings/productionQueueFeedback';
 import { drawResourceNodeSilhouette } from '../resources/resourceNodeSilhouette';
@@ -264,6 +269,8 @@ export class BattlefieldScene extends Phaser.Scene {
   /** Active match time only — does not advance while paused. */
   private matchElapsedMs = 0;
   private animTimeMs = 0;
+  /** Enemy building id → last animTimeMs while revealed (leave-vision ghost). */
+  private enemyBuildingLastSeen = new Map<number, number>();
   private fogAccMs = 999;
   private viewCull: ViewBounds | null = null;
   /** Equipped cosmetics accent for the player species (visual only). */
@@ -1445,10 +1452,39 @@ export class BattlefieldScene extends Phaser.Scene {
     drawMutationVisuals(g, this.world, this.animTimeMs);
     drawRageVisuals(g, this.world, this.animTimeMs);
 
+    const livingBuildingIds = new Set<number>();
     for (const b of this.world.buildings) {
+      livingBuildingIds.add(b.id);
       if (view && !inView(view, b.x, b.y)) continue;
-      if (b.team === 'enemy' && !enemyRevealed(this.world.fog, b.x, b.y)) {
-        continue;
+      if (b.team === 'enemy') {
+        const revealed = enemyRevealed(this.world.fog, b.x, b.y);
+        if (revealed) {
+          noteEnemyBuildingVisible(
+            this.enemyBuildingLastSeen,
+            b.id,
+            this.animTimeMs,
+          );
+        } else {
+          const ghostA = enemyBuildingGhostAlpha(
+            this.enemyBuildingLastSeen,
+            b.id,
+            this.animTimeMs,
+          );
+          if (ghostA <= 0.02) continue;
+          // Leave-vision ghost — silhouette only, no HP/queue chrome.
+          drawBuildingSilhouette(g, {
+            x: b.x,
+            y: b.y,
+            radius: b.radius,
+            color: b.color,
+            accent: b.accent,
+            typeId: b.typeId,
+            alpha: ghostA,
+            selected: false,
+            timeMs: this.animTimeMs,
+          });
+          continue;
+        }
       }
       const alpha = b.complete ? 1 : 0.45 + 0.4 * b.buildProgress;
       drawBuildingSilhouette(g, {
@@ -1477,6 +1513,7 @@ export class BattlefieldScene extends Phaser.Scene {
       g.fillStyle(0x5dce6a, 1);
       g.fillRect(b.x - b.radius, b.y - b.radius - 10, barW * pct, 4);
     }
+    pruneBuildingGhosts(this.enemyBuildingLastSeen, livingBuildingIds);
 
     for (const s of this.world.stockpiles) {
       if (view && !inView(view, s.x, s.y)) continue;
