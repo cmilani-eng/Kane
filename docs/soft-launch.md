@@ -49,7 +49,7 @@ This doc is the honest gate before any public preview URL.
 | Easy AI cushion | **OK** — Easy gives player start gold/crystal cushion + slower AI eco; menu shows a short tip only while Easy is selected | `aiDifficulty`, `MenuScene`, `createBattlefieldWorld` |
 | Hard lean tip | **OK** — Hard shows a quiet leaner-start tip (same pattern as Easy); Normal stays tip-free; short/landscape menu shows the tip too | `MenuScene`, `menu.hardTip` |
 | In-match tips | **OK** — coach copy covers Pause/Esc, Home, Army, Idle chip, Rematch | `battlefieldTutorial`, `tutorialCoach` |
-| Friend lobby UI | **OK** — Create / Join / Leave local stub; quiet “no live sync” note | `lobbyPanel`, `lobbyStub` |
+| Friend lobby UI | **OK** — Create / Join / Leave local stub; quiet “no live sync” note; selected map flavor tip (menu parity) | `lobbyPanel`, `lobbyMapTipLine`, `lobbyStub` |
 
 ## Remaining gaps (honest)
 
