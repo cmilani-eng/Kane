@@ -140,8 +140,14 @@ export class Minimap {
       if (!isExplored(fog, n.x, n.y)) continue;
       const x = this.mapX + n.x * sx;
       const y = this.mapY + n.y * sy;
-      g.fillStyle(n.resourceId === 'magic_crystals' ? 0x7ec8ff : 0xf0c75e, 0.85);
-      g.fillCircle(x, y, 2);
+      if (n.resourceId === 'magic_crystals') {
+        g.fillStyle(0x7ec8ff, 0.95);
+        g.fillTriangle(x, y - 3.2, x + 2.4, y + 2.2, x - 2.4, y + 2.2);
+      } else {
+        g.fillStyle(0xf0c75e, 0.95);
+        g.fillCircle(x - 1.2, y + 0.4, 1.8);
+        g.fillCircle(x + 1.4, y, 1.5);
+      }
     }
 
     // CORE fragments

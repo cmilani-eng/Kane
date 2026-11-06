@@ -210,24 +210,37 @@ export function generatePropTextures(scene: Phaser.Scene): void {
   barracks('barracks-player', 0x3d7ea6, 0xf0c75e);
   barracks('barracks-enemy', 0x6b4a8a, 0xc4a0e0);
 
-  // Resource nodes
+  // Resource nodes — gold mound vs crystal shards (match in-world silhouettes)
   g.clear();
-  g.fillStyle(0x000000, 0.25);
-  g.fillEllipse(24, 36, 28, 10);
+  g.fillStyle(0x000000, 0.28);
+  g.fillEllipse(24, 40, 30, 10);
+  g.fillStyle(0xd4782e, 0.35);
+  g.fillEllipse(24, 30, 26, 14);
+  g.fillStyle(0xb8862e, 1);
+  g.fillCircle(14, 30, 9);
+  g.fillCircle(34, 31, 8);
   g.fillStyle(0xf0c75e, 1);
-  g.fillCircle(20, 22, 12);
-  g.fillCircle(30, 24, 10);
+  g.fillCircle(18, 22, 10);
+  g.fillCircle(30, 24, 9);
   g.fillStyle(0xffe6a0, 1);
-  g.fillCircle(24, 18, 6);
+  g.fillCircle(23, 14, 7);
+  g.fillStyle(0xffffff, 0.85);
+  g.fillCircle(20, 11, 2);
   g.generateTexture('node-gold', 48, 48);
 
   g.clear();
-  g.fillStyle(0x000000, 0.25);
-  g.fillEllipse(24, 38, 26, 10);
+  g.fillStyle(0x000000, 0.28);
+  g.fillEllipse(24, 42, 26, 9);
+  g.fillStyle(0x4a9ad4, 1);
+  g.fillTriangle(8, 38, 18, 10, 22, 36);
+  g.fillStyle(0x6ab8e8, 1);
+  g.fillTriangle(40, 36, 30, 12, 22, 34);
   g.fillStyle(0x7ec8ff, 1);
-  g.fillTriangle(24, 6, 38, 34, 10, 34);
+  g.fillTriangle(24, 4, 36, 40, 12, 40);
   g.fillStyle(0xcfe9ff, 1);
-  g.fillTriangle(24, 12, 32, 30, 16, 30);
+  g.fillTriangle(23, 12, 30, 32, 17, 32);
+  g.fillStyle(0xffffff, 1);
+  g.fillTriangle(24, 6, 27, 16, 21, 16);
   g.generateTexture('node-crystal', 48, 48);
 
   g.clear();
