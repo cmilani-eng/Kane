@@ -14,7 +14,12 @@ import {
   type MatchSummaryPayload,
   type MatchSummaryStore,
 } from './matchSummary';
+import {
+  loadDailyRollup,
+  type DailyRollupStore,
+} from './dailyStatsRollup';
 import { writeMatchSummaryFunctionStub } from '../server/matchSummaryFunctionStub';
+import { rollupDailyMatchStatsFunctionStub } from '../server/dailyRollupFunctionStub';
 import type { SpeciesId } from '../data/speciesStub';
 
 export interface PlayerProfileStub {
@@ -62,6 +67,13 @@ export function createDatabaseStub() {
     },
     peekMatchSummaries(): MatchSummaryStore {
       return loadMatchSummaries();
+    },
+    peekDailyRollup(): DailyRollupStore {
+      return loadDailyRollup();
+    },
+    async rebuildDailyRollup(): Promise<DailyRollupStore> {
+      await rollupDailyMatchStatsFunctionStub();
+      return loadDailyRollup();
     },
   };
 }

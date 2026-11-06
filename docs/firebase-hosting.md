@@ -13,6 +13,7 @@
 | RTDB / Firestore rules drafts | `database.rules.json`, `firestore.rules` |
 | Auth / age gate / lobby stubs | `src/firebase/`, `src/networking/` |
 | Match summary write | `src/database/matchSummary.ts` → `#/admin` |
+| Daily stats rollup | `src/database/dailyStatsRollup.ts` + Function stub → `#/admin` |
 | Admin allowlist stub | `src/database/adminAllowlist.ts` — `#/admin` open or allowlist + deny UI |
 | Moderation stubs | `src/database/moderationStub.ts` — local report/mute log |
 | Env placeholders | `.env.example` |
