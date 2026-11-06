@@ -10,6 +10,7 @@ export function hubChrome(): {
   subtitle: string;
   meta: string;
   play: string;
+  live: string;
   experimental: string;
   privacy: string;
   terms: string;
@@ -20,6 +21,7 @@ export function hubChrome(): {
     subtitle: t('hub.subtitle'),
     meta: t('hub.meta'),
     play: t('hub.play'),
+    live: t('hub.live'),
     experimental: t('hub.experimental'),
     privacy: t('menu.privacy'),
     terms: t('menu.terms'),

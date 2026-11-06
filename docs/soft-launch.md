@@ -55,6 +55,7 @@ This doc is the honest gate before any public preview URL.
 | Hub legal footer | **OK** — Privacy / Terms footer hrefs stay `/privacy.html` and `/terms.html` after the games/ move | `hubLegalHref`, `games/privacy.html` |
 | Kane → hub back | **OK** — soft-launch strip shows `hub /`; menu ← Games returns to the picker | `softLaunchStatusStrip`, `MenuScene` `menu.games` |
 | Blob → hub back | **OK** — Blob Evolution keeps a fixed ← Games link to `/` | `games/blob-evolution/index.html` `#hub-back` |
+| Hub status badges | **OK** — every hub card shows Live or Soft launch from `games.json` status | `hub.ts` `statusPill`, `hub.live` / `hub.experimental` |
 
 ## Remaining gaps (honest)
 

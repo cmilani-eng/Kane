@@ -82,6 +82,16 @@ describe('games registry', () => {
     expect(page).toMatch(/id="hub-back"[^>]*href="\/"/);
   });
 
+  it('marks Kane live and Blob Evolution experimental for hub status badges', () => {
+    expect(GAMES.find((game) => game.id === 'kane')?.status).toBe('live');
+    expect(GAMES.find((game) => game.id === 'blob-evolution')?.status).toBe(
+      'experimental',
+    );
+    for (const game of GAMES) {
+      expect(['live', 'experimental']).toContain(game.status);
+    }
+  });
+
   it('keeps Privacy and Terms pages under games/ for hub footer links', () => {
     const privacy = readFileSync(resolve(gamesDir, 'privacy.html'), 'utf8');
     const terms = readFileSync(resolve(gamesDir, 'terms.html'), 'utf8');
