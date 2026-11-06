@@ -1,0 +1,4 @@
+@import "tailwindcss" source(none);
+@import "../../src/theme.css";
+@source "../privacy.html";
+@source "../terms.html";
