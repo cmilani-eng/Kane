@@ -11,7 +11,7 @@ import { BootScene } from '../presentation/scenes/BootScene';
 import { BattlefieldScene } from '../presentation/scenes/BattlefieldScene';
 import { MenuScene } from '../presentation/scenes/MenuScene';
 import { createOfflineConnection } from '../networking/connectionStub';
-import { createLobbyStub } from '../networking/lobbyStub';
+import { getLobbyStub } from '../networking/lobbySingleton';
 import { createMatchServerStub } from '../server/matchServerStub';
 import { createDatabaseStub } from '../database/persistenceStub';
 import { createFirebaseFoundation } from '../firebase/foundation';
@@ -21,7 +21,7 @@ export function createKaneGame(parent: HTMLElement): Phaser.Game {
   const server = createMatchServerStub();
   const db = createDatabaseStub();
   const firebase = createFirebaseFoundation();
-  const lobby = createLobbyStub(firebase.auth);
+  const lobby = getLobbyStub();
   console.info(
     `[${BRAND.name}] Phaser ${Phaser.VERSION} · milestone=sp-rematch · net=${connection.status} · server=${server.enabled} · db=${db.enabled} · lobby=${lobby.enabled} · ads=${flags.adsEnabled}`,
   );

@@ -1,6 +1,6 @@
 /**
- * Friend-lobby codes — STUB. No RTDB traffic yet.
- * Codes are local-only placeholders for UI / future emulator wiring.
+ * Friend-lobby codes — STUB. No RTDB / live MP sync yet.
+ * Create/join are local-only; SP vs AI never calls this path.
  */
 import type { AuthStub } from '../firebase/authStub';
 import { canUseOnlineFeatures, loadAgeGate } from '../firebase/ageGate';

@@ -11,11 +11,13 @@ import {
 } from '../../gameplay/battlefield/aiDifficulty';
 import { playSfx } from '../audio/sfx';
 import { hideDomHud } from '../ui/domHud';
+import { showLobbyPanel } from '../ui/lobbyPanel';
 import { showStatsPanel } from '../ui/statsPanel';
 import { drawSpeciesPreview } from '../units/unitSilhouette';
 
 export class MenuScene extends Phaser.Scene {
   private statsOpen = false;
+  private lobbyOpen = false;
   private difficulty: AiDifficultyId = 'normal';
   private previewGfx: Phaser.GameObjects.Graphics | null = null;
   private previewSlots: { id: SpeciesId; x: number; y: number }[] = [];
@@ -31,6 +33,7 @@ export class MenuScene extends Phaser.Scene {
       return;
     }
     this.statsOpen = false;
+    this.lobbyOpen = false;
     this.previewSlots = [];
     this.buildLayout(true);
     this.scale.on('resize', this.onResize, this);
@@ -44,7 +47,7 @@ export class MenuScene extends Phaser.Scene {
 
   /** Everything is positioned from the canvas size, so rebuild when it changes. */
   private onResize(): void {
-    if (this.statsOpen) return;
+    if (this.statsOpen || this.lobbyOpen) return;
     this.tweens.killAll();
     this.children.removeAll(true);
     this.previewGfx = null;
@@ -65,11 +68,20 @@ export class MenuScene extends Phaser.Scene {
   }
 
   private openStats(): void {
-    if (this.statsOpen) return;
+    if (this.statsOpen || this.lobbyOpen) return;
     this.statsOpen = true;
     playSfx('ui');
     showStatsPanel(this, () => {
       this.statsOpen = false;
+    });
+  }
+
+  private openLobby(): void {
+    if (this.statsOpen || this.lobbyOpen) return;
+    this.lobbyOpen = true;
+    playSfx('ui');
+    showLobbyPanel(this, () => {
+      this.lobbyOpen = false;
     });
   }
 
@@ -211,18 +223,29 @@ export class MenuScene extends Phaser.Scene {
       )
       .setOrigin(0.5);
 
-    const statsBtn = this.add
-      .text(width / 2, height * 0.86, 'Stats  ·  #/admin', {
+    const gap = Math.min(150, width * 0.36);
+    this.add
+      .text(width / 2 - gap * 0.5, height * 0.86, 'Friends lobby', {
+        fontFamily: 'system-ui, sans-serif',
+        fontSize: '14px',
+        color: '#fff8e8',
+        backgroundColor: '#2a3a50',
+        padding: { x: 14, y: 8 },
+      })
+      .setOrigin(0.5)
+      .setInteractive({ useHandCursor: true })
+      .on('pointerup', () => this.openLobby());
+    this.add
+      .text(width / 2 + gap * 0.5, height * 0.86, 'Stats  ·  #/admin', {
         fontFamily: 'system-ui, sans-serif',
         fontSize: '14px',
         color: '#fff8e8',
         backgroundColor: '#3a4555',
-        padding: { x: 16, y: 8 },
+        padding: { x: 14, y: 8 },
       })
       .setOrigin(0.5)
       .setInteractive({ useHandCursor: true })
       .on('pointerup', () => this.openStats());
-    void statsBtn;
 
     this.add
       .text(

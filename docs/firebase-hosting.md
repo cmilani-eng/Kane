@@ -11,7 +11,7 @@ Local-first Phaser build. **Ads stay off** (`adsEnabled=false`). Local SP Vite p
 | RTDB rules draft | `database.rules.json` |
 | Firestore rules draft | `firestore.rules` |
 | Client stubs | `src/firebase/` (auth, age gate, config) |
-| Lobby stub | `src/networking/lobbyStub.ts` |
+| Lobby stub | `src/networking/lobbyStub.ts` + menu **Friends lobby** UI |
 | Env placeholders | `.env.example` |
 
 ## Local SP (unchanged)
