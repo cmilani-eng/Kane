@@ -64,6 +64,7 @@ This doc is the honest gate before any public preview URL.
 | Hub meta description | **OK** — picker `#hub-meta` is a short localized blurb | `hub.meta`, `games/index.html` |
 | Kane meta description | **OK** — play `#kane-meta` is name · tagline — genre | `brandMetaDescription`, `games/kane/index.html` |
 | Blob meta description | **OK** — Blob `#blob-meta` is title · tagline — blurb | `games/blob-evolution/index.html` |
+| Legal meta descriptions | **OK** — Privacy / Terms stubs carry short `#privacy-meta` / `#terms-meta` blurbs | `games/privacy.html`, `games/terms.html` |
 
 ## Remaining gaps (honest)
 

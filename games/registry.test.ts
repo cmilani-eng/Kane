@@ -135,6 +135,10 @@ describe('games registry', () => {
     expect(terms).toContain('Terms');
     expect(privacy).toContain('<title>KANE · Privacy</title>');
     expect(terms).toContain('<title>KANE · Terms</title>');
+    expect(privacy).toContain('id="privacy-meta"');
+    expect(terms).toContain('id="terms-meta"');
+    expect(privacy).toContain('name="description"');
+    expect(terms).toContain('name="description"');
     const hub = readFileSync(resolve(gamesDir, 'index.html'), 'utf8');
     expect(hub).toContain('id="hub-privacy"');
     expect(hub).toContain('id="hub-terms"');
