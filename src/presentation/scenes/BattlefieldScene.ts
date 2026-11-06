@@ -830,7 +830,6 @@ export class BattlefieldScene extends Phaser.Scene {
     this.clearAttackMoveMode();
     this.ghostGfx.clear();
     this.cameraCtl.suppressPan = true;
-    playSfx(result === 'victory' ? 'victory' : 'defeat');
     this.writeEndMatchSummary(result);
 
     showKaneEndScreen({

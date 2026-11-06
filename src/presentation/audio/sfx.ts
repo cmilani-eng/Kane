@@ -48,12 +48,32 @@ const TONES: Record<SfxKey, Tone[]> = {
     { freq: 750, dur: 0.09, type: 'sine', gain: 0.04 },
   ],
   ui: [{ freq: 600, dur: 0.04, type: 'square', gain: 0.03 }],
+  // Short stub tones — end screen uses playEndFanfare for full stingers.
   victory: [
     { freq: 523, dur: 0.1, type: 'triangle', gain: 0.05 },
     { freq: 659, dur: 0.1, type: 'triangle', gain: 0.05 },
     { freq: 784, dur: 0.16, type: 'triangle', gain: 0.05 },
   ],
   defeat: [{ freq: 220, dur: 0.2, type: 'sawtooth', gain: 0.04 }],
+};
+
+/** Longer mute-aware win/lose fanfares for the end overlay. */
+const FANFARE: Record<'victory' | 'defeat', Tone[]> = {
+  victory: [
+    { freq: 392, dur: 0.12, type: 'triangle', gain: 0.045 },
+    { freq: 523, dur: 0.12, type: 'triangle', gain: 0.05 },
+    { freq: 659, dur: 0.12, type: 'triangle', gain: 0.05 },
+    { freq: 784, dur: 0.18, type: 'triangle', gain: 0.055 },
+    { freq: 659, dur: 0.1, type: 'sine', gain: 0.04 },
+    { freq: 784, dur: 0.1, type: 'sine', gain: 0.045 },
+    { freq: 1047, dur: 0.28, type: 'triangle', gain: 0.06 },
+  ],
+  defeat: [
+    { freq: 330, dur: 0.16, type: 'sawtooth', gain: 0.045 },
+    { freq: 277, dur: 0.18, type: 'sawtooth', gain: 0.04 },
+    { freq: 220, dur: 0.22, type: 'triangle', gain: 0.04 },
+    { freq: 165, dur: 0.36, type: 'sine', gain: 0.05 },
+  ],
 };
 
 let lastPlayMs = 0;
@@ -64,10 +84,21 @@ export function playSfx(key: SfxKey): void {
   const now = performance.now();
   if (now - lastPlayMs < 40) return;
   lastPlayMs = now;
+  playToneSequence(TONES[key]);
+}
 
+/**
+ * End-screen victory / defeat fanfare.
+ * Mute-aware; not rate-limited so combat spam cannot steal the stinger.
+ */
+export function playEndFanfare(win: boolean): void {
+  if (isSfxMuted()) return;
+  playToneSequence(FANFARE[win ? 'victory' : 'defeat']);
+}
+
+function playToneSequence(tones: Tone[]): void {
   const ac = getAudioContext();
   if (!ac) return;
-  const tones = TONES[key];
   let t0 = ac.currentTime;
   for (const tone of tones) {
     try {

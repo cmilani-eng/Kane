@@ -6,6 +6,7 @@ import Phaser from 'phaser';
 import { showPostMatchInterstitialStub } from '../../ads/adsSdkStub';
 import { BRAND } from '../../config/brand';
 import { SPECIES, type SpeciesId } from '../../data/speciesStub';
+import { playEndFanfare } from '../audio/sfx';
 
 export interface EndScreenOpts {
   scene: Phaser.Scene;
@@ -149,6 +150,9 @@ export function showKaneEndScreen(opts: EndScreenOpts): void {
   root.push(btn);
 
   ignoreOnMain(root);
+
+  // Mute-aware procedural stinger (shared SFX mute / AudioContext).
+  playEndFanfare(win);
 
   // Soft-launch: no-op while adsEnabled=false — never blocks Return to Menu.
   showPostMatchInterstitialStub();

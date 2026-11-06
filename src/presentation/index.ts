@@ -2,7 +2,7 @@
 export { createSkirmishMap } from './maps/mapManager';
 export { RtsCamera } from './camera/rtsCamera';
 export { EntityPresenter } from './views/entityViews';
-export { playSfx, setSfxMuted, isSfxMuted } from './audio/sfx';
+export { playSfx, playEndFanfare, setSfxMuted, isSfxMuted } from './audio/sfx';
 export type { SfxKey } from './audio/sfx';
 export {
   ensureAmbientBgm,
