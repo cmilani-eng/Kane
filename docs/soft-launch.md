@@ -59,6 +59,7 @@ This doc is the honest gate before any public preview URL.
 | Hub card focus | **OK** — keyboard focus-visible ring on `.hub-card` (accent outline + soft glow) | `games/hub/hub.css` |
 | Hub document title | **OK** — picker tab title is `KANE · Game picker` (localized) | `hub.documentTitle`, `games/index.html` |
 | Kane document title | **OK** — play tab is `KANE · BUILD. COMMAND. CONQUER.` | `brandDocumentTitle`, `games/kane/index.html` |
+| Blob document title | **OK** — Blob tab is `Blob Evolution 3D · Eat. Evolve. Ascend.` | `games/blob-evolution/index.html` |
 
 ## Remaining gaps (honest)
 
