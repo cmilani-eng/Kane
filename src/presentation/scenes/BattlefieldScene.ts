@@ -104,6 +104,7 @@ import { RtsCamera } from '../camera/rtsCamera';
 import { createSkirmishMap } from '../maps/mapManager';
 import { FogOverlay } from '../ui/fogOverlay';
 import { showKaneEndScreen } from '../ui/endScreen';
+import { drawBuildingSilhouette } from '../buildings/buildingSilhouette';
 import { drawCombatFxList } from '../fx/combatFxDraw';
 import { drawCoreFragments } from '../fx/coreFragmentDraw';
 import { drawFormationVisuals } from '../fx/formationVisual';
@@ -666,52 +667,17 @@ export class BattlefieldScene extends Phaser.Scene {
         continue;
       }
       const alpha = b.complete ? 1 : 0.45 + 0.4 * b.buildProgress;
-      const def = getBuildingType(b.typeId);
-      // Soft shadow
-      g.fillStyle(0x000000, 0.28 * alpha);
-      g.fillEllipse(b.x, b.y + b.radius * 0.75, b.radius * 1.5, b.radius * 0.45);
-      g.fillStyle(b.color, alpha);
-      g.fillRoundedRect(
-        b.x - b.radius,
-        b.y - b.radius,
-        b.radius * 2,
-        b.radius * 2,
-        6,
-      );
-      // Accent roof / crystal nub — species-flavored hall silhouette
-      g.fillStyle(b.accent, alpha);
-      if (def.isMainHall) {
-        g.fillTriangle(
-          b.x - b.radius * 0.7,
-          b.y - b.radius * 0.2,
-          b.x + b.radius * 0.7,
-          b.y - b.radius * 0.2,
-          b.x,
-          b.y - b.radius * 1.15,
-        );
-        if (def.speciesId === 'brutes') {
-          g.fillStyle(0xd4782e, alpha * 0.9);
-          g.fillRect(b.x + b.radius * 0.35, b.y - b.radius * 1.05, b.radius * 0.22, b.radius * 0.55);
-        } else if (def.speciesId === 'nobles') {
-          g.fillStyle(0xf0c75e, alpha);
-          g.fillRect(b.x - b.radius * 0.06, b.y - b.radius * 1.45, b.radius * 0.12, b.radius * 0.4);
-          g.fillCircle(b.x, b.y - b.radius * 1.5, b.radius * 0.16);
-        } else {
-          const pulse = 0.85 + 0.15 * Math.sin(this.animTimeMs / 400);
-          g.fillStyle(0x6ecfbf, alpha * pulse);
-          g.fillCircle(b.x, b.y - b.radius * 1.05, b.radius * 0.22);
-        }
-      } else {
-        g.fillCircle(b.x, b.y - b.radius * 0.55, b.radius * 0.28);
-      }
-      g.lineStyle(2, b.selected ? 0xf0c75e : b.accent, b.selected ? 1 : 0.9);
-      g.strokeRoundedRect(
-        b.x - b.radius,
-        b.y - b.radius,
-        b.radius * 2,
-        b.radius * 2,
-        6,
-      );
+      drawBuildingSilhouette(g, {
+        x: b.x,
+        y: b.y,
+        radius: b.radius,
+        color: b.color,
+        accent: b.accent,
+        typeId: b.typeId,
+        alpha,
+        selected: !!b.selected,
+        timeMs: this.animTimeMs,
+      });
       if (b.trainQueue.length > 0) {
         const tw = b.radius * 2;
         const udef = getUnitType(b.trainQueue[0]!);
