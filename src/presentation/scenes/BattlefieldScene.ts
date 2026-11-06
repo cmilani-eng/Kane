@@ -141,6 +141,7 @@ import {
 } from '../../database/matchSummary';
 import { getEquippedSkin } from '../../database/cosmeticsLoadout';
 import { rememberMatchPrefs } from '../../database/matchPrefs';
+import { rematchPrefsFromWorld } from '../../gameplay/battlefield/rematchPrefs';
 import { recordGameStarted } from '../../database/localStats';
 import { writeMatchSummaryFunctionStub } from '../../server/matchSummaryFunctionStub';
 import {
@@ -1270,9 +1271,7 @@ export class BattlefieldScene extends Phaser.Scene {
 
   /** End-screen Rematch — same species + difficulty + map, no menu hop. */
   private rematchSameSkirmish(): void {
-    const species = this.world.speciesId;
-    const difficulty = this.world.aiDifficulty;
-    const mapId = this.world.mapId;
+    const { species, difficulty, mapId } = rematchPrefsFromWorld(this.world);
     rememberMatchPrefs(species, difficulty, mapId);
     recordGameStarted(species);
     void maybeRecordCloudGameStarted(species);

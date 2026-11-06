@@ -16,7 +16,7 @@ This doc is the honest gate before any public preview URL.
 | Cosmetics | **OK** — skins catalog, local equip, in-match tint; **not purchasable**, no combat stats | `cosmeticsCatalog`, Cosmetics menu, `skinAccent` |
 | Legal stubs | **OK** — Privacy / Terms placeholders linked from menu | `public/privacy.html`, `public/terms.html` |
 | RTDB / Firestore rules drafts | **OK** — deny-by-default drafts documented | `database.rules.json`, `firestore.rules` |
-| SP rematch loop | **OK** — species + difficulty prefs; end-screen **Rematch** (same setup) or Return to Menu | `endScreen`, `matchPrefs`, Battlefield |
+| SP rematch loop | **OK** — species + difficulty + map prefs; end-screen **Rematch** (same setup) or Return to Menu | `endScreen`, `matchPrefs`, `rematchPrefs`, Battlefield |
 | PWA manifest + icons | **OK** — Add to Home Screen stubs; **no** offline service worker yet | `public/manifest.webmanifest`, `public/icons/`, `docs/pwa.md` |
 | Master volume | **OK** — mute-aware slider on menu + pause; persists `kane.masterVolume.v1` | `audioContext`, `volumeSlider`, pause/menu |
 | Easy AI cushion | **OK** — Easy gives player start gold/crystal cushion + slower AI eco; Normal/Hard unchanged | `aiDifficulty`, `createBattlefieldWorld` |
@@ -32,7 +32,7 @@ This doc is the honest gate before any public preview URL.
 5. **Admin allowlist is soft** — default `open` for local-dev; no Custom Claims / server enforcement. Admin **`#/admin`** tools are separate from menu **Stats**.
 6. **Match writes are client-trusted** for SP MVP — Functions deferred; local `#/admin` summaries still device-local.
 7. **Legal copy is placeholder** — not counsel-reviewed.
-8. **Content depth** — Phase 8 maps / deeper tutorial / practice arena not started.
+8. **Content depth** — two skirmish maps (Crossing / Ridge); deeper tutorial / practice arena still later.
 9. **CI is thin** — pull requests run lint, unit tests and the build (`.github/workflows/ci.yml`) and a push to `dev` runs the same checks before auto-deploying Hosting (see `docs/firebase-hosting.md`); there are no browser or gameplay tests yet.
 10. **Cosmetics shop** — explicitly out; free unlocks only.
 11. **No offline service worker** — installability stubs exist; full offline PWA is later (`docs/pwa.md`).

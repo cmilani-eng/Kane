@@ -45,7 +45,7 @@ const TIPS: Record<Exclude<TutorialStepId, 'done'>, string> = {
   hud:
     'Handy HUD: Pause / Esc, Home · Base recenters your keep, Army selects combat, Idle / Idle army cycle standers.',
   heroes:
-    'Press H for your hero, then Q / W / E for big moves. When the match ends, Rematch keeps the same species & difficulty!',
+    'Press H for your hero, then Q / W / E for big moves. When the match ends, Rematch keeps species, difficulty, and map!',
 };
 
 const STEP_ORDER: Exclude<TutorialStepId, 'done'>[] = [
