@@ -44,6 +44,7 @@ import { Minimap } from '../ui/minimap';
 import {
   buildSelectionView,
   flashQueueCancel,
+  flashStanceHotkey,
   mountSelectionPanel,
   renderSelectionPanel,
   selectionPanelInsetPx,
@@ -566,12 +567,15 @@ export class BattlefieldScene extends Phaser.Scene {
       if (this.paused || this.matchResult !== 'ongoing') return;
       if (this.world.speciesId === 'nobles') {
         toggleFormationSelected(this.world);
+        flashStanceHotkey('formation');
+        playSfx('ui');
       }
     });
     this.input.keyboard?.on('keydown-M', () => {
       if (this.paused || this.matchResult !== 'ongoing') return;
       if (this.world.speciesId === 'weirdos') {
         toggleMutationSelected(this.world);
+        flashStanceHotkey('mutation');
         playSfx('ui');
       }
     });
@@ -579,6 +583,7 @@ export class BattlefieldScene extends Phaser.Scene {
       if (this.paused || this.matchResult !== 'ongoing') return;
       if (this.world.speciesId === 'brutes') {
         toggleRageSelected(this.world);
+        flashStanceHotkey('rage');
         playSfx('ui');
       }
     });

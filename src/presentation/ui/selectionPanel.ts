@@ -301,6 +301,28 @@ export function formatQueueCancelFlash(opts: {
     : t('sel.cancelFlashRes', { resources });
 }
 
+export type StanceHotkeyKind = 'formation' | 'rage' | 'mutation';
+
+const STANCE_HOTKEY_ACT: Record<StanceHotkeyKind, string> = {
+  formation: 'toggleFormation',
+  rage: 'toggleRage',
+  mutation: 'toggleMutation',
+};
+
+/** Brief gold flash on the stance button when F / R / M is pressed. */
+export function flashStanceHotkey(kind: StanceHotkeyKind): void {
+  const root = document.getElementById(PANEL_ID);
+  if (!root) return;
+  const btn = root.querySelector(
+    `[data-act="${STANCE_HOTKEY_ACT[kind]}"]`,
+  ) as HTMLElement | null;
+  if (!btn) return;
+  btn.classList.remove('is-hotkey-echo');
+  void btn.offsetWidth;
+  btn.classList.add('is-hotkey-echo');
+  window.setTimeout(() => btn.classList.remove('is-hotkey-echo'), 320);
+}
+
 /** Brief queue-row flash + refund copy after a successful cancel. */
 export function flashQueueCancel(opts: {
   unitName?: string;
