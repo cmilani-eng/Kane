@@ -18,13 +18,17 @@
       class="mx-auto max-w-[920px] px-[max(20px,env(safe-area-inset-left))] py-[max(28px,env(safe-area-inset-top))]"
     >
       <header class="text-center">
-        <h1 class="text-[clamp(32px,7vw,48px)] font-bold tracking-[-1.5px]">Games</h1>
-        <p class="mt-2 mb-7 text-muted">Pick a game to play.</p>
+        <div class="mb-5 flex items-center justify-end gap-2">
+          <span id="hub-locale-label" class="text-xs text-subtle">Language</span>
+          <div id="hub-locale" class="flex gap-2"></div>
+        </div>
+        <h1 id="hub-title" class="text-[clamp(32px,7vw,48px)] font-bold tracking-[-1.5px]">Games</h1>
+        <p id="hub-subtitle" class="mt-2 mb-7 text-muted">Pick a game to play.</p>
       </header>
       <ul id="game-list" class="grid grid-cols-[repeat(auto-fill,minmax(280px,1fr))] gap-5"></ul>
       <footer class="mt-8 flex justify-center gap-6">
-        <a class="inline-flex min-h-12 items-center text-subtle underline" href="/privacy.html">Privacy</a>
-        <a class="inline-flex min-h-12 items-center text-subtle underline" href="/terms.html">Terms</a>
+        <a id="hub-privacy" class="inline-flex min-h-12 items-center text-subtle underline" href="/privacy.html">Privacy</a>
+        <a id="hub-terms" class="inline-flex min-h-12 items-center text-subtle underline" href="/terms.html">Terms</a>
       </footer>
     </main>
     <script type="module" src="./hub/hub.ts"></script>
