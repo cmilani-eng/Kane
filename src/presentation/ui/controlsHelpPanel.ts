@@ -140,6 +140,7 @@ function bodyHtml(): string {
     ${row('Stop', 'Stop chip')}
     ${row('Train / produce', 'Bottom panel buttons')}
     ${row('Camera', 'Two-finger pan · Base chip')}
+    ${row('Attention mark', 'Hold minimap')}
     <div class="kane-help-section">Keyboard</div>
     ${row('Attack-move', 'A')}
     ${row('Stop', 'S')}
