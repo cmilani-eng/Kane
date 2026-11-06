@@ -117,6 +117,8 @@ import {
   makeMatchSummaryId,
 } from '../../database/matchSummary';
 import { getEquippedSkin } from '../../database/cosmeticsLoadout';
+import { rememberMatchPrefs } from '../../database/matchPrefs';
+import { recordGameStarted } from '../../database/localStats';
 import { writeMatchSummaryFunctionStub } from '../../server/matchSummaryFunctionStub';
 import { ensureAmbientBgm } from '../audio/bgm';
 import { playSfx } from '../audio/sfx';
@@ -837,10 +839,20 @@ export class BattlefieldScene extends Phaser.Scene {
       win: result === 'victory',
       speciesId: this.world.speciesId,
       onMenu: () => this.scene.start('Menu'),
+      onRematch: () => this.rematchSameSkirmish(),
       ignoreOnMain: (objs) => {
         this.cameras.main.ignore(this.add.container(0, 0, objs));
       },
     });
+  }
+
+  /** End-screen Rematch — same species + difficulty, no menu hop. */
+  private rematchSameSkirmish(): void {
+    const species = this.world.speciesId;
+    const difficulty = this.world.aiDifficulty;
+    rememberMatchPrefs(species, difficulty);
+    recordGameStarted(species);
+    this.scene.start('Battlefield', { species, difficulty });
   }
 
   /** Admin/#/admin payload — Function stub → localStorage. SP path unchanged. */
