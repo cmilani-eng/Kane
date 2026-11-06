@@ -6,6 +6,7 @@ import Phaser from 'phaser';
 import { t } from '../../i18n';
 import {
   getMasterVolume,
+  isSfxMuted,
   setMasterVolume,
 } from '../audio/sfx';
 import { syncAmbientBgmMute } from '../audio/bgm';
@@ -75,9 +76,14 @@ export function createVolumeSlider(opts: VolumeSliderOpts): VolumeSliderHandle {
 
   const applyVisual = (): void => {
     const v = getMasterVolume();
+    const muted = isSfxMuted();
     const kx = x - width / 2 + v * width;
     fill.width = Math.max(2, v * width);
+    fill.setFillStyle(muted ? 0x6a7f94 : 0xf0c75e, muted ? 0.45 : 0.9);
     knob.setPosition(kx, y);
+    knob.setFillStyle(muted ? 0xb8c9d9 : 0xf5e6c8, 1);
+    knob.setStrokeStyle(2, muted ? 0x6a7f94 : 0xf0c75e);
+    label.setColor(muted ? '#7a8fa3' : '#b8c9d9');
     label.setText(volumeLabel());
   };
   applyVisual();
@@ -112,5 +118,6 @@ export function createVolumeSlider(opts: VolumeSliderOpts): VolumeSliderHandle {
 
 function volumeLabel(): string {
   const pct = Math.round(getMasterVolume() * 100);
+  if (isSfxMuted()) return t('volume.labelMuted', { pct });
   return t('volume.label', { pct });
 }
