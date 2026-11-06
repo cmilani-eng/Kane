@@ -124,6 +124,7 @@ import { RtsCamera } from '../camera/rtsCamera';
 import { createSkirmishMap } from '../maps/mapManager';
 import { FogOverlay } from '../ui/fogOverlay';
 import { showKaneEndScreen } from '../ui/endScreen';
+import { PauseMenu } from '../ui/pauseMenu';
 import { drawBuildingSilhouette } from '../buildings/buildingSilhouette';
 import { drawPlacementGhost } from '../buildings/placementGhost';
 import { drawProductionQueueFeedback } from '../buildings/productionQueueFeedback';
@@ -172,6 +173,8 @@ export class BattlefieldScene extends Phaser.Scene {
   private cameraStart = { x: 0, y: 0 };
   private amovePointer = { x: 0, y: 0 };
   private hud!: BattlefieldHud;
+  private pauseMenu!: PauseMenu;
+  private paused = false;
   private minimap!: Minimap;
   private tutorial!: TutorialState;
   private coach!: TutorialCoach;
@@ -216,6 +219,7 @@ export class BattlefieldScene extends Phaser.Scene {
     this.placeType = this.placeables[0] ?? 'bonker_hut';
     this.ai = createAiState(difficulty);
     this.matchResult = 'ongoing';
+    this.paused = false;
     this.matchStartedAtMs = Date.now();
     this.cameraCtl = new RtsCamera(this);
     const first = this.world.units.find((u) => u.team === 'player');
@@ -239,6 +243,15 @@ export class BattlefieldScene extends Phaser.Scene {
     this.hud.onArmAttackMove = () => this.toggleAttackMoveMode();
     this.hud.onStopSelected = () => this.issueStopCommand();
     this.hud.onRecenterBase = () => this.recenterOnPlayerBase();
+    this.hud.onPause = () => this.togglePause();
+    this.pauseMenu = new PauseMenu({
+      scene: this,
+      onResume: () => this.setPaused(false),
+      onQuit: () => this.scene.start('Menu'),
+      ignoreOnMain: (objs) => {
+        this.cameras.main.ignore(this.add.container(0, 0, objs));
+      },
+    });
     this.minimap = new Minimap(this, this.world, this.cameraCtl);
     this.tutorial = createTutorialState();
     this.coach = new TutorialCoach(this, this.tutorial);
@@ -292,17 +305,10 @@ export class BattlefieldScene extends Phaser.Scene {
     this.input.on('pointerdown', this.onDown, this);
     this.input.on('pointermove', this.onMove, this);
     this.input.on('pointerup', this.onUp, this);
-    this.input.keyboard?.on('keydown-ESC', () => {
-      if (this.mode === 'place' || this.mode === 'attackMove') {
-        this.clearAttackMoveMode();
-        this.mode = 'none';
-        this.ghostGfx.clear();
-      } else {
-        clearSelection(this.world);
-        this.clearBuildingSelection();
-      }
-    });
+    this.input.keyboard?.on('keydown-ESC', () => this.onEscapeKey());
+    this.input.keyboard?.on('keydown-PAUSE', () => this.togglePause());
     this.input.keyboard?.on('keydown-B', () => {
+      if (this.paused || this.matchResult !== 'ongoing') return;
       if (this.mode === 'place' && this.placeables.length > 1) {
         this.placeIndex = (this.placeIndex + 1) % this.placeables.length;
         this.placeType = this.placeables[this.placeIndex]!;
@@ -319,41 +325,51 @@ export class BattlefieldScene extends Phaser.Scene {
       if (this.mode !== 'place') this.ghostGfx.clear();
     });
     this.input.keyboard?.on('keydown-F', () => {
+      if (this.paused || this.matchResult !== 'ongoing') return;
       if (this.world.speciesId === 'nobles') {
         toggleFormationSelected(this.world);
       }
     });
     this.input.keyboard?.on('keydown-M', () => {
+      if (this.paused || this.matchResult !== 'ongoing') return;
       if (this.world.speciesId === 'weirdos') {
         toggleMutationSelected(this.world);
         playSfx('ui');
       }
     });
     this.input.keyboard?.on('keydown-R', () => {
+      if (this.paused || this.matchResult !== 'ongoing') return;
       if (this.world.speciesId === 'brutes') {
         toggleRageSelected(this.world);
         playSfx('ui');
       }
     });
     this.input.keyboard?.on('keydown-H', () => {
+      if (this.paused || this.matchResult !== 'ongoing') return;
       if (recruitHero(this.world, 'player')) playSfx('hero');
     });
     this.input.keyboard?.on('keydown-Q', () => {
+      if (this.paused || this.matchResult !== 'ongoing') return;
       if (castHeroAbility(this.world, 'ability1', 'player')) playSfx('ability');
     });
     this.input.keyboard?.on('keydown-W', () => {
+      if (this.paused || this.matchResult !== 'ongoing') return;
       if (castHeroAbility(this.world, 'ability2', 'player')) playSfx('ability');
     });
     this.input.keyboard?.on('keydown-E', () => {
+      if (this.paused || this.matchResult !== 'ongoing') return;
       if (castHeroAbility(this.world, 'ultimate', 'player')) playSfx('ability');
     });
     this.input.keyboard?.on('keydown-S', () => {
+      if (this.paused || this.matchResult !== 'ongoing') return;
       this.issueStopCommand();
     });
     this.input.keyboard?.on('keydown-A', () => {
+      if (this.paused || this.matchResult !== 'ongoing') return;
       this.toggleAttackMoveMode();
     });
     this.input.keyboard?.on('keydown-HOME', () => {
+      if (this.paused || this.matchResult !== 'ongoing') return;
       this.recenterOnPlayerBase();
     });
 
@@ -374,7 +390,52 @@ export class BattlefieldScene extends Phaser.Scene {
     });
   }
 
+  /** Esc: cancel place/A-move first, else toggle pause (resume when open). */
+  private onEscapeKey(): void {
+    if (this.matchResult !== 'ongoing') return;
+    if (this.paused) {
+      this.setPaused(false);
+      return;
+    }
+    if (this.mode === 'place' || this.mode === 'attackMove') {
+      this.clearAttackMoveMode();
+      this.mode = 'none';
+      this.ghostGfx.clear();
+      return;
+    }
+    this.setPaused(true);
+  }
+
+  private togglePause(): void {
+    if (this.matchResult !== 'ongoing') return;
+    this.setPaused(!this.paused);
+  }
+
+  private setPaused(value: boolean): void {
+    if (this.matchResult !== 'ongoing') return;
+    if (value === this.paused) {
+      if (value && !this.pauseMenu.isOpen) this.pauseMenu.show();
+      return;
+    }
+    this.paused = value;
+    if (value) {
+      this.clearAttackMoveMode();
+      this.mode = 'none';
+      this.ghostGfx.clear();
+      this.boxGfx.clear();
+      this.cameraCtl.suppressPan = true;
+      this.pauseMenu.show();
+      playSfx('ui');
+    } else {
+      this.pauseMenu.hide();
+      this.cameraCtl.suppressPan = false;
+      this.hud.syncMuteLabel();
+      playSfx('ui');
+    }
+  }
+
   private onDigitHotkey(slot: number): void {
+    if (this.paused || this.matchResult !== 'ongoing') return;
     if (this.ctrlHeld()) {
       if (assignControlGroup(this.world, this.controlGroups, slot)) {
         spawnControlGroupAssignFx(this.world, slot);
@@ -422,7 +483,7 @@ export class BattlefieldScene extends Phaser.Scene {
   }
 
   private onDown(pointer: Phaser.Input.Pointer): void {
-    if (this.matchResult !== 'ongoing') return;
+    if (this.matchResult !== 'ongoing' || this.paused) return;
     if (pointer.y < 40 && pointer.x > this.scale.width - 80) return;
 
     this.pointerStart = { x: pointer.x, y: pointer.y };
@@ -482,6 +543,7 @@ export class BattlefieldScene extends Phaser.Scene {
   }
 
   private onMove(pointer: Phaser.Input.Pointer): void {
+    if (this.paused) return;
     const wp = this.cameraCtl.worldPoint(pointer.x, pointer.y);
     if (this.mode === 'attackMove') {
       this.amovePointer = { x: wp.x, y: wp.y };
@@ -523,6 +585,7 @@ export class BattlefieldScene extends Phaser.Scene {
   }
 
   private onUp(pointer: Phaser.Input.Pointer): void {
+    if (this.paused) return;
     this.cameraCtl.suppressPan = false;
     if (this.mode === 'place' || this.mode === 'pan') {
       if (this.mode === 'pan') this.mode = 'none';
@@ -683,9 +746,11 @@ export class BattlefieldScene extends Phaser.Scene {
   }
 
   update(_t: number, delta: number): void {
-    this.animTimeMs += delta;
-    this.cameraCtl.update(delta);
-    if (this.matchResult === 'ongoing') {
+    if (!this.paused) {
+      this.animTimeMs += delta;
+      this.cameraCtl.update(delta);
+    }
+    if (this.matchResult === 'ongoing' && !this.paused) {
       tickBattlefield(this.world, delta);
       tickBattlefieldEconomy(this.world);
       // Mute-aware gather/deposit SFX — fire once while FX is fresh.
@@ -747,6 +812,10 @@ export class BattlefieldScene extends Phaser.Scene {
     if (this.matchResult !== 'ongoing') return;
     if (result === 'ongoing') return;
     this.matchResult = result;
+    if (this.paused) {
+      this.paused = false;
+      this.pauseMenu.hide();
+    }
     this.clearAttackMoveMode();
     this.ghostGfx.clear();
     this.cameraCtl.suppressPan = true;
