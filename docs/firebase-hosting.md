@@ -14,6 +14,7 @@
 | Auth / age gate / lobby stubs | `src/firebase/`, `src/networking/` |
 | Match summary write | `src/database/matchSummary.ts` → `#/admin` |
 | Admin allowlist stub | `src/database/adminAllowlist.ts` — `#/admin` open or allowlist + deny UI |
+| Moderation stubs | `src/database/moderationStub.ts` — local report/mute log |
 | Env placeholders | `.env.example` |
 
 ## Local SP (primary — unchanged)
