@@ -96,7 +96,9 @@ import { tickWaypointMarkers } from '../../gameplay/battlefield/battlefieldWaypo
 import {
   clearSelection,
   createBattlefieldWorld,
+  findPlayerUnitAt,
   issueMoveSelected,
+  selectAllVisibleSameType,
   selectAt,
   selectInRect,
   selectedCount,
@@ -189,6 +191,8 @@ export class BattlefieldScene extends Phaser.Scene {
   private viewCull: ViewBounds | null = null;
   /** Equipped cosmetics accent for the player species (visual only). */
   private playerSkinAccent = 0xf0c75e;
+  /** Double-click / double-tap tracking for same-type select. */
+  private lastSelectTap = { t: 0, unitId: -1, sx: 0, sy: 0 };
 
   constructor() {
     super('Battlefield');
@@ -544,13 +548,43 @@ export class BattlefieldScene extends Phaser.Scene {
         this.clearBuildingSelection();
         b.selected = true;
         this.selectedBuilding = b;
+        this.lastSelectTap.t = 0;
         playSfx('select');
       } else {
         this.clearBuildingSelection();
-        if (selectAt(this.world, wp.x, wp.y, additive)) playSfx('select');
+        const hit = findPlayerUnitAt(this.world, wp.x, wp.y);
+        if (hit && !additive && this.isDoubleSelectTap(pointer, hit.id)) {
+          const n = selectAllVisibleSameType(this.world, hit.typeId);
+          if (n > 0) playSfx('select');
+          this.lastSelectTap.t = 0;
+        } else {
+          if (selectAt(this.world, wp.x, wp.y, additive)) playSfx('select');
+          if (hit && !additive) {
+            this.lastSelectTap = {
+              t: this.time.now,
+              unitId: hit.id,
+              sx: pointer.x,
+              sy: pointer.y,
+            };
+          } else {
+            this.lastSelectTap.t = 0;
+          }
+        }
       }
     }
     this.mode = 'none';
+  }
+
+  private isDoubleSelectTap(
+    pointer: Phaser.Input.Pointer,
+    unitId: number,
+  ): boolean {
+    const DOUBLE_MS = 380;
+    const DOUBLE_PX = 36;
+    const prev = this.lastSelectTap;
+    if (prev.unitId !== unitId) return false;
+    if (this.time.now - prev.t > DOUBLE_MS) return false;
+    return Math.hypot(pointer.x - prev.sx, pointer.y - prev.sy) <= DOUBLE_PX;
   }
 
   private updateGhostAt(worldX: number, worldY: number): void {
