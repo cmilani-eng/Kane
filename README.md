@@ -6,7 +6,7 @@ Fantasy Real-Time Strategy Game
 Built with **[Phaser 4](https://phaser.io/phaser4)** (`phaser@^4.2.1`) + TypeScript + Vite.  
 APIs: [docs.phaser.io](https://docs.phaser.io/) — do not assume Phaser 3.
 
-> **Local-first.** Ads off (`adsEnabled=false`). Vite (`npm run dev`) is primary. Firebase Hosting preview is optional — see `docs/firebase-hosting.md`. Push/merge to **`dev`** auto-deploys Hosting via GitHub Actions once the `FIREBASE_SERVICE_ACCOUNT_KANE_RTS_STUB` secret is set (same doc).
+> **Local-first.** Ads off (`adsEnabled=false`). Vite (`npm run dev`) is primary. Firebase Hosting preview is optional — see `docs/firebase-hosting.md`. Push/merge to **`dev`** auto-deploys Hosting via GitHub Actions (`FIREBASE_SERVICE_ACCOUNT_KANE_RTS_GAME`, via Firebase Hosting GitHub integration).
 
 ## Quick start
 
@@ -46,7 +46,7 @@ Playable **battlefield** (select / move / attack):
 | Online connection | `src/networking/` | Stub (lobby codes local-only) |
 | Multiplayer server | `src/server/` | Stub |
 | Database | `src/database/` | Local stats + persistence stub |
-| Firebase foundation | `src/firebase/` | Auth/age-gate/emulator stubs — no live MP |
+| Firebase foundation | `src/firebase/` | Email Auth + Firestore account path (opt-in via env); age gate local; no live MP |
 
 Gameplay does not import presentation. Full skirmish systems under `gameplay/` remain for later milestones; **M1 wires only** `battlefield/` + `BattlefieldScene`.
 

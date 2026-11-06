@@ -86,6 +86,9 @@ export function equipSkin(
   }
   loadout.equipped[speciesId] = skin.id;
   save(loadout);
+  void import('../firebase/cloudProgression')
+    .then((m) => m.maybeSyncCosmetics())
+    .catch(() => undefined);
   return loadout;
 }
 

@@ -71,4 +71,10 @@ export function rememberMatchPrefs(
   difficulty: AiDifficultyId,
 ): void {
   saveMatchPrefs({ version: 1, species, difficulty });
+  // Cloud sync when signed in (best-effort; guest stays local).
+  void import('../firebase/cloudProgression')
+    .then((m) => m.maybeSyncPrefs(species, difficulty))
+    .catch(() => undefined);
 }
+
+// Note: dynamic import avoids a hard cycle (cloudProgression → matchPrefs).

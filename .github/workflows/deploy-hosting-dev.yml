@@ -1,5 +1,6 @@
 # Auto-deploy Firebase Hosting when `dev` is updated (incl. PR merges into `dev`).
-# Requires GitHub secret FIREBASE_SERVICE_ACCOUNT_KANE_RTS_STUB — see docs/firebase-hosting.md.
+# Uses secret FIREBASE_SERVICE_ACCOUNT_KANE_RTS_GAME (provisioned by Firebase Hosting GitHub integration).
+# See docs/firebase-hosting.md. Does not deploy Firestore rules.
 name: Deploy Hosting (dev)
 
 on:
@@ -37,8 +38,8 @@ jobs:
       - name: Authenticate to Google Cloud
         uses: google-github-actions/auth@v2
         with:
-          credentials_json: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_KANE_RTS_STUB }}
+          credentials_json: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_KANE_RTS_GAME }}
 
       - name: Deploy Firebase Hosting (kane-web)
         # Matches `npm run hosting:deploy` target; project from `.firebaserc`.
-        run: npx --yes firebase-tools@13 deploy --only hosting:kane-web --non-interactive --project kane-rts-stub
+        run: npx --yes firebase-tools@13 deploy --only hosting:kane-web --non-interactive --project kane-rts-game
