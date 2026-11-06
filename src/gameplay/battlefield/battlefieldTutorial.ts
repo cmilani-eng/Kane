@@ -1,6 +1,7 @@
 /**
  * In-match tutorial coach — short kid-friendly tips that advance with play.
  * Presentation-only prompts; never blocks gameplay.
+ * Copy covers rematch, Idle chip, Army, pause, and Home.
  */
 import type { BattlefieldWorld } from './battlefieldWorld';
 import { selectedCount } from './battlefieldWorld';
@@ -13,6 +14,7 @@ export type TutorialStepId =
   | 'gather'
   | 'build'
   | 'attack'
+  | 'hud'
   | 'heroes'
   | 'done';
 
@@ -20,7 +22,7 @@ export interface TutorialState {
   step: TutorialStepId;
   /** Hide coach after dismiss or finish. */
   visible: boolean;
-  /** Soft timer so welcome shows briefly before select tip. */
+  /** Soft timer so welcome / hud tips show briefly. */
   elapsedMs: number;
   seenSelect: boolean;
   seenGather: boolean;
@@ -30,16 +32,31 @@ export interface TutorialState {
 }
 
 const TIPS: Record<Exclude<TutorialStepId, 'done'>, string> = {
-  welcome: 'Hi commander! Let’s learn the basics — tap Next or just play!',
-  select: 'Tap or drag a box to pick your friends. Yellow ring = selected!',
+  welcome:
+    'Hi commander! Tap Next or just play. Esc / Pause freezes the fight — Rematch waits after victory or defeat.',
+  select:
+    'Tap or box-select your units (yellow ring). Need the whole army? Tap Army or press Ctrl+A.',
   gather:
-    'Workers love shiny stuff! Select a worker, then right-click Gold or Crystals.',
-  build: 'Press B to place a building, then tap the map. Homes make more units!',
+    'Workers love shiny stuff! Right-click Gold or Crystals. Idle N · tap grabs idle workers — tap again to cycle.',
+  build:
+    'Press B (or the build flow) to place a building, then tap the map. Halls and huts train more friends!',
   attack:
-    'Select fighters, then right-click an enemy. Red line = “go get ‘em!”',
+    'Select fighters, then right-click an enemy — or arm A · Atk for attack-move. Stop clears orders.',
+  hud:
+    'Handy HUD: Pause / Esc, Home · Base recenters your keep, Army selects combat units, Idle cycles workers.',
   heroes:
-    'Press H to call your hero, then Q / W / E for big fancy moves. You’re a star!',
+    'Press H for your hero, then Q / W / E for big moves. When the match ends, Rematch keeps the same species & difficulty!',
 };
+
+const STEP_ORDER: Exclude<TutorialStepId, 'done'>[] = [
+  'welcome',
+  'select',
+  'gather',
+  'build',
+  'attack',
+  'hud',
+  'heroes',
+];
 
 export function createTutorialState(): TutorialState {
   return {
@@ -61,16 +78,8 @@ export function tutorialTip(t: TutorialState): string {
 
 export function tutorialStepLabel(t: TutorialState): string {
   if (!t.visible || t.step === 'done') return '';
-  const order: TutorialStepId[] = [
-    'welcome',
-    'select',
-    'gather',
-    'build',
-    'attack',
-    'heroes',
-  ];
-  const i = order.indexOf(t.step);
-  return i >= 0 ? `Tip ${i + 1}/${order.length}` : '';
+  const i = STEP_ORDER.indexOf(t.step);
+  return i >= 0 ? `Tip ${i + 1}/${STEP_ORDER.length}` : '';
 }
 
 export function dismissTutorial(t: TutorialState): void {
@@ -85,10 +94,12 @@ export function advanceTutorial(t: TutorialState): void {
     select: 'gather',
     gather: 'build',
     build: 'attack',
-    attack: 'heroes',
+    attack: 'hud',
+    hud: 'heroes',
     heroes: 'done',
   };
   t.step = next[t.step];
+  t.elapsedMs = 0;
   if (t.step === 'done') t.visible = false;
 }
 
@@ -135,25 +146,35 @@ export function tickTutorial(
     t.seenHero = true;
   }
 
-  // Auto-advance when the player does the thing (or welcome times out)
+  // Auto-advance when the player does the thing (or timed tips expire)
   if (t.step === 'welcome' && t.elapsedMs > 4500) {
     t.step = 'select';
+    t.elapsedMs = 0;
     return;
   }
   if (t.step === 'select' && t.seenSelect) {
     t.step = 'gather';
+    t.elapsedMs = 0;
     return;
   }
   if (t.step === 'gather' && t.seenGather) {
     t.step = 'build';
+    t.elapsedMs = 0;
     return;
   }
   if (t.step === 'build' && t.seenBuild) {
     t.step = 'attack';
+    t.elapsedMs = 0;
     return;
   }
   if (t.step === 'attack' && t.seenAttack) {
+    t.step = 'hud';
+    t.elapsedMs = 0;
+    return;
+  }
+  if (t.step === 'hud' && t.elapsedMs > 5500) {
     t.step = 'heroes';
+    t.elapsedMs = 0;
     return;
   }
   if (t.step === 'heroes' && t.seenHero) {

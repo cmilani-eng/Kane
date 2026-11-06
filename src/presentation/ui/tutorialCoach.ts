@@ -23,10 +23,10 @@ export class TutorialCoach {
   constructor(scene: Phaser.Scene, state: TutorialState) {
     this.scene = scene;
     this.state = state;
-    const w = Math.min(520, scene.scale.width - 24);
+    const w = Math.min(560, scene.scale.width - 24);
 
     this.panel = scene.add
-      .rectangle(0, 0, w, 88, 0x122033, 0.92)
+      .rectangle(0, 0, w, 108, 0x122033, 0.92)
       .setStrokeStyle(2, 0xf0c75e, 0.95)
       .setScrollFactor(0)
       .setDepth(120);
@@ -95,16 +95,16 @@ export class TutorialCoach {
     const sw = this.scene.scale.width;
     const sh = this.scene.scale.height;
     const narrow = sw < 720;
-    const w = Math.min(narrow ? sw - 20 : 520, sw - 24);
-    const h = narrow ? 100 : 88;
+    const w = Math.min(narrow ? sw - 20 : 560, sw - 24);
+    const h = narrow ? 120 : 108;
     const x = sw / 2;
-    const y = narrow ? sh * 0.28 : 210;
+    const y = narrow ? sh * 0.3 : 220;
 
     this.panel.setSize(w, h).setPosition(x, y);
     this.label.setPosition(x - w / 2 + 14, y - h / 2 + 10);
     this.body
       .setPosition(x - w / 2 + 14, y - h / 2 + 28)
-      .setStyle({ wordWrap: { width: w - 28 }, fontSize: narrow ? '13px' : '14px' });
+      .setStyle({ wordWrap: { width: w - 36 }, fontSize: narrow ? '12px' : '13px' });
     this.nextBtn.setPosition(x + w / 2 - 70, y + h / 2 - 28);
     this.skipBtn.setPosition(x + w / 2 - 150, y + h / 2 - 28);
   }
