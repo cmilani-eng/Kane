@@ -43,11 +43,16 @@ export type SelectionPanelView =
       flavor: string;
       hp: number;
       maxHp: number;
+      /** Building finished construction (can start training). */
+      ready: boolean;
       trains: {
         typeId: UnitTypeId;
         name: string;
         costGold: number;
         costCrystals: number;
+        /** Wallet can cover gold + crystals. */
+        canPay: boolean;
+        /** Ready + canPay — button enabled. */
         affordable: boolean;
       }[];
       queue: UnitTypeId[];
@@ -284,24 +289,51 @@ function injectStyles(): void {
     }
     #kane-selection-panel button.is-train {
       background: #3d7ea6;
-      flex: 1 1 90px;
-      max-width: 160px;
+      flex: 1 1 100px;
+      max-width: 180px;
+      text-align: left;
     }
-    #kane-selection-panel button.is-train small {
+    #kane-selection-panel button.is-train .kane-sel-train-name {
       display: block;
-      font-weight: 500;
-      opacity: 0.9;
+      font-weight: 700;
+      font-size: 12px;
+      color: #fff8e8;
+    }
+    #kane-selection-panel button.is-train .kane-sel-cost {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      margin-top: 3px;
+      font-weight: 600;
       font-size: 10px;
-      margin-top: 2px;
+      font-variant-numeric: tabular-nums;
+      letter-spacing: 0.02em;
+    }
+    #kane-selection-panel button.is-train .kane-sel-cost-gold {
+      color: #f0c75e;
+    }
+    #kane-selection-panel button.is-train .kane-sel-cost-crystal {
+      color: #7ec8ff;
+    }
+    #kane-selection-panel button.is-train.is-unaffordable {
+      opacity: 0.55;
+      border-color: #6a7f94;
+      background: #243040;
+    }
+    #kane-selection-panel button.is-train.is-unaffordable .kane-sel-cost-gold,
+    #kane-selection-panel button.is-train.is-unaffordable .kane-sel-cost-crystal {
+      color: #e87a7a;
     }
     #kane-selection-panel button:disabled {
-      opacity: 0.45;
       cursor: default;
     }
     #kane-selection-panel .kane-sel-queue {
       margin-top: 10px;
       padding-top: 8px;
       border-top: 1px solid #3a4555;
+    }
+    #kane-selection-panel .kane-sel-queue.is-idle .kane-sel-queue-bar {
+      opacity: 0.35;
     }
     #kane-selection-panel .kane-sel-queue-bar {
       height: 8px;
@@ -321,6 +353,8 @@ function injectStyles(): void {
       gap: 6px;
       margin-top: 8px;
       flex-wrap: wrap;
+      min-height: 28px;
+      align-items: center;
     }
     #kane-selection-panel .kane-sel-qicon {
       width: 28px;
@@ -337,13 +371,34 @@ function injectStyles(): void {
       position: relative;
     }
     #kane-selection-panel .kane-sel-qicon.is-active {
-      border-color: #fff8e8;
-      box-shadow: 0 0 0 1px rgba(240,199,94,0.5);
+      border-color: #f0c75e;
+      box-shadow: 0 0 0 1px rgba(240,199,94,0.55);
+      color: #fff8e8;
+    }
+    #kane-selection-panel .kane-sel-qicon .kane-sel-qnum {
+      position: absolute;
+      top: -5px;
+      right: -5px;
+      min-width: 12px;
+      height: 12px;
+      padding: 0 2px;
+      border-radius: 6px;
+      background: #0a1220;
+      border: 1px solid #f0c75e;
+      color: #f0c75e;
+      font-size: 8px;
+      line-height: 11px;
+      text-align: center;
     }
     #kane-selection-panel .kane-sel-queue-label {
       margin-top: 4px;
       font-size: 11px;
       color: #9eb4c8;
+      line-height: 1.3;
+    }
+    #kane-selection-panel .kane-sel-queue-label strong {
+      color: #f5e6c8;
+      font-weight: 600;
     }
     @media (max-width: 719px) {
       #kane-selection-panel {
@@ -385,7 +440,8 @@ export function selectionPanelInsetPx(visible: boolean): number {
   if (!visible) return 0;
   const narrow =
     typeof window !== 'undefined' ? window.innerWidth < 720 : false;
-  return narrow ? 148 : 136;
+  // Slightly taller: train cost rows + always-on queue strip for producers.
+  return narrow ? 168 : 156;
 }
 
 export function buildSelectionView(
@@ -399,15 +455,18 @@ export function buildSelectionView(
     const bdef = getBuildingType(b.typeId);
     const species = SPECIES[bdef.speciesId];
     const wallet = walletOf(world, 'player');
+    const ready = b.complete;
     const trains = bdef.trains.map((typeId) => {
       const u = getUnitType(typeId);
       const cost = { gold: u.costGold, magic_crystals: u.costCrystals };
+      const canPay = canAfford(wallet, cost);
       return {
         typeId,
         name: u.name,
         costGold: u.costGold,
         costCrystals: u.costCrystals,
-        affordable: canAfford(wallet, cost) && b.complete,
+        canPay,
+        affordable: canPay && ready,
       };
     });
     const head = b.trainQueue[0] ? getUnitType(b.trainQueue[0]) : null;
@@ -421,6 +480,7 @@ export function buildSelectionView(
       flavor: `${species.name} · ${species.uniqueMechanic}`,
       hp: b.hp,
       maxHp: b.maxHp,
+      ready,
       trains,
       queue: [...b.trainQueue],
       progressPct,
@@ -512,10 +572,76 @@ function structureSignature(view: SelectionPanelView): string {
   return [
     'b',
     view.title,
-    view.trains.map((t) => `${t.typeId}:${t.affordable ? 1 : 0}`).join(','),
+    view.ready ? 1 : 0,
+    view.trains
+      .map((t) => `${t.typeId}:${t.canPay ? 1 : 0}:${t.affordable ? 1 : 0}`)
+      .join(','),
     view.queue.join(','),
     view.headName ?? '',
   ].join('|');
+}
+
+function trainCostHtml(gold: number, crystals: number): string {
+  const bits = [
+    `<span class="kane-sel-cost-gold">Gold ${gold}</span>`,
+  ];
+  if (crystals > 0) {
+    bits.push(`<span class="kane-sel-cost-crystal">Crystal ${crystals}</span>`);
+  }
+  return `<span class="kane-sel-cost">${bits.join('')}</span>`;
+}
+
+function trainButtonHtml(t: {
+  typeId: UnitTypeId;
+  name: string;
+  costGold: number;
+  costCrystals: number;
+  canPay: boolean;
+  affordable: boolean;
+}): string {
+  const classes = ['is-train'];
+  if (!t.affordable) classes.push('is-unaffordable');
+  const reason = !t.affordable
+    ? !t.canPay
+      ? ' title="Need more resources"'
+      : ' title="Building still under construction"'
+    : '';
+  return `<button type="button" class="${classes.join(' ')}" data-act="train" data-type-id="${t.typeId}"${t.affordable ? '' : ' disabled'}${reason}><span class="kane-sel-train-name">${escapeHtml(t.name)}</span>${trainCostHtml(t.costGold, t.costCrystals)}</button>`;
+}
+
+function applyTrainAffordability(
+  btn: HTMLButtonElement,
+  t: { canPay: boolean; affordable: boolean },
+): void {
+  btn.disabled = !t.affordable;
+  btn.classList.toggle('is-unaffordable', !t.affordable);
+  if (!t.affordable) {
+    btn.title = !t.canPay
+      ? 'Need more resources'
+      : 'Building still under construction';
+  } else {
+    btn.removeAttribute('title');
+  }
+}
+
+function queueLabelText(
+  view: Extract<SelectionPanelView, { kind: 'building' }>,
+): string {
+  if (!view.ready) return 'Under construction — train buttons unlock when finished';
+  if (view.queue.length === 0) {
+    return view.trains.length
+      ? 'Idle — tap a unit to train (Gold / Crystal cost on each button)'
+      : 'No production options';
+  }
+  const pct = Math.floor(view.progressPct * 100);
+  const waiting = view.queue.length - 1;
+  if (view.headName && waiting > 0) {
+    return `Training ${view.headName} · ${pct}% · ${waiting} waiting`;
+  }
+  if (view.headName) {
+    return `Training ${view.headName} · ${pct}%`;
+  }
+  return `Queue ${view.queue.length}`;
 }
 
 export function renderSelectionPanel(view: SelectionPanelView): boolean {
@@ -591,48 +717,45 @@ export function renderSelectionPanel(view: SelectionPanelView): boolean {
       stats.innerHTML = view.trains.length
         ? '<span>Production</span>'
         : '<span>No production</span>';
-      actions.innerHTML = view.trains
-        .map((t) => {
-          const cost =
-            t.costCrystals > 0
-              ? `${t.costGold}g / ${t.costCrystals}c`
-              : `${t.costGold}g`;
-          return `<button type="button" class="is-train" data-act="train" data-type-id="${t.typeId}" ${t.affordable ? '' : 'disabled'}>${escapeHtml(t.name)}<small>${cost}</small></button>`;
-        })
-        .join('');
+      actions.innerHTML = view.trains.map(trainButtonHtml).join('');
     } else {
       for (const t of view.trains) {
         const btn = actions.querySelector(
           `button[data-type-id="${t.typeId}"]`,
         ) as HTMLButtonElement | null;
-        if (btn) btn.disabled = !t.affordable;
+        if (btn) applyTrainAffordability(btn, t);
       }
     }
 
-    if (view.queue.length === 0) {
+    if (view.trains.length === 0) {
       queue.hidden = true;
     } else {
       queue.hidden = false;
-      queueFill.style.width = `${(view.progressPct * 100).toFixed(1)}%`;
+      const idle = view.queue.length === 0;
+      queue.classList.toggle('is-idle', idle);
+      queueFill.style.width = idle
+        ? '0%'
+        : `${(view.progressPct * 100).toFixed(1)}%`;
       if (structuralChange) {
-        const shown = view.queue.slice(0, 6);
-        const overflow = view.queue.length - shown.length;
-        queueIcons.innerHTML =
-          shown
-            .map((id, i) => {
-              const u = getUnitType(id);
-              const label = u.name.slice(0, 2).toUpperCase();
-              return `<div class="kane-sel-qicon${i === 0 ? ' is-active' : ''}" title="${escapeHtml(u.name)}">${label}</div>`;
-            })
-            .join('') +
-          (overflow > 0
-            ? `<div class="kane-sel-qicon" title="+${overflow}">+${overflow}</div>`
-            : '');
+        if (idle) {
+          queueIcons.innerHTML = '';
+        } else {
+          const shown = view.queue.slice(0, 6);
+          const overflow = view.queue.length - shown.length;
+          queueIcons.innerHTML =
+            shown
+              .map((id, i) => {
+                const u = getUnitType(id);
+                const label = u.name.slice(0, 2).toUpperCase();
+                return `<div class="kane-sel-qicon${i === 0 ? ' is-active' : ''}" title="${escapeHtml(u.name)}">${label}<span class="kane-sel-qnum">${i + 1}</span></div>`;
+              })
+              .join('') +
+            (overflow > 0
+              ? `<div class="kane-sel-qicon" title="+${overflow} more">+${overflow}</div>`
+              : '');
+        }
       }
-      const pct = Math.floor(view.progressPct * 100);
-      queueLabel.textContent = view.headName
-        ? `Training ${view.headName} · ${pct}% · queue ${view.queue.length}`
-        : `Queue ${view.queue.length}`;
+      queueLabel.textContent = queueLabelText(view);
     }
   }
 
