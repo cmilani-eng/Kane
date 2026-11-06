@@ -23,6 +23,7 @@ import { createFogState } from './battlefieldFog';
 import { setUnitPath } from './battlefieldPathfinding';
 import { mutationSpeedMult } from './battlefieldMutations';
 import { rageSpeedMult } from './battlefieldRage';
+import { spawnWaypointMarker } from './battlefieldWaypointMarkers';
 
 export type BattlefieldTeam = 'player' | 'enemy' | 'neutral';
 
@@ -134,6 +135,8 @@ export interface BattlefieldWorld {
   stopFx: import('./battlefieldStopFx').StopFx[];
   /** Control-group assign/recall rings. */
   controlGroupFx: import('./battlefieldControlGroupFx').ControlGroupFx[];
+  /** Move / attack-move ground waypoints. */
+  waypointMarkers: import('./battlefieldWaypointMarkers').WaypointMarker[];
   /** Capturable CORE fragments (shattered KANE CORE). */
   coreFragments: import('./battlefieldCoreFragments').CoreFragment[];
   /** Presentation cue — claim SFX window. */
@@ -400,6 +403,7 @@ export function createBattlefieldWorld(
     economyFx: [],
     stopFx: [],
     controlGroupFx: [],
+    waypointMarkers: [],
     coreFragments: [],
     coreClaimFlashMs: 0,
     fog: createFogState(),
@@ -490,6 +494,7 @@ export function issueMoveSelected(
   y: number,
 ): void {
   const selected = world.units.filter((u) => u.selected && u.team === 'player');
+  if (selected.length === 0) return;
   selected.forEach((u, i) => {
     u.attackTargetId = null;
     u.gatherNodeId = null;
@@ -501,6 +506,13 @@ export function issueMoveSelected(
       y: clamp(y + oy, 20, MAP.height - 20),
     });
   });
+  spawnWaypointMarker(
+    world,
+    clamp(x, 20, MAP.width - 20),
+    clamp(y, 20, MAP.height - 20),
+    'move',
+    selected.map((u) => u.id),
+  );
 }
 
 /** Accumulator for throttled soft-separation (ms). */
