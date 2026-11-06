@@ -72,6 +72,8 @@ export class BattlefieldHud {
   readonly armyBtn!: Phaser.GameObjects.Text;
   /** Subtle idle-worker attention chip (hidden when 0). */
   readonly idlePingBtn!: Phaser.GameObjects.Text;
+  /** Critical under-attack chip (Keep/hero) — tap to jump camera. */
+  readonly attackPingBtn!: Phaser.GameObjects.Text;
   /** Recenter camera on player keep / hall. */
   readonly baseBtn!: Phaser.GameObjects.Text;
   /** Mobile/desktop open in-match pause overlay. */
@@ -92,6 +94,8 @@ export class BattlefieldHud {
   onSelectArmy: (() => void) | null = null;
   /** Scene wires idle-chip select/cycle (clear building + camera). */
   onIdleWorkers: ((result: IdleChipResult) => void) | null = null;
+  /** Scene wires critical under-attack chip → camera jump. */
+  onUnderAttackJump: ((x: number, y: number) => void) | null = null;
 
   private goldDot!: Phaser.GameObjects.Arc;
   private crystalDot!: Phaser.GameObjects.Arc;
@@ -104,6 +108,7 @@ export class BattlefieldHud {
   private groupFlashColor = '#f0c75e';
   private groupFlashUntil = 0;
   private idlePulseMs = 0;
+  private attackPulseMs = 0;
   /** Extra lift for DOM selection panel (px from bottom). */
   private bottomInset = 0;
 
@@ -455,6 +460,25 @@ export class BattlefieldHud {
         this.onIdleWorkers?.(result);
       });
 
+    this.attackPingBtn = scene.add
+      .text(12, 140, '', {
+        fontFamily: 'system-ui, sans-serif',
+        fontSize: '12px',
+        color: '#ffe0e0',
+        backgroundColor: '#5a2030cc',
+        padding: { x: 10, y: 6 },
+      })
+      .setScrollFactor(0)
+      .setDepth(101)
+      .setVisible(false)
+      .setInteractive({ useHandCursor: true })
+      .on('pointerup', () => {
+        const a = this.world.underAttackAlert;
+        if (!a || a.lifeMs <= 0 || a.severity !== 'critical') return;
+        playSfx('alert');
+        this.onUnderAttackJump?.(a.x, a.y);
+      });
+
     this.buildAbilityPad(accent);
     this.layout();
     scene.scale.on('resize', () => this.layout());
@@ -550,6 +574,7 @@ export class BattlefieldHud {
       this.stopBtn,
       this.armyBtn,
       this.idlePingBtn,
+      this.attackPingBtn,
       this.goldDot,
       this.crystalDot,
       this.supplyDot,
@@ -616,16 +641,21 @@ export class BattlefieldHud {
       .setPosition(pad, belowRes)
       .setFontSize(this.narrow ? '11px' : '12px');
     const idleOffset = this.idlePingBtn.visible ? 28 : 0;
-    this.status
+    this.attackPingBtn
       .setPosition(pad, belowRes + idleOffset)
+      .setFontSize(this.narrow ? '11px' : '12px');
+    const alertOffset =
+      idleOffset + (this.attackPingBtn.visible ? 28 : 0);
+    this.status
+      .setPosition(pad, belowRes + alertOffset)
       .setStyle({ wordWrap: { width: Math.min(520, w - pad * 2) } });
     this.heroLine
-      .setPosition(pad, belowRes + idleOffset + (this.narrow ? 44 : 36))
+      .setPosition(pad, belowRes + alertOffset + (this.narrow ? 44 : 36))
       .setStyle({ wordWrap: { width: Math.min(560, w - pad * 2) } })
       .setFontSize(this.narrow ? '11px' : '12px');
     const coreY =
       belowRes +
-      idleOffset +
+      alertOffset +
       (this.narrow ? 44 : 36) +
       (this.heroLine.visible && this.heroLine.text ? (this.narrow ? 28 : 30) : 0);
     this.coreLine
@@ -878,6 +908,31 @@ export class BattlefieldHud {
       this.idlePingBtn.setVisible(false).setAlpha(1);
     }
     if (wasIdleVisible !== this.idlePingBtn.visible) this.layout();
+
+    // Critical Keep/hero under-attack chip
+    this.attackPulseMs += dtMs;
+    const alert = this.world.underAttackAlert;
+    const wasAttackVisible = this.attackPingBtn.visible;
+    const showAttack =
+      !!alert &&
+      alert.lifeMs > 0 &&
+      alert.severity === 'critical';
+    if (showAttack && alert) {
+      const pulse = 0.7 + 0.3 * Math.sin(this.attackPulseMs / 220);
+      const label =
+        alert.kind === 'keep'
+          ? 'Keep under attack · tap'
+          : alert.kind === 'hero'
+            ? 'Hero under attack · tap'
+            : 'Base under attack · tap';
+      this.attackPingBtn
+        .setVisible(true)
+        .setAlpha(pulse)
+        .setText(label);
+    } else {
+      this.attackPingBtn.setVisible(false).setAlpha(1);
+    }
+    if (wasAttackVisible !== this.attackPingBtn.visible) this.layout();
 
     // Brutes: live Rage count on match line
     if (this.speciesId === 'brutes') {
