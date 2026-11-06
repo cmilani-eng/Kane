@@ -1558,6 +1558,8 @@ export class BattlefieldScene extends Phaser.Scene {
       const crystals = def.cost.magic_crystals ?? 0;
       const canPay = canAfford(walletOf(this.world, 'player'), def.cost);
       const foot = placementFootprintSize(this.placeType);
+      const buildSec =
+        def.buildMs > 0 ? Math.max(0, Math.ceil(def.buildMs / 1000)) : 0;
       this.hud.setPlacementCost({
         name: def.name,
         gold,
@@ -1565,6 +1567,7 @@ export class BattlefieldScene extends Phaser.Scene {
         canPay,
         cols: foot.cols,
         rows: foot.rows,
+        buildSec,
       });
     } else {
       this.hud.setPlacementCost(null);
