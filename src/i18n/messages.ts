@@ -5,6 +5,7 @@
 export const enGB = {
   'boot.tap': 'Tap to continue',
   'menu.difficulty': 'Difficulty',
+  'menu.easyTip': 'Easy · extra starting gold & crystals · slower AI economy',
   'menu.map': 'Map',
   'menu.pickSpecies': 'Pick your species for a local skirmish',
   'menu.lastPlayed': 'Last played',
@@ -200,6 +201,7 @@ type Catalog = Record<MessageKey, string>;
 export const ptBR = {
   'boot.tap': 'Toque para continuar',
   'menu.difficulty': 'Dificuldade',
+  'menu.easyTip': 'Fácil · ouro e cristais extras · economia da IA mais lenta',
   'menu.map': 'Mapa',
   'menu.pickSpecies': 'Escolha a espécie para uma escaramuça local',
   'menu.lastPlayed': 'Última',
@@ -391,6 +393,7 @@ export const ptBR = {
 export const es = {
   'boot.tap': 'Toca para continuar',
   'menu.difficulty': 'Dificultad',
+  'menu.easyTip': 'Fácil · oro y cristales extra · economía de la IA más lenta',
   'menu.map': 'Mapa',
   'menu.pickSpecies': 'Elige tu especie para una escaramuza local',
   'menu.lastPlayed': 'Anterior',

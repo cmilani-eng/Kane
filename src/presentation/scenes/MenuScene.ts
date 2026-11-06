@@ -280,15 +280,31 @@ export class MenuScene extends Phaser.Scene {
 
     this.drawDifficultyRow(width, height * 0.29);
 
+    // One quiet line only while Easy is selected — no tip clutter on Normal/Hard.
+    if (this.difficulty === 'easy') {
+      this.add
+        .text(width / 2, height * 0.325, t('menu.easyTip'), {
+          fontFamily: 'system-ui, sans-serif',
+          fontSize: '11px',
+          color: '#c8d8a8',
+          align: 'center',
+          wordWrap: { width: Math.min(420, width * 0.88) },
+        })
+        .setOrigin(0.5);
+    }
+
+    const mapLabelY = this.difficulty === 'easy' ? height * 0.355 : height * 0.335;
+    const mapRowY = this.difficulty === 'easy' ? height * 0.4 : height * 0.38;
+
     this.add
-      .text(width / 2, height * 0.335, t('menu.map'), {
+      .text(width / 2, mapLabelY, t('menu.map'), {
         fontFamily: 'system-ui, sans-serif',
         fontSize: '13px',
         color: '#b8c9d9',
       })
       .setOrigin(0.5);
 
-    this.drawMapRow(width, height * 0.38);
+    this.drawMapRow(width, mapRowY);
 
     this.add
       .text(width / 2, height * 0.43, t('menu.pickSpecies'), {
