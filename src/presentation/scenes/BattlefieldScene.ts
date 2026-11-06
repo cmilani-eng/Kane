@@ -92,6 +92,7 @@ import {
   spawnStopPulses,
   tickStopFx,
 } from '../../gameplay/battlefield/battlefieldStopFx';
+import { tickWaypointMarkers } from '../../gameplay/battlefield/battlefieldWaypointMarkers';
 import {
   clearSelection,
   createBattlefieldWorld,
@@ -138,6 +139,7 @@ import { drawMutationVisuals } from '../fx/mutationVisual';
 import { drawRageVisuals } from '../fx/rageVisual';
 import { drawControlGroupFxList } from '../fx/controlGroupFeedback';
 import { drawStopFxList } from '../fx/stopCommandFeedback';
+import { drawWaypointMarkers } from '../fx/waypointMarkersDraw';
 import {
   drawUnitSilhouette,
   resolveUnitAnimPhase,
@@ -646,6 +648,7 @@ export class BattlefieldScene extends Phaser.Scene {
       tickEconomyFx(this.world, delta);
       tickStopFx(this.world, delta);
       tickControlGroupFx(this.world, delta);
+      tickWaypointMarkers(this.world, delta);
       tickBuildings(this.world, delta);
       tickProduction(this.world, delta);
       tickFormations(this.world, delta);
@@ -836,6 +839,12 @@ export class BattlefieldScene extends Phaser.Scene {
     drawEconomyFxList(g, this.world.economyFx, view);
     drawStopFxList(g, this.world.stopFx, view);
     drawControlGroupFxList(g, this.world.controlGroupFx, view);
+    drawWaypointMarkers(
+      g,
+      this.world.waypointMarkers,
+      this.animTimeMs,
+      view,
+    );
     drawCoreFragments(g, this.world, this.animTimeMs, view);
     drawCombatFxList(g, this.world.combatFx, view);
     drawFormationVisuals(g, this.world, this.animTimeMs);

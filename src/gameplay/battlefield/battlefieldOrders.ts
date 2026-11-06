@@ -4,6 +4,7 @@
 import { MAP } from '../../config/balance';
 import { clamp } from '../math';
 import { clearUnitPath, setUnitPath } from './battlefieldPathfinding';
+import { spawnWaypointMarker } from './battlefieldWaypointMarkers';
 import type { BattlefieldWorld } from './battlefieldWorld';
 import { clearSelection, selectedUnits } from './battlefieldWorld';
 
@@ -79,6 +80,9 @@ export function issueAttackMoveSelected(
   y: number,
 ): number {
   const selected = selectedUnits(world);
+  if (selected.length === 0) return 0;
+  const gx = clamp(x, 20, MAP.width - 20);
+  const gy = clamp(y, 20, MAP.height - 20);
   selected.forEach((u, i) => {
     u.gatherNodeId = null;
     u.attackTargetId = null;
@@ -86,9 +90,16 @@ export function issueAttackMoveSelected(
     const ox = (i % 5) * 28 - 56;
     const oy = Math.floor(i / 5) * 28;
     setUnitPath(world, u, {
-      x: clamp(x + ox, 20, MAP.width - 20),
-      y: clamp(y + oy, 20, MAP.height - 20),
+      x: clamp(gx + ox, 20, MAP.width - 20),
+      y: clamp(gy + oy, 20, MAP.height - 20),
     });
   });
+  spawnWaypointMarker(
+    world,
+    gx,
+    gy,
+    'attackMove',
+    selected.map((u) => u.id),
+  );
   return selected.length;
 }
