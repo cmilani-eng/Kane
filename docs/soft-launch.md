@@ -50,6 +50,7 @@ This doc is the honest gate before any public preview URL.
 | Minimap select blips | **OK** — selected units draw gold/cream blips above camera/order layers | `minimapSelectedUnitBlip`, `minimap` |
 | Help species hotkeys | **OK** — Controls help lists Formation/Mutation/Rage only for the current species | `controlsHelpPanel`, `help.formation` / `mutation` / `rage` |
 | Help Tab cycle tip | **OK** — Controls help notes Tab/Shift+Tab walks all → one type → all in the selection | `help.cycle`, `help.cycleKeys` |
+| Help minimap ping tip | **OK** — Controls help lists Attention mark · hold minimap (cooldown) · double-tap recenter | `help.ping`, `help.pingKeys`, `controlsHelpPanel` |
 | Formation count tip | **OK** — Nobles selection hint shows F + formed/eligible count | `selectionPanel` `formationCountTip` |
 | Stance hotkey echo | **OK** — F / R / M flashes the matching stance button on the selection panel | `flashStanceHotkey` |
 | Idle gather target | **OK** — idle worker chip hints nearest Gold/Crystals gather target | `nearestIdleGatherResource`, `hud.idleGather` |
