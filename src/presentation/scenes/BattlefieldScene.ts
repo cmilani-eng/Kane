@@ -1263,12 +1263,19 @@ export class BattlefieldScene extends Phaser.Scene {
     this.cameraCtl.suppressPan = true;
     this.writeEndMatchSummary(result);
 
+    const playerUnitsLeft = livingByTeam(this.world, 'player');
+    const playerBuildingsLeft = this.world.buildings.filter(
+      (b) => b.team === 'player' && b.hp > 0,
+    ).length;
+
     showKaneEndScreen({
       scene: this,
       win: result === 'victory',
       speciesId: this.world.speciesId,
       mapId: this.world.mapId,
       durationMs: Math.max(0, Math.floor(this.matchElapsedMs)),
+      playerUnitsLeft,
+      playerBuildingsLeft,
       reason: matchEndReason(this.world, result),
       onMenu: () => this.scene.start('Menu'),
       onRematch: () => this.rematchSameSkirmish(),

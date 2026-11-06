@@ -19,6 +19,10 @@ export interface EndScreenOpts {
   mapId?: SkirmishMapId;
   /** Match elapsed ms → mm:ss on the panel. */
   durationMs?: number;
+  /** Surviving player units at end (same as match summary). */
+  playerUnitsLeft?: number;
+  /** Surviving player buildings at end (same as match summary). */
+  playerBuildingsLeft?: number;
   onMenu: () => void;
   /** Restart skirmish with the same species + difficulty. */
   onRematch: () => void;
@@ -35,6 +39,8 @@ export function showKaneEndScreen(opts: EndScreenOpts): void {
     speciesId,
     mapId,
     durationMs,
+    playerUnitsLeft,
+    playerBuildingsLeft,
     onMenu,
     onRematch,
     ignoreOnMain,
@@ -55,7 +61,7 @@ export function showKaneEndScreen(opts: EndScreenOpts): void {
   root.push(dim);
 
   const panelW = Math.min(440, width - 32);
-  const panelH = Math.min(380, height * 0.66);
+  const panelH = Math.min(420, height * 0.7);
   const panel = scene.add
     .rectangle(width / 2, height * 0.48, panelW, panelH, wash, 0.92)
     .setStrokeStyle(2, accent, 0.85)
@@ -167,7 +173,7 @@ export function showKaneEndScreen(opts: EndScreenOpts): void {
       ? t('end.meta', { map: mapLabel, clock })
       : mapLabel || clock;
   const meta = scene.add
-    .text(width / 2, height * 0.48 + panelH * 0.3, metaText, {
+    .text(width / 2, height * 0.48 + panelH * 0.26, metaText, {
       fontFamily: 'system-ui, sans-serif',
       fontSize: '13px',
       color: '#9eb4c8',
@@ -180,8 +186,30 @@ export function showKaneEndScreen(opts: EndScreenOpts): void {
     .setVisible(!!metaText);
   root.push(meta);
 
+  const hasRecap =
+    playerUnitsLeft != null && playerBuildingsLeft != null;
+  const recapText = hasRecap
+    ? t('end.recap', {
+        units: playerUnitsLeft,
+        buildings: playerBuildingsLeft,
+      })
+    : '';
+  const recap = scene.add
+    .text(width / 2, height * 0.48 + panelH * 0.34, recapText, {
+      fontFamily: 'system-ui, sans-serif',
+      fontSize: '13px',
+      color: '#b8c9d9',
+      align: 'center',
+    })
+    .setOrigin(0.5)
+    .setScrollFactor(0)
+    .setDepth(202)
+    .setAlpha(0)
+    .setVisible(hasRecap);
+  root.push(recap);
+
   const rematchBtn = scene.add
-    .text(width / 2, height * 0.48 + panelH * 0.4, t('end.rematch'), {
+    .text(width / 2, height * 0.48 + panelH * 0.44, t('end.rematch'), {
       fontFamily: 'Georgia, "Times New Roman", serif',
       fontSize: '18px',
       color: '#fff8e8',
@@ -202,7 +230,7 @@ export function showKaneEndScreen(opts: EndScreenOpts): void {
   root.push(rematchBtn);
 
   const menuBtn = scene.add
-    .text(width / 2, height * 0.48 + panelH * 0.54, t('end.menu'), {
+    .text(width / 2, height * 0.48 + panelH * 0.58, t('end.menu'), {
       fontFamily: 'Georgia, "Times New Roman", serif',
       fontSize: '16px',
       color: '#fff8e8',
@@ -244,7 +272,7 @@ export function showKaneEndScreen(opts: EndScreenOpts): void {
     ease: 'Back.easeOut',
   });
   scene.tweens.add({
-    targets: [brand, tag, sub, meta, rematchBtn, menuBtn],
+    targets: [brand, tag, sub, meta, recap, rematchBtn, menuBtn],
     alpha: 1,
     duration: 400,
     delay: 180,
