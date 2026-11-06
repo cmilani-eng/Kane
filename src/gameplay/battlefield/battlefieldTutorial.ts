@@ -94,7 +94,9 @@ export function tutorialTip(
 ): string {
   if (!state.visible || state.step === 'done') return '';
   if (state.step === 'map') {
-    return mapId === 'ridge' ? t('tutorial.map.ridge') : t('tutorial.map.crossing');
+    if (mapId === 'ridge') return t('tutorial.map.ridge');
+    if (mapId === 'gap') return t('tutorial.map.gap');
+    return t('tutorial.map.crossing');
   }
   if (state.step === 'practice') return t('tutorial.practice');
   return t(tipKey(state.step));

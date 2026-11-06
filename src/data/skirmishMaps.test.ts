@@ -9,7 +9,7 @@ import {
 
 describe('skirmish maps', () => {
   it('lists two distinct selectable layouts', () => {
-    expect(SKIRMISH_MAP_ORDER).toEqual(['crossing', 'ridge']);
+    expect(SKIRMISH_MAP_ORDER).toEqual(['crossing', 'ridge', 'gap']);
     expect(SKIRMISH_MAPS.crossing.tileSeed).not.toBe(SKIRMISH_MAPS.ridge.tileSeed);
     expect(SKIRMISH_MAPS.crossing.playerBase).not.toEqual(
       SKIRMISH_MAPS.ridge.playerBase,
@@ -17,6 +17,8 @@ describe('skirmish maps', () => {
     expect(SKIRMISH_MAPS.crossing.enemyBase).not.toEqual(
       SKIRMISH_MAPS.ridge.enemyBase,
     );
+    expect(SKIRMISH_MAPS.gap.playerBase.x).toBeLessThan(SKIRMISH_MAPS.gap.enemyBase.x);
+    expect(SKIRMISH_MAPS.gap.playerBase.y).toBe(SKIRMISH_MAPS.gap.enemyBase.y);
   });
 
   it('seeds different base halls for ridge vs crossing', () => {
@@ -31,6 +33,12 @@ describe('skirmish maps', () => {
     expect(b.nodes.length).toBeGreaterThan(0);
     expect(a.coreFragments.length).toBe(3);
     expect(b.coreFragments.length).toBe(3);
+    const gap = createBattlefieldWorld('brutes', 'normal', 'gap');
+    const hallG = gap.buildings.find((x) => x.team === 'player')!;
+    const enemyG = gap.buildings.find((x) => x.team === 'enemy')!;
+    expect(gap.mapId).toBe('gap');
+    expect(hallG.x).toBeLessThan(enemyG.x);
+    expect(gap.coreFragments.length).toBe(3);
   });
 
   it('falls back to the default map for unknown ids', () => {

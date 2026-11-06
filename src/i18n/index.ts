@@ -22,7 +22,7 @@ export const LOCALE_CHOICES: { id: LocaleId; short: string; label: string }[] = 
 type Vars = Record<string, string | number>;
 type SpeciesId = 'brutes' | 'nobles' | 'weirdos';
 type DifficultyId = 'practice' | 'easy' | 'normal' | 'hard';
-type MapId = 'crossing' | 'ridge';
+type MapId = 'crossing' | 'ridge' | 'gap';
 
 const listeners = new Set<() => void>();
 let sessionLocale: LocaleId | null = null;
@@ -141,5 +141,7 @@ export function mapCopy(id: MapId): { label: string; blurb: string } {
       return { label: t('map.crossing.label'), blurb: t('map.crossing.blurb') };
     case 'ridge':
       return { label: t('map.ridge.label'), blurb: t('map.ridge.blurb') };
+    case 'gap':
+      return { label: t('map.gap.label'), blurb: t('map.gap.blurb') };
   }
 }
