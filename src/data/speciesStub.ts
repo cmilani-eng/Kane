@@ -74,6 +74,52 @@ export const SPECIES: Record<SpeciesId, SpeciesDef> = {
   },
 };
 
+/**
+ * Teaching matchup triangle from GDD §6.0 — not rock-paper auto-win.
+ * Phrases are existing GDD copy only (no invented balance numbers).
+ *
+ *   Brutes swarm overwhelm Nobles
+ *   Weirdos disrupt Brutes
+ *   Nobles engineering/ranged counter Weirdos
+ */
+export interface SpeciesMatchupTip {
+  strongVs: SpeciesId;
+  weakVs: SpeciesId;
+  /** GDD verb fragment for Strong vs. */
+  strongPhrase: string;
+  /** GDD verb fragment for Weak vs. */
+  weakPhrase: string;
+}
+
+export const SPECIES_MATCHUP_TIP: Record<SpeciesId, SpeciesMatchupTip> = {
+  brutes: {
+    strongVs: 'nobles',
+    weakVs: 'weirdos',
+    strongPhrase: 'swarm overwhelm',
+    weakPhrase: 'disrupt',
+  },
+  nobles: {
+    strongVs: 'weirdos',
+    weakVs: 'brutes',
+    strongPhrase: 'engineering/ranged counter',
+    weakPhrase: 'swarm overwhelm',
+  },
+  weirdos: {
+    strongVs: 'brutes',
+    weakVs: 'nobles',
+    strongPhrase: 'disrupt',
+    weakPhrase: 'engineering/ranged counter',
+  },
+};
+
+/** Short selection-panel tip: Strong vs X · Weak vs Y (GDD names only). */
+export function speciesCounterTip(speciesId: SpeciesId): string {
+  const tip = SPECIES_MATCHUP_TIP[speciesId];
+  const strong = SPECIES[tip.strongVs].name.replace(/^The /, '');
+  const weak = SPECIES[tip.weakVs].name.replace(/^The /, '');
+  return `Strong vs ${strong} · Weak vs ${weak}`;
+}
+
 export function listSpecies(): SpeciesDef[] {
   return Object.values(SPECIES);
 }
