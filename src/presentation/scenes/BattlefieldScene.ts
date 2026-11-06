@@ -99,6 +99,7 @@ import { RtsCamera } from '../camera/rtsCamera';
 import { createSkirmishMap } from '../maps/mapManager';
 import { FogOverlay } from '../ui/fogOverlay';
 import { drawCombatFxList } from '../fx/combatFxDraw';
+import { drawFormationVisuals } from '../fx/formationVisual';
 import {
   drawUnitSilhouette,
   resolveUnitAnimPhase,
@@ -612,14 +613,23 @@ export class BattlefieldScene extends Phaser.Scene {
           : u.canGather
             ? ' · worker'
             : '';
-      const form = u.inFormation ? ' · FORMATION' : '';
+      const form = u.inFormation
+        ? u.formationLocked
+          ? ' · FORMATION (locked · F)'
+          : ' · FORMATION'
+        : '';
       const mut = u.mutated ? ' · MUTATED' : '';
       status = `1 selected — ${u.name}  HP ${Math.ceil(u.hp)}/${u.maxHp}${carry}${form}${mut}`;
     } else {
       const formed = sel.filter((u) => u.inFormation).length;
+      const locked = sel.filter((u) => u.formationLocked).length;
       const mutated = sel.filter((u) => u.mutated).length;
       const extra = [
-        formed ? `${formed} in formation` : '',
+        formed
+          ? locked
+            ? `${formed} formed (${locked} locked)`
+            : `${formed} in formation`
+          : '',
         mutated ? `${mutated} mutated` : '',
       ]
         .filter(Boolean)
@@ -651,6 +661,7 @@ export class BattlefieldScene extends Phaser.Scene {
     }
 
     drawCombatFxList(g, this.world.combatFx);
+    drawFormationVisuals(g, this.world, this.animTimeMs);
 
     for (const b of this.world.buildings) {
       if (b.team === 'enemy' && !enemyRevealed(this.world.fog, b.x, b.y)) {
