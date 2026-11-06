@@ -89,6 +89,7 @@ This doc is the honest gate before any public preview URL.
 | Blob → hub back | **OK** — Blob Evolution keeps a fixed ← Games link to `/` with `aria-label` (Back to Games hub) | `games/blob-evolution/index.html` `#hub-back` |
 | Hub status badges | **OK** — every hub card shows Live or Soft launch from `games.json` status | `hub.ts` `statusPill`, `hub.live` / `hub.experimental` |
 | Hub Live aria | **OK** — Live status pill sets `aria-label` via `hub.liveAria` (Status: Live) | `hub.ts` `statusPill`, `hub.liveAria` |
+| Hub Soft launch aria | **OK** — Soft launch pill sets `aria-label` via `hub.experimentalAria` | `hub.ts` `statusPill`, `hub.experimentalAria` |
 | Hub card focus | **OK** — keyboard focus-visible ring on `.hub-card` (accent outline + soft glow) | `games/hub/hub.css` |
 | Hub card Enter | **OK** — picker subtitle + card `aria-label` note Tab · Enter opens | `hub.subtitle`, `hub.cardOpen`, `hub.ts` |
 | Hub document title | **OK** — picker tab title is `KANE · Game picker` (localized) | `hub.documentTitle`, `games/index.html` |

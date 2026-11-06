@@ -105,6 +105,7 @@ describe('games registry', () => {
     }
     const hub = readFileSync(resolve(gamesDir, 'hub/hub.ts'), 'utf8');
     expect(hub).toContain("t('hub.liveAria')");
+    expect(hub).toContain("t('hub.experimentalAria')");
     expect(hub).toContain("setAttribute('aria-label'");
   });
 

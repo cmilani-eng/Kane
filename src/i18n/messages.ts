@@ -137,6 +137,7 @@ export const enGB = {
   'hub.live': 'Live',
   'hub.liveAria': 'Status: Live',
   'hub.experimental': 'Soft launch',
+  'hub.experimentalAria': 'Status: Soft launch',
   'hub.year': '© {n}',
   'hub.kane.blurb':
     'Fantasy real-time strategy. Pick a species, build a base and crush the enemy.',
@@ -631,6 +632,7 @@ export const ptBR = {
   'hub.live': 'Ao vivo',
   'hub.liveAria': 'Estado: Ao vivo',
   'hub.experimental': 'Pré-lançamento',
+  'hub.experimentalAria': 'Estado: Pré-lançamento',
   'hub.year': '© {n}',
   'hub.kane.blurb':
     'Estratégia em tempo real de fantasia. Escolha uma espécie, construa uma base e esmague o inimigo.',
@@ -1121,6 +1123,7 @@ export const es = {
   'hub.live': 'En vivo',
   'hub.liveAria': 'Estado: En vivo',
   'hub.experimental': 'Prelanzamiento',
+  'hub.experimentalAria': 'Estado: Prelanzamiento',
   'hub.year': '© {n}',
   'hub.kane.blurb':
     'Estrategia en tiempo real de fantasía. Elige una especie, construye una base y aplasta al enemigo.',

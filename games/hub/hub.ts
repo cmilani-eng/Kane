@@ -31,7 +31,9 @@ function statusPill(
     el.setAttribute('aria-label', t('hub.liveAria'));
     return el;
   }
-  return pill(softLaunch, 'bg-gold-bg text-gold');
+  const el = pill(softLaunch, 'bg-gold-bg text-gold');
+  el.setAttribute('aria-label', t('hub.experimentalAria'));
+  return el;
 }
 
 function gameCard(
