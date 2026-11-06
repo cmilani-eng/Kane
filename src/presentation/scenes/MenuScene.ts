@@ -269,10 +269,12 @@ export class MenuScene extends Phaser.Scene {
     this.drawDifficultyRow(width, height * 0.31);
 
     this.add
-      .text(width / 2, height * 0.38, t('menu.pickSpecies'), {
+      .text(width / 2, height * 0.365, t('menu.pickSpecies'), {
         fontFamily: 'system-ui, sans-serif',
         fontSize: '14px',
         color: '#b8c9d9',
+        align: 'center',
+        wordWrap: { width: Math.min(520, width * 0.9) },
       })
       .setOrigin(0.5);
 
@@ -535,13 +537,18 @@ export class MenuScene extends Phaser.Scene {
   ): void {
     const w = cardW ?? Math.min(190, this.scale.width * 0.28);
     const h = cardH ?? 150;
+    const compact = h <= 100;
     const bg = this.add
       .rectangle(x, y, w, h, fill, 1)
       .setStrokeStyle(remembered ? 4 : 3, remembered ? 0xf0c75e : stroke)
       .setInteractive({ useHandCursor: true });
-    this.previewSlots.push({ id: speciesId, x, y: y - 28 });
+    this.previewSlots.push({
+      id: speciesId,
+      x: compact ? x - w / 2 + 36 : x,
+      y: compact ? y : y - 28,
+    });
     this.add
-      .text(x, y - 52, name, {
+      .text(x, compact ? y - 28 : y - 52, name, {
         fontFamily: 'Georgia, "Times New Roman", serif',
         fontSize: '16px',
         color: '#fff8e8',
@@ -557,7 +564,7 @@ export class MenuScene extends Phaser.Scene {
         .setOrigin(0.5);
     }
     this.add
-      .text(x, y + 8, motto, {
+      .text(x, compact ? y + 2 : y + 8, motto, {
         fontFamily: 'system-ui, sans-serif',
         fontSize: '10px',
         color: '#e8f0f8',
@@ -566,7 +573,7 @@ export class MenuScene extends Phaser.Scene {
       })
       .setOrigin(0.5);
     this.add
-      .text(x, y + 36, mechanic, {
+      .text(x, compact ? y + 22 : y + 36, mechanic, {
         fontFamily: 'system-ui, sans-serif',
         fontSize: '12px',
         color: '#f0c75e',
@@ -574,7 +581,7 @@ export class MenuScene extends Phaser.Scene {
       })
       .setOrigin(0.5);
     this.add
-      .text(x, y + 58, remembered ? t('menu.playLast') : t('menu.play'), {
+      .text(x, compact ? y + 36 : y + 58, remembered ? t('menu.playLast') : t('menu.play'), {
         fontFamily: 'system-ui, sans-serif',
         fontSize: '14px',
         color: remembered ? '#f0c75e' : '#fff8e8',
