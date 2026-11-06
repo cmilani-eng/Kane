@@ -27,7 +27,6 @@ import {
 } from '../../gameplay/battlefield/battlefieldFormations';
 import {
   castHeroAbility,
-  recruitHero,
   tickHeroes,
 } from '../../gameplay/battlefield/battlefieldHeroes';
 import {
@@ -143,6 +142,10 @@ import { createSkirmishMap } from '../maps/mapManager';
 import { FogOverlay } from '../ui/fogOverlay';
 import { showKaneEndScreen } from '../ui/endScreen';
 import { PauseMenu } from '../ui/pauseMenu';
+import {
+  createControlsHelpPanel,
+  type ControlsHelpHandle,
+} from '../ui/controlsHelpPanel';
 import { drawBuildingSilhouette } from '../buildings/buildingSilhouette';
 import { drawPlacementGhost } from '../buildings/placementGhost';
 import { drawProductionQueueFeedback } from '../buildings/productionQueueFeedback';
@@ -194,6 +197,7 @@ export class BattlefieldScene extends Phaser.Scene {
   private amovePointer = { x: 0, y: 0 };
   private hud!: BattlefieldHud;
   private pauseMenu!: PauseMenu;
+  private controlsHelp!: ControlsHelpHandle;
   private paused = false;
   private minimap!: Minimap;
   private tutorial!: TutorialState;
@@ -272,6 +276,7 @@ export class BattlefieldScene extends Phaser.Scene {
     this.hud.onStopSelected = () => this.issueStopCommand();
     this.hud.onRecenterBase = () => this.recenterOnPlayerBase();
     this.hud.onPause = () => this.togglePause();
+    this.hud.onHelp = () => this.toggleControlsHelp();
     this.hud.onSelectArmy = () => this.clearBuildingSelection();
     this.hud.onIdleWorkers = (result) => {
       this.clearBuildingSelection();
@@ -279,6 +284,7 @@ export class BattlefieldScene extends Phaser.Scene {
         this.cameraCtl.centerOn(result.focus.x, result.focus.y);
       }
     };
+    this.controlsHelp = createControlsHelpPanel({});
     mountSelectionPanel({
       stop: () => this.issueStopCommand(),
       attackMove: () => this.toggleAttackMoveMode(),
@@ -289,12 +295,14 @@ export class BattlefieldScene extends Phaser.Scene {
         else playSfx('ui');
       },
     });
-    this.events.once(Phaser.Scenes.Events.SHUTDOWN, () =>
-      unmountSelectionPanel(),
-    );
-    this.events.once(Phaser.Scenes.Events.DESTROY, () =>
-      unmountSelectionPanel(),
-    );
+    this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => {
+      unmountSelectionPanel();
+      this.controlsHelp.destroy();
+    });
+    this.events.once(Phaser.Scenes.Events.DESTROY, () => {
+      unmountSelectionPanel();
+      this.controlsHelp.destroy();
+    });
     this.pauseMenu = new PauseMenu({
       scene: this,
       onResume: () => this.setPaused(false),
@@ -399,28 +407,41 @@ export class BattlefieldScene extends Phaser.Scene {
         playSfx('ui');
       }
     });
+    // H / ? open the controls cheat sheet (Recruit stays on the ability pad).
     this.input.keyboard?.on('keydown-H', () => {
-      if (this.paused || this.matchResult !== 'ongoing') return;
-      if (recruitHero(this.world, 'player')) playSfx('hero');
+      if (this.matchResult !== 'ongoing') return;
+      this.toggleControlsHelp();
+    });
+    this.input.keyboard?.on('keydown', (ev: KeyboardEvent) => {
+      if (this.matchResult !== 'ongoing') return;
+      if (ev.key === '?' || ev.key === '/') {
+        ev.preventDefault();
+        this.toggleControlsHelp();
+      }
     });
     this.input.keyboard?.on('keydown-Q', () => {
       if (this.paused || this.matchResult !== 'ongoing') return;
+      if (this.controlsHelp.isOpen()) return;
       if (castHeroAbility(this.world, 'ability1', 'player')) playSfx('ability');
     });
     this.input.keyboard?.on('keydown-W', () => {
       if (this.paused || this.matchResult !== 'ongoing') return;
+      if (this.controlsHelp.isOpen()) return;
       if (castHeroAbility(this.world, 'ability2', 'player')) playSfx('ability');
     });
     this.input.keyboard?.on('keydown-E', () => {
       if (this.paused || this.matchResult !== 'ongoing') return;
+      if (this.controlsHelp.isOpen()) return;
       if (castHeroAbility(this.world, 'ultimate', 'player')) playSfx('ability');
     });
     this.input.keyboard?.on('keydown-S', () => {
       if (this.paused || this.matchResult !== 'ongoing') return;
+      if (this.controlsHelp.isOpen()) return;
       this.issueStopCommand();
     });
     this.input.keyboard?.on('keydown-A', () => {
       if (this.paused || this.matchResult !== 'ongoing') return;
+      if (this.controlsHelp.isOpen()) return;
       if (this.ctrlHeld()) {
         this.selectAllMilitary();
         return;
@@ -451,9 +472,13 @@ export class BattlefieldScene extends Phaser.Scene {
     });
   }
 
-  /** Esc: cancel place/A-move first, else toggle pause (resume when open). */
+  /** Esc: close help, cancel place/A-move, else toggle pause (resume when open). */
   private onEscapeKey(): void {
     if (this.matchResult !== 'ongoing') return;
+    if (this.controlsHelp.isOpen()) {
+      this.controlsHelp.hide();
+      return;
+    }
     if (this.paused) {
       this.setPaused(false);
       return;
@@ -465,6 +490,12 @@ export class BattlefieldScene extends Phaser.Scene {
       return;
     }
     this.setPaused(true);
+  }
+
+  private toggleControlsHelp(): void {
+    if (this.matchResult !== 'ongoing') return;
+    if (this.paused) return;
+    this.controlsHelp.toggle();
   }
 
   private togglePause(): void {

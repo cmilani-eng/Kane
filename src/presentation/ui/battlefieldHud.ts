@@ -67,6 +67,8 @@ export class BattlefieldHud {
   readonly baseBtn!: Phaser.GameObjects.Text;
   /** Mobile/desktop open in-match pause overlay. */
   readonly pauseBtn!: Phaser.GameObjects.Text;
+  /** Mobile/desktop open controls / hotkey cheat sheet. */
+  readonly helpBtn!: Phaser.GameObjects.Text;
   /** Scene wires this to toggle A-move mode. */
   onArmAttackMove: (() => void) | null = null;
   /** Scene wires this to issue stop + pulse. */
@@ -75,6 +77,8 @@ export class BattlefieldHud {
   onRecenterBase: (() => void) | null = null;
   /** Scene wires this to open/toggle pause menu. */
   onPause: (() => void) | null = null;
+  /** Scene wires this to open/toggle controls help. */
+  onHelp: (() => void) | null = null;
   /** Scene wires this after army select (clears building focus). */
   onSelectArmy: (() => void) | null = null;
   /** Scene wires idle-chip select/cycle (clear building + camera). */
@@ -300,6 +304,28 @@ export class BattlefieldHud {
         this.baseBtn.setStyle({ backgroundColor: '#2a4050' }),
       );
 
+    this.helpBtn = scene.add
+      .text(scene.scale.width - 12, 172, 'Help', {
+        fontFamily: 'system-ui, sans-serif',
+        fontSize: '13px',
+        color: '#fff8e8',
+        backgroundColor: '#2a4050',
+        padding: { x: 12, y: 8 },
+      })
+      .setOrigin(1, 0)
+      .setScrollFactor(0)
+      .setDepth(101)
+      .setInteractive({ useHandCursor: true })
+      .on('pointerup', () => {
+        this.onHelp?.();
+      })
+      .on('pointerover', () =>
+        this.helpBtn.setStyle({ backgroundColor: '#3a5565' }),
+      )
+      .on('pointerout', () =>
+        this.helpBtn.setStyle({ backgroundColor: '#2a4050' }),
+      );
+
     this.attackMoveBtn = scene.add
       .text(12, scene.scale.height - 48, 'A · Atk', {
         fontFamily: 'system-ui, sans-serif',
@@ -389,7 +415,8 @@ export class BattlefieldHud {
     const accent = Phaser.Display.Color.HexStringToColor(accentHex).color;
     const entries: { slot: HeroAbilitySlot | 'recruit'; key: string; name: string }[] =
       [
-        { slot: 'recruit', key: 'H', name: 'Recruit' },
+        // H opens Controls help; recruit stays on this pad (tap).
+        { slot: 'recruit', key: '★', name: 'Recruit' },
         {
           slot: 'ability1',
           key: 'Q',
@@ -465,6 +492,7 @@ export class BattlefieldHud {
       this.muteBtn,
       this.pauseBtn,
       this.baseBtn,
+      this.helpBtn,
       this.attackMoveBtn,
       this.stopBtn,
       this.armyBtn,
@@ -546,6 +574,10 @@ export class BattlefieldHud {
       .setPosition(w - pad, pad + (this.narrow ? 104 : 118))
       .setFontSize(this.narrow ? '12px' : '13px')
       .setText(this.narrow ? 'Base' : 'Home · Base');
+    this.helpBtn
+      .setPosition(w - pad, pad + (this.narrow ? 138 : 156))
+      .setFontSize(this.narrow ? '12px' : '13px')
+      .setText(this.narrow ? 'Help' : '? · Help');
 
     const btnW = this.narrow ? Math.min(78, (w - pad * 2 - 18) / 4) : 92;
     const btnH = this.narrow ? 52 : 58;
@@ -780,12 +812,12 @@ export class BattlefieldHud {
       return `Place ${placeName ?? 'building'} (${placeCost ?? 0}g) · tap map · B cycle · Esc cancel`;
     }
     if (this.narrow) {
-      return 'Home · S stop · A atk-move · Army · pads H/Q/W/E';
+      return 'Help · Home · S stop · A atk-move · Army · pads H/Q/W/E';
     }
     return this.speciesId === 'nobles'
-      ? 'Home · Ctrl+1-0 · Ctrl+A army · S stop · A attack-move · F · H/Q/W/E'
+      ? '? Help · Home · Ctrl+1-0 · Ctrl+A · S · A · F · H/Q/W/E'
       : this.speciesId === 'weirdos'
-        ? 'Home · Ctrl+1-0 · Ctrl+A army · S stop · A attack-move · M · H/Q/W/E'
-        : 'Home · Ctrl+1-0 · Ctrl+A army · S stop · A attack-move · R · B · H/Q/W/E';
+        ? '? Help · Home · Ctrl+1-0 · Ctrl+A · S · A · M · H/Q/W/E'
+        : '? Help · Home · Ctrl+1-0 · Ctrl+A · S · A · R · B · H/Q/W/E';
   }
 }
