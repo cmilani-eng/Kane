@@ -16,7 +16,7 @@ This doc is the honest gate before any public preview URL.
 | Cosmetics | **OK** — skins catalog, local equip, in-match tint; **not purchasable**, no combat stats | `cosmeticsCatalog`, Cosmetics menu, `skinAccent` |
 | Legal stubs | **OK** — Privacy / Terms placeholders linked from menu | `public/privacy.html`, `public/terms.html` |
 | RTDB / Firestore rules drafts | **OK** — deny-by-default drafts documented | `database.rules.json`, `firestore.rules` |
-| SP rematch loop | **OK** — species + difficulty + map prefs; end-screen **Rematch** (same setup) or Return to Menu | `endScreen`, `matchPrefs`, `rematchPrefs`, Battlefield |
+| SP rematch loop | **OK** — species + difficulty + map prefs; end-screen + pause **Rematch** (same setup) or Return to Menu | `endScreen`, `pauseMenu`, `matchPrefs`, `rematchPrefs`, Battlefield |
 | PWA manifest + icons | **OK** — Add to Home Screen stubs; **no** offline service worker yet | `public/manifest.webmanifest`, `public/icons/`, `docs/pwa.md` |
 | Master volume | **OK** — mute-aware slider on menu + pause; persists `kane.masterVolume.v1` | `audioContext`, `volumeSlider`, pause/menu |
 | Reduce motion | **OK** — pause toggle disables under-attack camera nudge; persists `kane.reduceMotion.v1` | `motionPrefs`, `pauseMenu`, `BattlefieldScene` |
