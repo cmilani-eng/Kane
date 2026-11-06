@@ -11,6 +11,7 @@ import type { AiDifficultyId } from '../../gameplay/battlefield/aiDifficulty';
 import { offerPracticeStepUp } from '../../gameplay/battlefield/practiceStepUp';
 import { difficultyCopy, mapCopy, speciesName, t } from '../../i18n';
 import { playEndFanfare, playSfx } from '../audio/sfx';
+import { endDurationTipLine } from './endDurationTip';
 import { formatMatchClock } from './matchClock';
 import { copyEndShareLine, formatEndShareLine } from './endShareLine';
 
@@ -93,11 +94,12 @@ export function showKaneEndScreen(opts: EndScreenOpts): void {
   const yBrand = short ? top + 18 : cy - panelH * 0.4;
   const yTitle = short ? top + 58 : cy - panelH * 0.18;
   const yTag = short ? top + 90 : cy + panelH * 0.02;
-  const ySub = short ? top + 112 : cy + panelH * 0.12;
-  const yMeta = short ? top + 134 : cy + panelH * 0.2;
-  const yRecap = short ? top + 154 : cy + panelH * 0.26;
-  const yKill = short ? top + 168 : cy + panelH * 0.31;
-  const yGathered = short ? top + 182 : cy + panelH * 0.36;
+  const ySub = short ? top + 108 : cy + panelH * 0.1;
+  const yMeta = short ? top + 128 : cy + panelH * 0.17;
+  const yDuration = short ? top + 146 : cy + panelH * 0.23;
+  const yRecap = short ? top + 164 : cy + panelH * 0.29;
+  const yKill = short ? top + 178 : cy + panelH * 0.34;
+  const yGathered = short ? top + 192 : cy + panelH * 0.39;
   const yShare = short ? top + (stepUp ? 184 : 202) : cy + panelH * 0.42;
   const yStep = short ? top + panelH - 72 : cy + panelH * 0.48;
   const yActions = top + panelH - (short ? 28 : 36);
@@ -235,6 +237,22 @@ export function showKaneEndScreen(opts: EndScreenOpts): void {
     .setAlpha(0)
     .setVisible(!!metaText);
   root.push(meta);
+
+  const durationTip =
+    durationMs != null ? endDurationTipLine(durationMs) : '';
+  const duration = scene.add
+    .text(width / 2, yDuration, durationTip, {
+      fontFamily: 'system-ui, sans-serif',
+      fontSize: '13px',
+      color: '#c8d8e8',
+      align: 'center',
+    })
+    .setOrigin(0.5)
+    .setScrollFactor(0)
+    .setDepth(202)
+    .setAlpha(0)
+    .setVisible(!!durationTip);
+  root.push(duration);
 
   const hasRecap =
     playerUnitsLeft != null && playerBuildingsLeft != null;
@@ -444,6 +462,7 @@ export function showKaneEndScreen(opts: EndScreenOpts): void {
       tag,
       sub,
       meta,
+      duration,
       recap,
       killRatio,
       gathered,
