@@ -16,8 +16,9 @@ export function showLobbyPanel(scene: Phaser.Scene, onClose: () => void): void {
     .setDepth(300)
     .setInteractive();
 
-  const panelW = Math.min(440, width - 28);
-  const panelH = Math.min(380, height - 36);
+  const short = height < 500;
+  const panelW = short ? Math.min(720, width - 24) : Math.min(440, width - 28);
+  const panelH = short ? height - 16 : Math.min(380, height - 36);
   const cx = width / 2;
   const cy = height / 2;
   const top = cy - panelH / 2;
@@ -61,9 +62,9 @@ export function showLobbyPanel(scene: Phaser.Scene, onClose: () => void): void {
     .setDepth(302);
 
   const codeText = scene.add
-    .text(cx, cy - 28, '————', {
+    .text(cx, short ? top + 128 : cy - 28, '————', {
       fontFamily: 'Georgia, "Times New Roman", serif',
-      fontSize: '40px',
+      fontSize: short ? '28px' : '40px',
       color: '#f0c75e',
       fontStyle: 'bold',
     })
@@ -71,7 +72,7 @@ export function showLobbyPanel(scene: Phaser.Scene, onClose: () => void): void {
     .setDepth(302);
 
   const statusText = scene.add
-    .text(cx, cy + 18, '', {
+    .text(cx, short ? top + 164 : cy + 18, '', {
       fontFamily: 'system-ui, sans-serif',
       fontSize: '14px',
       color: '#d7e6f2',
@@ -83,7 +84,7 @@ export function showLobbyPanel(scene: Phaser.Scene, onClose: () => void): void {
     .setDepth(302);
 
   const quietNote = scene.add
-    .text(cx, bottom - 22, 'Local stub · no live sync yet', {
+    .text(cx, short ? bottom - 64 : bottom - 22, 'Local stub · no live sync yet', {
       fontFamily: 'system-ui, sans-serif',
       fontSize: '11px',
       color: '#6a7f94',
@@ -151,11 +152,11 @@ export function showLobbyPanel(scene: Phaser.Scene, onClose: () => void): void {
     nodes.push(btn);
   };
 
-  const rowY = bottom - 78;
-  mkBtn(cx - 110, rowY, 'Create code', '#2a4a38', () => {
+  const rowY = short ? bottom - 32 : bottom - 78;
+  mkBtn(cx - (short ? 180 : 110), rowY, 'Create code', '#2a4a38', () => {
     lobby.hostLocal();
   });
-  mkBtn(cx + 110, rowY, 'Join code…', '#2a3a50', () => {
+  mkBtn(cx + (short ? 0 : 110), rowY, 'Join code…', '#2a3a50', () => {
     const raw =
       typeof window !== 'undefined'
         ? window.prompt('Enter friend lobby code', 'KANE01')
@@ -163,7 +164,7 @@ export function showLobbyPanel(scene: Phaser.Scene, onClose: () => void): void {
     if (raw == null) return;
     lobby.joinLocal(raw);
   });
-  mkBtn(cx, rowY + 42, 'Leave', '#3a4555', () => {
+  mkBtn(short ? cx + 180 : cx, short ? rowY : rowY + 42, 'Leave', '#3a4555', () => {
     lobby.leave();
   });
 

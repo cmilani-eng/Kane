@@ -23,6 +23,7 @@ import type {
   ResourceNode,
 } from '../../gameplay/battlefield/battlefieldWorld';
 import { canAfford } from '../../gameplay/battlefield/battlefieldBuildings';
+import { buildingHasCustomRally } from '../../gameplay/battlefield/battlefieldRally';
 
 function matchupLine(id: SpeciesId): string {
   const tip = SPECIES_MATCHUP_TIP[id];
@@ -55,6 +56,8 @@ export type SelectionPanelHandlers = {
   train: (typeId: UnitTypeId) => void;
   /** Arm rally-set mode for the selected production building. */
   rally: () => void;
+  /** Reset rally to the default near-building point. */
+  clearRally: () => void;
   /** Cancel a queue slot (omit index = last item). */
   cancelQueue: (index?: number) => void;
   /** Cast selected hero ability (Q/W/E). */
@@ -165,6 +168,8 @@ export type SelectionPanelView =
       headName: string | null;
       rallyArmed: boolean;
       hasRally: boolean;
+      /** Rally differs from the default march point. */
+      hasCustomRally: boolean;
     }
   | {
       kind: 'resource';
@@ -237,6 +242,7 @@ export function ensureSelectionPanel(): HTMLElement {
     if (act === 'stop') handlers.stop();
     else if (act === 'attackMove') handlers.attackMove();
     else if (act === 'rally') handlers.rally();
+    else if (act === 'clearRally') handlers.clearRally();
     else if (act === 'cancelQueue') {
       const raw = btn.dataset.queueIndex;
       const idx =
@@ -455,9 +461,24 @@ function injectStyles(): void {
       border-color: #f0c75e;
       color: #fff8e8;
     }
+    #kane-selection-panel button.is-rally-clear {
+      background: #3a4555;
+      border-color: #6a7a8a;
+    }
     #kane-selection-panel button.is-cancel {
       background: #5a3a3a;
       border-color: #e87a7a;
+    }
+    #kane-selection-panel .kane-sel-queue.is-cancel-flash {
+      animation: kane-sel-cancel-flash 420ms ease-out;
+    }
+    #kane-selection-panel .kane-sel-queue-label.is-flash {
+      color: #f0c75e;
+      font-weight: 700;
+    }
+    @keyframes kane-sel-cancel-flash {
+      0% { background: rgba(232, 122, 122, 0.35); }
+      100% { background: transparent; }
     }
     #kane-selection-panel button.is-train {
       background: #3d7ea6;
@@ -726,6 +747,31 @@ export function mountSelectionPanel(next: SelectionPanelHandlers): void {
   ensureSelectionPanel();
 }
 
+/** Brief queue-row flash + refund copy after a successful cancel. */
+export function flashQueueCancel(unitName?: string): void {
+  const root = document.getElementById(PANEL_ID);
+  if (!root) return;
+  const queue = root.querySelector('[data-role="queue"]') as HTMLElement | null;
+  const label = root.querySelector(
+    '[data-role="queue-label"]',
+  ) as HTMLElement | null;
+  if (!queue || queue.hidden) return;
+  queue.classList.remove('is-cancel-flash');
+  // Force reflow so rapid cancels retrigger the animation.
+  void queue.offsetWidth;
+  queue.classList.add('is-cancel-flash');
+  if (label) {
+    label.classList.add('is-flash');
+    label.textContent = unitName
+      ? t('sel.cancelFlashNamed', { name: unitName })
+      : t('sel.cancelFlash');
+  }
+  window.setTimeout(() => {
+    queue.classList.remove('is-cancel-flash');
+    label?.classList.remove('is-flash');
+  }, 420);
+}
+
 export function unmountSelectionPanel(): void {
   handlers = null;
   lastStructureSig = '';
@@ -822,6 +868,8 @@ export function buildSelectionView(
       headName: head?.name ?? null,
       rallyArmed,
       hasRally: trains.length > 0,
+      hasCustomRally:
+        trains.length > 0 && buildingHasCustomRally(b),
     };
   }
 
@@ -1176,6 +1224,7 @@ function structureSignature(view: SelectionPanelView): string {
     view.title,
     view.ready ? 1 : 0,
     view.hasRally ? 1 : 0,
+    view.hasCustomRally ? 1 : 0,
     view.rallyArmed ? 1 : 0,
     view.trains
       .map((t) => `${t.typeId}:${t.canPay ? 1 : 0}:${t.affordable ? 1 : 0}`)
@@ -1653,12 +1702,17 @@ export function renderSelectionPanel(view: SelectionPanelView): boolean {
         const rallyBtn = view.hasRally
           ? `<button type="button" class="is-rally${view.rallyArmed ? ' is-armed' : ''}" data-act="rally">${view.rallyArmed ? t('sel.rallyArmed') : t('sel.setRally')}</button>`
           : '';
+        const clearRallyBtn =
+          view.hasRally && view.hasCustomRally
+            ? `<button type="button" class="is-rally-clear" data-act="clearRally" title="${t('sel.clearRallyTitle')}">${t('sel.clearRally')}</button>`
+            : '';
         const cancelBtn =
           view.queue.length > 0
             ? `<button type="button" class="is-cancel" data-act="cancelQueue" title="${t('sel.cancelTitle')}">${t('sel.cancelLast')}</button>`
             : '';
         actions.innerHTML =
           rallyBtn +
+          clearRallyBtn +
           cancelBtn +
           view.trains.map(trainButtonHtml).join('') +
           view.places.map(placeButtonHtml).join('');

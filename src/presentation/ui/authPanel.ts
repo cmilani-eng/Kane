@@ -118,6 +118,33 @@ function ensureStyle(): void {
     #${ROOT_ID} .kane-auth-quiet {
       margin: 10px 0 0; font-size: 11px; color: #6a7f94; text-align: center;
     }
+    @media (max-height: 499px) {
+      #${ROOT_ID} {
+        align-items: flex-start;
+        overflow: auto;
+        padding: 8px 12px;
+      }
+      #${ROOT_ID} .kane-auth-card {
+        width: min(720px, 100%);
+        padding: 12px 16px 10px;
+      }
+      #${ROOT_ID} h2 { font-size: 20px; margin: 0; }
+      #${ROOT_ID} .kane-auth-sub { margin: 0 0 6px; }
+      #${ROOT_ID} label { margin: 4px 0 2px; }
+      #${ROOT_ID} input { padding: 7px 10px; }
+      #${ROOT_ID} .kane-auth-actions {
+        flex-direction: row;
+        flex-wrap: wrap;
+        align-items: center;
+        margin-top: 8px;
+      }
+      #${ROOT_ID} .kane-auth-actions > button.primary,
+      #${ROOT_ID} .kane-auth-actions > button.ghost {
+        flex: 1 1 140px;
+      }
+      #${ROOT_ID} .kane-auth-row { flex: 1 1 100%; margin: 0; }
+      #${ROOT_ID} .kane-auth-quiet { margin: 6px 0 0; }
+    }
   `;
   document.head.appendChild(style);
 }
