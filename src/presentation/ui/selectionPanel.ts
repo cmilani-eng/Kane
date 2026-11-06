@@ -196,6 +196,8 @@ export type SelectionPanelView =
       progressPct: number;
       /** Whole seconds left on the head train slot (ceil). */
       remainSec: number;
+      /** Head remain + full trainSec for each waiting slot (ceil). */
+      totalSec: number;
       headName: string | null;
       rallyArmed: boolean;
       hasRally: boolean;
@@ -459,6 +461,7 @@ export function buildSelectionView(
       head && head.trainMs > 0
         ? trainRemainSec(head.trainMs, b.trainProgressMs)
         : 0;
+    const totalSec = trainQueueTotalSec(b.trainQueue, remainSec);
     const buildPct = ready
       ? 1
       : Math.min(1, Math.max(0, b.buildProgress));
@@ -485,6 +488,7 @@ export function buildSelectionView(
       queue: [...b.trainQueue],
       progressPct,
       remainSec,
+      totalSec,
       headName: head?.name ?? null,
       rallyArmed,
       hasRally: trains.length > 0,
@@ -907,6 +911,8 @@ function structureSignature(view: SelectionPanelView): string {
       )
       .join(','),
     view.queue.join(','),
+    view.remainSec,
+    view.totalSec,
     view.headName ?? '',
   ].join('|');
 }
@@ -1151,6 +1157,12 @@ function applyTrainAffordability(
   }
 }
 
+/** Whole seconds for a full train from trainMs. */
+export function trainFullSec(trainMs: number): number {
+  if (trainMs <= 0) return 0;
+  return Math.max(0, Math.ceil(trainMs / 1000));
+}
+
 /** Whole seconds left on the active train slot (ceil, never negative). */
 export function trainRemainSec(
   trainMs: number,
@@ -1158,6 +1170,19 @@ export function trainRemainSec(
 ): number {
   if (trainMs <= 0) return 0;
   return Math.max(0, Math.ceil((trainMs - trainProgressMs) / 1000));
+}
+
+/** Head remain + full duration for each waiting queue slot. */
+export function trainQueueTotalSec(
+  queue: readonly UnitTypeId[],
+  remainSec: number,
+): number {
+  if (queue.length === 0) return 0;
+  let total = Math.max(0, remainSec);
+  for (let i = 1; i < queue.length; i++) {
+    total += trainFullSec(getUnitType(queue[i]!).trainMs);
+  }
+  return total;
 }
 
 /** Whole seconds left on construction from buildMs × remaining progress. */
@@ -1195,6 +1220,7 @@ function queueLabelText(
       pct,
       sec,
       waiting,
+      total: view.totalSec,
       hint,
     });
   }

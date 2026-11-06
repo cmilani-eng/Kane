@@ -402,7 +402,7 @@ export const enGB = {
   'sel.idleTrain': 'Idle — tap a unit to train (Gold / Crystal cost on each button)',
   'sel.noProduction': 'No production options',
   'sel.trainingWait':
-    'Training {name} · {pct}% · {sec}s · {waiting} waiting{hint}',
+    'Training {name} · {pct}% · {sec}s · {waiting} waiting · {total}s{hint}',
   'sel.training': 'Training {name} · {pct}% · {sec}s{hint}',
   'sel.queue': 'Queue {n}{hint}',
   'sel.cancelHint': ' · tap icon or Cancel last to refund',
@@ -884,7 +884,7 @@ export const ptBR = {
   'sel.idleTrain': 'Ocioso — toque uma unidade para treinar (custo de Ouro / Cristal em cada botão)',
   'sel.noProduction': 'Sem opções de produção',
   'sel.trainingWait':
-    'Treinando {name} · {pct}% · {sec}s · {waiting} na fila{hint}',
+    'Treinando {name} · {pct}% · {sec}s · {waiting} na fila · {total}s{hint}',
   'sel.training': 'Treinando {name} · {pct}% · {sec}s{hint}',
   'sel.queue': 'Fila {n}{hint}',
   'sel.cancelHint': ' · toque o ícone ou Cancelar último para reembolso',
@@ -1362,7 +1362,7 @@ export const es = {
   'sel.idleTrain': 'Inactivo — toca una unidad para entrenar (coste de Oro / Cristal en cada botón)',
   'sel.noProduction': 'Sin opciones de producción',
   'sel.trainingWait':
-    'Entrenando {name} · {pct}% · {sec}s · {waiting} en espera{hint}',
+    'Entrenando {name} · {pct}% · {sec}s · {waiting} en espera · {total}s{hint}',
   'sel.training': 'Entrenando {name} · {pct}% · {sec}s{hint}',
   'sel.queue': 'Cola {n}{hint}',
   'sel.cancelHint': ' · toca el icono o Cancelar último para reembolso',
