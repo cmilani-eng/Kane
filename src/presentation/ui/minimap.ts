@@ -44,6 +44,10 @@ import {
 import { minimapSelectedUnitBlip } from './minimapSelectedBlip';
 import { minimapCameraViewportLabelText } from './minimapCameraViewportLabel';
 import {
+  minimapPingSectorTipAlpha,
+  minimapPingSectorTipText,
+} from './minimapPingSectorTip';
+import {
   minimapScoutPulseLabelAlpha,
   minimapScoutPulseLabelText,
 } from './minimapScoutPulseLabel';
@@ -57,6 +61,8 @@ export class Minimap {
   private readonly frame: Phaser.GameObjects.Rectangle;
   /** Short sector label when fog scout pulse lands. */
   private readonly scoutLabel: Phaser.GameObjects.Text;
+  /** Short sector tip when an attention ping lands. */
+  private readonly pingSectorLabel: Phaser.GameObjects.Text;
   /** Short mark on the camera viewport frame. */
   private readonly camLabel: Phaser.GameObjects.Text;
 
@@ -107,6 +113,19 @@ export class Minimap {
         fontFamily: 'Segoe UI, system-ui, sans-serif',
         fontSize: '11px',
         color: '#b8e8ff',
+        stroke: '#0a1018',
+        strokeThickness: 3,
+      })
+      .setScrollFactor(0)
+      .setDepth(113)
+      .setOrigin(0.5, 1)
+      .setVisible(false);
+
+    this.pingSectorLabel = scene.add
+      .text(0, 0, '', {
+        fontFamily: 'Segoe UI, system-ui, sans-serif',
+        fontSize: '11px',
+        color: '#e8f4ff',
         stroke: '#0a1018',
         strokeThickness: 3,
       })
@@ -190,7 +209,14 @@ export class Minimap {
   }
 
   objects(): Phaser.GameObjects.GameObject[] {
-    return [this.frame, this.gfx, this.hit, this.scoutLabel, this.camLabel];
+    return [
+      this.frame,
+      this.gfx,
+      this.hit,
+      this.scoutLabel,
+      this.pingSectorLabel,
+      this.camLabel,
+    ];
   }
 
   setBottomInset(px: number): void {
@@ -485,6 +511,27 @@ export class Minimap {
         .setVisible(true);
     } else {
       this.scoutLabel.setVisible(false).setAlpha(1);
+    }
+
+    const pingHint = this.world.attentionPingSectorHint;
+    if (pingHint && pingHint.lifeMs > 0) {
+      const x = Phaser.Math.Clamp(
+        this.mapX + pingHint.x * sx,
+        this.mapX + 10,
+        this.mapX + this.mapW - 10,
+      );
+      const y = Phaser.Math.Clamp(
+        this.mapY + pingHint.y * sy,
+        this.mapY + 12,
+        this.mapY + this.mapH - 2,
+      );
+      this.pingSectorLabel
+        .setText(minimapPingSectorTipText(pingHint.sector))
+        .setPosition(x, y - 6)
+        .setAlpha(minimapPingSectorTipAlpha(pingHint.lifeMs))
+        .setVisible(true);
+    } else {
+      this.pingSectorLabel.setVisible(false).setAlpha(1);
     }
 
     // Camera viewport — gold frame + soft fill so it reads at a glance

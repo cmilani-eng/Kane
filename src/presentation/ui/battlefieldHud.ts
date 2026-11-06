@@ -21,6 +21,10 @@ import {
 } from '../../gameplay/battlefield/idleWorkers';
 import { idleWorkerGatherTypeTip } from './idleWorkerGatherTypeTip';
 import {
+  minimapPingSectorTipAlpha,
+  minimapPingSectorTipText,
+} from './minimapPingSectorTip';
+import {
   countIdleMilitary,
   isIdleMilitary,
   nearestIdleArmyThreatArrow,
@@ -92,6 +96,8 @@ export class BattlefieldHud {
   readonly attackPingBtn!: Phaser.GameObjects.Text;
   /** Brief fog-scout sector label (NW…SE). */
   readonly scoutSectorBtn!: Phaser.GameObjects.Text;
+  /** Brief attention-ping sector tip (NW…SE). */
+  readonly pingSectorBtn!: Phaser.GameObjects.Text;
   /** Recenter camera on player keep / hall. */
   readonly baseBtn!: Phaser.GameObjects.Text;
   /** Mobile/desktop open in-match pause overlay. */
@@ -529,6 +535,18 @@ export class BattlefieldHud {
       .setDepth(101)
       .setVisible(false);
 
+    this.pingSectorBtn = scene.add
+      .text(12, 196, '', {
+        fontFamily: 'system-ui, sans-serif',
+        fontSize: '12px',
+        color: '#e8f4ff',
+        backgroundColor: '#1a2838cc',
+        padding: { x: 10, y: 6 },
+      })
+      .setScrollFactor(0)
+      .setDepth(101)
+      .setVisible(false);
+
     this.buildAbilityPad(accent);
     this.layout();
     scene.scale.on('resize', () => this.layout());
@@ -627,6 +645,7 @@ export class BattlefieldHud {
       this.idleMilPingBtn,
       this.attackPingBtn,
       this.scoutSectorBtn,
+      this.pingSectorBtn,
       this.goldDot,
       this.crystalDot,
       this.supplyDot,
@@ -717,8 +736,13 @@ export class BattlefieldHud {
     this.scoutSectorBtn
       .setPosition(pad, belowRes + attackOffset)
       .setFontSize(this.narrow ? '11px' : '12px');
-    const alertOffset =
+    const scoutOffset =
       attackOffset + (this.scoutSectorBtn.visible ? 28 : 0);
+    this.pingSectorBtn
+      .setPosition(pad, belowRes + scoutOffset)
+      .setFontSize(this.narrow ? '11px' : '12px');
+    const alertOffset =
+      scoutOffset + (this.pingSectorBtn.visible ? 28 : 0);
     this.status
       .setPosition(pad, belowRes + alertOffset)
       .setStyle({ wordWrap: { width: Math.min(520, w - pad * 2) } });
@@ -1065,6 +1089,18 @@ export class BattlefieldHud {
       this.scoutSectorBtn.setVisible(false).setAlpha(1);
     }
     if (wasScoutVisible !== this.scoutSectorBtn.visible) this.layout();
+
+    const pingHint = this.world.attentionPingSectorHint;
+    const wasPingVisible = this.pingSectorBtn.visible;
+    if (pingHint && pingHint.lifeMs > 0) {
+      this.pingSectorBtn
+        .setVisible(true)
+        .setAlpha(minimapPingSectorTipAlpha(pingHint.lifeMs))
+        .setText(minimapPingSectorTipText(pingHint.sector));
+    } else {
+      this.pingSectorBtn.setVisible(false).setAlpha(1);
+    }
+    if (wasPingVisible !== this.pingSectorBtn.visible) this.layout();
 
     // Brutes: live Rage count on match line
     this.matchLine.setText(this.matchupLine());

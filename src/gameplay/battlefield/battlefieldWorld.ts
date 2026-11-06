@@ -151,6 +151,8 @@ export interface BattlefieldWorld {
   waypointMarkers: import('./battlefieldWaypointMarkers').WaypointMarker[];
   /** Chat-free attention pings (look-here marks). */
   attentionPings: import('./battlefieldAttentionPing').AttentionPing[];
+  /** Brief HUD / minimap sector tip after a hold-to-ping. */
+  attentionPingSectorHint: import('./battlefieldAttentionPing').AttentionPingSectorHint | null;
   /** Capturable CORE fragments (shattered KANE CORE). */
   coreFragments: import('./battlefieldCoreFragments').CoreFragment[];
   /** Presentation cue — claim SFX window. */
@@ -443,6 +445,7 @@ export function createBattlefieldWorld(
     scoutSectorHint: null,
     waypointMarkers: [],
     attentionPings: [],
+    attentionPingSectorHint: null,
     coreFragments: [],
     coreClaimFlashMs: 0,
     playerCoreHoldMs: 0,
