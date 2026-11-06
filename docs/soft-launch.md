@@ -24,12 +24,12 @@ This doc is the honest gate before any public preview URL.
 
 ## Remaining gaps (honest)
 
-1. **No real Firebase project / Hosting preview URL yet** — channel scripts exist; nobody has proven `firebase hosting:channel:deploy` against a live project from this repo.
-2. **No Firebase Auth SDK** — age gate + lobby + profiles are local stubs; RTDB/Firestore rules are unused by the client.
+1. **Hosting** — live site https://kane-rts-game.web.app (`kane-rts-game`). GHA deploy on `dev` needs secret `FIREBASE_SERVICE_ACCOUNT_KANE_RTS_GAME` (see `docs/firebase-hosting.md`).
+2. **Firebase Auth / player dashboard** — email/password + Firestore `users/{uid}` path in client; requires Console Email/Password + **rules deploy** (draft only in repo until Cassio asks). Guest SP still works offline.
 3. **No live multiplayer** — lobby codes and command-sync spike are local/transport stubs only.
 4. **Ads SDK not bundled** — flipping `adsEnabled` still shows stub logs only (`docs/ads-sdk.md`).
-5. **Admin allowlist is soft** — default `open` for local-dev; no Custom Claims / server enforcement.
-6. **Daily rollup / match summaries are device-local** — not a Cassio cloud dashboard yet.
+5. **Admin allowlist is soft** — default `open` for local-dev; no Custom Claims / server enforcement. Admin **Stats** is separate from player **Account**.
+6. **Match writes are client-trusted** for SP MVP — Functions deferred; local `#/admin` summaries still device-local.
 7. **Legal copy is placeholder** — not counsel-reviewed.
 8. **Content depth** — Phase 8 maps / deeper tutorial / practice arena not started.
 9. **CI is thin** — Hosting auto-deploy on push to `dev` (see `docs/firebase-hosting.md`); other PRs may still show empty check rollups until more workflows land.

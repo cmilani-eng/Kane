@@ -17,6 +17,7 @@
     "hosting:channels": "firebase hosting:channel:list"
   },
   "dependencies": {
+    "firebase": "^11.10.0",
     "phaser": "^4.2.1"
   },
   "devDependencies": {

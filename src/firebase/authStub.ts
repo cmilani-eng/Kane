@@ -29,7 +29,7 @@ function localUid(): string {
 }
 
 export interface AuthStub {
-  /** Always false until Firebase Auth SDK is installed + enabled. */
+  /** True only for the local anonymous stub path (SDK off). */
   readonly sdkEnabled: false;
   readonly usingEmulator: boolean;
   currentUser(): KaneAuthUser | null;
@@ -54,6 +54,7 @@ export function createAuthStub(usingEmulator: boolean): AuthStub {
       user = {
         uid: localUid(),
         displayName: 'Local Commander',
+        email: null,
         isAnonymous: true,
         provider: 'anonymous',
       };

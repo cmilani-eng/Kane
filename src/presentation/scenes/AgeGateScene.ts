@@ -69,7 +69,7 @@ export class AgeGateScene extends Phaser.Scene {
       .text(
         width / 2,
         height * 0.92,
-        `Ads ${flags.adsEnabled ? 'on' : 'off'}  ·  Local-only age check  ·  No account yet`,
+        `Ads ${flags.adsEnabled ? 'on' : 'off'}  ·  Local-only age check  ·  Account optional`,
         {
           fontFamily: 'system-ui, sans-serif',
           fontSize: '11px',

@@ -14,9 +14,12 @@ export const flags = {
   unitCap: 36,
   /**
    * Phase 6 scaffolding — expose auth/lobby stubs + logging.
-   * Does not enable live multiplayer or load the Firebase SDK.
+   * Live Auth/Firestore initialize when VITE_FIREBASE_* is configured
+   * (see `src/firebase/publicConfig.ts` / `app.ts`). Guest SP still works offline.
    */
   firebaseFoundation: true as const,
+  /** Prefer email Auth for Account / cloud progression when SDK ready. */
+  firebaseAuthUi: true as const,
   /**
    * Point stubs at local emulator ports (see `firebase.json`).
    * Also overridable via `VITE_FIREBASE_USE_EMULATORS=true`.

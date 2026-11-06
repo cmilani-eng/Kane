@@ -1,7 +1,6 @@
 /**
- * DATABASE — STUB.
- * Phase 6: Auth / Firestore profiles stay stubbed; see `src/firebase/`.
- * Local SP persists counters + match summaries via localStorage.
+ * DATABASE — local stub + cloud progression when signed in.
+ * Guest SP: localStorage only. Email account: see `src/firebase/cloudProgression.ts`.
  */
 
 import {

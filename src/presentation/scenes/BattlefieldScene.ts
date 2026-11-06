@@ -125,6 +125,10 @@ import { getEquippedSkin } from '../../database/cosmeticsLoadout';
 import { rememberMatchPrefs } from '../../database/matchPrefs';
 import { recordGameStarted } from '../../database/localStats';
 import { writeMatchSummaryFunctionStub } from '../../server/matchSummaryFunctionStub';
+import {
+  maybeRecordCloudGameStarted,
+  maybeWriteCloudMatch,
+} from '../../firebase/cloudProgression';
 import { ensureAmbientBgm } from '../audio/bgm';
 import { playSfx } from '../audio/sfx';
 import { RtsCamera } from '../camera/rtsCamera';
@@ -932,12 +936,17 @@ export class BattlefieldScene extends Phaser.Scene {
     const difficulty = this.world.aiDifficulty;
     rememberMatchPrefs(species, difficulty);
     recordGameStarted(species);
+    void maybeRecordCloudGameStarted(species);
     this.scene.start('Battlefield', { species, difficulty });
   }
 
-  /** Admin/#/admin payload — Function stub → localStorage. SP path unchanged. */
+  /**
+   * Always write local admin stub; also cloud write when email-authed
+   * (client-trusted MVP — Functions deferred).
+   */
   private writeEndMatchSummary(result: Exclude<MatchResult, 'ongoing'>): void {
     const endedAtMs = Date.now();
+    const id = makeMatchSummaryId(endedAtMs);
     const playerUnitsLeft = livingByTeam(this.world, 'player');
     const enemyUnitsLeft = livingByTeam(this.world, 'enemy');
     const playerBuildingsLeft = this.world.buildings.filter(
@@ -946,15 +955,32 @@ export class BattlefieldScene extends Phaser.Scene {
     const enemyBuildingsLeft = this.world.buildings.filter(
       (b) => b.team === 'enemy' && b.hp > 0,
     ).length;
+    const durationMs = Math.max(0, Math.floor(this.matchElapsedMs));
+    const won = result === 'victory';
+    const species = this.world.speciesId;
+    const difficulty = this.world.aiDifficulty;
     void writeMatchSummaryFunctionStub({
-      id: makeMatchSummaryId(endedAtMs),
+      id,
       version: 1,
       endedAtMs,
-      durationMs: Math.max(0, Math.floor(this.matchElapsedMs)),
+      durationMs,
       result,
-      won: result === 'victory',
-      species: this.world.speciesId,
-      difficulty: this.world.aiDifficulty,
+      won,
+      species,
+      difficulty,
+      playerUnitsLeft,
+      enemyUnitsLeft,
+      playerBuildingsLeft,
+      enemyBuildingsLeft,
+    });
+    void maybeWriteCloudMatch({
+      id,
+      endedAtMs,
+      durationMs,
+      result,
+      won,
+      species,
+      difficulty,
       playerUnitsLeft,
       enemyUnitsLeft,
       playerBuildingsLeft,
