@@ -8,6 +8,7 @@ import {
   enemyRevealed,
   isExplored,
 } from '../../gameplay/battlefield/battlefieldFog';
+import { isIdleWorker } from '../../gameplay/battlefield/idleWorkers';
 import type { BattlefieldWorld } from '../../gameplay/battlefield/battlefieldWorld';
 import type { RtsCamera } from '../camera/rtsCamera';
 import { playSfx } from '../audio/sfx';
@@ -26,6 +27,7 @@ export class Minimap {
   private mapW = 180;
   private mapH = 120;
   private dragging = false;
+  private pulseMs = 0;
 
   constructor(
     scene: Phaser.Scene,
@@ -103,6 +105,7 @@ export class Minimap {
 
   /** Throttled redraw — call every frame; paints on cadence. */
   refresh(dtMs = 16): void {
+    this.pulseMs += dtMs;
     this.refreshAcc += dtMs;
     if (this.refreshAcc < MOBILE_PERF.minimapMs) return;
     this.refreshAcc = 0;
@@ -177,12 +180,18 @@ export class Minimap {
     }
 
     // Units
+    const idlePulse = 0.35 + 0.25 * Math.sin(this.pulseMs / 850);
     for (const u of this.world.units) {
       if (u.hp <= 0) continue;
       if (u.team === 'enemy' && !enemyRevealed(fog, u.x, u.y)) continue;
       const x = this.mapX + u.x * sx;
       const y = this.mapY + u.y * sy;
       const player = u.team === 'player';
+      if (isIdleWorker(u)) {
+        // Soft attention ring — yellow, slow pulse (not spammy)
+        g.lineStyle(1.5, u.carrying > 0 ? 0xffc857 : 0xf0c75e, idlePulse);
+        g.strokeCircle(x, y, 5.5);
+      }
       g.fillStyle(player ? 0x5dce6a : 0xe85a5a, 1);
       g.fillCircle(x, y, u.selected ? 3.2 : 2.2);
     }
