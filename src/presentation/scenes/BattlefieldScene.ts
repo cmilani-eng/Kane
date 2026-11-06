@@ -161,6 +161,12 @@ import { createSkirmishMap } from '../maps/mapManager';
 import { FogOverlay } from '../ui/fogOverlay';
 import { showKaneEndScreen } from '../ui/endScreen';
 import { PauseMenu } from '../ui/pauseMenu';
+import { publishMatchStock, resetMatchStock } from '../ui/matchUiStore';
+import {
+  layoutStockStrip,
+  mountStockStrip,
+  unmountStockStrip,
+} from '../ui/stockStrip';
 import {
   createControlsHelpPanel,
   type ControlsHelpHandle,
@@ -238,6 +244,7 @@ export class BattlefieldScene extends Phaser.Scene {
   private amovePointer = { x: 0, y: 0 };
   private hud!: BattlefieldHud;
   private pauseMenu!: PauseMenu;
+  private pauseBlur: Phaser.Filters.Blur | null = null;
   private controlsHelp!: ControlsHelpHandle;
   private paused = false;
   private minimap!: Minimap;
@@ -331,6 +338,10 @@ export class BattlefieldScene extends Phaser.Scene {
     this.fogOverlay.refresh(this.world.fog);
 
     this.hud = new BattlefieldHud(this, this.world);
+    this.hud.hidePhaserStock();
+    resetMatchStock();
+    mountStockStrip();
+    layoutStockStrip(this.scale.width, this.scale.height);
     this.hud.menuBtn.on('pointerup', () => this.scene.start('Menu'));
     this.hud.onArmAttackMove = () => this.toggleAttackMoveMode();
     this.hud.onStopSelected = () => this.issueStopCommand();
@@ -470,6 +481,7 @@ export class BattlefieldScene extends Phaser.Scene {
     );
     const onResize = (): void => {
       this.hud.layout();
+      layoutStockStrip(this.scale.width, this.scale.height);
       this.coach.layout();
       this.coreBanner.layout();
       this.minimap.layout();
@@ -479,6 +491,11 @@ export class BattlefieldScene extends Phaser.Scene {
     this.events.once(Phaser.Scenes.Events.SHUTDOWN, () =>
       this.scale.off('resize', onResize),
     );
+    this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => {
+      this.clearGameplayBlur();
+      unmountStockStrip();
+      resetMatchStock();
+    });
 
     this.shiftKey =
       this.input.keyboard?.addKey(Phaser.Input.Keyboard.KeyCodes.SHIFT) ?? null;
@@ -671,6 +688,7 @@ export class BattlefieldScene extends Phaser.Scene {
     if (value === this.paused) {
       if (value && !this.pauseMenu.isOpen) {
         this.pauseMenu.show(this.pauseSnapshot());
+        this.setGameplayBlur(true);
       }
       return;
     }
@@ -683,13 +701,41 @@ export class BattlefieldScene extends Phaser.Scene {
       this.boxGfx.clear();
       this.cameraCtl.suppressPan = true;
       this.pauseMenu.show(this.pauseSnapshot());
+      this.setGameplayBlur(true);
       playSfx('ui');
     } else {
       this.pauseMenu.hide();
+      this.setGameplayBlur(false);
       this.cameraCtl.suppressPan = false;
       this.hud.syncMuteLabel();
       playSfx('ui');
     }
+  }
+
+  /**
+   * Blur the world camera only. The pause menu is drawn by the HUD camera,
+   * so it stays sharp.
+   */
+  private setGameplayBlur(on: boolean): void {
+    if (on) {
+      if (this.pauseBlur) return;
+      this.pauseBlur = this.cameras.main.filters.internal.addBlur(
+        0,
+        2,
+        2,
+        1,
+        0xffffff,
+        4,
+      );
+      return;
+    }
+    this.clearGameplayBlur();
+  }
+
+  private clearGameplayBlur(): void {
+    if (!this.pauseBlur) return;
+    this.cameras.main.filters.internal.remove(this.pauseBlur);
+    this.pauseBlur = null;
   }
 
   /**
@@ -1295,6 +1341,7 @@ export class BattlefieldScene extends Phaser.Scene {
     if (this.paused) {
       this.paused = false;
       this.pauseMenu.hide();
+      this.setGameplayBlur(false);
     }
     this.clearAttackMoveMode();
     this.ghostGfx.clear();
@@ -1454,6 +1501,13 @@ export class BattlefieldScene extends Phaser.Scene {
       def?.cost.magic_crystals ?? 0,
     );
     this.hud.refresh(status, hint, dtMs);
+    const wallet = walletOf(this.world, 'player');
+    publishMatchStock({
+      gold: wallet.gold,
+      crystals: wallet.magic_crystals,
+      supply: livingByTeam(this.world, 'player'),
+      supplyCap: flags.unitCap,
+    });
   }
 
   private drawWorld(): void {
