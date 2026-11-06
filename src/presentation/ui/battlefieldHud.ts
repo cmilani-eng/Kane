@@ -19,6 +19,7 @@ import {
   selectOrCycleIdleWorkers,
   type IdleChipResult,
 } from '../../gameplay/battlefield/idleWorkers';
+import { idleWorkerGatherTypeTip } from './idleWorkerGatherTypeTip';
 import {
   countIdleMilitary,
   isIdleMilitary,
@@ -976,20 +977,16 @@ export class BattlefieldHud {
         (u) => u.selected && u.team === 'player' && u.canGather && u.hp > 0,
       );
       const action = t(cycling ? 'hud.idleCycle' : 'hud.idleTap');
-      const gatherId = holding ? null : nearestIdleGatherResource(this.world);
-      const gatherLabel =
-        gatherId === 'gold'
-          ? t('hud.resourceGold')
-          : gatherId === 'magic_crystals'
-            ? t('hud.resourceCrystals')
-            : null;
+      const gatherTip = holding
+        ? null
+        : idleWorkerGatherTypeTip(nearestIdleGatherResource(this.world));
       const idleText = holding
         ? t('hud.idleCargo', { n: idleN, action })
-        : gatherLabel
+        : gatherTip
           ? t('hud.idleGather', {
               n: idleN,
               action,
-              resource: gatherLabel,
+              tip: gatherTip,
             })
           : t('hud.idle', { n: idleN, action });
       this.idlePingBtn
