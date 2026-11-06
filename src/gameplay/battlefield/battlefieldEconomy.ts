@@ -6,6 +6,10 @@ import { MAP } from '../../config/balance';
 import type { ResourceId } from '../../data/resources';
 import { dist } from '../math';
 import { getAiDifficulty } from './aiDifficulty';
+import {
+  spawnDepositFx,
+  spawnGatherFx,
+} from './battlefieldEconomyFx';
 import { setUnitPath } from './battlefieldPathfinding';
 import type {
   BattlefieldTeam,
@@ -87,7 +91,9 @@ export function tickBattlefieldEconomy(world: BattlefieldWorld): void {
           const rate = getAiDifficulty(world.aiDifficulty).economyRate;
           amt = Math.max(1, Math.round(amt * rate));
         }
+        const deposited = u.carryingResource;
         walletOf(world, u.team)[u.carryingResource] += amt;
+        spawnDepositFx(world, deposited, pile.x, pile.y - 8);
         u.carrying = 0;
         u.carryingResource = null;
         if (u.gatherNodeId != null) {
@@ -125,6 +131,7 @@ export function tickBattlefieldEconomy(world: BattlefieldWorld): void {
           node.remaining -= take;
           u.carrying += take;
           u.carryingResource = node.resourceId;
+          spawnGatherFx(world, node.resourceId, node.x, node.y - 6);
           u.path = [];
           u.moveTarget = null;
           const pile = stockpileOf(world, u.team);
