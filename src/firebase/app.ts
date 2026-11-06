@@ -41,7 +41,7 @@ export function getFirebaseApp(): FirebaseApp | null {
     apiKey: cfg.apiKey || 'demo-api-key',
     authDomain: cfg.authDomain,
     projectId: cfg.projectId,
-    databaseURL: cfg.databaseURL,
+    ...(cfg.databaseURL ? { databaseURL: cfg.databaseURL } : {}),
     storageBucket: cfg.storageBucket,
     messagingSenderId: cfg.messagingSenderId || '0',
     appId: cfg.appId || '1:0:web:demo',
