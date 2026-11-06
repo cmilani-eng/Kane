@@ -11,6 +11,7 @@ import {
   tutorialTip,
   type TutorialState,
 } from '../../gameplay/battlefield/battlefieldTutorial';
+import { setCoachSeen } from '../../database/coachPrefs';
 import { t } from '../../i18n';
 import { playSfx } from '../audio/sfx';
 
@@ -73,6 +74,7 @@ export class TutorialCoach {
       .on('pointerup', () => {
         playSfx('ui');
         advanceTutorial(this.state, this.difficulty());
+        this.rememberIfFinished();
       });
 
     this.skipBtn = scene.add
@@ -89,6 +91,7 @@ export class TutorialCoach {
       .on('pointerup', () => {
         playSfx('ui');
         dismissTutorial(this.state);
+        this.rememberIfFinished();
       });
 
     this.layout();
@@ -142,5 +145,9 @@ export class TutorialCoach {
     );
     this.skipBtn.setText(t('tutorial.gotIt'));
     this.layout();
+  }
+
+  private rememberIfFinished(): void {
+    if (!this.state.visible || this.state.step === 'done') setCoachSeen(true);
   }
 }

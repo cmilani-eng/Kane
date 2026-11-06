@@ -5,6 +5,7 @@ import {
   wantsAdminPanel,
   wantsStatsPanel,
 } from '../../database/localStats';
+import { isCoachSeen, setCoachSeen } from '../../database/coachPrefs';
 import {
   loadMatchPrefs,
   rememberMatchPrefs,
@@ -394,6 +395,7 @@ export class MenuScene extends Phaser.Scene {
       y: Math.max(40, height * 0.055),
       depth: 40,
     });
+    this.addTipsToggle(88, Math.max(40, height * 0.055));
 
     this.add
       .text(width / 2, height * 0.81, softLaunchStatusStrip(), {
@@ -530,6 +532,7 @@ export class MenuScene extends Phaser.Scene {
       y: 42,
       depth: 40,
     });
+    this.addTipsToggle(78, 42);
 
     this.drawDifficultyRow(width, 78, true);
     this.drawMapRow(width, 116, true);
@@ -634,6 +637,25 @@ export class MenuScene extends Phaser.Scene {
     terms.on('pointerup', () => {
       playSfx('ui');
       if (typeof window !== 'undefined') window.open('/terms.html', '_blank');
+    });
+  }
+
+  private addTipsToggle(x: number, y: number): void {
+    const label = this.add
+      .text(x, y, isCoachSeen() ? t('menu.tipsOff') : t('menu.tipsOn'), {
+        fontFamily: 'system-ui, sans-serif',
+        fontSize: '13px',
+        color: '#fff8e8',
+        backgroundColor: '#1a2433',
+        padding: { x: 10, y: 6 },
+      })
+      .setOrigin(0, 0.5)
+      .setDepth(40)
+      .setInteractive({ useHandCursor: true });
+    label.on('pointerup', () => {
+      setCoachSeen(!isCoachSeen());
+      label.setText(isCoachSeen() ? t('menu.tipsOff') : t('menu.tipsOn'));
+      playSfx('ui');
     });
   }
 
