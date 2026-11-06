@@ -9,7 +9,8 @@ import {
   type HeroAbilitySlot,
 } from '../../data/heroes';
 import { RESOURCES } from '../../data/resources';
-import { SPECIES, speciesCounterTip } from '../../data/speciesStub';
+import { SPECIES_MATCHUP_TIP, type SpeciesId } from '../../data/speciesStub';
+import { getLocale, speciesCopy, speciesName, t } from '../../i18n';
 import { getUnitType, type UnitTypeId } from '../../data/units';
 import type {
   BattlefieldBuilding,
@@ -18,6 +19,14 @@ import type {
   ResourceNode,
 } from '../../gameplay/battlefield/battlefieldWorld';
 import { canAfford } from '../../gameplay/battlefield/battlefieldBuildings';
+
+function matchupLine(id: SpeciesId): string {
+  const tip = SPECIES_MATCHUP_TIP[id];
+  return t('sel.matchup', {
+    strong: speciesName(tip.strongVs),
+    weak: speciesName(tip.weakVs),
+  });
+}
 import { walletOf } from '../../gameplay/battlefield/battlefieldEconomy';
 
 export type SelectionAbilityView = {
@@ -558,7 +567,7 @@ export function buildSelectionView(
   if (selectedBuilding && selectedBuilding.hp > 0) {
     const b = selectedBuilding;
     const bdef = getBuildingType(b.typeId);
-    const species = SPECIES[bdef.speciesId];
+    const species = speciesCopy(bdef.speciesId);
     const wallet = walletOf(world, 'player');
     const ready = b.complete;
     const trains = bdef.trains.map((typeId) => {
@@ -582,7 +591,7 @@ export function buildSelectionView(
     return {
       kind: 'building',
       title: b.name,
-      flavor: `${species.name} · ${species.uniqueMechanic} · ${speciesCounterTip(bdef.speciesId)}`,
+      flavor: `${species.name} · ${species.mechanic} · ${matchupLine(bdef.speciesId)}`,
       hp: b.hp,
       maxHp: b.maxHp,
       ready,
@@ -600,7 +609,7 @@ export function buildSelectionView(
     return {
       kind: 'resource',
       title: def.label,
-      flavor: `${def.source} · send workers to gather`,
+      flavor: t('sel.gather', { source: def.source }),
       remaining: selectedNode.remaining,
       maxAmount: selectedNode.maxAmount,
       resourceId: selectedNode.resourceId,
@@ -612,21 +621,25 @@ export function buildSelectionView(
 
   if (alive.length === 1) {
     const u = alive[0]!;
-    const species = SPECIES[u.speciesId];
+    const species = speciesCopy(u.speciesId);
     const tags: string[] = [];
-    if (u.canGather) tags.push('Worker');
-    if (getUnitType(u.typeId).isHero) tags.push('Hero');
-    if (u.inFormation) tags.push(u.formationLocked ? 'Formation·lock' : 'Formation');
-    if (u.mutated) tags.push(u.mutationLocked ? 'Mutated·lock' : 'Mutated');
-    if (u.enraged) tags.push(u.rageLocked ? 'Rage·lock' : 'Rage');
+    if (u.canGather) tags.push(t('sel.worker'));
+    if (getUnitType(u.typeId).isHero) tags.push(t('sel.hero'));
+    if (u.inFormation) {
+      tags.push(t(u.formationLocked ? 'sel.formationLock' : 'sel.formation'));
+    }
+    if (u.mutated) tags.push(t(u.mutationLocked ? 'sel.mutatedLock' : 'sel.mutated'));
+    if (u.enraged) tags.push(t(u.rageLocked ? 'sel.rageLock' : 'sel.rage'));
     // Cargo is live-updated via flavor so button DOM is not rebuilt each tick.
     const cargo =
-      u.carrying > 0 ? ` · cargo ${u.carrying} ${u.carryingResource ?? ''}` : '';
+      u.carrying > 0
+        ? t('sel.cargo', { n: u.carrying, resource: u.carryingResource ?? '' })
+        : '';
     return {
       kind: 'units',
       count: 1,
       title: u.name,
-      flavor: `${species.name} · ${speciesCounterTip(u.speciesId)}${cargo}`,
+      flavor: `${species.name} · ${matchupLine(u.speciesId)}${cargo}`,
       hp: u.hp,
       maxHp: u.maxHp,
       dmg: u.dmg,
@@ -640,13 +653,13 @@ export function buildSelectionView(
   const types = new Set(alive.map((u) => u.typeId));
   const mixed = types.size > 1;
   const title = mixed
-    ? `Mixed ×${alive.length}`
+    ? t('sel.mixed', { n: alive.length })
     : `${alive[0]!.name} ×${alive.length}`;
   const speciesIds = new Set(alive.map((u) => u.speciesId));
   const flavor =
     speciesIds.size === 1
-      ? `${SPECIES[alive[0]!.speciesId].name} · ${alive.length} selected · ${speciesCounterTip(alive[0]!.speciesId)}`
-      : `${alive.length} selected · Mixed species`;
+      ? `${speciesName(alive[0]!.speciesId)} · ${t('sel.selected', { n: alive.length })} · ${matchupLine(alive[0]!.speciesId)}`
+      : t('sel.mixedSpecies', { n: alive.length });
   const hp = alive.reduce((s, u) => s + u.hp, 0);
   const maxHp = alive.reduce((s, u) => s + u.maxHp, 0);
   let dmg: number | null = null;
@@ -659,9 +672,9 @@ export function buildSelectionView(
   const formed = alive.filter((u) => u.inFormation).length;
   const mutated = alive.filter((u) => u.mutated).length;
   const enraged = alive.filter((u) => u.enraged).length;
-  if (formed) tags.push(`Form ${formed}`);
-  if (mutated) tags.push(`Mut ${mutated}`);
-  if (enraged) tags.push(`Rage ${enraged}`);
+  if (formed) tags.push(t('sel.formCount', { n: formed }));
+  if (mutated) tags.push(t('sel.mutCount', { n: mutated }));
+  if (enraged) tags.push(t('sel.rageCount', { n: enraged }));
 
   return {
     kind: 'units',
@@ -707,6 +720,7 @@ function heroAbilityViews(
 }
 
 function structureSignature(view: SelectionPanelView): string {
+  const locale = getLocale();
   if (view.kind === 'hidden') return 'h';
   if (view.kind === 'units') {
     const abs = view.abilities
@@ -718,6 +732,7 @@ function structureSignature(view: SelectionPanelView): string {
           .join(',')
       : '';
     return [
+      locale,
       'u',
       view.count,
       view.title,
@@ -730,6 +745,7 @@ function structureSignature(view: SelectionPanelView): string {
   }
   if (view.kind === 'resource') {
     return [
+      locale,
       'r',
       view.resourceId,
       view.title,
@@ -738,6 +754,7 @@ function structureSignature(view: SelectionPanelView): string {
     ].join('|');
   }
   return [
+    locale,
     'b',
     view.title,
     view.ready ? 1 : 0,
@@ -753,10 +770,12 @@ function structureSignature(view: SelectionPanelView): string {
 
 function trainCostHtml(gold: number, crystals: number): string {
   const bits = [
-    `<span class="kane-sel-cost-gold">Gold ${gold}</span>`,
+    `<span class="kane-sel-cost-gold">${t('sel.goldCost', { n: gold })}</span>`,
   ];
   if (crystals > 0) {
-    bits.push(`<span class="kane-sel-cost-crystal">Crystal ${crystals}</span>`);
+    bits.push(
+      `<span class="kane-sel-cost-crystal">${t('sel.crystalCost', { n: crystals })}</span>`,
+    );
   }
   return `<span class="kane-sel-cost">${bits.join('')}</span>`;
 }
@@ -770,13 +789,13 @@ function abilityButtonHtml(a: SelectionAbilityView): string {
   const cdLabel = !a.ready
     ? `${a.cdSec}s`
     : !a.canPay
-      ? `Need ${a.costCrystals}c`
-      : 'READY';
+      ? t('sel.needShort', { n: a.costCrystals })
+      : t('sel.ready');
   const title = !a.ready
-    ? ` title="Cooldown ${a.cdSec}s"`
+    ? ` title="${escapeHtml(t('sel.cooldown', { n: a.cdSec }))}"`
     : !a.canPay
-      ? ` title="Need ${a.costCrystals} crystals"`
-      : ` title="Cast ${escapeHtml(a.name)} (${a.hotkey})"`;
+      ? ` title="${t('sel.needCrystals', { n: a.costCrystals })}"`
+      : ` title="${escapeHtml(t('sel.cast', { name: a.name, hotkey: a.hotkey }))}"`;
   return `<button type="button" class="${classes.join(' ')}" data-act="castAbility" data-slot="${a.slot}"${castable ? '' : ' disabled'}${title}><span class="kane-sel-ability-name">${escapeHtml(a.hotkey)} · ${escapeHtml(a.name)}</span><span class="kane-sel-ability-cd">${cdLabel}</span></button>`;
 }
 
@@ -793,15 +812,15 @@ function applyAbilityButtonState(
     cd.textContent = !a.ready
       ? `${a.cdSec}s`
       : !a.canPay
-        ? `Need ${a.costCrystals}c`
-        : 'READY';
+        ? t('sel.needShort', { n: a.costCrystals })
+        : t('sel.ready');
   }
-  if (!a.ready) btn.title = `Cooldown ${a.cdSec}s`;
-  else if (!a.canPay) btn.title = `Need ${a.costCrystals} crystals`;
-  else btn.title = `Cast ${a.name} (${a.hotkey})`;
+  if (!a.ready) btn.title = t('sel.cooldown', { n: a.cdSec });
+  else if (!a.canPay) btn.title = t('sel.needCrystals', { n: a.costCrystals });
+  else btn.title = t('sel.cast', { name: a.name, hotkey: a.hotkey });
 }
 
-function trainButtonHtml(t: {
+function trainButtonHtml(unit: {
   typeId: UnitTypeId;
   name: string;
   costGold: number;
@@ -810,25 +829,25 @@ function trainButtonHtml(t: {
   affordable: boolean;
 }): string {
   const classes = ['is-train'];
-  if (!t.affordable) classes.push('is-unaffordable');
-  const reason = !t.affordable
-    ? !t.canPay
-      ? ' title="Need more resources"'
-      : ' title="Building still under construction"'
+  if (!unit.affordable) classes.push('is-unaffordable');
+  const reason = !unit.affordable
+    ? !unit.canPay
+      ? ` title="${t('sel.needResources')}"`
+      : ` title="${t('sel.underConstruction')}"`
     : '';
-  return `<button type="button" class="${classes.join(' ')}" data-act="train" data-type-id="${t.typeId}"${t.affordable ? '' : ' disabled'}${reason}><span class="kane-sel-train-name">${escapeHtml(t.name)}</span>${trainCostHtml(t.costGold, t.costCrystals)}</button>`;
+  return `<button type="button" class="${classes.join(' ')}" data-act="train" data-type-id="${unit.typeId}"${unit.affordable ? '' : ' disabled'}${reason}><span class="kane-sel-train-name">${escapeHtml(unit.name)}</span>${trainCostHtml(unit.costGold, unit.costCrystals)}</button>`;
 }
 
 function applyTrainAffordability(
   btn: HTMLButtonElement,
-  t: { canPay: boolean; affordable: boolean },
+  unit: { canPay: boolean; affordable: boolean },
 ): void {
-  btn.disabled = !t.affordable;
-  btn.classList.toggle('is-unaffordable', !t.affordable);
-  if (!t.affordable) {
-    btn.title = !t.canPay
-      ? 'Need more resources'
-      : 'Building still under construction';
+  btn.disabled = !unit.affordable;
+  btn.classList.toggle('is-unaffordable', !unit.affordable);
+  if (!unit.affordable) {
+    btn.title = !unit.canPay
+      ? t('sel.needResources')
+      : t('sel.underConstruction');
   } else {
     btn.removeAttribute('title');
   }
@@ -837,22 +856,25 @@ function applyTrainAffordability(
 function queueLabelText(
   view: Extract<SelectionPanelView, { kind: 'building' }>,
 ): string {
-  if (!view.ready) return 'Under construction — train buttons unlock when finished';
+  if (!view.ready) return t('sel.trainLocked');
   if (view.queue.length === 0) {
-    return view.trains.length
-      ? 'Idle — tap a unit to train (Gold / Crystal cost on each button)'
-      : 'No production options';
+    return view.trains.length ? t('sel.idleTrain') : t('sel.noProduction');
   }
   const pct = Math.floor(view.progressPct * 100);
   const waiting = view.queue.length - 1;
-  const cancelHint = ' · tap icon or Cancel last to refund';
+  const hint = t('sel.cancelHint');
   if (view.headName && waiting > 0) {
-    return `Training ${view.headName} · ${pct}% · ${waiting} waiting${cancelHint}`;
+    return t('sel.trainingWait', {
+      name: view.headName,
+      pct,
+      waiting,
+      hint,
+    });
   }
   if (view.headName) {
-    return `Training ${view.headName} · ${pct}%${cancelHint}`;
+    return t('sel.training', { name: view.headName, pct, hint });
   }
-  return `Queue ${view.queue.length}${cancelHint}`;
+  return t('sel.queue', { n: view.queue.length, hint });
 }
 
 export function renderSelectionPanel(view: SelectionPanelView): boolean {
@@ -907,12 +929,16 @@ export function renderSelectionPanel(view: SelectionPanelView): boolean {
     );
     if (structuralChange) {
       const label =
-        view.resourceId === 'magic_crystals' ? 'Crystals left' : 'Gold left';
+        view.resourceId === 'magic_crystals'
+          ? t('sel.crystalsLeft')
+          : t('sel.goldLeft');
       stats.innerHTML = `<span>${label}  ·  ${Math.floor(view.remaining)}</span>`;
       actions.innerHTML = '';
     } else {
       const label =
-        view.resourceId === 'magic_crystals' ? 'Crystals left' : 'Gold left';
+        view.resourceId === 'magic_crystals'
+          ? t('sel.crystalsLeft')
+          : t('sel.goldLeft');
       stats.innerHTML = `<span>${label}  ·  ${Math.floor(view.remaining)}</span>`;
     }
     queue.hidden = true;
@@ -929,16 +955,16 @@ export function renderSelectionPanel(view: SelectionPanelView): boolean {
       portrait.style.setProperty('--kane-sel-accent', '#f0c75e');
       if (structuralChange) {
         const bits: string[] = [];
-        if (view.dmg != null) bits.push(`<span>ATK ${view.dmg}</span>`);
-        if (view.range != null) bits.push(`<span>RNG ${view.range}</span>`);
+        if (view.dmg != null) bits.push(`<span>${t('sel.atk')} ${view.dmg}</span>`);
+        if (view.range != null) bits.push(`<span>${t('sel.rng')} ${view.range}</span>`);
         for (const t of view.tags) bits.push(`<span>${escapeHtml(t)}</span>`);
         stats.innerHTML = bits.join('');
         const abilityHtml = view.abilities
           ? view.abilities.map(abilityButtonHtml).join('')
           : '';
         actions.innerHTML = `
-        <button type="button" data-act="stop">Stop</button>
-        <button type="button" data-act="attackMove" class="${view.attackMoveArmed ? 'is-armed' : ''}">${view.attackMoveArmed ? 'Atk · Armed' : 'Atk-move'}</button>
+        <button type="button" data-act="stop">${t('hud.stop')}</button>
+        <button type="button" data-act="attackMove" class="${view.attackMoveArmed ? 'is-armed' : ''}">${view.attackMoveArmed ? t('sel.atkArmed') : t('sel.atkMove')}</button>
         ${abilityHtml}
       `;
       } else {
@@ -947,7 +973,9 @@ export function renderSelectionPanel(view: SelectionPanelView): boolean {
         ) as HTMLButtonElement | null;
         if (am) {
           am.classList.toggle('is-armed', view.attackMoveArmed);
-          am.textContent = view.attackMoveArmed ? 'Atk · Armed' : 'Atk-move';
+          am.textContent = view.attackMoveArmed
+            ? t('sel.atkArmed')
+            : t('sel.atkMove');
         }
         if (view.abilities) {
           for (const a of view.abilities) {
@@ -965,14 +993,14 @@ export function renderSelectionPanel(view: SelectionPanelView): boolean {
       portrait.style.setProperty('--kane-sel-accent', '#3d7ea6');
       if (structuralChange) {
         stats.innerHTML = view.trains.length
-          ? '<span>Production</span>'
-          : '<span>No production</span>';
+          ? `<span>${t('sel.production')}</span>`
+          : `<span>${t('sel.noProductionStat')}</span>`;
         const rallyBtn = view.hasRally
-          ? `<button type="button" class="is-rally${view.rallyArmed ? ' is-armed' : ''}" data-act="rally">${view.rallyArmed ? 'Rally · Tap map' : 'Set rally'}</button>`
+          ? `<button type="button" class="is-rally${view.rallyArmed ? ' is-armed' : ''}" data-act="rally">${view.rallyArmed ? t('sel.rallyArmed') : t('sel.setRally')}</button>`
           : '';
         const cancelBtn =
           view.queue.length > 0
-            ? `<button type="button" class="is-cancel" data-act="cancelQueue" title="Cancel last queued unit (full refund)">Cancel last</button>`
+            ? `<button type="button" class="is-cancel" data-act="cancelQueue" title="${t('sel.cancelTitle')}">${t('sel.cancelLast')}</button>`
             : '';
         actions.innerHTML =
           rallyBtn + cancelBtn + view.trains.map(trainButtonHtml).join('');
@@ -988,7 +1016,9 @@ export function renderSelectionPanel(view: SelectionPanelView): boolean {
         ) as HTMLButtonElement | null;
         if (rally) {
           rally.classList.toggle('is-armed', view.rallyArmed);
-          rally.textContent = view.rallyArmed ? 'Rally · Tap map' : 'Set rally';
+          rally.textContent = view.rallyArmed
+            ? t('sel.rallyArmed')
+            : t('sel.setRally');
         }
       }
 
@@ -1012,11 +1042,11 @@ export function renderSelectionPanel(view: SelectionPanelView): boolean {
                 .map((id, i) => {
                   const u = getUnitType(id);
                   const label = u.name.slice(0, 2).toUpperCase();
-                  return `<button type="button" class="kane-sel-qicon${i === 0 ? ' is-active' : ''}" data-act="cancelQueue" data-queue-index="${i}" title="Cancel ${escapeHtml(u.name)} (refund)">${label}<span class="kane-sel-qnum">${i + 1}</span></button>`;
+                  return `<button type="button" class="kane-sel-qicon${i === 0 ? ' is-active' : ''}" data-act="cancelQueue" data-queue-index="${i}" title="${t('sel.cancelOne', { name: escapeHtml(u.name) })}">${label}<span class="kane-sel-qnum">${i + 1}</span></button>`;
                 })
                 .join('') +
               (overflow > 0
-                ? `<span class="kane-sel-qicon" title="+${overflow} more" style="cursor:default">+${overflow}</span>`
+                ? `<span class="kane-sel-qicon" title="${t('sel.overflow', { n: overflow })}" style="cursor:default">+${overflow}</span>`
                 : '');
           }
         }
