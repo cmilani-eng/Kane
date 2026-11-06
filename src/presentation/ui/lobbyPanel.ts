@@ -4,6 +4,7 @@
  */
 import Phaser from 'phaser';
 import { BRAND } from '../../config/brand';
+import { t } from '../../i18n';
 import { getLobbyStub } from '../../networking/lobbySingleton';
 import { playSfx } from '../audio/sfx';
 
@@ -44,7 +45,7 @@ export function showLobbyPanel(scene: Phaser.Scene, onClose: () => void): void {
     .setDepth(302);
 
   const title = scene.add
-    .text(cx, top + 54, 'Friend lobby', {
+    .text(cx, top + 54, t('lobby.title'), {
       fontFamily: 'Georgia, "Times New Roman", serif',
       fontSize: '26px',
       color: '#f5e6c8',
@@ -53,7 +54,7 @@ export function showLobbyPanel(scene: Phaser.Scene, onClose: () => void): void {
     .setDepth(302);
 
   const subtitle = scene.add
-    .text(cx, top + 84, 'Share a code with a friend — coming soon live', {
+    .text(cx, top + 84, t('lobby.subtitle'), {
       fontFamily: 'system-ui, sans-serif',
       fontSize: '13px',
       color: '#9eb4c8',
@@ -84,7 +85,7 @@ export function showLobbyPanel(scene: Phaser.Scene, onClose: () => void): void {
     .setDepth(302);
 
   const quietNote = scene.add
-    .text(cx, short ? bottom - 64 : bottom - 22, 'Local stub · no live sync yet', {
+    .text(cx, short ? bottom - 64 : bottom - 22, t('lobby.quiet'), {
       fontFamily: 'system-ui, sans-serif',
       fontSize: '11px',
       color: '#6a7f94',
@@ -103,13 +104,13 @@ export function showLobbyPanel(scene: Phaser.Scene, onClose: () => void): void {
           : '#6a7f94',
     );
     if (st.status === 'idle') {
-      statusText.setText('Create a code to host, or join one from a friend.');
+      statusText.setText(t('lobby.idle'));
     } else if (st.status === 'hosting') {
-      statusText.setText('Hosting locally — share this code.\nLive match sync is not connected yet.');
+      statusText.setText(t('lobby.hosting'));
     } else if (st.status === 'joining') {
-      statusText.setText(`Joining ${st.code} locally.\nLive match sync is not connected yet.`);
+      statusText.setText(t('lobby.joining', { code: st.code ?? '' }));
     } else {
-      statusText.setText(st.reason ?? 'Lobby unavailable.');
+      statusText.setText(st.reason ?? t('lobby.unavailable'));
     }
   };
   refresh();
@@ -153,18 +154,18 @@ export function showLobbyPanel(scene: Phaser.Scene, onClose: () => void): void {
   };
 
   const rowY = short ? bottom - 32 : bottom - 78;
-  mkBtn(cx - (short ? 180 : 110), rowY, 'Create code', '#2a4a38', () => {
+  mkBtn(cx - (short ? 180 : 110), rowY, t('lobby.create'), '#2a4a38', () => {
     lobby.hostLocal();
   });
-  mkBtn(cx + (short ? 0 : 110), rowY, 'Join code…', '#2a3a50', () => {
+  mkBtn(cx + (short ? 0 : 110), rowY, t('lobby.join'), '#2a3a50', () => {
     const raw =
       typeof window !== 'undefined'
-        ? window.prompt('Enter friend lobby code', 'KANE01')
+        ? window.prompt(t('lobby.prompt'), 'KANE01')
         : null;
     if (raw == null) return;
     lobby.joinLocal(raw);
   });
-  mkBtn(short ? cx + 180 : cx, short ? rowY : rowY + 42, 'Leave', '#3a4555', () => {
+  mkBtn(short ? cx + 180 : cx, short ? rowY : rowY + 42, t('lobby.leave'), '#3a4555', () => {
     lobby.leave();
   });
 

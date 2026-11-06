@@ -80,4 +80,4 @@ Full list, and how each key maps to StarCraft, Age of Empires and C&C: [docs/hot
 
 ## What’s next
 
-Phase 6 (Firebase emulators + live friend lobby) stays parked. Match writes are still client-trusted. Gap is the third skirmish map: you start west, the enemy starts east, and the coach names it. Rematch keeps the map. Ads stay off.
+Phase 6 (Firebase emulators + live friend lobby) stays parked. Match writes are still client-trusted. The friend lobby, the stats record, and the CORE hold banner follow the menu language. Ads stay off.
