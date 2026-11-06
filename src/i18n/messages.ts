@@ -103,6 +103,15 @@ export const enGB = {
     'Cloud profile · empty until you finish a signed-in skirmish',
   'account.recentEmpty':
     'Recent matches\nNo cloud matches yet — finish a skirmish while signed in.',
+  'hub.title': 'Games',
+  'hub.subtitle': 'Pick a game to play.',
+  'hub.meta': 'KANE and friends: pick a game to play.',
+  'hub.play': 'Play',
+  'hub.experimental': 'Experimental',
+  'hub.kane.blurb':
+    'Fantasy real-time strategy. Pick a species, build a base and crush the enemy.',
+  'hub.blob.blurb':
+    'Start as a tiny blob and eat your way up the chain to become the Angel.',
   'auth.age': '13+ framing · no in-game age gate',
   'auth.displayName': 'Display name',
   'auth.displayPlaceholder': 'Commander',
@@ -523,6 +532,15 @@ export const ptBR = {
     'Perfil na nuvem · vazio até você terminar uma escaramuça conectado',
   'account.recentEmpty':
     'Partidas recentes\nAinda não há partidas na nuvem — termine uma escaramuça conectado.',
+  'hub.title': 'Jogos',
+  'hub.subtitle': 'Escolha um jogo.',
+  'hub.meta': 'KANE e companhia: escolha um jogo.',
+  'hub.play': 'Jogar',
+  'hub.experimental': 'Experimental',
+  'hub.kane.blurb':
+    'Estratégia em tempo real de fantasia. Escolha uma espécie, construa uma base e esmague o inimigo.',
+  'hub.blob.blurb':
+    'Comece como uma bolha minúscula e coma até o topo para virar o Anjo.',
   'auth.age': 'Enquadramento 13+ · sem verificação de idade no jogo',
   'auth.displayName': 'Nome de exibição',
   'auth.displayPlaceholder': 'Comandante',
@@ -939,6 +957,15 @@ export const es = {
     'Perfil en la nube · vacío hasta que termines una escaramuza con la sesión iniciada',
   'account.recentEmpty':
     'Partidas recientes\nAún no hay partidas en la nube — termina una escaramuza con la sesión iniciada.',
+  'hub.title': 'Juegos',
+  'hub.subtitle': 'Elige un juego.',
+  'hub.meta': 'KANE y compañía: elige un juego.',
+  'hub.play': 'Jugar',
+  'hub.experimental': 'Experimental',
+  'hub.kane.blurb':
+    'Estrategia en tiempo real de fantasía. Elige una especie, construye una base y aplasta al enemigo.',
+  'hub.blob.blurb':
+    'Empieza como una masa diminuta y come hasta la cima para convertirte en el Ángel.',
   'auth.age': 'Marco 13+ · sin verificación de edad en el juego',
   'auth.displayName': 'Nombre visible',
   'auth.displayPlaceholder': 'Comandante',
