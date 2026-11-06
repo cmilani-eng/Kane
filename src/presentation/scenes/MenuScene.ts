@@ -9,6 +9,10 @@ import {
   AI_DIFFICULTY_ORDER,
   type AiDifficultyId,
 } from '../../gameplay/battlefield/aiDifficulty';
+import {
+  hideMenuBannerStub,
+  showMenuBannerStub,
+} from '../../ads/adsSdkStub';
 import { playSfx } from '../audio/sfx';
 import { hideDomHud } from '../ui/domHud';
 import { showLobbyPanel } from '../ui/lobbyPanel';
@@ -36,10 +40,12 @@ export class MenuScene extends Phaser.Scene {
     this.lobbyOpen = false;
     this.previewSlots = [];
     this.buildLayout(true);
+    showMenuBannerStub();
     this.scale.on('resize', this.onResize, this);
-    this.events.once(Phaser.Scenes.Events.SHUTDOWN, () =>
-      this.scale.off('resize', this.onResize, this),
-    );
+    this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => {
+      this.scale.off('resize', this.onResize, this);
+      hideMenuBannerStub();
+    });
     if (wantsAdminPanel()) {
       this.openStats();
     }
