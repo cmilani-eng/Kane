@@ -10,7 +10,7 @@
     "preview": "vite preview --host",
     "lint": "eslint .",
     "prepare": "git rev-parse --is-inside-work-tree >/dev/null 2>&1 && git config core.hooksPath .githooks || true",
-    "test": "vitest run --dir src",
+    "test": "vitest run",
     "emulators": "firebase emulators:start",
     "emulators:exec": "firebase emulators:exec --only auth,database,firestore",
     "hosting:preview": "npm run build && firebase hosting:channel:deploy kane-preview --expires 7d --only kane-web",

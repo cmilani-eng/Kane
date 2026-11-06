@@ -3,7 +3,7 @@
   "short_name": "KANE",
   "description": "BUILD. COMMAND. CONQUER. — Fantasy Real-Time Strategy Game",
   "id": "/",
-  "start_url": "./",
+  "start_url": "./kane/",
   "scope": "./",
   "display": "standalone",
   "display_override": ["standalone", "browser"],

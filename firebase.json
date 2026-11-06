@@ -12,6 +12,14 @@
       ],
       "rewrites": [
         {
+          "source": "/kane/**",
+          "destination": "/kane/index.html"
+        },
+        {
+          "source": "/blob-evolution/**",
+          "destination": "/blob-evolution/index.html"
+        },
+        {
           "source": "**",
           "destination": "/index.html"
         }
@@ -27,7 +35,7 @@
           ]
         },
         {
-          "source": "{/,/index.html}",
+          "source": "{/,/index.html,/*/,/*/index.html}",
           "headers": [
             {
               "key": "Cache-Control",
@@ -67,8 +75,7 @@
           ]
         }
       ],
-      "cleanUrls": true,
-      "trailingSlash": false
+      "cleanUrls": true
     }
   ],
   "emulators": {

@@ -15,7 +15,7 @@ npm install
 npm run dev
 ```
 
-Open `http://localhost:5173` (use the LAN URL for phones).
+Open `http://localhost:5173` for the game picker, or `http://localhost:5173/kane/` for Kane directly (use the LAN URL for phones).
 
 Checks: `npm run lint` (ESLint), `npm test` (Vitest), `npm run build` (type-check + bundle).
 
@@ -30,6 +30,28 @@ Playable **battlefield** (select / move / attack / build / train):
 - Health bars, attack range when selected, death removal, no friendly fire
 
 **Parked:** live multiplayer, Firebase friend lobby, ads, offline service worker.
+
+## Games in this repo
+
+The site is a game picker at `/`. Each game lives in its own folder under `games/` and is served at `/<id>/`.
+
+| Game | Folder | URL | Build | Status |
+|------|--------|-----|-------|--------|
+| KANE | `games/kane/` (code in `src/`) | `/kane/` | `vite` | Live |
+| Blob Evolution 3D | `games/blob-evolution/` | `/blob-evolution/` | `static` | Experimental |
+
+`games/games.json` is the list of games. The hub cards, the Vite build inputs and the registry test all read it.
+
+- **`vite`** games are bundled from `games/<id>/index.html` (TypeScript, npm packages, lint and tests).
+- **`static`** games are copied to `dist/<id>/` untouched, so a single self-contained HTML file (CDN scripts, import maps) works as-is.
+
+To add a game:
+
+1. Create `games/<id>/index.html`.
+2. Add an entry to `games/games.json` (`id`, `title`, `tagline`, `description`, `build`, `status`).
+3. Add a `/<id>/**` rewrite to `firebase.json`, above the `**` catch-all. `npm test` fails if this is missing.
+
+Old links to `/#…` (e.g. `/#admin`) are forwarded to `/kane/#…`.
 
 ## Architecture
 
