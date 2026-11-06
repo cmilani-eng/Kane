@@ -43,6 +43,7 @@ import { showAuthPanel, hideAuthPanel } from '../ui/authPanel';
 import { showCosmeticsPanel } from '../ui/cosmeticsPanel';
 import { showDashboardPanel } from '../ui/dashboardPanel';
 import { showLobbyPanel } from '../ui/lobbyPanel';
+import { hideMenuGamesLink, showMenuGamesLink } from '../ui/menuGamesLink';
 import { softLaunchStatusStrip } from '../ui/softLaunchStatus';
 import { showStatsPanel } from '../ui/statsPanel';
 import { addLocalePicker } from '../ui/localePicker';
@@ -70,6 +71,7 @@ export class MenuScene extends Phaser.Scene {
 
   create(): void {
     hideDomHud();
+    showMenuGamesLink();
     const prefs = loadMatchPrefs();
     this.difficulty = prefs.difficulty;
     this.mapId = prefs.mapId;
@@ -94,6 +96,7 @@ export class MenuScene extends Phaser.Scene {
       this.authUnsub = null;
       this.localeUnsub?.();
       this.localeUnsub = null;
+      hideMenuGamesLink();
       hideAuthPanel();
       hideMenuBannerStub();
     });
