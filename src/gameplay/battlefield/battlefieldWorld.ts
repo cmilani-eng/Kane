@@ -141,6 +141,8 @@ export interface BattlefieldWorld {
   coreFragments: import('./battlefieldCoreFragments').CoreFragment[];
   /** Presentation cue — claim SFX window. */
   coreClaimFlashMs: number;
+  /** Player under-attack edge alert (enemy damage on friendlies). */
+  underAttackAlert: import('./battlefieldUnderAttack').UnderAttackAlert;
   /** Player fog of war (explored / visible). */
   fog: import('./battlefieldFog').FogState;
   /** Skirmish AI difficulty for this match. */
@@ -409,6 +411,14 @@ export function createBattlefieldWorld(
     waypointMarkers: [],
     coreFragments: [],
     coreClaimFlashMs: 0,
+    underAttackAlert: {
+      lifeMs: 0,
+      maxLifeMs: 520,
+      x: 0,
+      y: 0,
+      cooldownMs: 0,
+      pulse: false,
+    },
     fog: createFogState(),
     aiDifficulty: ai.id,
   };

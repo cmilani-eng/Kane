@@ -26,6 +26,7 @@ export type SfxKey =
   | 'build'
   | 'train'
   | 'attack'
+  | 'alert'
   | 'hero'
   | 'ability'
   | 'ui'
@@ -47,6 +48,11 @@ const TONES: Record<SfxKey, Tone[]> = {
   build: [{ freq: 180, dur: 0.12, type: 'sawtooth', gain: 0.035 }],
   train: [{ freq: 260, dur: 0.08, type: 'square', gain: 0.04 }],
   attack: [{ freq: 140, dur: 0.07, type: 'sawtooth', gain: 0.05 }],
+  // Soft under-attack cue — brief, not spammy (rate-limited by combat pulse).
+  alert: [
+    { freq: 380, dur: 0.05, type: 'square', gain: 0.035 },
+    { freq: 260, dur: 0.08, type: 'triangle', gain: 0.04 },
+  ],
   hero: [
     { freq: 440, dur: 0.08, type: 'triangle', gain: 0.05 },
     { freq: 660, dur: 0.1, type: 'triangle', gain: 0.045 },
