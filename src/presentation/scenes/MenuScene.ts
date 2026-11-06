@@ -15,9 +15,9 @@ import {
   subscribeAuth,
 } from '../../firebase/auth';
 import { maybeRecordCloudGameStarted } from '../../firebase/cloudProgression';
-import { SPECIES, type SpeciesId } from '../../data/speciesStub';
+import type { SpeciesId } from '../../data/speciesStub';
+import { difficultyCopy, speciesCopy, subscribeLocale, t } from '../../i18n';
 import {
-  AI_DIFFICULTIES,
   AI_DIFFICULTY_ORDER,
   type AiDifficultyId,
 } from '../../gameplay/battlefield/aiDifficulty';
@@ -34,6 +34,7 @@ import { showDashboardPanel } from '../ui/dashboardPanel';
 import { showLobbyPanel } from '../ui/lobbyPanel';
 import { softLaunchStatusStrip } from '../ui/softLaunchStatus';
 import { showStatsPanel } from '../ui/statsPanel';
+import { addLocalePicker } from '../ui/localePicker';
 import { createVolumeSlider } from '../ui/volumeSlider';
 import { drawSpeciesPreview } from '../units/unitSilhouette';
 
@@ -49,6 +50,7 @@ export class MenuScene extends Phaser.Scene {
   private lastSpecies: SpeciesId = 'nobles';
   private previewGfx: Phaser.GameObjects.Graphics | null = null;
   private previewSlots: { id: SpeciesId; x: number; y: number }[] = [];
+  private localeUnsub: (() => void) | null = null;
 
   constructor() {
     super('Menu');
@@ -68,6 +70,8 @@ export class MenuScene extends Phaser.Scene {
     showMenuBannerStub();
     this.authUnsub?.();
     this.authUnsub = subscribeAuth(() => this.refreshAccountChip());
+    this.localeUnsub?.();
+    this.localeUnsub = subscribeLocale(() => this.rebuildForLocale());
     // Ambient BGM needs a user gesture for autoplay policy.
     this.input.once('pointerdown', () => ensureAmbientBgm());
     this.scale.on('resize', this.onResize, this);
@@ -75,6 +79,8 @@ export class MenuScene extends Phaser.Scene {
       this.scale.off('resize', this.onResize, this);
       this.authUnsub?.();
       this.authUnsub = null;
+      this.localeUnsub?.();
+      this.localeUnsub = null;
       hideAuthPanel();
       hideMenuBannerStub();
     });
@@ -83,7 +89,20 @@ export class MenuScene extends Phaser.Scene {
     }
   }
 
-  /** Everything is positioned from the canvas size, so rebuild when it changes. */
+  /** Locale changes destroy the text that received the click, so rebuild next tick. */
+  private rebuildForLocale(): void {
+    if (this.anyOverlayOpen()) return;
+    this.time.delayedCall(0, () => {
+      if (this.anyOverlayOpen()) return;
+      this.tweens.killAll();
+      this.children.removeAll(true);
+      this.previewGfx = null;
+      this.previewSlots = [];
+      this.accountLabel = null;
+      this.buildLayout(false);
+    });
+  }
+
   private onResize(): void {
     if (
       this.statsOpen ||
@@ -172,10 +191,10 @@ export class MenuScene extends Phaser.Scene {
     if (!this.accountLabel) return;
     const u = getCurrentAuthUser();
     if (isCloudAccount(u) && u) {
-      const short = (u.displayName || 'Account').slice(0, 12);
+      const short = (u.displayName || t('menu.account')).slice(0, 12);
       this.accountLabel.setText(short);
     } else {
-      this.accountLabel.setText('Account');
+      this.accountLabel.setText(t('menu.account'));
     }
   }
 
@@ -240,7 +259,7 @@ export class MenuScene extends Phaser.Scene {
       .setOrigin(0.5);
 
     this.add
-      .text(width / 2, height * 0.26, 'Difficulty', {
+      .text(width / 2, height * 0.26, t('menu.difficulty'), {
         fontFamily: 'system-ui, sans-serif',
         fontSize: '13px',
         color: '#b8c9d9',
@@ -250,10 +269,12 @@ export class MenuScene extends Phaser.Scene {
     this.drawDifficultyRow(width, height * 0.31);
 
     this.add
-      .text(width / 2, height * 0.38, 'Pick your species for a local skirmish', {
+      .text(width / 2, height * 0.365, t('menu.pickSpecies'), {
         fontFamily: 'system-ui, sans-serif',
         fontSize: '14px',
         color: '#b8c9d9',
+        align: 'center',
+        wordWrap: { width: Math.min(520, width * 0.9) },
       })
       .setOrigin(0.5);
 
@@ -270,14 +291,14 @@ export class MenuScene extends Phaser.Scene {
     if (narrow) {
       const startY = height * 0.44;
       cards.forEach((c, i) => {
-        const s = SPECIES[c.id];
+        const s = speciesCopy(c.id);
         this.makeSpeciesCard(
           c.id,
           width / 2,
           startY + i * 108,
           s.name,
           s.motto,
-          s.uniqueMechanic,
+          s.mechanic,
           c.fill,
           c.stroke,
           () => this.startMatch(c.id),
@@ -290,14 +311,14 @@ export class MenuScene extends Phaser.Scene {
       const gap = Math.min(200, width * 0.28);
       const cardY = height * 0.56;
       cards.forEach((c, i) => {
-        const s = SPECIES[c.id];
+        const s = speciesCopy(c.id);
         this.makeSpeciesCard(
           c.id,
           width / 2 + (i - 1) * gap,
           cardY,
           s.name,
           s.motto,
-          s.uniqueMechanic,
+          s.mechanic,
           c.fill,
           c.stroke,
           () => this.startMatch(c.id),
@@ -316,6 +337,13 @@ export class MenuScene extends Phaser.Scene {
       depth: 30,
     });
 
+    addLocalePicker({
+      scene: this,
+      x: width - Math.min(140, width * 0.28),
+      y: Math.max(40, height * 0.055),
+      depth: 40,
+    });
+
     this.add
       .text(width / 2, height * 0.81, softLaunchStatusStrip(), {
         fontFamily: 'system-ui, sans-serif',
@@ -326,7 +354,7 @@ export class MenuScene extends Phaser.Scene {
 
     const gap = Math.min(88, width * 0.22);
     this.add
-      .text(width / 2 - gap * 1.5, height * 0.855, 'Friends', {
+      .text(width / 2 - gap * 1.5, height * 0.855, t('menu.friends'), {
         fontFamily: 'system-ui, sans-serif',
         fontSize: '12px',
         color: '#fff8e8',
@@ -337,7 +365,7 @@ export class MenuScene extends Phaser.Scene {
       .setInteractive({ useHandCursor: true })
       .on('pointerup', () => this.openLobby());
     this.add
-      .text(width / 2 - gap * 0.5, height * 0.855, 'Cosmetics', {
+      .text(width / 2 - gap * 0.5, height * 0.855, t('menu.cosmetics'), {
         fontFamily: 'system-ui, sans-serif',
         fontSize: '12px',
         color: '#fff8e8',
@@ -348,7 +376,7 @@ export class MenuScene extends Phaser.Scene {
       .setInteractive({ useHandCursor: true })
       .on('pointerup', () => this.openCosmetics());
     this.accountLabel = this.add
-      .text(width / 2 + gap * 0.5, height * 0.855, 'Account', {
+      .text(width / 2 + gap * 0.5, height * 0.855, t('menu.account'), {
         fontFamily: 'system-ui, sans-serif',
         fontSize: '12px',
         color: '#fff8e8',
@@ -360,7 +388,7 @@ export class MenuScene extends Phaser.Scene {
       .on('pointerup', () => this.openAccount());
     this.refreshAccountChip();
     this.add
-      .text(width / 2 + gap * 1.5, height * 0.855, 'Stats', {
+      .text(width / 2 + gap * 1.5, height * 0.855, t('menu.stats'), {
         fontFamily: 'system-ui, sans-serif',
         fontSize: '12px',
         color: '#fff8e8',
@@ -375,7 +403,7 @@ export class MenuScene extends Phaser.Scene {
       .text(
         width / 2,
         height * 0.915,
-        'RAGE (R) · FORMATIONS (F) · MUTATION (M) · Heroes (H, Q/W/E)',
+        t('menu.hotkeys'),
         {
           fontFamily: 'system-ui, sans-serif',
           fontSize: '12px',
@@ -386,7 +414,7 @@ export class MenuScene extends Phaser.Scene {
 
     const legalY = height * 0.97;
     const privacy = this.add
-      .text(width / 2 - 48, legalY, 'Privacy', {
+      .text(width / 2 - 72, legalY, t('menu.privacy'), {
         fontFamily: 'system-ui, sans-serif',
         fontSize: '11px',
         color: '#7ec8ff',
@@ -398,7 +426,7 @@ export class MenuScene extends Phaser.Scene {
       if (typeof window !== 'undefined') window.open('/privacy.html', '_blank');
     });
     const terms = this.add
-      .text(width / 2 + 48, legalY, 'Terms', {
+      .text(width / 2 + 72, legalY, t('menu.terms'), {
         fontFamily: 'system-ui, sans-serif',
         fontSize: '11px',
         color: '#7ec8ff',
@@ -414,7 +442,7 @@ export class MenuScene extends Phaser.Scene {
   private drawDifficultyRow(width: number, y: number): void {
     const gap = Math.min(118, width * 0.28);
     AI_DIFFICULTY_ORDER.forEach((id, i) => {
-      const d = AI_DIFFICULTIES[id];
+      const d = difficultyCopy(id);
       const selected = this.difficulty === id;
       const x = width / 2 + (i - 1) * gap;
       const bg = this.add
@@ -509,13 +537,18 @@ export class MenuScene extends Phaser.Scene {
   ): void {
     const w = cardW ?? Math.min(190, this.scale.width * 0.28);
     const h = cardH ?? 150;
+    const compact = h <= 100;
     const bg = this.add
       .rectangle(x, y, w, h, fill, 1)
       .setStrokeStyle(remembered ? 4 : 3, remembered ? 0xf0c75e : stroke)
       .setInteractive({ useHandCursor: true });
-    this.previewSlots.push({ id: speciesId, x, y: y - 28 });
+    this.previewSlots.push({
+      id: speciesId,
+      x: compact ? x - w / 2 + 36 : x,
+      y: compact ? y : y - 28,
+    });
     this.add
-      .text(x, y - 52, name, {
+      .text(x, compact ? y - 28 : y - 52, name, {
         fontFamily: 'Georgia, "Times New Roman", serif',
         fontSize: '16px',
         color: '#fff8e8',
@@ -523,7 +556,7 @@ export class MenuScene extends Phaser.Scene {
       .setOrigin(0.5);
     if (remembered && h > 120) {
       this.add
-        .text(x, y - 68, 'Last played', {
+        .text(x, y - 68, t('menu.lastPlayed'), {
           fontFamily: 'system-ui, sans-serif',
           fontSize: '10px',
           color: '#f0c75e',
@@ -531,7 +564,7 @@ export class MenuScene extends Phaser.Scene {
         .setOrigin(0.5);
     }
     this.add
-      .text(x, y + 8, motto, {
+      .text(x, compact ? y + 2 : y + 8, motto, {
         fontFamily: 'system-ui, sans-serif',
         fontSize: '10px',
         color: '#e8f0f8',
@@ -540,7 +573,7 @@ export class MenuScene extends Phaser.Scene {
       })
       .setOrigin(0.5);
     this.add
-      .text(x, y + 36, mechanic, {
+      .text(x, compact ? y + 22 : y + 36, mechanic, {
         fontFamily: 'system-ui, sans-serif',
         fontSize: '12px',
         color: '#f0c75e',
@@ -548,7 +581,7 @@ export class MenuScene extends Phaser.Scene {
       })
       .setOrigin(0.5);
     this.add
-      .text(x, y + 58, remembered ? 'Play · last' : 'Play', {
+      .text(x, compact ? y + 36 : y + 58, remembered ? t('menu.playLast') : t('menu.play'), {
         fontFamily: 'system-ui, sans-serif',
         fontSize: '14px',
         color: remembered ? '#f0c75e' : '#fff8e8',

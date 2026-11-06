@@ -1,4 +1,5 @@
 /** DOM command bar — reliable touch targets over the Phaser canvas. */
+import { subscribeLocale, t, type MessageKey } from '../../i18n';
 
 export type DomHudHandlers = {
   buildBarracks: () => void;
@@ -9,6 +10,32 @@ export type DomHudHandlers = {
 };
 
 const BAR_ID = 'kane-dom-hud';
+
+const HUD_LABELS: Record<keyof DomHudHandlers, MessageKey> = {
+  buildBarracks: 'hud.buildBarracks',
+  trainMelee: 'hud.trainBlade',
+  trainRanged: 'hud.trainArcher',
+  trainScout: 'hud.trainScout',
+  menu: 'hud.menu',
+};
+
+let localeWatch: (() => void) | null = null;
+
+function applyDomHudLabels(bar: HTMLElement): void {
+  for (const act of Object.keys(HUD_LABELS) as (keyof DomHudHandlers)[]) {
+    const btn = bar.querySelector(`button[data-act="${act}"]`);
+    if (btn) btn.textContent = t(HUD_LABELS[act]);
+  }
+}
+
+function watchDomHudLocale(bar: HTMLElement): void {
+  applyDomHudLabels(bar);
+  if (localeWatch) return;
+  localeWatch = subscribeLocale(() => {
+    const live = document.getElementById(BAR_ID);
+    if (live) applyDomHudLabels(live);
+  });
+}
 
 export function ensureDomHud(): HTMLElement {
   let bar = document.getElementById(BAR_ID);
@@ -84,6 +111,7 @@ export function ensureDomHud(): HTMLElement {
     document.head.appendChild(style);
   }
 
+  watchDomHudLocale(bar);
   return bar;
 }
 
@@ -91,9 +119,9 @@ export function showDomHud(handlers: DomHudHandlers): void {
   const bar = ensureDomHud();
   bar.classList.add('is-visible');
   bar.onclick = (ev) => {
-    const t = ev.target;
-    if (!(t instanceof HTMLElement)) return;
-    const btn = t.closest('button[data-act]');
+    const target = ev.target;
+    if (!(target instanceof HTMLElement)) return;
+    const btn = target.closest('button[data-act]');
     if (!(btn instanceof HTMLElement)) return;
     ev.preventDefault();
     ev.stopPropagation();

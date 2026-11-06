@@ -5,7 +5,8 @@
 import Phaser from 'phaser';
 import { showPostMatchInterstitialStub } from '../../ads/adsSdkStub';
 import { BRAND } from '../../config/brand';
-import { SPECIES, type SpeciesId } from '../../data/speciesStub';
+import type { SpeciesId } from '../../data/speciesStub';
+import { speciesName, t } from '../../i18n';
 import { playEndFanfare, playSfx } from '../audio/sfx';
 
 export interface EndScreenOpts {
@@ -25,7 +26,6 @@ export function showKaneEndScreen(opts: EndScreenOpts): void {
   const { scene, win, speciesId, onMenu, onRematch, ignoreOnMain, reason } =
     opts;
   const { width, height } = scene.scale;
-  const species = SPECIES[speciesId];
   const accent = win ? 0xf0c75e : 0xe85a5a;
   const accentHex = win ? '#f0c75e' : '#e87a7a';
   const wash = win ? 0x1a2818 : 0x1a0e14;
@@ -88,7 +88,7 @@ export function showKaneEndScreen(opts: EndScreenOpts): void {
   root.push(brand);
 
   const title = scene.add
-    .text(width / 2, height * 0.48 - panelH * 0.12, win ? 'VICTORY' : 'DEFEAT', {
+    .text(width / 2, height * 0.48 - panelH * 0.12, win ? t('end.victory') : t('end.defeat'), {
       fontFamily: 'Georgia, "Times New Roman", serif',
       fontSize: Math.min(58, width * 0.14) + 'px',
       color: accentHex,
@@ -115,14 +115,15 @@ export function showKaneEndScreen(opts: EndScreenOpts): void {
     .setAlpha(0);
   root.push(tag);
 
+  const name = speciesName(speciesId);
   const subtitle =
     reason === 'core_hold'
       ? win
-        ? `CORE held — ${species.name} secure the field.`
-        : `Enemy held the CORE — ${species.name} need a rematch.`
+        ? t('end.coreVictoryBody', { species: name })
+        : t('end.coreDefeatBody', { species: name })
       : win
-        ? `Enemy hall destroyed — ${species.name} claim the field.`
-        : `Your hall fell — ${species.name} need a rematch.`;
+        ? t('end.victoryBody', { species: name })
+        : t('end.defeatBody', { species: name });
 
   const sub = scene.add
     .text(
@@ -144,7 +145,7 @@ export function showKaneEndScreen(opts: EndScreenOpts): void {
   root.push(sub);
 
   const rematchBtn = scene.add
-    .text(width / 2, height * 0.48 + panelH * 0.34, 'Rematch', {
+    .text(width / 2, height * 0.48 + panelH * 0.34, t('end.rematch'), {
       fontFamily: 'Georgia, "Times New Roman", serif',
       fontSize: '18px',
       color: '#fff8e8',
@@ -165,7 +166,7 @@ export function showKaneEndScreen(opts: EndScreenOpts): void {
   root.push(rematchBtn);
 
   const menuBtn = scene.add
-    .text(width / 2, height * 0.48 + panelH * 0.48, 'Return to Menu', {
+    .text(width / 2, height * 0.48 + panelH * 0.48, t('end.menu'), {
       fontFamily: 'Georgia, "Times New Roman", serif',
       fontSize: '16px',
       color: '#fff8e8',

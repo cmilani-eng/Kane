@@ -4,6 +4,7 @@
  */
 import Phaser from 'phaser';
 import { BRAND } from '../../config/brand';
+import { t } from '../../i18n';
 import { registerUnitAnims } from '../animations/unitAnims';
 import { hideDomHud } from '../ui/domHud';
 import {
@@ -83,7 +84,7 @@ export class BootScene extends Phaser.Scene {
       .setAlpha(0);
 
     const hint = this.add
-      .text(width / 2, height * 0.88, 'Tap to continue', {
+      .text(width / 2, height * 0.88, t('boot.tap'), {
         fontFamily: 'system-ui, sans-serif',
         fontSize: '12px',
         color: '#6a7f94',

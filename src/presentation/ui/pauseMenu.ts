@@ -5,8 +5,10 @@
  */
 import Phaser from 'phaser';
 import { BRAND } from '../../config/brand';
+import { subscribeLocale, t } from '../../i18n';
 import { isSfxMuted, playSfx, setSfxMuted } from '../audio/sfx';
 import { formatMatchClock } from './battlefieldHud';
+import { addLocalePicker } from './localePicker';
 import { createVolumeSlider, type VolumeSliderHandle } from './volumeSlider';
 
 export interface PauseMenuSnapshot {
@@ -30,6 +32,7 @@ export class PauseMenu {
   private root: Phaser.GameObjects.GameObject[] = [];
   private muteLabel: Phaser.GameObjects.Text | null = null;
   private volume: VolumeSliderHandle | null = null;
+  private localeUnsub: (() => void) | null = null;
   private open = false;
   private snapshot: PauseMenuSnapshot = {
     elapsedMs: 0,
@@ -54,11 +57,18 @@ export class PauseMenu {
     this.open = true;
     this.build();
     this.scene.scale.on('resize', this.onResize, this);
+    this.localeUnsub = subscribeLocale(() => {
+      this.scene.time.delayedCall(0, () => {
+        if (this.open) this.onResize();
+      });
+    });
   }
 
   hide(): void {
     if (!this.open) return;
     this.open = false;
+    this.localeUnsub?.();
+    this.localeUnsub = null;
     this.scene.scale.off('resize', this.onResize, this);
     this.volume?.destroy();
     this.volume = null;
@@ -80,7 +90,7 @@ export class PauseMenu {
   private build(): void {
     const { width, height } = this.scene.scale;
     const panelW = Math.min(360, width - 40);
-    const panelH = Math.min(400, height * 0.68);
+    const panelH = Math.min(520, height * 0.84);
     const cx = width / 2;
     const cy = height * 0.48;
 
@@ -99,7 +109,7 @@ export class PauseMenu {
     this.root.push(panel);
 
     const title = this.scene.add
-      .text(cx, cy - panelH * 0.42, 'Paused', {
+      .text(cx, cy - panelH * 0.44, t('pause.paused'), {
         fontFamily: 'Georgia, "Times New Roman", serif',
         fontSize: Math.min(32, width * 0.08) + 'px',
         color: '#f5e6c8',
@@ -108,7 +118,7 @@ export class PauseMenu {
       .setScrollFactor(0)
       .setDepth(222);
     const brand = this.scene.add
-      .text(cx, cy - panelH * 0.32, BRAND.name, {
+      .text(cx, cy - panelH * 0.36, BRAND.name, {
         fontFamily: 'system-ui, sans-serif',
         fontSize: '13px',
         color: '#9eb4c8',
@@ -118,34 +128,32 @@ export class PauseMenu {
       .setDepth(222);
 
     const clock = formatMatchClock(this.snapshot.elapsedMs);
-    const supply = `Supply  ${this.snapshot.supplyCurrent} / ${this.snapshot.supplyCap}`;
+    const supply = t('pause.supply', {
+      current: this.snapshot.supplyCurrent,
+      cap: this.snapshot.supplyCap,
+    });
     const nearCap =
       this.snapshot.supplyCurrent >=
       Math.floor(this.snapshot.supplyCap * 0.85);
     const atCap =
       this.snapshot.supplyCurrent >= this.snapshot.supplyCap;
     const snap = this.scene.add
-      .text(
-        cx,
-        cy - panelH * 0.22,
-        `Match  ${clock}\n${supply}`,
-        {
-          fontFamily: 'system-ui, sans-serif',
-          fontSize: '14px',
-          color: atCap ? '#e87aa8' : nearCap ? '#f0c75e' : '#d7e6f2',
-          align: 'center',
-          lineSpacing: 6,
-        },
-      )
+      .text(cx, cy - panelH * 0.27, `${t('pause.match', { clock })}\n${supply}`, {
+        fontFamily: 'system-ui, sans-serif',
+        fontSize: '14px',
+        color: atCap ? '#e87aa8' : nearCap ? '#f0c75e' : '#d7e6f2',
+        align: 'center',
+        lineSpacing: 6,
+      })
       .setOrigin(0.5)
       .setScrollFactor(0)
       .setDepth(222);
     this.root.push(title, brand, snap);
 
-    const btnY0 = cy - panelH * 0.06;
-    const gap = Math.min(52, panelH * 0.15);
+    const btnY0 = cy - panelH * 0.14;
+    const gap = Math.min(44, panelH * 0.11);
     this.root.push(
-      this.makeBtn(cx, btnY0, 'Resume', () => {
+      this.makeBtn(cx, btnY0, t('pause.resume'), () => {
         this.hide();
         this.onResume();
       }),
@@ -172,7 +180,7 @@ export class PauseMenu {
       this.makeBtn(
         cx,
         btnY0 + gap * 3 + 16,
-        'Quit to Menu',
+        t('pause.quit'),
         () => {
           playSfx('ui');
           this.hide();
@@ -182,11 +190,21 @@ export class PauseMenu {
       ),
     );
 
+    this.root.push(
+      ...addLocalePicker({
+        scene: this.scene,
+        x: cx,
+        y: cy + panelH * 0.38,
+        depth: 222,
+        scrollFactor: 0,
+      }),
+    );
+
     this.ignoreOnMain(this.root);
   }
 
   private muteText(): string {
-    return isSfxMuted() ? 'Sound: Off' : 'Sound: On';
+    return isSfxMuted() ? t('pause.soundOff') : t('pause.soundOn');
   }
 
   private makeBtn(
