@@ -7,12 +7,31 @@
 <style>
   :root { color-scheme: dark; font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; }
   * { box-sizing: border-box; }
-  html, body { margin:0; width:100%; height:100%; overflow:hidden; background:#07111d; }
+  html, body { margin:0; width:100%; height:100%; overflow:hidden; background:#07111d; touch-action:none; overscroll-behavior:none; -webkit-user-select:none; user-select:none; }
   #world, #phaser-ui { position:fixed; inset:0; }
   #world { z-index:1; }
   #phaser-ui { z-index:3; pointer-events:none; }
   #phaser-ui canvas { display:block; }
   #overlay { position:fixed; z-index:5; inset:0; display:flex; align-items:center; justify-content:center; padding:20px; background:rgba(3,10,20,.48); backdrop-filter:blur(7px); }
+  #stick {
+    position:fixed; z-index:4; left:18px; bottom:18px; width:132px; height:132px;
+    display:none; touch-action:none; pointer-events:auto;
+  }
+  #stick.active { display:block; }
+  #stick-base {
+    position:absolute; inset:0; border-radius:50%;
+    background:rgba(18,37,60,.55); border:2px solid rgba(123,224,255,.35);
+    box-shadow:inset 0 0 24px rgba(0,0,0,.28);
+  }
+  #stick-knob {
+    position:absolute; left:50%; top:50%; width:58px; height:58px; margin:-29px 0 0 -29px;
+    border-radius:50%; background:rgba(123,224,255,.88); border:2px solid rgba(255,255,255,.55);
+    box-shadow:0 6px 18px rgba(0,0,0,.35); transform:translate(0,0); will-change:transform;
+  }
+  #stick-label {
+    position:absolute; left:0; right:0; bottom:-18px; text-align:center;
+    color:rgba(185,216,255,.72); font-size:10px; font-weight:800; letter-spacing:.08em; text-transform:uppercase;
+  }
   .panel { width:min(520px, 100%); border:1px solid rgba(255,255,255,.16); border-radius:24px; padding:26px; color:#f5f8ff; text-align:center; background:linear-gradient(145deg,rgba(18,37,60,.96),rgba(8,18,33,.96)); box-shadow:0 24px 80px rgba(0,0,0,.45); }
   .panel h1 { margin:0 0 8px; font-size:clamp(28px,6vw,44px); letter-spacing:-1.5px; }
   .panel p { color:#bdcce0; line-height:1.5; margin:8px 0 18px; }
@@ -26,7 +45,12 @@
   .small { font-size:12px!important; color:#8fa7c2!important; margin-bottom:0!important; }
   #rps-result { min-height:25px; font-weight:800; color:#ffe28a; }
   #touch-help { position:fixed; z-index:4; right:16px; bottom:14px; color:rgba(230,241,255,.48); font-size:11px; pointer-events:none; text-align:right; }
-  @media (max-width:600px) { .panel { padding:21px 17px; } #touch-help { bottom:8px; right:9px; } }
+  @media (max-width:600px) {
+    .panel { padding:21px 17px; }
+    #touch-help { bottom:8px; right:9px; max-width:46vw; }
+    #stick { left:12px; bottom:12px; width:148px; height:148px; }
+    #stick-knob { width:64px; height:64px; margin:-32px 0 0 -32px; }
+  }
 </style>
 <script src="https://cdn.jsdelivr.net/npm/phaser@4.1.0/dist/phaser.min.js"></script>
 <script type="importmap">
@@ -36,14 +60,18 @@
 <body>
 <div id="world"></div>
 <div id="phaser-ui"></div>
-<div id="touch-help">MOVE: WASD / ARROW KEYS &nbsp; • &nbsp; EAT: TOUCH</div>
+<div id="stick" aria-label="Move stick">
+  <div id="stick-base"><div id="stick-knob"></div></div>
+  <div id="stick-label">Drag to move</div>
+</div>
+<div id="touch-help">MOVE: STICK OR WASD &nbsp; • &nbsp; EAT: BUMP INTO PREY</div>
 <div id="overlay">
   <div class="panel" id="start-panel">
     <span class="pill">3D blob survival</span>
     <h1>Blob Evolution</h1>
     <p>Start as a tiny blue blob. Eat your way through the evolution chain, grow bigger and faster, and become the one-and-only Angel.</p>
     <p><b>Blue → Green → Rock → Rainbow → Angel</b></p>
-    <p class="small">Use W A S D or the arrow keys to move. You can only eat the stage below you — unless you're Rainbow!</p>
+    <p class="small">On phone: drag the stick. On desktop: WASD or arrows. You can only eat the stage below you — unless you're Rainbow!</p>
     <div class="btnrow"><button id="start-btn">START GAME</button></div>
   </div>
   <div class="panel" id="rps-panel" hidden>
@@ -130,7 +158,9 @@ function makeBlob(stage, isPlayer=false) {
   }
   let body;
   if (stage === 3) {
-    body = new THREE.Mesh(new THREE.BoxGeometry(1.55, 1.35, 1.55), material);
+    // Faceted pebble: round silhouette with visible edges (not a cube).
+    body = new THREE.Mesh(new THREE.IcosahedronGeometry(1, 1), material);
+    body.scale.set(1.08, .92, 1.08);
   } else {
     body = new THREE.Mesh(new THREE.SphereGeometry(1,32,24), material);
     body.scale.set(1, .82, 1);
@@ -273,12 +303,14 @@ function showEnd(won,title,copy){
   document.getElementById('end-pill').textContent=won?'Ultimate evolution':'Game over';
   document.getElementById('end-title').textContent=title;
   document.getElementById('end-copy').textContent=copy;
+  refreshStick();
 }
 function showRPS(bot){
   if(duelBusy||!running)return;
   duelBusy=true; duelBot=bot; running=false;
   overlay.style.display='flex'; startPanel.hidden=true; endPanel.hidden=true; rpsPanel.hidden=false;
   rpsResult.textContent='';
+  refreshStick();
 }
 const beats={rock:'scissors',paper:'rock',scissors:'paper'};
 function chooseRPS(choice){
@@ -288,17 +320,67 @@ function chooseRPS(choice){
   if(choice===botChoice){ rpsResult.textContent=`Both chose ${labels[choice]}. It's a tie — choose again!`; return; }
   if(beats[choice]===botChoice){
     rpsResult.textContent=`You chose ${labels[choice]}; the bot chose ${labels[botChoice]}. You win!`;
-    setTimeout(()=>{ if(!duelBot)return; removeBot(duelBot); duelBot=null; duelBusy=false; rpsPanel.hidden=true; overlay.style.display='none'; running=true; checkVictory(); },900);
+    setTimeout(()=>{ if(!duelBot)return; removeBot(duelBot); duelBot=null; duelBusy=false; rpsPanel.hidden=true; overlay.style.display='none'; running=true; refreshStick(); checkVictory(); },900);
   }else{
     rpsResult.textContent=`You chose ${labels[choice]}; the bot chose ${labels[botChoice]}. You lose!`;
     setTimeout(()=>{ duelBot=null; duelBusy=false; loseGame('The other Rainbow blob won!'); },1100);
   }
 }
 function distance(a,b){return Math.hypot(a.x-b.x,a.z-b.z);}
+
+const stickEl = document.getElementById('stick');
+const stickKnob = document.getElementById('stick-knob');
+const stickInput = { dx:0, dz:0, pointerId:null };
+const STICK_MAX = 48;
+
+function resetStickKnob(){
+  stickInput.dx=0; stickInput.dz=0; stickInput.pointerId=null;
+  if(stickKnob) stickKnob.style.transform='translate(0px,0px)';
+}
+function refreshStick(){
+  const show = running && overlay.style.display==='none';
+  stickEl.classList.toggle('active', show);
+  if(!show) resetStickKnob();
+}
+function updateStickFromEvent(e){
+  const rect=stickEl.getBoundingClientRect();
+  const cx=rect.left+rect.width/2, cy=rect.top+rect.height/2;
+  let ox=e.clientX-cx, oy=e.clientY-cy;
+  const len=Math.hypot(ox,oy)||1;
+  const clamped=Math.min(len, STICK_MAX);
+  ox=ox/len*clamped; oy=oy/len*clamped;
+  stickKnob.style.transform=`translate(${ox}px,${oy}px)`;
+  stickInput.dx=ox/STICK_MAX;
+  stickInput.dz=oy/STICK_MAX;
+}
+stickEl.addEventListener('pointerdown',e=>{
+  if(!running||overlay.style.display!=='none')return;
+  stickEl.setPointerCapture(e.pointerId);
+  stickInput.pointerId=e.pointerId;
+  updateStickFromEvent(e);
+  e.preventDefault();
+});
+stickEl.addEventListener('pointermove',e=>{
+  if(stickInput.pointerId!==e.pointerId)return;
+  updateStickFromEvent(e);
+});
+function endStick(e){
+  if(stickInput.pointerId!==e.pointerId)return;
+  resetStickKnob();
+}
+stickEl.addEventListener('pointerup',endStick);
+stickEl.addEventListener('pointercancel',endStick);
+
 function updatePlayer(dt){
-  const keys=phaserScene?.keys; if(!keys)return;
-  let dx=(keys.d.isDown||keys.right.isDown?1:0)-(keys.a.isDown||keys.left.isDown?1:0);
-  let dz=(keys.s.isDown||keys.down.isDown?1:0)-(keys.w.isDown||keys.up.isDown?1:0);
+  const keys=phaserScene?.keys;
+  let dx=0, dz=0;
+  const stickMag=Math.hypot(stickInput.dx,stickInput.dz);
+  if(stickMag>0.08){
+    dx=stickInput.dx; dz=stickInput.dz;
+  }else if(keys){
+    dx=(keys.d.isDown||keys.right.isDown?1:0)-(keys.a.isDown||keys.left.isDown?1:0);
+    dz=(keys.s.isDown||keys.down.isDown?1:0)-(keys.w.isDown||keys.up.isDown?1:0);
+  }
   const len=Math.hypot(dx,dz); if(len>0){dx/=len;dz/=len; player.facing=Math.atan2(dx,dz);}
   const accel=player.speed;
   player.vx+=(dx*accel-player.vx)*Math.min(1,dt*7);
@@ -375,7 +457,7 @@ class OverlayScene extends Phaser.Scene {
     this.keys=this.input.keyboard.addKeys({w:'W',a:'A',s:'S',d:'D',up:'UP',down:'DOWN',left:'LEFT',right:'RIGHT'});
     this.hud=this.add.text(22,20,'BLOB EVOLUTION',{fontFamily:'Arial, sans-serif',fontSize:'15px',fontStyle:'bold',color:'#b8e3ff',lineSpacing:5,stroke:'#071321',strokeThickness:4}).setScrollFactor(0);
     this.hud.setDepth(20);
-    this.add.text(22,innerHeight-28,'WASD / ARROWS  •  TOUCH A SMALLER BLOB TO EAT IT',{fontFamily:'Arial, sans-serif',fontSize:'10px',color:'#91a9c1',stroke:'#071321',strokeThickness:3}).setScrollFactor(0).setDepth(20);
+    this.add.text(22,innerHeight-28,'STICK / WASD  •  BUMP INTO PREY TO EAT',{fontFamily:'Arial, sans-serif',fontSize:'10px',color:'#91a9c1',stroke:'#071321',strokeThickness:3}).setScrollFactor(0).setDepth(20);
     this.scale.on('resize',size=>{ this.children.list[2]?.setY(size.height-28); });
   }
   update(time,delta){
@@ -388,6 +470,7 @@ class OverlayScene extends Phaser.Scene {
 function startGame(){
   overlay.style.display='none';startPanel.hidden=true;rpsPanel.hidden=true;endPanel.hidden=true;
   spawnGame();
+  refreshStick();
 }
 document.getElementById('start-btn').addEventListener('click',startGame);
 document.getElementById('restart-btn').addEventListener('click',startGame);
