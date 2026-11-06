@@ -88,9 +88,17 @@ Local Vite (`npm run dev`) stays the day-to-day playtest path. This pipeline onl
    git checkout -b dev
    git push -u origin dev
    ```
-2. **Check the deploy secret exists:** GitHub → Settings → Secrets and variables → Actions → Repository secrets → `FIREBASE_SERVICE_ACCOUNT_KANE_RTS_GAME` (the full JSON key of a service account that can deploy Hosting to `kane-rts-game`). `firebase init hosting:github` already created the service account `github-action-<id>@kane-rts-game.iam.gserviceaccount.com` and stored its key under this name, so for a normal setup there is nothing to create or paste. (The older `FIREBASE_SERVICE_ACCOUNT_KANE_RTS_STUB` name is obsolete.) **Only if the secret is missing:** Console → IAM → that service account → Keys → Add key → JSON, then paste the entire JSON into a new repository secret with that name. **Do not commit the JSON.**
-3. **Keep the service account's roles small.** A Hosting deploy needs **Firebase Hosting Admin** (`roles/firebasehosting.admin`) plus the viewer roles the Firebase CLI asks for (API Keys Viewer, Cloud Run Viewer). `firebase init hosting:github` also granted Cloud Functions Developer, Firebase Authentication Admin and Service Usage Consumer here; a Hosting-only deploy does not use the first two, so remove them (IAM → the account → edit roles) and re-run the Action to confirm. Anyone who can push to `dev` can run a workflow that reads this key, so also protect `dev` (Settings → Branches) or add required reviewers to the GitHub `dev` environment and reference it from the workflow.
-4. **Auth / Firestore client config (separate from the deploy key):** live Auth needs the public web-app config in the Vite build. The deploy workflow reads it from repository **secrets** with these names (names only, set the values in GitHub from Firebase console → Project settings → Your apps → Web app, never commit them): `VITE_FIREBASE_API_KEY`, `VITE_FIREBASE_AUTH_DOMAIN`, `VITE_FIREBASE_PROJECT_ID`, `VITE_FIREBASE_DATABASE_URL`, `VITE_FIREBASE_STORAGE_BUCKET`, `VITE_FIREBASE_MESSAGING_SENDER_ID`, `VITE_FIREBASE_APP_ID`, optional `VITE_FIREBASE_USE_EMULATORS`. Any that are unset fall back to the defaults in `src/firebase/publicConfig.ts`, which have no API key, so Auth stays off.
+2. **The secret already exists.** GitHub Actions secret `FIREBASE_SERVICE_ACCOUNT_KANE_RTS_GAME` is provisioned via **Firebase Hosting ↔ GitHub** (`firebase hosting:github`) for `github-action-1447520035@kane-rts-game.iam.gserviceaccount.com`. Do not paste a new JSON over it. (The older `FIREBASE_SERVICE_ACCOUNT_KANE_RTS_STUB` name is obsolete.)
+3. **Only create a key if it is missing.** If that secret is absent, Console → IAM → that service account → Keys → Add key → JSON, then store the entire JSON in the secret. Do not commit the JSON.
+4. **Roles that service account has** on `kane-rts-game`:
+   - `roles/firebasehosting.admin`
+   - `roles/firebaseauth.admin`
+   - `roles/cloudfunctions.developer`
+   - `roles/run.viewer`
+   - `roles/serviceusage.apiKeysViewer`
+   - `roles/serviceusage.serviceUsageConsumer`
+
+**Auth / Firestore client config (separate from the deploy key):** live Auth needs the public web-app config in the Vite build. The deploy workflow reads it from repository **secrets** with these names (names only, set the values in GitHub from Firebase console → Project settings → Your apps → Web app, never commit them): `VITE_FIREBASE_API_KEY`, `VITE_FIREBASE_AUTH_DOMAIN`, `VITE_FIREBASE_PROJECT_ID`, `VITE_FIREBASE_DATABASE_URL`, `VITE_FIREBASE_STORAGE_BUCKET`, `VITE_FIREBASE_MESSAGING_SENDER_ID`, `VITE_FIREBASE_APP_ID`, optional `VITE_FIREBASE_USE_EMULATORS`. Any that are unset fall back to the defaults in `src/firebase/publicConfig.ts`, which have no API key, so Auth stays off.
 5. Push or merge something into `dev` and confirm the **Deploy Hosting (dev)** Action succeeds.
 
 If the live Firebase project id is **not** `kane-rts-game`, update `.firebaserc`, the secret name in the workflow, `.env.example` and the defaults in `src/firebase/publicConfig.ts` together before relying on CI.
