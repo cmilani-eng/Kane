@@ -1,7 +1,11 @@
+import { readFileSync } from 'node:fs';
+import { dirname, resolve } from 'node:path';
+import { fileURLToPath } from 'node:url';
 import { describe, expect, it } from 'vitest';
 import firebaseJson from '../firebase.json';
 import { GAMES } from './registry';
 
+const gamesDir = dirname(fileURLToPath(import.meta.url));
 const gamePages = Object.keys(import.meta.glob('./*/index.html'));
 const rewrites = firebaseJson.hosting[0].rewrites.map((rule) => rule.source);
 
@@ -27,5 +31,24 @@ describe('games registry', () => {
     const index = rewrites.indexOf(`/${id}/**`);
     expect(index).toBeGreaterThanOrEqual(0);
     expect(index).toBeLessThan(rewrites.indexOf('**'));
+  });
+
+  it('keeps the Kane client in src/', () => {
+    const page = readFileSync(resolve(gamesDir, 'kane/index.html'), 'utf8');
+    expect(page).toContain('src="../../src/main.ts"');
+  });
+
+  it('forwards old Kane hashes from the picker', () => {
+    const hub = readFileSync(resolve(gamesDir, 'index.html'), 'utf8');
+    expect(hub).toContain("location.replace('./kane/' + location.search + location.hash)");
+  });
+
+  it('starts the installed app at /kane/ and keeps the app id at /', () => {
+    const manifest = JSON.parse(
+      readFileSync(resolve(gamesDir, '../public/manifest.webmanifest'), 'utf8'),
+    ) as { id: string; start_url: string; scope: string };
+    expect(manifest.id).toBe('/');
+    expect(manifest.start_url).toBe('./kane/');
+    expect(manifest.scope).toBe('./');
   });
 });
