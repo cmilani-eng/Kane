@@ -8,7 +8,7 @@ import {
 } from '../../src/i18n';
 import { GAMES, type GameEntry } from '../registry';
 import { hubBlurb, hubChrome } from './hubCopy';
-import { gamePlayHref } from './hubLinks';
+import { gamePlayHref, hubLegalHref } from './hubLinks';
 
 const PILL =
   'inline-block rounded-full px-[11px] py-1.5 text-xs font-extrabold uppercase tracking-[0.08em]';
@@ -92,8 +92,12 @@ function render(): void {
   text('hub-locale-label').textContent = chrome.language;
   text('hub-title').textContent = chrome.title;
   text('hub-subtitle').textContent = chrome.subtitle;
-  text('hub-privacy').textContent = chrome.privacy;
-  text('hub-terms').textContent = chrome.terms;
+  const privacy = text('hub-privacy') as HTMLAnchorElement;
+  const terms = text('hub-terms') as HTMLAnchorElement;
+  privacy.textContent = chrome.privacy;
+  terms.textContent = chrome.terms;
+  privacy.href = hubLegalHref('privacy');
+  terms.href = hubLegalHref('terms');
   renderLocale(text('hub-locale'));
   text('game-list').replaceChildren(
     ...GAMES.map((game) => gameCard(game, chrome.play, chrome.experimental)),
