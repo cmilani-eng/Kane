@@ -84,6 +84,11 @@ import {
   type ControlGroups,
 } from '../../gameplay/battlefield/battlefieldOrders';
 import {
+  groupCenter,
+  isGroupDoubleTap,
+  type GroupTap,
+} from '../../gameplay/battlefield/battlefieldGroupFocus';
+import {
   spawnControlGroupAssignFx,
   spawnControlGroupRecallFx,
   tickControlGroupFx,
@@ -184,7 +189,10 @@ export class BattlefieldScene extends Phaser.Scene {
   private coach!: TutorialCoach;
   private shiftKey: Phaser.Input.Keyboard.Key | null = null;
   private ctrlKey: Phaser.Input.Keyboard.Key | null = null;
+  private altKey: Phaser.Input.Keyboard.Key | null = null;
   private controlGroups!: ControlGroups;
+  /** Last group-key press, to spot a double-tap that centres the camera. */
+  private lastGroupTap: GroupTap | null = null;
   private placeables: BuildingTypeId[] = [];
   private placeIndex = 0;
   private placeType: BuildingTypeId = 'bonker_hut';
@@ -294,7 +302,11 @@ export class BattlefieldScene extends Phaser.Scene {
       this.input.keyboard?.addKey(Phaser.Input.Keyboard.KeyCodes.SHIFT) ?? null;
     this.ctrlKey =
       this.input.keyboard?.addKey(Phaser.Input.Keyboard.KeyCodes.CTRL) ?? null;
+    this.altKey =
+      this.input.keyboard?.addKey(Phaser.Input.Keyboard.KeyCodes.ALT) ?? null;
     this.controlGroups = createControlGroups();
+    // Phaser reuses this scene object between matches.
+    this.lastGroupTap = null;
 
     this.bindInput();
     ensureAmbientBgm();
@@ -406,7 +418,9 @@ export class BattlefieldScene extends Phaser.Scene {
       'NINE',
     ] as const;
     digitEvents.forEach((name, slot) => {
-      this.input.keyboard?.on(`keydown-${name}`, () => this.onDigitHotkey(slot));
+      this.input.keyboard?.on(`keydown-${name}`, (e: KeyboardEvent) =>
+        this.onDigitHotkey(slot, e.timeStamp),
+      );
     });
   }
 
@@ -454,9 +468,12 @@ export class BattlefieldScene extends Phaser.Scene {
     }
   }
 
-  private onDigitHotkey(slot: number): void {
+  /** `now` is the key event's DOM timestamp (ms), used to spot a double-tap. */
+  private onDigitHotkey(slot: number, now: number): void {
     if (this.paused || this.matchResult !== 'ongoing') return;
-    if (this.ctrlHeld()) {
+    // Alt+N is a fallback: browsers can reserve Ctrl+digit for tab switching.
+    if (this.ctrlHeld() || this.altHeld()) {
+      this.lastGroupTap = null;
       if (assignControlGroup(this.world, this.controlGroups, slot)) {
         spawnControlGroupAssignFx(this.world, slot);
         this.hud.flashControlGroup(slot, 'assign');
@@ -471,6 +488,7 @@ export class BattlefieldScene extends Phaser.Scene {
       slot <= 3 &&
       trainHotkey(this.world, this.selectedBuilding, slot - 1)
     ) {
+      this.lastGroupTap = null;
       playSfx('train');
       return;
     }
@@ -486,6 +504,14 @@ export class BattlefieldScene extends Phaser.Scene {
       spawnControlGroupRecallFx(this.world, slot);
       this.hud.flashControlGroup(slot, 'recall');
       playSfx('select');
+      // Pressing the same group key twice jumps the camera to it, as in StarCraft.
+      if (isGroupDoubleTap(this.lastGroupTap, slot, now)) {
+        const center = groupCenter(this.world, this.controlGroups.get(slot) ?? []);
+        if (center) this.cameraCtl.centerOn(center.x, center.y);
+      }
+      this.lastGroupTap = { slot, time: now };
+    } else {
+      this.lastGroupTap = null;
     }
   }
 
@@ -500,6 +526,10 @@ export class BattlefieldScene extends Phaser.Scene {
 
   private ctrlHeld(): boolean {
     return !!this.ctrlKey?.isDown;
+  }
+
+  private altHeld(): boolean {
+    return !!this.altKey?.isDown;
   }
 
   private onDown(pointer: Phaser.Input.Pointer): void {
@@ -641,7 +671,15 @@ export class BattlefieldScene extends Phaser.Scene {
       } else {
         this.clearBuildingSelection();
         const hit = findPlayerUnitAt(this.world, wp.x, wp.y);
-        if (hit && !additive && this.isDoubleSelectTap(pointer, hit.id)) {
+        // Ctrl/Cmd+click picks every unit of the type at once (macOS reports
+        // Ctrl+click as a right-click, so Cmd+click is the Mac route).
+        const modifierClick =
+          pointer.event.ctrlKey || pointer.event.metaKey;
+        if (
+          hit &&
+          !additive &&
+          (modifierClick || this.isDoubleSelectTap(pointer, hit.id))
+        ) {
           const n = selectAllVisibleSameType(this.world, hit.typeId);
           if (n > 0) playSfx('select');
           this.lastSelectTap.t = 0;
@@ -931,7 +969,7 @@ export class BattlefieldScene extends Phaser.Scene {
     const friends = livingByTeam(this.world, 'player');
     const foes = livingByTeam(this.world, 'enemy');
     const b = this.selectedBuilding;
-    let status = '';
+    let status: string;
     if (b) {
       const trains = getBuildingType(b.typeId).trains;
       const labels = trains
