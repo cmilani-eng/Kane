@@ -317,10 +317,7 @@ export function drawUnitSilhouette(g: G, opts: SilhouetteOpts): void {
     g.fillCircle(x, y - r - 8 - Math.abs(anim.oy), 3.5);
   }
 
-  if (opts.inFormation) {
-    g.lineStyle(2, pal.silver ?? 0xc0c8d4, 0.9);
-    g.strokeCircle(x, y, r + 9);
-  }
+  // Formation rings drawn by formationVisual (cluster + links).
 
   // Attack slash arc (placeholder VFX)
   if (phase === 'attack' && anim.swing > 0.2) {
