@@ -135,6 +135,8 @@ export type SelectionPanelView =
       carryLine: string | null;
       /** Tint carry line for magic crystals. */
       carryCrystal: boolean;
+      /** True when haul is at capacity (deposit hint). */
+      carryFull: boolean;
     }
   | {
       kind: 'building';
@@ -387,6 +389,12 @@ function injectStyles(): void {
     }
     #kane-selection-panel .kane-sel-carry.is-crystal {
       color: #7ec8ff;
+    }
+    #kane-selection-panel .kane-sel-carry.is-full {
+      color: #fff0c0;
+    }
+    #kane-selection-panel .kane-sel-carry.is-full.is-crystal {
+      color: #d8f0ff;
     }
     #kane-selection-panel .kane-sel-hp-text {
       flex: 0 0 auto;
@@ -862,6 +870,7 @@ export function buildSelectionView(
       controlHint: controlHintFor(alive),
       carryLine: carry.line,
       carryCrystal: carry.crystal,
+      carryFull: carry.full,
     };
   }
 
@@ -910,38 +919,47 @@ export function buildSelectionView(
     controlHint: controlHintFor(alive),
     carryLine: carry.line,
     carryCrystal: carry.crystal,
+    carryFull: carry.full,
   };
 }
 
 /** Visible cargo readout for selected workers (single or group). */
 export function carryLineFor(
   units: BattlefieldUnit[],
-): { line: string | null; crystal: boolean } {
+): { line: string | null; crystal: boolean; full: boolean } {
   const carriers = units.filter(
     (u) => u.hp > 0 && u.carrying > 0 && u.carryingResource,
   );
-  if (carriers.length === 0) return { line: null, crystal: false };
+  if (carriers.length === 0) {
+    return { line: null, crystal: false, full: false };
+  }
   const total = carriers.reduce((s, u) => s + u.carrying, 0);
   const cap = carriers.reduce((s, u) => s + (u.carryCapacity || 0), 0);
   const n = Math.floor(total);
   const capN = Math.max(n, Math.floor(cap));
+  const full = capN > 0 && n >= capN;
   const resources = new Set(
     carriers.map((u) => u.carryingResource).filter(Boolean),
   );
   if (resources.size === 1) {
     const id = carriers[0]!.carryingResource!;
     return {
-      line: t('sel.cargo', {
+      line: t(full ? 'sel.cargoFull' : 'sel.cargo', {
         n,
         cap: capN,
         resource: RESOURCES[id].label,
       }),
       crystal: id === 'magic_crystals',
+      full,
     };
   }
   return {
-    line: t('sel.cargoMixed', { n, cap: capN }),
+    line: t(full ? 'sel.cargoMixedFull' : 'sel.cargoMixed', {
+      n,
+      cap: capN,
+    }),
     crystal: false,
+    full,
   };
 }
 
@@ -1510,10 +1528,11 @@ export function renderSelectionPanel(view: SelectionPanelView): boolean {
         carryEl.hidden = false;
         carryEl.textContent = view.carryLine;
         carryEl.classList.toggle('is-crystal', view.carryCrystal);
+        carryEl.classList.toggle('is-full', view.carryFull);
       } else {
         carryEl.hidden = true;
         carryEl.textContent = '';
-        carryEl.classList.remove('is-crystal');
+        carryEl.classList.remove('is-crystal', 'is-full');
       }
       portrait.classList.toggle('is-building', false);
       portrait.classList.toggle('is-mixed', view.count > 1 && view.dmg == null);
