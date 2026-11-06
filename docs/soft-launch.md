@@ -73,6 +73,7 @@ This doc is the honest gate before any public preview URL.
 | Unit vision tip | **OK** — selection stats show catalog vision radius in map tiles (same-type only) | `unitVision`, `sel.visionTip` |
 | Unit HP max tip | **OK** — selection stats show catalog max HP (same-type only) | `unitHpMax`, `sel.hpMaxTip` |
 | Unit atk CD tip | **OK** — selection stats show catalog attack cooldown in seconds (same-type only) | `unitAttackCooldown`, `sel.atkCdTip` |
+| Unit supply tip | **OK** — selection stats show catalog supply cost (1 slot per unit, same-type only) | `unitSupplyCost`, `sel.supplyTip` |
 | Build remain secs | **OK** — incomplete building selection shows construction seconds beside % | `buildRemainSec`, `sel.buildingPct` |
 | Place build secs | **OK** — place-mode cost strip shows full construction seconds when buildMs > 0 | `hud.placeBuild`, `setPlacementCost` |
 | Stock supply tone | **OK** — DOM stock strip uses the same near-cap/full supply tones as HUD/pause | `stockStrip`, `supplyTone` |
