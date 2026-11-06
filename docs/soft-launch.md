@@ -80,6 +80,7 @@ This doc is the honest gate before any public preview URL.
 | Lobby match length | **OK** — lobby shows ~min estimate from recent local summaries (default ~10 min) | `lobbyMatchLengthTipLine`, `lobby.matchLength*` |
 | Hub → Kane path | **OK** — picker cards link `./kane/`; hash forward + manifest start_url match `games/PATHS.md` | `hub.gamePlayHref`, `games/registry.test.ts` |
 | Hub → Blob path | **OK** — picker cards link `./blob-evolution/`; Vite entry `main.js` guarded in registry tests | `hubLinks`, `games/PATHS.md` |
+| Soft-launch Blob path | **OK** — menu soft-launch strip lists `/blob-evolution` beside hub / `/kane` | `softLaunchStatusStrip` |
 | Hub legal footer | **OK** — Privacy / Terms footer hrefs stay `/privacy.html` and `/terms.html` after the games/ move | `hubLegalHref`, `games/privacy.html` |
 | Kane → hub back | **OK** — soft-launch strip shows `hub /`; menu ← Games returns to the picker | `softLaunchStatusStrip`, `MenuScene` `menu.games` |
 | Blob → hub back | **OK** — Blob Evolution keeps a fixed ← Games link to `/` | `games/blob-evolution/index.html` `#hub-back` |
@@ -125,4 +126,4 @@ This doc is the honest gate before any public preview URL.
 
 ## Menu status strip
 
-The title menu shows a one-line soft-launch strip (hosting · admin · cosmetics · vol · pwa · hub / · /kane) built by `src/presentation/ui/softLaunchStatus.ts`. Ads and age-gate flags stay out of that strip so the main experience stays clean. A ← Games footer link returns to the hub picker at `/`.
+The title menu shows a one-line soft-launch strip (hosting · admin · cosmetics · vol · pwa · hub / · /kane · /blob-evolution) built by `src/presentation/ui/softLaunchStatus.ts`. Ads and age-gate flags stay out of that strip so the main experience stays clean. A ← Games footer link returns to the hub picker at `/`.

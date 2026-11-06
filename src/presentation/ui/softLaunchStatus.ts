@@ -19,8 +19,9 @@ export function softLaunchStatusStrip(): string {
   const cosBit = `skin ${loadout.equipped.nobles.replace(/^skin_/, '').slice(0, 8)}`;
   const volBit = `vol ${Math.round(getMasterVolume() * 100)}`;
   const pwaBit = 'pwa';
-  // Hub picker + canonical Kane play URL (see games/PATHS.md).
+  // Hub picker + canonical Kane / Blob play URLs (see games/PATHS.md).
   const hubBit = 'hub /';
   const playBit = '/kane';
-  return `${hostBit} · ${adminBit} · ${cosBit} · ${volBit} · ${pwaBit} · ${hubBit} · ${playBit}`;
+  const blobBit = '/blob-evolution';
+  return `${hostBit} · ${adminBit} · ${cosBit} · ${volBit} · ${pwaBit} · ${hubBit} · ${playBit} · ${blobBit}`;
 }
