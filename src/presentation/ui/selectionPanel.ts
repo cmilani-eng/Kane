@@ -37,6 +37,10 @@ import {
   unitRoleLabel,
 } from './unitRole';
 import {
+  sharedUnitSpeciesTipLabel,
+  unitSpeciesTipLabel,
+} from './unitSpeciesTip';
+import {
   sharedUnitTrainCrystalLabel,
   unitTrainCrystalLabel,
 } from './unitTrainCrystal';
@@ -202,6 +206,8 @@ export type SelectionPanelView =
       trainCrystalTip: string | null;
       /** Coarse duty role tip (worker / combat / hero), distinct from armor class. */
       roleTip: string | null;
+      /** Species name tip when selection shares one species. */
+      speciesTip: string | null;
       tags: string[];
       attackMoveArmed: boolean;
       /** Present when a single player hero is selected. */
@@ -622,6 +628,7 @@ export function buildSelectionView(
       trainGoldTip: unitTrainGoldLabel(u.typeId),
       trainCrystalTip: unitTrainCrystalLabel(u.typeId),
       roleTip: unitRoleLabel(u.typeId),
+      speciesTip: unitSpeciesTipLabel(u.speciesId),
       tags,
       attackMoveArmed,
       abilities: heroAbilityViews(world, u),
@@ -685,6 +692,7 @@ export function buildSelectionView(
     trainGoldTip: sharedUnitTrainGoldLabel(alive.map((u) => u.typeId)),
     trainCrystalTip: sharedUnitTrainCrystalLabel(alive.map((u) => u.typeId)),
     roleTip: sharedUnitRoleLabel(alive.map((u) => u.typeId)),
+    speciesTip: sharedUnitSpeciesTipLabel(alive.map((u) => u.speciesId)),
     tags,
     attackMoveArmed,
     abilities: null,
@@ -960,6 +968,7 @@ function structureSignature(view: SelectionPanelView): string {
       view.trainGoldTip ?? '',
       view.trainCrystalTip ?? '',
       view.roleTip ?? '',
+      view.speciesTip ?? '',
       view.tags.join(','),
       view.attackMoveArmed ? 1 : 0,
       abs,
@@ -1494,6 +1503,9 @@ export function renderSelectionPanel(view: SelectionPanelView): boolean {
         }
         if (view.roleTip) {
           bits.push(`<span>${escapeHtml(view.roleTip)}</span>`);
+        }
+        if (view.speciesTip) {
+          bits.push(`<span>${escapeHtml(view.speciesTip)}</span>`);
         }
         if (view.armorClass) {
           bits.push(`<span>${escapeHtml(view.armorClass)}</span>`);
