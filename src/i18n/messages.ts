@@ -5,6 +5,8 @@
 export const enGB = {
   'boot.tap': 'Tap to continue',
   'menu.difficulty': 'Difficulty',
+  'menu.practiceTip':
+    'Practice · the enemy builds and gathers, but never attacks. Rematch keeps this.',
   'menu.easyTip': 'Easy · extra starting gold & crystals · slower AI economy',
   'menu.hardTip': 'Hard · leaner start · faster AI economy & pressure',
   'menu.map': 'Map',
@@ -20,6 +22,8 @@ export const enGB = {
   'menu.privacy': 'Privacy',
   'menu.terms': 'Terms',
   'menu.language': 'Language',
+  'difficulty.practice.label': 'Practice',
+  'difficulty.practice.blurb': 'Builds · never attacks',
   'difficulty.easy.label': 'Easy',
   'difficulty.easy.blurb': 'Newcomer cushion · slow AI eco',
   'difficulty.normal.label': 'Normal',
@@ -223,6 +227,8 @@ type Catalog = Record<MessageKey, string>;
 export const ptBR = {
   'boot.tap': 'Toque para continuar',
   'menu.difficulty': 'Dificuldade',
+  'menu.practiceTip':
+    'Treino · o inimigo constrói e coleta, mas nunca ataca. A revanche mantém isto.',
   'menu.easyTip': 'Fácil · ouro e cristais extras · economia da IA mais lenta',
   'menu.hardTip': 'Difícil · início enxuto · economia e pressão da IA mais rápidas',
   'menu.map': 'Mapa',
@@ -238,6 +244,8 @@ export const ptBR = {
   'menu.privacy': 'Privacidade',
   'menu.terms': 'Termos',
   'menu.language': 'Idioma',
+  'difficulty.practice.label': 'Treino',
+  'difficulty.practice.blurb': 'Constrói · nunca ataca',
   'difficulty.easy.label': 'Fácil',
   'difficulty.easy.blurb': 'Folga inicial · IA lenta',
   'difficulty.normal.label': 'Normal',
@@ -437,6 +445,8 @@ export const ptBR = {
 export const es = {
   'boot.tap': 'Toca para continuar',
   'menu.difficulty': 'Dificultad',
+  'menu.practiceTip':
+    'Práctica · el enemigo construye y recolecta, pero nunca ataca. La revancha conserva esto.',
   'menu.easyTip': 'Fácil · oro y cristales extra · economía de la IA más lenta',
   'menu.hardTip': 'Difícil · inicio austero · economía y presión de la IA más rápidas',
   'menu.map': 'Mapa',
@@ -452,6 +462,8 @@ export const es = {
   'menu.privacy': 'Privacidad',
   'menu.terms': 'Términos',
   'menu.language': 'Idioma',
+  'difficulty.practice.label': 'Práctica',
+  'difficulty.practice.blurb': 'Construye · nunca ataca',
   'difficulty.easy.label': 'Fácil',
   'difficulty.easy.blurb': 'Margen inicial · IA lenta',
   'difficulty.normal.label': 'Normal',

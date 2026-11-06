@@ -19,7 +19,7 @@ service cloud.firestore {
     }
 
     function validDifficulty(d) {
-      return d in ['easy', 'normal', 'hard'];
+      return d in ['practice', 'easy', 'normal', 'hard'];
     }
 
     function validEquipped(eq) {

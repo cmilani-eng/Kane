@@ -117,16 +117,18 @@ export function tickBattlefieldAi(
     if (pick) queueTrain(world, b, pick);
   }
 
-  if (army.length >= p.attackArmyMin) ai.phase = 'attack';
+  if (!p.attacks) ai.phase = army.length >= p.armyPhaseMin ? 'army' : 'eco';
+  else if (army.length >= p.attackArmyMin) ai.phase = 'attack';
   else if (army.length >= p.armyPhaseMin) ai.phase = 'army';
   else ai.phase = 'eco';
 
   const poke =
+    p.attacks &&
     ai.phase === 'army' &&
     p.pokeChance > 0 &&
     Math.random() < p.pokeChance;
 
-  if (ai.phase === 'attack' || poke) {
+  if (p.attacks && (ai.phase === 'attack' || poke)) {
     const targetKeep = world.buildings.find(
       (b) => b.team === 'player' && getBuildingType(b.typeId).isMainHall,
     );
