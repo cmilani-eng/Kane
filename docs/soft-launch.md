@@ -60,6 +60,7 @@ This doc is the honest gate before any public preview URL.
 | Attack direction | **OK** — critical under-attack chip shows an 8-way arrow toward the hit from camera center | `attackDirectionArrow`, `hud.attack*` |
 | Menu map tip | **OK** — selected skirmish map shows a one-line flavor blurb under the map row (tall + short menus) | `MenuScene`, `menu.mapTip` |
 | Account match clock | **OK** — dashboard (and Stats) recent matches show duration as mm:ss | `dashboardPanel`, `formatMatchClock`, `stats.matchLine` |
+| Account prefs map tip | **OK** — account prefs block echoes last/selected map flavor (`menu.mapTip`) | `accountProfileText`, `menu.mapTip` |
 | Pause map name | **OK** — pause overlay lists map · difficulty with clock + supply | `pauseMenu`, `pause.setup` |
 | Pause elapsed | **OK** — pause shows dedicated Elapsed mm:ss (neutral, not supply-tint) | `pause.elapsed`, `pauseMenu` |
 | Train queue ETA | **OK** — selection train line shows remaining seconds beside % | `trainRemainSec`, `sel.training*` |
