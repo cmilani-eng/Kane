@@ -63,6 +63,24 @@ export function buildingBlocks(
   return false;
 }
 
+/**
+ * Snap a placement point to tile centers (MAP.tile).
+ * Mobile-friendly: finger drag settles on a stable grid cell.
+ */
+export function snapBuildingWorld(
+  x: number,
+  y: number,
+  radius = 0,
+): { x: number; y: number } {
+  const t = MAP.tile;
+  let sx = Math.floor(x / t) * t + t / 2;
+  let sy = Math.floor(y / t) * t + t / 2;
+  const pad = Math.max(20 + radius, t);
+  sx = Math.min(MAP.width - pad, Math.max(pad, sx));
+  sy = Math.min(MAP.height - pad, Math.max(pad, sy));
+  return { x: sx, y: sy };
+}
+
 export function placeBuilding(
   world: BattlefieldWorld,
   team: BattlefieldTeam,
@@ -71,6 +89,9 @@ export function placeBuilding(
   y: number,
 ): BattlefieldBuilding | null {
   const def = getBuildingType(typeId);
+  const snapped = snapBuildingWorld(x, y, def.radius);
+  x = snapped.x;
+  y = snapped.y;
   if (buildingBlocks(world, x, y, def.radius)) return null;
   const wallet = walletOf(world, team);
   if (!pay(wallet, def.cost)) return null;

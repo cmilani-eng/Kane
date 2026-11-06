@@ -52,6 +52,7 @@ import {
   buildingBlocks,
   findBuildingAt,
   placeBuilding,
+  snapBuildingWorld,
   tickBuildings,
 } from '../../gameplay/battlefield/battlefieldBuildings';
 import {
@@ -111,6 +112,7 @@ import { createSkirmishMap } from '../maps/mapManager';
 import { FogOverlay } from '../ui/fogOverlay';
 import { showKaneEndScreen } from '../ui/endScreen';
 import { drawBuildingSilhouette } from '../buildings/buildingSilhouette';
+import { drawPlacementGhost } from '../buildings/placementGhost';
 import { drawProductionQueueFeedback } from '../buildings/productionQueueFeedback';
 import { drawResourceNodeSilhouette } from '../resources/resourceNodeSilhouette';
 import { drawCombatFxList } from '../fx/combatFxDraw';
@@ -284,13 +286,15 @@ export class BattlefieldScene extends Phaser.Scene {
       if (this.mode === 'place' && this.placeables.length > 1) {
         this.placeIndex = (this.placeIndex + 1) % this.placeables.length;
         this.placeType = this.placeables[this.placeIndex]!;
-        this.drawGhost();
+        this.refreshPlacementGhost();
         return;
       }
       if (this.mode === 'attackMove') this.clearAttackMoveMode();
       this.mode = this.mode === 'place' ? 'none' : 'place';
       if (this.mode === 'place' && this.placeables.length) {
         this.placeType = this.placeables[this.placeIndex]!;
+        const mid = this.cameras.main.midPoint;
+        this.updateGhostAt(mid.x, mid.y);
       }
       if (this.mode !== 'place') this.ghostGfx.clear();
     });
@@ -458,10 +462,7 @@ export class BattlefieldScene extends Phaser.Scene {
       return;
     }
     if (this.mode === 'place') {
-      const def = getBuildingType(this.placeType);
-      this.ghostPos = { x: wp.x, y: wp.y };
-      this.ghostValid = !buildingBlocks(this.world, wp.x, wp.y, def.radius);
-      this.drawGhost();
+      this.updateGhostAt(wp.x, wp.y);
       return;
     }
 
@@ -534,14 +535,33 @@ export class BattlefieldScene extends Phaser.Scene {
     this.mode = 'none';
   }
 
-  private drawGhost(): void {
+  private updateGhostAt(worldX: number, worldY: number): void {
     const def = getBuildingType(this.placeType);
+    const snapped = snapBuildingWorld(worldX, worldY, def.radius);
+    this.ghostPos = snapped;
+    this.ghostValid = !buildingBlocks(
+      this.world,
+      snapped.x,
+      snapped.y,
+      def.radius,
+    );
+    this.refreshPlacementGhost();
+  }
+
+  private refreshPlacementGhost(): void {
+    if (this.mode !== 'place') {
+      this.ghostGfx.clear();
+      return;
+    }
     this.ghostGfx.clear();
-    const color = this.ghostValid ? 0x5dce6a : 0xe85a5a;
-    this.ghostGfx.lineStyle(2, color, 0.95);
-    this.ghostGfx.fillStyle(color, 0.25);
-    this.ghostGfx.fillCircle(this.ghostPos.x, this.ghostPos.y, def.radius);
-    this.ghostGfx.strokeCircle(this.ghostPos.x, this.ghostPos.y, def.radius);
+    drawPlacementGhost(this.ghostGfx, {
+      x: this.ghostPos.x,
+      y: this.ghostPos.y,
+      typeId: this.placeType,
+      valid: this.ghostValid,
+      timeMs: this.animTimeMs,
+      accent: this.playerSkinAccent,
+    });
   }
 
   private toggleAttackMoveMode(): void {
@@ -638,6 +658,7 @@ export class BattlefieldScene extends Phaser.Scene {
       cam.height / cam.zoom,
     );
     this.drawWorld();
+    if (this.mode === 'place') this.refreshPlacementGhost();
     if (this.mode === 'attackMove') this.drawAttackMoveFeedback();
     this.fogOverlay.refresh(this.world.fog, cam);
     this.refreshHud();
