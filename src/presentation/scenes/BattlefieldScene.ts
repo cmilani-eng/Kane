@@ -344,6 +344,7 @@ export class BattlefieldScene extends Phaser.Scene {
         if (queueTrain(this.world, b, typeId)) playSfx('train');
         else playSfx('ui');
       },
+      placeBuilding: (typeId) => this.armPlacementFromPanel(typeId),
       castAbility: (slot) => {
         if (castHeroAbility(this.world, slot, 'player')) playSfx('ability');
         else playSfx('ui');
@@ -982,6 +983,31 @@ export class BattlefieldScene extends Phaser.Scene {
     this.refreshPlacementGhost();
   }
 
+  /** Selection-panel Keep/hall → arm existing place mode for a building type. */
+  private armPlacementFromPanel(typeId: BuildingTypeId): void {
+    if (this.paused || this.matchResult !== 'ongoing') return;
+    if (this.controlsHelp.isOpen()) return;
+    if (!this.placeables.includes(typeId)) {
+      playSfx('ui');
+      return;
+    }
+    if (this.mode === 'place' && this.placeType === typeId) {
+      this.mode = 'none';
+      this.ghostGfx.clear();
+      playSfx('ui');
+      return;
+    }
+    if (this.mode === 'attackMove') this.clearAttackMoveMode();
+    this.clearRallyMode();
+    this.placeType = typeId;
+    const idx = this.placeables.indexOf(typeId);
+    this.placeIndex = idx >= 0 ? idx : 0;
+    this.mode = 'place';
+    const mid = this.cameras.main.midPoint;
+    this.updateGhostAt(mid.x, mid.y);
+    playSfx('ui');
+  }
+
   private refreshPlacementGhost(): void {
     if (this.mode !== 'place') {
       this.ghostGfx.clear();
@@ -1281,6 +1307,7 @@ export class BattlefieldScene extends Phaser.Scene {
       this.mode === 'attackMove',
       this.mode === 'rally',
       node,
+      this.mode === 'place' ? this.placeType : null,
     );
     const panelOpen = renderSelectionPanel(selView);
     const inset = selectionPanelInsetPx(panelOpen);
@@ -1292,7 +1319,10 @@ export class BattlefieldScene extends Phaser.Scene {
     if (this.mode === 'rally' && b) {
       status = `${b.name} · tap map to set rally · Esc cancel`;
     } else if (b) {
-      status = `${b.name} selected · Train / Set rally below`;
+      const hall = getBuildingType(b.typeId).isMainHall;
+      status = hall
+        ? `${b.name} selected · Train / Build below`
+        : `${b.name} selected · Train / Set rally below`;
     } else if (node) {
       const label =
         node.resourceId === 'magic_crystals' ? 'Crystals' : 'Gold';

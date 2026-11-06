@@ -3,7 +3,11 @@
  * Mobile-web first; navy/gold/cream HUD aligned with battlefield chrome.
  * Reads gameplay state only — no new combat systems.
  */
-import { getBuildingType } from '../../data/buildings';
+import {
+  getBuildingType,
+  placeableBuildings,
+  type BuildingTypeId,
+} from '../../data/buildings';
 import {
   heroForSpecies,
   type HeroAbilitySlot,
@@ -45,6 +49,20 @@ export type SelectionPanelHandlers = {
   cancelQueue: (index?: number) => void;
   /** Cast selected hero ability (Q/W/E). */
   castAbility: (slot: HeroAbilitySlot) => void;
+  /** Arm building placement from Keep / main hall (existing place mode). */
+  placeBuilding: (typeId: BuildingTypeId) => void;
+};
+
+export type SelectionPlaceOption = {
+  typeId: BuildingTypeId;
+  name: string;
+  costGold: number;
+  costCrystals: number;
+  canPay: boolean;
+  /** Complete Keep + canPay — button enabled. */
+  affordable: boolean;
+  /** Currently armed in place mode. */
+  armed: boolean;
 };
 
 export type SelectionPanelView =
@@ -81,6 +99,8 @@ export type SelectionPanelView =
         /** Ready + canPay — button enabled. */
         affordable: boolean;
       }[];
+      /** Placeable buildings when Keep / main hall is selected. */
+      places: SelectionPlaceOption[];
       queue: UnitTypeId[];
       progressPct: number;
       headName: string | null;
@@ -157,8 +177,10 @@ export function ensureSelectionPanel(): HTMLElement {
       handlers.cancelQueue(
         Number.isFinite(idx as number) ? (idx as number) : undefined,
       );
-    }     else if (act === 'train' && btn.dataset.typeId) {
+    } else if (act === 'train' && btn.dataset.typeId) {
       handlers.train(btn.dataset.typeId as UnitTypeId);
+    } else if (act === 'place' && btn.dataset.typeId) {
+      handlers.placeBuilding(btn.dataset.typeId as BuildingTypeId);
     } else if (act === 'castAbility' && btn.dataset.slot) {
       handlers.castAbility(btn.dataset.slot as HeroAbilitySlot);
     }
@@ -554,6 +576,8 @@ export function buildSelectionView(
   attackMoveArmed: boolean,
   rallyArmed = false,
   selectedNode: ResourceNode | null = null,
+  /** Armed place-mode building type (from Keep panel / B key). */
+  placeArmedType: BuildingTypeId | null = null,
 ): SelectionPanelView {
   if (selectedBuilding && selectedBuilding.hp > 0) {
     const b = selectedBuilding;
@@ -574,6 +598,24 @@ export function buildSelectionView(
         affordable: canPay && ready,
       };
     });
+    const places: SelectionPlaceOption[] =
+      b.team === 'player' && bdef.isMainHall
+        ? placeableBuildings(bdef.speciesId).map((typeId) => {
+            const pdef = getBuildingType(typeId);
+            const costGold = pdef.cost.gold ?? 0;
+            const costCrystals = pdef.cost.magic_crystals ?? 0;
+            const canPay = canAfford(wallet, pdef.cost);
+            return {
+              typeId,
+              name: pdef.name,
+              costGold,
+              costCrystals,
+              canPay,
+              affordable: canPay && ready,
+              armed: placeArmedType === typeId,
+            };
+          })
+        : [];
     const head = b.trainQueue[0] ? getUnitType(b.trainQueue[0]) : null;
     const progressPct =
       head && head.trainMs > 0
@@ -587,6 +629,7 @@ export function buildSelectionView(
       maxHp: b.maxHp,
       ready,
       trains,
+      places,
       queue: [...b.trainQueue],
       progressPct,
       headName: head?.name ?? null,
@@ -746,6 +789,12 @@ function structureSignature(view: SelectionPanelView): string {
     view.trains
       .map((t) => `${t.typeId}:${t.canPay ? 1 : 0}:${t.affordable ? 1 : 0}`)
       .join(','),
+    view.places
+      .map(
+        (p) =>
+          `${p.typeId}:${p.canPay ? 1 : 0}:${p.affordable ? 1 : 0}:${p.armed ? 1 : 0}`,
+      )
+      .join(','),
     view.queue.join(','),
     view.headName ?? '',
   ].join('|');
@@ -819,6 +868,21 @@ function trainButtonHtml(t: {
   return `<button type="button" class="${classes.join(' ')}" data-act="train" data-type-id="${t.typeId}"${t.affordable ? '' : ' disabled'}${reason}><span class="kane-sel-train-name">${escapeHtml(t.name)}</span>${trainCostHtml(t.costGold, t.costCrystals)}</button>`;
 }
 
+function placeButtonHtml(p: SelectionPlaceOption): string {
+  const classes = ['is-train', 'is-place'];
+  if (!p.affordable) classes.push('is-unaffordable');
+  if (p.armed) classes.push('is-armed');
+  const reason = !p.affordable
+    ? !p.canPay
+      ? ' title="Need more resources"'
+      : ' title="Keep still under construction"'
+    : p.armed
+      ? ' title="Tap map to place · tap again to cancel"'
+      : ` title="Place ${escapeHtml(p.name)}"`;
+  const label = p.armed ? `${p.name} · Armed` : p.name;
+  return `<button type="button" class="${classes.join(' ')}" data-act="place" data-type-id="${p.typeId}"${p.affordable ? '' : ' disabled'}${reason}><span class="kane-sel-train-name">${escapeHtml(label)}</span>${trainCostHtml(p.costGold, p.costCrystals)}</button>`;
+}
+
 function applyTrainAffordability(
   btn: HTMLButtonElement,
   t: { canPay: boolean; affordable: boolean },
@@ -837,10 +901,19 @@ function applyTrainAffordability(
 function queueLabelText(
   view: Extract<SelectionPanelView, { kind: 'building' }>,
 ): string {
-  if (!view.ready) return 'Under construction — train buttons unlock when finished';
+  if (!view.ready) {
+    return view.places.length
+      ? 'Under construction — train / build unlock when finished'
+      : 'Under construction — train buttons unlock when finished';
+  }
   if (view.queue.length === 0) {
-    return view.trains.length
-      ? 'Idle — tap a unit to train (Gold / Crystal cost on each button)'
+    if (view.trains.length) {
+      return view.places.length
+        ? 'Idle — train workers or tap a building to place'
+        : 'Idle — tap a unit to train (Gold / Crystal cost on each button)';
+    }
+    return view.places.length
+      ? 'Tap a building below to place (Gold / Crystal cost on each button)'
       : 'No production options';
   }
   const pct = Math.floor(view.progressPct * 100);
@@ -964,9 +1037,11 @@ export function renderSelectionPanel(view: SelectionPanelView): boolean {
       portrait.classList.remove('is-mixed');
       portrait.style.setProperty('--kane-sel-accent', '#3d7ea6');
       if (structuralChange) {
-        stats.innerHTML = view.trains.length
-          ? '<span>Production</span>'
-          : '<span>No production</span>';
+        const bits: string[] = [];
+        if (view.trains.length) bits.push('<span>Production</span>');
+        if (view.places.length) bits.push('<span>Build</span>');
+        if (bits.length === 0) bits.push('<span>No production</span>');
+        stats.innerHTML = bits.join('');
         const rallyBtn = view.hasRally
           ? `<button type="button" class="is-rally${view.rallyArmed ? ' is-armed' : ''}" data-act="rally">${view.rallyArmed ? 'Rally · Tap map' : 'Set rally'}</button>`
           : '';
@@ -975,13 +1050,37 @@ export function renderSelectionPanel(view: SelectionPanelView): boolean {
             ? `<button type="button" class="is-cancel" data-act="cancelQueue" title="Cancel last queued unit (full refund)">Cancel last</button>`
             : '';
         actions.innerHTML =
-          rallyBtn + cancelBtn + view.trains.map(trainButtonHtml).join('');
+          rallyBtn +
+          cancelBtn +
+          view.trains.map(trainButtonHtml).join('') +
+          view.places.map(placeButtonHtml).join('');
       } else {
         for (const t of view.trains) {
           const btn = actions.querySelector(
-            `button[data-type-id="${t.typeId}"]`,
+            `button[data-act="train"][data-type-id="${t.typeId}"]`,
           ) as HTMLButtonElement | null;
           if (btn) applyTrainAffordability(btn, t);
+        }
+        for (const p of view.places) {
+          const btn = actions.querySelector(
+            `button[data-act="place"][data-type-id="${p.typeId}"]`,
+          ) as HTMLButtonElement | null;
+          if (!btn) continue;
+          applyTrainAffordability(btn, p);
+          btn.classList.toggle('is-armed', p.armed);
+          const nameEl = btn.querySelector('.kane-sel-train-name');
+          if (nameEl) {
+            nameEl.textContent = p.armed ? `${p.name} · Armed` : p.name;
+          }
+          if (!p.affordable) {
+            btn.title = !p.canPay
+              ? 'Need more resources'
+              : 'Keep still under construction';
+          } else {
+            btn.title = p.armed
+              ? 'Tap map to place · tap again to cancel'
+              : `Place ${p.name}`;
+          }
         }
         const rally = actions.querySelector(
           '[data-act="rally"]',
