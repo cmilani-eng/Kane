@@ -195,12 +195,19 @@ export function showKaneEndScreen(opts: EndScreenOpts): void {
   root.push(sub);
 
   const mapLabel = mapId ? mapCopy(mapId).label : '';
+  const difficultyLabel = difficulty
+    ? difficultyCopy(difficulty).label
+    : '';
   const clock =
     durationMs != null ? formatMatchClock(durationMs) : '';
   const metaText =
-    mapLabel && clock
-      ? t('end.meta', { map: mapLabel, clock })
-      : mapLabel || clock;
+    mapLabel && difficultyLabel && clock
+      ? t('end.meta', {
+          map: mapLabel,
+          difficulty: difficultyLabel,
+          clock,
+        })
+      : [mapLabel, difficultyLabel, clock].filter(Boolean).join('  ·  ');
   const meta = scene.add
     .text(width / 2, yMeta, metaText, {
       fontFamily: 'system-ui, sans-serif',
@@ -241,6 +248,7 @@ export function showKaneEndScreen(opts: EndScreenOpts): void {
     win,
     speciesName: name,
     mapLabel,
+    difficultyLabel,
     clock,
     units: playerUnitsLeft,
     buildings: playerBuildingsLeft,

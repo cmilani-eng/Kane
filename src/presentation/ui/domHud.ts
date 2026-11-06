@@ -43,73 +43,31 @@ export function ensureDomHud(): HTMLElement {
 
   bar = document.createElement('div');
   bar.id = BAR_ID;
+  bar.className = [
+    'pointer-events-none fixed inset-x-0 bottom-0 z-20 hidden [&.is-visible]:block',
+    'px-2 pt-2 pb-[calc(8px+env(safe-area-inset-bottom,0px))] font-sans',
+    'bg-linear-to-t from-kane-night/92 via-kane-night/55 via-70% to-transparent',
+  ].join(' ');
+  const row = 'pointer-events-none mt-1.5 flex justify-center gap-1.5';
+  const button = [
+    'pointer-events-auto m-0 min-h-12 flex-1 basis-0 cursor-pointer touch-manipulation',
+    'rounded border-2 border-kane-gold px-1.5 py-2 text-xs leading-[1.2] font-semibold',
+    'text-kane-parchment [-webkit-tap-highlight-color:transparent]',
+  ].join(' ');
+  const action = `${button} max-w-[120px] bg-kane-sky active:bg-kane-sky-light`;
+  const menu = `${button} max-w-[100px] bg-kane-slate`;
   bar.innerHTML = `
-    <div class="kane-hud-row">
-      <button type="button" data-act="buildBarracks">Build Barracks</button>
-      <button type="button" data-act="trainMelee">Train Blade</button>
-      <button type="button" data-act="trainRanged">Train Archer</button>
+    <div class="${row}">
+      <button type="button" class="${action}" data-act="buildBarracks">Build Barracks</button>
+      <button type="button" class="${action}" data-act="trainMelee">Train Blade</button>
+      <button type="button" class="${action}" data-act="trainRanged">Train Archer</button>
     </div>
-    <div class="kane-hud-row">
-      <button type="button" data-act="trainScout">Train Scout</button>
-      <button type="button" data-act="menu" class="kane-hud-menu">Menu</button>
+    <div class="${row}">
+      <button type="button" class="${action}" data-act="trainScout">Train Scout</button>
+      <button type="button" class="${menu}" data-act="menu">Menu</button>
     </div>
   `;
   document.body.appendChild(bar);
-
-  if (!document.getElementById('kane-dom-hud-style')) {
-    const style = document.createElement('style');
-    style.id = 'kane-dom-hud-style';
-    style.textContent = `
-      #kane-dom-hud {
-        display: none;
-        position: fixed;
-        left: 0;
-        right: 0;
-        bottom: 0;
-        z-index: 20;
-        padding: 8px 8px calc(8px + env(safe-area-inset-bottom, 0px));
-        background: linear-gradient(to top, rgba(15,26,46,0.92), rgba(15,26,46,0.55) 70%, transparent);
-        pointer-events: none;
-        font-family: system-ui, sans-serif;
-      }
-      #kane-dom-hud.is-visible {
-        display: block;
-      }
-      #kane-dom-hud .kane-hud-row {
-        display: flex;
-        justify-content: center;
-        gap: 6px;
-        margin-top: 6px;
-        pointer-events: none;
-      }
-      #kane-dom-hud button {
-        pointer-events: auto;
-        flex: 1 1 0;
-        max-width: 120px;
-        min-height: 48px;
-        margin: 0;
-        padding: 8px 6px;
-        border: 2px solid #f0c75e;
-        border-radius: 4px;
-        background: #3d7ea6;
-        color: #fff8e8;
-        font-size: 12px;
-        font-weight: 600;
-        line-height: 1.2;
-        touch-action: manipulation;
-        -webkit-tap-highlight-color: transparent;
-        cursor: pointer;
-      }
-      #kane-dom-hud button:active {
-        background: #5aa3c8;
-      }
-      #kane-dom-hud button.kane-hud-menu {
-        background: #3a4555;
-        max-width: 100px;
-      }
-    `;
-    document.head.appendChild(style);
-  }
 
   watchDomHudLocale(bar);
   return bar;

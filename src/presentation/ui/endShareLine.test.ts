@@ -12,6 +12,7 @@ describe('formatEndShareLine', () => {
       win: true,
       speciesName: 'The Brutes',
       mapLabel: 'Crossing',
+      difficultyLabel: 'Hard',
       clock: '03:21',
       units: 8,
       buildings: 3,
@@ -20,6 +21,7 @@ describe('formatEndShareLine', () => {
     expect(line).toContain('VICTORY');
     expect(line).toContain('The Brutes');
     expect(line).toContain('Crossing');
+    expect(line).toContain('Hard');
     expect(line).toContain('03:21');
     expect(line).toContain('8');
     expect(line).toContain('3');

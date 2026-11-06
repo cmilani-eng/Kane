@@ -553,14 +553,38 @@ export class MenuScene extends Phaser.Scene {
     this.addTipsToggle(78, 42);
 
     this.drawDifficultyRow(width, 78, true);
-    this.drawMapRow(width, 116, true);
+
+    // Compact difficulty buttons hide blurbs — tip only for Practice / Easy / Hard.
+    const shortDiffTip =
+      this.difficulty === 'practice'
+        ? t('menu.practiceTip')
+        : this.difficulty === 'easy'
+          ? t('menu.easyTip')
+          : this.difficulty === 'hard'
+            ? t('menu.hardTip')
+            : null;
+    if (shortDiffTip) {
+      this.add
+        .text(width / 2, 98, shortDiffTip, {
+          fontFamily: 'system-ui, sans-serif',
+          fontSize: '10px',
+          color: '#c8d8a8',
+          align: 'center',
+          wordWrap: { width: Math.min(520, width * 0.92) },
+        })
+        .setOrigin(0.5);
+    }
+
+    const mapY = shortDiffTip ? 120 : 112;
+    this.drawMapRow(width, mapY, true);
 
     // Compact map buttons hide per-tile blurbs — surface the selected map here.
     const shortMap = mapCopy(this.mapId);
+    const mapTipY = mapY + 20;
     this.add
       .text(
         width / 2,
-        138,
+        mapTipY,
         t('menu.mapTip', { label: shortMap.label, blurb: shortMap.blurb }),
         {
           fontFamily: 'system-ui, sans-serif',
@@ -581,10 +605,10 @@ export class MenuScene extends Phaser.Scene {
       { id: 'nobles', fill: 0x3d7ea6, stroke: 0xf0c75e },
       { id: 'weirdos', fill: 0x7a4aa8, stroke: 0x6ecfbf },
     ];
-    const cardH = 90;
+    const cardH = shortDiffTip ? 84 : 90;
     const cardW = Math.min(210, (width - 56) / 3);
     const step = cardW + 12;
-    const cardY = 138 + 14 + cardH / 2;
+    const cardY = mapTipY + 12 + cardH / 2;
     cards.forEach((c, i) => {
       const s = speciesCopy(c.id);
       this.makeSpeciesCard(

@@ -23,7 +23,8 @@ Kane's match code stays in `src/`. A move under `games/kane/` waits until a seco
 | `games/kane/main.ts` | Kane's Vite entry, inside the Vite root. |
 | `games/<id>/` | The page served at `/<id>/`. |
 | `games/games.json` | The list. Hub cards, Vite inputs for `build: "vite"` games, and the registry test read it. |
-| `public/` | Shared icons, the manifest, Privacy, and Terms. |
+| `public/` | Shared icons and the manifest. |
+| `games/privacy.html`, `games/terms.html` | Legal stubs (menu / hub links at `/privacy.html` and `/terms.html`). |
 | Repo-root env files | Vite `envDir`. Do not put env files inside a game folder. |
 | `dist/` | Build output, at the repo root. |
 

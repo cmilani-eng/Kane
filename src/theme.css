@@ -1,0 +1,31 @@
+/* KANE palette (navy / gold / cream), shared by Kane's DOM overlays and the legal pages. */
+@theme {
+  --font-kane-serif: Georgia, 'Times New Roman', serif;
+
+  --color-kane-night: #0f1a2e;
+  --color-kane-card: #122033;
+  --color-kane-deep: #0a1220;
+  --color-kane-abyss: #0a121c;
+  --color-kane-panel: #1a2838;
+  --color-kane-steel: #2a3a50;
+  --color-kane-iron: #2a3545;
+  --color-kane-slate: #3a4555;
+  --color-kane-sky: #3d7ea6;
+  --color-kane-sky-light: #5aa3c8;
+  --color-kane-moss: #3a5530;
+
+  --color-kane-gold: #f0c75e;
+  --color-kane-gold-dim: #c9a84c;
+  --color-kane-cream: #f5e6c8;
+  --color-kane-parchment: #fff8e8;
+  --color-kane-ink: #d7e6f2;
+  --color-kane-mist: #c8d8e8;
+  --color-kane-fog: #b8c9d9;
+  --color-kane-muted: #9eb4c8;
+  --color-kane-quiet: #6a7f94;
+  --color-kane-ice: #7ec8ff;
+  --color-kane-teal: #6ecfbf;
+  --color-kane-danger: #e87a7a;
+  --color-kane-pink: #e87aa8;
+  --color-kane-scrim: rgb(10 18 32 / 0.84);
+}

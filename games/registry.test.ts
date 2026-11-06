@@ -8,6 +8,36 @@ import { GAMES } from './registry';
 const gamesDir = dirname(fileURLToPath(import.meta.url));
 const gamePages = Object.keys(import.meta.glob('./*/index.html'));
 const rewrites = firebaseJson.hosting[0].rewrites.map((rule) => rule.source);
+const headerRules = firebaseJson.hosting[0].headers;
+
+/**
+ * Whether a Hosting header `source` glob matches a request path. Handles the
+ * forms firebase.json uses: one `{a,b}` group, `*` (one segment) and `**`.
+ */
+function globMatches(source: string, path: string): boolean {
+  const open = source.indexOf('{');
+  if (open >= 0) {
+    const close = source.indexOf('}', open);
+    return source
+      .slice(open + 1, close)
+      .split(',')
+      .some((alt) => globMatches(source.slice(0, open) + alt + source.slice(close + 1), path));
+  }
+  const pattern = source
+    .replace(/[.+?^$()|[\]\\]/g, '\\$&')
+    .replace(/\*\*/g, '\0')
+    .replace(/\*/g, '[^/]*')
+    .replace(/\0/g, '.*');
+  return new RegExp(`^${pattern}$`).test(path);
+}
+
+/** Hosting serves a page with cleanUrls, so users land on /id as often as /id/. */
+const isNoCache = (path: string) =>
+  headerRules.some(
+    (rule) =>
+      globMatches(rule.source, path) &&
+      rule.headers.some((h) => h.key === 'Cache-Control' && h.value === 'no-cache'),
+  );
 
 describe('games registry', () => {
   it('has unique, URL-safe ids', () => {
@@ -52,5 +82,21 @@ describe('games registry', () => {
     expect(manifest.id).toBe('/');
     expect(manifest.start_url).toBe('./kane/');
     expect(manifest.scope).toBe('./');
+  });
+
+  // A stale page points at hashed bundles a newer deploy removed, and the hub
+  // catch-all answers those with HTML, so a game's page must never be cached.
+  it.each(GAMES.map((game) => game.id))('%s page is no-cache with and without a trailing slash', (id) => {
+    for (const path of [`/${id}`, `/${id}/`, `/${id}/index.html`]) {
+      expect(isNoCache(path), path).toBe(true);
+    }
+  });
+
+  it('keeps the hub page no-cache', () => {
+    for (const path of ['/', '/index.html']) expect(isNoCache(path), path).toBe(true);
+  });
+
+  it('leaves hashed bundles to the immutable rule, not no-cache', () => {
+    expect(isNoCache('/assets/kane-abc123.js')).toBe(false);
   });
 });
