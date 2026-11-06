@@ -320,8 +320,26 @@ export class MenuScene extends Phaser.Scene {
 
     this.drawMapRow(width, mapRowY);
 
+    // Quiet flavor line for the selected skirmish map (same pattern as difficulty tips).
+    const selectedMap = mapCopy(this.mapId);
+    const mapTip = t('menu.mapTip', {
+      label: selectedMap.label,
+      blurb: selectedMap.blurb,
+    });
+    const mapTipY = mapRowY + height * 0.035;
     this.add
-      .text(width / 2, height * 0.43, t('menu.pickSpecies'), {
+      .text(width / 2, mapTipY, mapTip, {
+        fontFamily: 'system-ui, sans-serif',
+        fontSize: '11px',
+        color: '#a8c8c0',
+        align: 'center',
+        wordWrap: { width: Math.min(420, width * 0.88) },
+      })
+      .setOrigin(0.5);
+
+    const pickSpeciesY = Math.max(height * 0.445, mapTipY + height * 0.03);
+    this.add
+      .text(width / 2, pickSpeciesY, t('menu.pickSpecies'), {
         fontFamily: 'system-ui, sans-serif',
         fontSize: '14px',
         color: '#b8c9d9',
@@ -341,7 +359,7 @@ export class MenuScene extends Phaser.Scene {
       { id: 'weirdos', fill: 0x7a4aa8, stroke: 0x6ecfbf },
     ];
     if (narrow) {
-      const startY = height * 0.49;
+      const startY = Math.max(height * 0.505, pickSpeciesY + height * 0.05);
       cards.forEach((c, i) => {
         const s = speciesCopy(c.id);
         this.makeSpeciesCard(
@@ -537,6 +555,23 @@ export class MenuScene extends Phaser.Scene {
     this.drawDifficultyRow(width, 78, true);
     this.drawMapRow(width, 116, true);
 
+    // Compact map buttons hide per-tile blurbs — surface the selected map here.
+    const shortMap = mapCopy(this.mapId);
+    this.add
+      .text(
+        width / 2,
+        138,
+        t('menu.mapTip', { label: shortMap.label, blurb: shortMap.blurb }),
+        {
+          fontFamily: 'system-ui, sans-serif',
+          fontSize: '10px',
+          color: '#a8c8c0',
+          align: 'center',
+          wordWrap: { width: Math.min(520, width * 0.92) },
+        },
+      )
+      .setOrigin(0.5);
+
     const cards: {
       id: SpeciesId;
       fill: number;
@@ -546,10 +581,10 @@ export class MenuScene extends Phaser.Scene {
       { id: 'nobles', fill: 0x3d7ea6, stroke: 0xf0c75e },
       { id: 'weirdos', fill: 0x7a4aa8, stroke: 0x6ecfbf },
     ];
-    const cardH = 96;
+    const cardH = 90;
     const cardW = Math.min(210, (width - 56) / 3);
     const step = cardW + 12;
-    const cardY = 116 + 16 + 8 + cardH / 2;
+    const cardY = 138 + 14 + cardH / 2;
     cards.forEach((c, i) => {
       const s = speciesCopy(c.id);
       this.makeSpeciesCard(
