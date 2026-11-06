@@ -5,11 +5,13 @@ import type { BattlefieldUnit } from '../../gameplay/battlefield/battlefieldWorl
 function stubWorker(
   carrying: number,
   resource: 'gold' | 'magic_crystals' | null,
+  carryCapacity = 10,
 ): BattlefieldUnit {
   return {
     hp: 10,
     carrying,
     carryingResource: resource,
+    carryCapacity,
   } as BattlefieldUnit;
 }
 
@@ -18,19 +20,19 @@ describe('selection panel worker carry', () => {
     expect(carryLineFor([stubWorker(0, null)]).line).toBeNull();
   });
 
-  it('shows labeled gold cargo for a single worker', () => {
-    const { line, crystal } = carryLineFor([stubWorker(25, 'gold')]);
-    expect(line).toContain('25');
+  it('shows n/capacity with labeled gold for a single worker', () => {
+    const { line, crystal } = carryLineFor([stubWorker(8, 'gold', 10)]);
+    expect(line).toContain('8/10');
     expect(line).toMatch(/Gold/i);
     expect(crystal).toBe(false);
   });
 
-  it('sums group cargo of the same resource', () => {
+  it('sums group cargo and capacity of the same resource', () => {
     const { line, crystal } = carryLineFor([
-      stubWorker(10, 'magic_crystals'),
-      stubWorker(5, 'magic_crystals'),
+      stubWorker(10, 'magic_crystals', 12),
+      stubWorker(5, 'magic_crystals', 12),
     ]);
-    expect(line).toContain('15');
+    expect(line).toContain('15/24');
     expect(crystal).toBe(true);
   });
 });
