@@ -29,6 +29,10 @@ import {
   unitAttackCooldownLabel,
 } from './unitAttackCooldown';
 import { attackRangeLabel } from './unitAttackRange';
+import {
+  sharedUnitAttackTypeLabel,
+  unitAttackTypeLabel,
+} from './unitAttackType';
 import { sharedUnitDamageLabel, unitDamageLabel } from './unitDamage';
 import { sharedUnitDpsLabel, unitDpsLabel } from './unitDps';
 import {
@@ -196,6 +200,8 @@ export type SelectionPanelView =
       dpsTip: string | null;
       /** Catalog attack-damage tip when selection shares one unit type (distinct from ATK chip / DPS). */
       dmgTip: string | null;
+      /** Melee / Ranged tip when selection shares one attack type. */
+      atkTypeTip: string | null;
       /** Catalog move-speed tip when selection shares one unit type. */
       speedTip: string | null;
       /** Catalog vision-radius tip when selection shares one unit type. */
@@ -643,6 +649,7 @@ export function buildSelectionView(
       armorClass: armorClassLabel(u.typeId),
       dpsTip: unitDpsLabel(u.typeId),
       dmgTip: unitDamageLabel(u.typeId),
+      atkTypeTip: unitAttackTypeLabel(u.typeId),
       speedTip: unitMoveSpeedLabel(u.typeId),
       visionTip: unitVisionLabel(u.typeId),
       hpMaxTip: unitHpMaxLabel(u.typeId),
@@ -710,6 +717,7 @@ export function buildSelectionView(
     armorClass: sharedUnitArmorClassTipLabel(alive.map((u) => u.typeId)),
     dpsTip: sharedUnitDpsLabel(alive.map((u) => u.typeId)),
     dmgTip: sharedUnitDamageLabel(alive.map((u) => u.typeId)),
+    atkTypeTip: sharedUnitAttackTypeLabel(alive.map((u) => u.typeId)),
     speedTip: sharedUnitMoveSpeedLabel(alive.map((u) => u.typeId)),
     visionTip: sharedUnitVisionLabel(alive.map((u) => u.typeId)),
     hpMaxTip: sharedUnitHpMaxLabel(alive.map((u) => u.typeId)),
@@ -989,6 +997,7 @@ function structureSignature(view: SelectionPanelView): string {
       view.armorClass ?? '',
       view.dpsTip ?? '',
       view.dmgTip ?? '',
+      view.atkTypeTip ?? '',
       view.speedTip ?? '',
       view.visionTip ?? '',
       view.hpMaxTip ?? '',
@@ -1517,6 +1526,9 @@ export function renderSelectionPanel(view: SelectionPanelView): boolean {
         }
         if (view.dmgTip) {
           bits.push(`<span>${escapeHtml(view.dmgTip)}</span>`);
+        }
+        if (view.atkTypeTip) {
+          bits.push(`<span>${escapeHtml(view.atkTypeTip)}</span>`);
         }
         if (view.speedTip) {
           bits.push(`<span>${escapeHtml(view.speedTip)}</span>`);
