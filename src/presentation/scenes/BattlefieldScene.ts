@@ -410,7 +410,7 @@ export class BattlefieldScene extends Phaser.Scene {
     });
     this.minimap = new Minimap(this, this.world, this.cameraCtl);
     this.tutorial = createTutorialState();
-    this.coach = new TutorialCoach(this, this.tutorial);
+    this.coach = new TutorialCoach(this, this.tutorial, () => this.world.mapId);
     this.coreBanner = new CoreVictoryBanner(this, this.world);
     this.splitHudCamera([
       layer,

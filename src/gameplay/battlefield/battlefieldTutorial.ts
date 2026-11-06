@@ -3,6 +3,8 @@
  * Presentation-only prompts; never blocks gameplay.
  * Copy covers rematch, Idle chip, Army, pause, and Home.
  */
+import type { SkirmishMapId } from '../../data/skirmishMaps';
+import { t } from '../../i18n';
 import type { BattlefieldWorld } from './battlefieldWorld';
 import { selectedCount } from './battlefieldWorld';
 import { getBuildingType } from '../../data/buildings';
@@ -10,6 +12,7 @@ import { getUnitType } from '../../data/units';
 
 export type TutorialStepId =
   | 'welcome'
+  | 'map'
   | 'select'
   | 'gather'
   | 'build'
@@ -31,7 +34,7 @@ export interface TutorialState {
   seenHero: boolean;
 }
 
-const TIPS: Record<Exclude<TutorialStepId, 'done'>, string> = {
+const TIPS: Record<Exclude<TutorialStepId, 'done' | 'map'>, string> = {
   welcome:
     'Hi commander! Tap Next or just play. Esc / Pause freezes the fight — Rematch waits after victory or defeat.',
   select:
@@ -50,6 +53,7 @@ const TIPS: Record<Exclude<TutorialStepId, 'done'>, string> = {
 
 const STEP_ORDER: Exclude<TutorialStepId, 'done'>[] = [
   'welcome',
+  'map',
   'select',
   'gather',
   'build',
@@ -71,9 +75,15 @@ export function createTutorialState(): TutorialState {
   };
 }
 
-export function tutorialTip(t: TutorialState): string {
-  if (!t.visible || t.step === 'done') return '';
-  return TIPS[t.step];
+export function tutorialTip(
+  state: TutorialState,
+  mapId: SkirmishMapId = 'crossing',
+): string {
+  if (!state.visible || state.step === 'done') return '';
+  if (state.step === 'map') {
+    return mapId === 'ridge' ? t('tutorial.map.ridge') : t('tutorial.map.crossing');
+  }
+  return TIPS[state.step];
 }
 
 export function tutorialStepLabel(t: TutorialState): string {
@@ -90,7 +100,8 @@ export function dismissTutorial(t: TutorialState): void {
 export function advanceTutorial(t: TutorialState): void {
   if (!t.visible || t.step === 'done') return;
   const next: Record<Exclude<TutorialStepId, 'done'>, TutorialStepId> = {
-    welcome: 'select',
+    welcome: 'map',
+    map: 'select',
     select: 'gather',
     gather: 'build',
     build: 'attack',
@@ -148,6 +159,11 @@ export function tickTutorial(
 
   // Auto-advance when the player does the thing (or timed tips expire)
   if (t.step === 'welcome' && t.elapsedMs > 4500) {
+    t.step = 'map';
+    t.elapsedMs = 0;
+    return;
+  }
+  if (t.step === 'map' && t.elapsedMs > 5500) {
     t.step = 'select';
     t.elapsedMs = 0;
     return;
