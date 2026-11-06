@@ -12,7 +12,6 @@ import {
   type BuildingTypeId,
 } from '../../data/buildings';
 import { type SpeciesId } from '../../data/speciesStub';
-import { getUnitType } from '../../data/units';
 import {
   getAiDifficulty,
   type AiDifficultyId,
@@ -42,6 +41,13 @@ import {
 import { tickCoreFragments } from '../../gameplay/battlefield/battlefieldCoreFragments';
 import { BattlefieldHud } from '../ui/battlefieldHud';
 import { Minimap } from '../ui/minimap';
+import {
+  buildSelectionView,
+  mountSelectionPanel,
+  renderSelectionPanel,
+  selectionPanelInsetPx,
+  unmountSelectionPanel,
+} from '../ui/selectionPanel';
 import { TutorialCoach } from '../ui/tutorialCoach';
 import {
   createTutorialState,
@@ -68,6 +74,7 @@ import {
 } from '../../gameplay/battlefield/battlefieldEconomy';
 import { tickEconomyFx } from '../../gameplay/battlefield/battlefieldEconomyFx';
 import {
+  queueTrain,
   tickProduction,
   trainHotkey,
 } from '../../gameplay/battlefield/battlefieldProduction';
@@ -272,6 +279,22 @@ export class BattlefieldScene extends Phaser.Scene {
         this.cameraCtl.centerOn(result.focus.x, result.focus.y);
       }
     };
+    mountSelectionPanel({
+      stop: () => this.issueStopCommand(),
+      attackMove: () => this.toggleAttackMoveMode(),
+      train: (typeId) => {
+        const b = this.selectedBuilding;
+        if (!b || b.team !== 'player') return;
+        if (queueTrain(this.world, b, typeId)) playSfx('train');
+        else playSfx('ui');
+      },
+    });
+    this.events.once(Phaser.Scenes.Events.SHUTDOWN, () =>
+      unmountSelectionPanel(),
+    );
+    this.events.once(Phaser.Scenes.Events.DESTROY, () =>
+      unmountSelectionPanel(),
+    );
     this.pauseMenu = new PauseMenu({
       scene: this,
       onResume: () => this.setPaused(false),
@@ -915,6 +938,9 @@ export class BattlefieldScene extends Phaser.Scene {
     }
     this.clearAttackMoveMode();
     this.ghostGfx.clear();
+    unmountSelectionPanel();
+    this.hud.setBottomInset(0);
+    this.minimap.setBottomInset(0);
     this.cameraCtl.suppressPan = true;
     this.writeEndMatchSummary(result);
 
@@ -995,73 +1021,28 @@ export class BattlefieldScene extends Phaser.Scene {
     const friends = livingByTeam(this.world, 'player');
     const foes = livingByTeam(this.world, 'enemy');
     const b = this.selectedBuilding;
+
+    const selView = buildSelectionView(
+      this.world,
+      b,
+      sel,
+      this.mode === 'attackMove',
+    );
+    const panelOpen = renderSelectionPanel(selView);
+    const inset = selectionPanelInsetPx(panelOpen);
+    this.hud.setBottomInset(inset);
+    this.minimap.setBottomInset(inset);
+
+    // Compact top status — detail lives in the bottom selection panel.
     let status: string;
     if (b) {
-      const trains = getBuildingType(b.typeId).trains;
-      const labels = trains
-        .map((id, i) => {
-          const d = getUnitType(id);
-          return `${i + 1}:${d.name}(${d.costGold}g${d.costCrystals ? '/' + d.costCrystals + 'c' : ''})`;
-        })
-        .join('  ');
-      const q =
-        b.trainQueue.length > 0
-          ? ` · queue ${b.trainQueue.length} (${Math.floor((b.trainProgressMs / getUnitType(b.trainQueue[0]!).trainMs) * 100)}%)`
-          : '';
-      status = `${b.name}  HP ${Math.ceil(b.hp)}/${b.maxHp}${q}  ·  ${labels}`;
+      status = `${b.name} selected · tap Train below or 1–3`;
     } else if (n === 0) {
-      status = `Alive ${friends} vs ${foes}  ·  Select hall to train · use hero pads below`;
+      status = `Alive ${friends} vs ${foes}  ·  Select a unit or building`;
     } else if (n === 1) {
-      const u = sel[0]!;
-      const carry =
-        u.carrying > 0
-          ? ` · carrying ${u.carrying} ${u.carryingResource ?? ''}`
-          : u.canGather
-            ? ' · worker'
-            : '';
-      const form = u.inFormation
-        ? u.formationLocked
-          ? ' · FORMATION (locked · F)'
-          : ' · FORMATION'
-        : '';
-      const mut = u.mutated
-        ? u.mutationLocked
-          ? ' · MUTATED (locked · M)'
-          : ' · MUTATED'
-        : '';
-      const rage = u.enraged
-        ? u.rageLocked
-          ? ' · RAGE (locked · R)'
-          : ' · RAGE'
-        : '';
-      status = `1 selected — ${u.name}  HP ${Math.ceil(u.hp)}/${u.maxHp}${carry}${form}${mut}${rage}`;
+      status = `${sel[0]!.name} selected · orders below`;
     } else {
-      const formed = sel.filter((u) => u.inFormation).length;
-      const locked = sel.filter((u) => u.formationLocked).length;
-      const mutated = sel.filter((u) => u.mutated).length;
-      const mutLocked = sel.filter((u) => u.mutationLocked).length;
-      const enraged = sel.filter((u) => u.enraged).length;
-      const rageLocked = sel.filter((u) => u.rageLocked).length;
-      const extra = [
-        formed
-          ? locked
-            ? `${formed} formed (${locked} locked)`
-            : `${formed} in formation`
-          : '',
-        mutated
-          ? mutLocked
-            ? `${mutated} mutated (${mutLocked} locked)`
-            : `${mutated} mutated`
-          : '',
-        enraged
-          ? rageLocked
-            ? `${enraged} enraged (${rageLocked} locked)`
-            : `${enraged} enraged`
-          : '',
-      ]
-        .filter(Boolean)
-        .join(' · ');
-      status = `${n} selected${extra ? ` · ${extra}` : ''}  ·  RMB / long-press for orders`;
+      status = `${n} selected · orders below · RMB / long-press`;
     }
 
     const placing = this.mode === 'place';
