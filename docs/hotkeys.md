@@ -48,11 +48,16 @@ recalling a group. Select a unit first to use the number for a group.
 | Function | Reference games | KANE | Status |
 |----------|-----------------|------|--------|
 | Move / attack / gather | right-click | RMB | ✅ |
-| Move / attack / gather on touch | long-press | — (a tap selects; the panel's A-move button sends units) | 🔜 |
+| Move / attack / gather on touch | long-press | Press and hold on the map (about half a second) | ✅ |
 | Attack-move | A, then click | A, then click | ✅ |
 | Stop | S | S (phones get a Stop button) | ✅ |
 | Hold position / patrol | H / P (SC2) | — | 🔜 |
 | Queue orders | Shift+command | — | 🔜 |
+
+On touch, holding without moving gives the same order as a right-click at that
+spot: attack an enemy, gather from a node, or move. Lifting early is a plain
+tap (select), and dragging more than a few pixels first starts a box-select
+instead. With nothing selected, a long-press does nothing.
 
 ## KANE-specific
 
