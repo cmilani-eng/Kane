@@ -427,7 +427,8 @@ export function showDashboardPanel(
           email: current.email,
           species: prefs.species,
           difficulty: prefs.difficulty,
-          mapId: prefs.mapId ?? loadMatchPrefs().mapId,
+          // Cloud profile prefs omit map; local match prefs keep the skirmish map.
+          mapId: loadMatchPrefs().mapId,
           skins,
         }),
       );
