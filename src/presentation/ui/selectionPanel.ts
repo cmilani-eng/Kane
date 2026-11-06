@@ -185,6 +185,8 @@ export type SelectionPanelView =
         name: string;
         costGold: number;
         costCrystals: number;
+        /** Full train duration in whole seconds (ceil of trainMs). */
+        trainSec: number;
         /** Wallet can cover gold + crystals. */
         canPay: boolean;
         /** Ready + canPay — button enabled. */
@@ -430,6 +432,7 @@ export function buildSelectionView(
         name: u.name,
         costGold: u.costGold,
         costCrystals: u.costCrystals,
+        trainSec: trainFullSec(u.trainMs),
         canPay,
         affordable: canPay && ready,
       };
@@ -917,13 +920,22 @@ function structureSignature(view: SelectionPanelView): string {
   ].join('|');
 }
 
-function trainCostHtml(gold: number, crystals: number): string {
+function trainCostHtml(
+  gold: number,
+  crystals: number,
+  trainSec = 0,
+): string {
   const bits = [
     `<span class="kane-sel-cost-gold">${t('sel.goldCost', { n: gold })}</span>`,
   ];
   if (crystals > 0) {
     bits.push(
       `<span class="kane-sel-cost-crystal">${t('sel.crystalCost', { n: crystals })}</span>`,
+    );
+  }
+  if (trainSec > 0) {
+    bits.push(
+      `<span class="kane-sel-cost-sec">${escapeHtml(t('sel.trainSec', { sec: trainSec }))}</span>`,
     );
   }
   return `<span class="kane-sel-cost">${bits.join('')}</span>`;
@@ -974,6 +986,7 @@ function trainButtonHtml(unit: {
   name: string;
   costGold: number;
   costCrystals: number;
+  trainSec: number;
   canPay: boolean;
   affordable: boolean;
 }): string {
@@ -984,7 +997,7 @@ function trainButtonHtml(unit: {
       ? ` title="${t('sel.needResources')}"`
       : ` title="${t('sel.underConstruction')}"`
     : '';
-  return `<button type="button" class="${classes.join(' ')}" data-act="train" data-type-id="${unit.typeId}"${unit.affordable ? '' : ' disabled'}${reason}><span class="kane-sel-train-name">${escapeHtml(unit.name)}</span>${trainCostHtml(unit.costGold, unit.costCrystals)}</button>`;
+  return `<button type="button" class="${classes.join(' ')}" data-act="train" data-type-id="${unit.typeId}"${unit.affordable ? '' : ' disabled'}${reason}><span class="kane-sel-train-name">${escapeHtml(unit.name)}</span>${trainCostHtml(unit.costGold, unit.costCrystals, unit.trainSec)}</button>`;
 }
 
 function placeButtonHtml(p: SelectionPlaceOption): string {
