@@ -21,7 +21,7 @@ describe('Weirdos Grabber / hero control hint', () => {
     expect(view.controlHint).toMatch(/Mutation/i);
   });
 
-  it('shows a ZOGGLE control hint for the Weirdos hero', () => {
+  it('shows Q/W/E ability hotkeys for the Weirdos hero', () => {
     const world = createBattlefieldWorld('weirdos', 'normal');
     const hero = spawnUnit(world, {
       team: 'player',
@@ -35,8 +35,10 @@ describe('Weirdos Grabber / hero control hint', () => {
     const view = buildSelectionView(world, null, [hero], false);
     expect(view.kind).toBe('units');
     if (view.kind !== 'units') return;
-    expect(view.controlHint).toMatch(/ZOGGLE/i);
     expect(view.controlHint).toMatch(/Q/);
+    expect(view.controlHint).toMatch(/Brain Zap/i);
+    expect(view.controlHint).toMatch(/W/);
+    expect(view.controlHint).toMatch(/E/);
   });
 
   it('omits the hint for ordinary bloblets', () => {
