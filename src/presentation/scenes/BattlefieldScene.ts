@@ -322,6 +322,10 @@ export class BattlefieldScene extends Phaser.Scene {
         if (queueTrain(this.world, b, typeId)) playSfx('train');
         else playSfx('ui');
       },
+      castAbility: (slot) => {
+        if (castHeroAbility(this.world, slot, 'player')) playSfx('ability');
+        else playSfx('ui');
+      },
     });
     this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => {
       unmountSelectionPanel();
