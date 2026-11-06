@@ -13,6 +13,7 @@ import {
   mutationIncomingMult,
   mutationOutgoingMult,
 } from './battlefieldMutations';
+import { rageIncomingMult, rageOutgoingMult } from './battlefieldRage';
 import {
   spawnBuildingHitFx,
   spawnDeathFx,
@@ -196,7 +197,8 @@ export function tickBattlefieldCombat(
       let raw =
         outgoingDamage(u, u.dmg) *
         heroOutgoingMult(world, u) *
-        mutationOutgoingMult(u);
+        mutationOutgoingMult(u) *
+        rageOutgoingMult(u);
       const isBuilding = 'typeId' in t && 'buildProgress' in t;
       if (isBuilding) {
         raw *= udef.structureMult ?? 1;
@@ -208,7 +210,8 @@ export function tickBattlefieldCombat(
         victim.hp -=
           incomingDamage(victim, raw) *
           heroIncomingMult(world, victim) *
-          mutationIncomingMult(victim);
+          mutationIncomingMult(victim) *
+          rageIncomingMult(victim);
         if (victim.hp <= 0) victim.hp = 0;
         spawnHitFx(world, victim.x, victim.y, victim.radius, victim.color);
       }
