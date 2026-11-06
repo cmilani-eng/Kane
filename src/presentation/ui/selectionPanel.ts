@@ -23,6 +23,7 @@ import {
   sharedUnitMoveSpeedLabel,
   unitMoveSpeedLabel,
 } from './unitMoveSpeed';
+import { sharedUnitHpMaxLabel, unitHpMaxLabel } from './unitHpMax';
 import { sharedUnitVisionLabel, unitVisionLabel } from './unitVision';
 import type {
   BattlefieldBuilding,
@@ -169,6 +170,8 @@ export type SelectionPanelView =
       speedTip: string | null;
       /** Catalog vision-radius tip when selection shares one unit type. */
       visionTip: string | null;
+      /** Catalog max-HP tip when selection shares one unit type. */
+      hpMaxTip: string | null;
       tags: string[];
       attackMoveArmed: boolean;
       /** Present when a single player hero is selected. */
@@ -583,6 +586,7 @@ export function buildSelectionView(
       dpsTip: unitDpsLabel(u.typeId),
       speedTip: unitMoveSpeedLabel(u.typeId),
       visionTip: unitVisionLabel(u.typeId),
+      hpMaxTip: unitHpMaxLabel(u.typeId),
       tags,
       attackMoveArmed,
       abilities: heroAbilityViews(world, u),
@@ -640,6 +644,7 @@ export function buildSelectionView(
     dpsTip: sharedUnitDpsLabel(alive.map((u) => u.typeId)),
     speedTip: sharedUnitMoveSpeedLabel(alive.map((u) => u.typeId)),
     visionTip: sharedUnitVisionLabel(alive.map((u) => u.typeId)),
+    hpMaxTip: sharedUnitHpMaxLabel(alive.map((u) => u.typeId)),
     tags,
     attackMoveArmed,
     abilities: null,
@@ -909,6 +914,7 @@ function structureSignature(view: SelectionPanelView): string {
       view.dpsTip ?? '',
       view.speedTip ?? '',
       view.visionTip ?? '',
+      view.hpMaxTip ?? '',
       view.tags.join(','),
       view.attackMoveArmed ? 1 : 0,
       abs,
@@ -1425,6 +1431,9 @@ export function renderSelectionPanel(view: SelectionPanelView): boolean {
         }
         if (view.visionTip) {
           bits.push(`<span>${escapeHtml(view.visionTip)}</span>`);
+        }
+        if (view.hpMaxTip) {
+          bits.push(`<span>${escapeHtml(view.hpMaxTip)}</span>`);
         }
         if (view.armorClass) {
           bits.push(`<span>${escapeHtml(view.armorClass)}</span>`);
