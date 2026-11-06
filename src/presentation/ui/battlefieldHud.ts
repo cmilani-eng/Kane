@@ -30,6 +30,7 @@ import { CORE_TONE_COLOR, formatCoreLine, formatHeroLine } from './matchStatusCo
 import {
   SUPPLY_TONE_COLOR,
   SUPPLY_TONE_DOT,
+  formatSupplyLine,
   supplyTone,
 } from './supplyTone';
 import {
@@ -218,7 +219,7 @@ export class BattlefieldHud {
       .setScrollFactor(0)
       .setDepth(100);
     this.supplyText = scene.add
-      .text(294, 76, t('pause.supply', { current: 0, cap: flags.unitCap }), {
+      .text(294, 76, formatSupplyLine(0, flags.unitCap), {
         fontFamily: 'system-ui, sans-serif',
         fontSize: '15px',
         color: '#d7e6f2',
@@ -923,7 +924,7 @@ export class BattlefieldHud {
     );
     const pop = livingByTeam(this.world, 'player');
     const cap = flags.unitCap;
-    this.supplyText.setText(t('pause.supply', { current: pop, cap }));
+    this.supplyText.setText(formatSupplyLine(pop, cap));
     this.fitResourceStrip();
     const tone = supplyTone(pop, cap);
     this.supplyText.setColor(SUPPLY_TONE_COLOR[tone]);

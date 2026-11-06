@@ -15,6 +15,7 @@ import { formatMatchClock } from './battlefieldHud';
 import { addLocalePicker } from './localePicker';
 import {
   SUPPLY_TONE_COLOR,
+  formatSupplyLine,
   supplyTone,
 } from './supplyTone';
 import { createVolumeSlider, type VolumeSliderHandle } from './volumeSlider';
@@ -156,10 +157,10 @@ export class PauseMenu {
       map: mapCopy(this.snapshot.mapId).label,
       difficulty: difficultyCopy(this.snapshot.difficulty).label,
     });
-    const supply = t('pause.supply', {
-      current: this.snapshot.supplyCurrent,
-      cap: this.snapshot.supplyCap,
-    });
+    const supply = formatSupplyLine(
+      this.snapshot.supplyCurrent,
+      this.snapshot.supplyCap,
+    );
     const tone = supplyTone(
       this.snapshot.supplyCurrent,
       this.snapshot.supplyCap,

@@ -8,7 +8,11 @@ import {
   subscribeMatchStock,
   type MatchStock,
 } from './matchUiStore';
-import { supplyTone, type SupplyTone } from './supplyTone';
+import {
+  formatSupplyLine,
+  supplyTone,
+  type SupplyTone,
+} from './supplyTone';
 
 const ROOT_ID = 'kane-stock';
 
@@ -42,10 +46,7 @@ function paint(root: HTMLElement, stock: MatchStock): void {
   if (gold) gold.textContent = t('hud.gold', { n: stock.gold });
   if (crystals) crystals.textContent = t('hud.crystals', { n: stock.crystals });
   if (supply) {
-    supply.textContent = t('pause.supply', {
-      current: stock.supply,
-      cap: stock.supplyCap,
-    });
+    supply.textContent = formatSupplyLine(stock.supply, stock.supplyCap);
   }
   const supplySlot = root.querySelector('[data-slot="supply"]');
   if (supplySlot instanceof HTMLElement) {

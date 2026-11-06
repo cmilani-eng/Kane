@@ -35,6 +35,7 @@ This doc is the honest gate before any public preview URL.
 | Low-HP pulse | **OK** — selection HP bar/text soft-pulse under 35% (respects reduced motion) | `selectionPanel` `.is-low` |
 | Resource gather tip | **OK** — selecting a node shows haul-per-trip + active gatherer count | `selectionPanel`, `sel.gatherTip*` |
 | Supply near-cap tint | **OK** — Supply readout amber within 4 of cap, pink at cap (HUD + pause) | `supplyTone`, `battlefieldHud`, `pauseMenu` |
+| Supply slots left | **OK** — near-cap / full supply lines append remaining slots (or “full”) | `formatSupplyLine`, `pause.supplyNear` / `supplyFull` |
 | CORE hold banner secs | **OK** — victory-hold banner shows remaining seconds clearly (Ns + “left”) | `coreVictoryBanner`, `banner.coreHold*` |
 | CORE hold progress tick | **OK** — hold banner progress bar + per-second clock tick | `coreHoldProgress`, `CoreVictoryBanner` |
 | Idle army count | **OK** — Idle army chip leads with idle combat unit count | `battlefieldHud`, `hud.idleArmy`, `countIdleMilitary` |
