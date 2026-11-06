@@ -483,31 +483,7 @@ export class MenuScene extends Phaser.Scene {
       )
       .setOrigin(0.5);
 
-    const legalY = height * 0.97;
-    const privacy = this.add
-      .text(width / 2 - 72, legalY, t('menu.privacy'), {
-        fontFamily: 'system-ui, sans-serif',
-        fontSize: '11px',
-        color: '#7ec8ff',
-      })
-      .setOrigin(0.5)
-      .setInteractive({ useHandCursor: true });
-    privacy.on('pointerup', () => {
-      playSfx('ui');
-      if (typeof window !== 'undefined') window.open('/privacy.html', '_blank');
-    });
-    const terms = this.add
-      .text(width / 2 + 72, legalY, t('menu.terms'), {
-        fontFamily: 'system-ui, sans-serif',
-        fontSize: '11px',
-        color: '#7ec8ff',
-      })
-      .setOrigin(0.5)
-      .setInteractive({ useHandCursor: true });
-    terms.on('pointerup', () => {
-      playSfx('ui');
-      if (typeof window !== 'undefined') window.open('/terms.html', '_blank');
-    });
+    this.addLegalFooter(width, height * 0.97);
   }
 
   /**
@@ -672,29 +648,36 @@ export class MenuScene extends Phaser.Scene {
       })
       .setOrigin(0.5);
 
-    const legalY = height - 14;
-    const privacy = this.add
-      .text(width / 2 - 70, legalY, t('menu.privacy'), {
-        fontFamily: 'system-ui, sans-serif',
-        fontSize: '11px',
-        color: '#7ec8ff',
-      })
-      .setOrigin(0.5)
-      .setInteractive({ useHandCursor: true });
-    privacy.on('pointerup', () => {
-      playSfx('ui');
+    this.addLegalFooter(width, height - 14);
+  }
+
+  /** Games (hub) · Privacy · Terms footer row. */
+  private addLegalFooter(width: number, legalY: number): void {
+    const link = (
+      x: number,
+      label: string,
+      onClick: () => void,
+    ): Phaser.GameObjects.Text =>
+      this.add
+        .text(x, legalY, label, {
+          fontFamily: 'system-ui, sans-serif',
+          fontSize: '11px',
+          color: '#7ec8ff',
+        })
+        .setOrigin(0.5)
+        .setInteractive({ useHandCursor: true })
+        .on('pointerup', () => {
+          playSfx('ui');
+          onClick();
+        });
+
+    link(width / 2 - 100, t('menu.games'), () => {
+      if (typeof window !== 'undefined') window.location.assign('/');
+    });
+    link(width / 2, t('menu.privacy'), () => {
       if (typeof window !== 'undefined') window.open('/privacy.html', '_blank');
     });
-    const terms = this.add
-      .text(width / 2 + 70, legalY, t('menu.terms'), {
-        fontFamily: 'system-ui, sans-serif',
-        fontSize: '11px',
-        color: '#7ec8ff',
-      })
-      .setOrigin(0.5)
-      .setInteractive({ useHandCursor: true });
-    terms.on('pointerup', () => {
-      playSfx('ui');
+    link(width / 2 + 100, t('menu.terms'), () => {
       if (typeof window !== 'undefined') window.open('/terms.html', '_blank');
     });
   }
