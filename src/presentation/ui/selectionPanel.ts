@@ -4,12 +4,14 @@
  * Reads gameplay state only — no new combat systems.
  */
 import { getBuildingType } from '../../data/buildings';
+import { RESOURCES } from '../../data/resources';
 import { SPECIES } from '../../data/speciesStub';
 import { getUnitType, type UnitTypeId } from '../../data/units';
 import type {
   BattlefieldBuilding,
   BattlefieldUnit,
   BattlefieldWorld,
+  ResourceNode,
 } from '../../gameplay/battlefield/battlefieldWorld';
 import { canAfford } from '../../gameplay/battlefield/battlefieldBuildings';
 import { walletOf } from '../../gameplay/battlefield/battlefieldEconomy';
@@ -64,6 +66,14 @@ export type SelectionPanelView =
       headName: string | null;
       rallyArmed: boolean;
       hasRally: boolean;
+    }
+  | {
+      kind: 'resource';
+      title: string;
+      flavor: string;
+      remaining: number;
+      maxAmount: number;
+      resourceId: 'gold' | 'magic_crystals';
     };
 
 let handlers: SelectionPanelHandlers | null = null;
@@ -486,6 +496,7 @@ export function buildSelectionView(
   units: BattlefieldUnit[],
   attackMoveArmed: boolean,
   rallyArmed = false,
+  selectedNode: ResourceNode | null = null,
 ): SelectionPanelView {
   if (selectedBuilding && selectedBuilding.hp > 0) {
     const b = selectedBuilding;
@@ -524,6 +535,18 @@ export function buildSelectionView(
       headName: head?.name ?? null,
       rallyArmed,
       hasRally: trains.length > 0,
+    };
+  }
+
+  if (selectedNode && selectedNode.remaining > 0) {
+    const def = RESOURCES[selectedNode.resourceId];
+    return {
+      kind: 'resource',
+      title: def.label,
+      flavor: `${def.source} · send workers to gather`,
+      remaining: selectedNode.remaining,
+      maxAmount: selectedNode.maxAmount,
+      resourceId: selectedNode.resourceId,
     };
   }
 
@@ -606,6 +629,15 @@ function structureSignature(view: SelectionPanelView): string {
       view.range ?? '-',
       view.tags.join(','),
       view.attackMoveArmed ? 1 : 0,
+    ].join('|');
+  }
+  if (view.kind === 'resource') {
+    return [
+      'r',
+      view.resourceId,
+      view.title,
+      Math.floor(view.remaining),
+      Math.floor(view.maxAmount),
     ].join('|');
   }
   return [
@@ -719,102 +751,128 @@ export function renderSelectionPanel(view: SelectionPanelView): boolean {
     '[data-role="queue-label"]',
   ) as HTMLElement;
 
-  const hpPct =
-    view.maxHp > 0 ? Math.min(1, Math.max(0, view.hp / view.maxHp)) : 0;
-  hpFill.style.width = `${(hpPct * 100).toFixed(1)}%`;
-  hpFill.classList.toggle('is-low', hpPct < 0.35);
-  hpText.textContent = `${Math.ceil(view.hp)}/${Math.ceil(view.maxHp)}`;
   titleEl.textContent = view.title;
   flavorEl.textContent = view.flavor;
 
-  if (view.kind === 'units') {
+  if (view.kind === 'resource') {
+    const remPct =
+      view.maxAmount > 0
+        ? Math.min(1, Math.max(0, view.remaining / view.maxAmount))
+        : 0;
+    hpFill.style.width = `${(remPct * 100).toFixed(1)}%`;
+    hpFill.classList.toggle('is-low', remPct < 0.35);
+    hpText.textContent = `${Math.floor(view.remaining)}/${Math.floor(view.maxAmount)}`;
     portrait.classList.toggle('is-building', false);
-    portrait.classList.toggle('is-mixed', view.count > 1 && view.dmg == null);
-    portrait.style.setProperty('--kane-sel-accent', '#f0c75e');
+    portrait.classList.toggle('is-mixed', false);
+    portrait.style.setProperty(
+      '--kane-sel-accent',
+      view.resourceId === 'magic_crystals' ? '#7ec8ff' : '#f0c75e',
+    );
     if (structuralChange) {
-      const bits: string[] = [];
-      if (view.dmg != null) bits.push(`<span>ATK ${view.dmg}</span>`);
-      if (view.range != null) bits.push(`<span>RNG ${view.range}</span>`);
-      for (const t of view.tags) bits.push(`<span>${escapeHtml(t)}</span>`);
-      stats.innerHTML = bits.join('');
-      actions.innerHTML = `
-        <button type="button" data-act="stop">Stop</button>
-        <button type="button" data-act="attackMove" class="${view.attackMoveArmed ? 'is-armed' : ''}">${view.attackMoveArmed ? 'Atk · Armed' : 'Atk-move'}</button>
-      `;
+      const label =
+        view.resourceId === 'magic_crystals' ? 'Crystals left' : 'Gold left';
+      stats.innerHTML = `<span>${label}  ·  ${Math.floor(view.remaining)}</span>`;
+      actions.innerHTML = '';
     } else {
-      const am = actions.querySelector(
-        '[data-act="attackMove"]',
-      ) as HTMLButtonElement | null;
-      if (am) {
-        am.classList.toggle('is-armed', view.attackMoveArmed);
-        am.textContent = view.attackMoveArmed ? 'Atk · Armed' : 'Atk-move';
-      }
+      const label =
+        view.resourceId === 'magic_crystals' ? 'Crystals left' : 'Gold left';
+      stats.innerHTML = `<span>${label}  ·  ${Math.floor(view.remaining)}</span>`;
     }
     queue.hidden = true;
   } else {
-    portrait.classList.add('is-building');
-    portrait.classList.remove('is-mixed');
-    portrait.style.setProperty('--kane-sel-accent', '#3d7ea6');
-    if (structuralChange) {
-      stats.innerHTML = view.trains.length
-        ? '<span>Production</span>'
-        : '<span>No production</span>';
-      const rallyBtn = view.hasRally
-        ? `<button type="button" class="is-rally${view.rallyArmed ? ' is-armed' : ''}" data-act="rally">${view.rallyArmed ? 'Rally · Tap map' : 'Set rally'}</button>`
-        : '';
-      const cancelBtn =
-        view.queue.length > 0
-          ? `<button type="button" class="is-cancel" data-act="cancelQueue" title="Cancel last queued unit (full refund)">Cancel last</button>`
-          : '';
-      actions.innerHTML =
-        rallyBtn +
-        cancelBtn +
-        view.trains.map(trainButtonHtml).join('');
-    } else {
-      for (const t of view.trains) {
-        const btn = actions.querySelector(
-          `button[data-type-id="${t.typeId}"]`,
-        ) as HTMLButtonElement | null;
-        if (btn) applyTrainAffordability(btn, t);
-      }
-      const rally = actions.querySelector(
-        '[data-act="rally"]',
-      ) as HTMLButtonElement | null;
-      if (rally) {
-        rally.classList.toggle('is-armed', view.rallyArmed);
-        rally.textContent = view.rallyArmed ? 'Rally · Tap map' : 'Set rally';
-      }
-    }
+    const hpPct =
+      view.maxHp > 0 ? Math.min(1, Math.max(0, view.hp / view.maxHp)) : 0;
+    hpFill.style.width = `${(hpPct * 100).toFixed(1)}%`;
+    hpFill.classList.toggle('is-low', hpPct < 0.35);
+    hpText.textContent = `${Math.ceil(view.hp)}/${Math.ceil(view.maxHp)}`;
 
-    if (view.trains.length === 0) {
-      queue.hidden = true;
-    } else {
-      queue.hidden = false;
-      const idle = view.queue.length === 0;
-      queue.classList.toggle('is-idle', idle);
-      queueFill.style.width = idle
-        ? '0%'
-        : `${(view.progressPct * 100).toFixed(1)}%`;
+    if (view.kind === 'units') {
+      portrait.classList.toggle('is-building', false);
+      portrait.classList.toggle('is-mixed', view.count > 1 && view.dmg == null);
+      portrait.style.setProperty('--kane-sel-accent', '#f0c75e');
       if (structuralChange) {
-        if (idle) {
-          queueIcons.innerHTML = '';
-        } else {
-          const shown = view.queue.slice(0, 6);
-          const overflow = view.queue.length - shown.length;
-          queueIcons.innerHTML =
-            shown
-              .map((id, i) => {
-                const u = getUnitType(id);
-                const label = u.name.slice(0, 2).toUpperCase();
-                return `<button type="button" class="kane-sel-qicon${i === 0 ? ' is-active' : ''}" data-act="cancelQueue" data-queue-index="${i}" title="Cancel ${escapeHtml(u.name)} (refund)">${label}<span class="kane-sel-qnum">${i + 1}</span></button>`;
-              })
-              .join('') +
-            (overflow > 0
-              ? `<span class="kane-sel-qicon" title="+${overflow} more" style="cursor:default">+${overflow}</span>`
-              : '');
+        const bits: string[] = [];
+        if (view.dmg != null) bits.push(`<span>ATK ${view.dmg}</span>`);
+        if (view.range != null) bits.push(`<span>RNG ${view.range}</span>`);
+        for (const t of view.tags) bits.push(`<span>${escapeHtml(t)}</span>`);
+        stats.innerHTML = bits.join('');
+        actions.innerHTML = `
+        <button type="button" data-act="stop">Stop</button>
+        <button type="button" data-act="attackMove" class="${view.attackMoveArmed ? 'is-armed' : ''}">${view.attackMoveArmed ? 'Atk · Armed' : 'Atk-move'}</button>
+      `;
+      } else {
+        const am = actions.querySelector(
+          '[data-act="attackMove"]',
+        ) as HTMLButtonElement | null;
+        if (am) {
+          am.classList.toggle('is-armed', view.attackMoveArmed);
+          am.textContent = view.attackMoveArmed ? 'Atk · Armed' : 'Atk-move';
         }
       }
-      queueLabel.textContent = queueLabelText(view);
+      queue.hidden = true;
+    } else {
+      portrait.classList.add('is-building');
+      portrait.classList.remove('is-mixed');
+      portrait.style.setProperty('--kane-sel-accent', '#3d7ea6');
+      if (structuralChange) {
+        stats.innerHTML = view.trains.length
+          ? '<span>Production</span>'
+          : '<span>No production</span>';
+        const rallyBtn = view.hasRally
+          ? `<button type="button" class="is-rally${view.rallyArmed ? ' is-armed' : ''}" data-act="rally">${view.rallyArmed ? 'Rally · Tap map' : 'Set rally'}</button>`
+          : '';
+        const cancelBtn =
+          view.queue.length > 0
+            ? `<button type="button" class="is-cancel" data-act="cancelQueue" title="Cancel last queued unit (full refund)">Cancel last</button>`
+            : '';
+        actions.innerHTML =
+          rallyBtn + cancelBtn + view.trains.map(trainButtonHtml).join('');
+      } else {
+        for (const t of view.trains) {
+          const btn = actions.querySelector(
+            `button[data-type-id="${t.typeId}"]`,
+          ) as HTMLButtonElement | null;
+          if (btn) applyTrainAffordability(btn, t);
+        }
+        const rally = actions.querySelector(
+          '[data-act="rally"]',
+        ) as HTMLButtonElement | null;
+        if (rally) {
+          rally.classList.toggle('is-armed', view.rallyArmed);
+          rally.textContent = view.rallyArmed ? 'Rally · Tap map' : 'Set rally';
+        }
+      }
+
+      if (view.trains.length === 0) {
+        queue.hidden = true;
+      } else {
+        queue.hidden = false;
+        const idle = view.queue.length === 0;
+        queue.classList.toggle('is-idle', idle);
+        queueFill.style.width = idle
+          ? '0%'
+          : `${(view.progressPct * 100).toFixed(1)}%`;
+        if (structuralChange) {
+          if (idle) {
+            queueIcons.innerHTML = '';
+          } else {
+            const shown = view.queue.slice(0, 6);
+            const overflow = view.queue.length - shown.length;
+            queueIcons.innerHTML =
+              shown
+                .map((id, i) => {
+                  const u = getUnitType(id);
+                  const label = u.name.slice(0, 2).toUpperCase();
+                  return `<button type="button" class="kane-sel-qicon${i === 0 ? ' is-active' : ''}" data-act="cancelQueue" data-queue-index="${i}" title="Cancel ${escapeHtml(u.name)} (refund)">${label}<span class="kane-sel-qnum">${i + 1}</span></button>`;
+                })
+                .join('') +
+              (overflow > 0
+                ? `<span class="kane-sel-qicon" title="+${overflow} more" style="cursor:default">+${overflow}</span>`
+                : '');
+          }
+        }
+        queueLabel.textContent = queueLabelText(view);
+      }
     }
   }
 

@@ -119,6 +119,7 @@ import {
   tickBattlefield,
   type BattlefieldBuilding,
   type BattlefieldWorld,
+  type ResourceNode,
 } from '../../gameplay/battlefield/battlefieldWorld';
 import {
   enemyRevealed,
@@ -232,6 +233,8 @@ export class BattlefieldScene extends Phaser.Scene {
   private ghostPos = { x: 0, y: 0 };
   private ghostValid = false;
   private selectedBuilding: BattlefieldBuilding | null = null;
+  /** Inspected map resource node (remaining Gold / Crystals). */
+  private selectedNode: ResourceNode | null = null;
   private ai!: AiState;
   private matchResult: MatchResult = 'ongoing';
   /** Active match time only — does not advance while paused. */
@@ -608,6 +611,7 @@ export class BattlefieldScene extends Phaser.Scene {
   private clearBuildingSelection(): void {
     for (const b of this.world.buildings) b.selected = false;
     this.selectedBuilding = null;
+    this.selectedNode = null;
     this.clearRallyMode();
   }
 
@@ -810,9 +814,9 @@ export class BattlefieldScene extends Phaser.Scene {
           const n = selectAllVisibleSameType(this.world, hit.typeId);
           if (n > 0) playSfx('select');
           this.lastSelectTap.t = 0;
-        } else {
+        } else if (hit) {
           if (selectAt(this.world, wp.x, wp.y, additive)) playSfx('select');
-          if (hit && !additive) {
+          if (!additive) {
             this.lastSelectTap = {
               t: this.time.now,
               unitId: hit.id,
@@ -820,6 +824,18 @@ export class BattlefieldScene extends Phaser.Scene {
               sy: pointer.y,
             };
           } else {
+            this.lastSelectTap.t = 0;
+          }
+        } else {
+          // Empty ground — inspect a resource node (remaining Gold / Crystals).
+          const node = findNodeAt(this.world, wp.x, wp.y);
+          if (node && !additive && isExplored(this.world.fog, node.x, node.y)) {
+            clearSelection(this.world);
+            this.selectedNode = node;
+            playSfx('select');
+            this.lastSelectTap.t = 0;
+          } else {
+            if (selectAt(this.world, wp.x, wp.y, additive)) playSfx('select');
             this.lastSelectTap.t = 0;
           }
         }
@@ -1012,6 +1028,9 @@ export class BattlefieldScene extends Phaser.Scene {
     ) {
       this.selectedBuilding = null;
     }
+    if (this.selectedNode && this.selectedNode.remaining <= 0) {
+      this.selectedNode = null;
+    }
     const cam = this.cameras.main;
     this.viewCull = viewBoundsFromCamera(
       cam.scrollX,
@@ -1126,6 +1145,9 @@ export class BattlefieldScene extends Phaser.Scene {
     const friends = livingByTeam(this.world, 'player');
     const foes = livingByTeam(this.world, 'enemy');
     const b = this.selectedBuilding;
+    // Units / buildings take priority over a previously inspected node.
+    const node =
+      n > 0 || b ? null : this.selectedNode;
 
     const selView = buildSelectionView(
       this.world,
@@ -1133,6 +1155,7 @@ export class BattlefieldScene extends Phaser.Scene {
       sel,
       this.mode === 'attackMove',
       this.mode === 'rally',
+      node,
     );
     const panelOpen = renderSelectionPanel(selView);
     const inset = selectionPanelInsetPx(panelOpen);
@@ -1145,6 +1168,10 @@ export class BattlefieldScene extends Phaser.Scene {
       status = `${b.name} · tap map to set rally · Esc cancel`;
     } else if (b) {
       status = `${b.name} selected · Train / Set rally below`;
+    } else if (node) {
+      const label =
+        node.resourceId === 'magic_crystals' ? 'Crystals' : 'Gold';
+      status = `${label} node · ${Math.floor(node.remaining)} remaining`;
     } else if (n === 0) {
       status = `Alive ${friends} vs ${foes}  ·  Select a unit or building`;
     } else if (n === 1) {
@@ -1239,6 +1266,11 @@ export class BattlefieldScene extends Phaser.Scene {
       if (n.remaining <= 0) continue;
       if (view && !inView(view, n.x, n.y)) continue;
       if (!isExplored(this.world.fog, n.x, n.y)) continue;
+      const inspected = this.selectedNode?.id === n.id;
+      if (inspected) {
+        g.lineStyle(2.5, n.resourceId === 'magic_crystals' ? 0x7ec8ff : 0xf0c75e, 0.95);
+        g.strokeCircle(n.x, n.y, n.radius + 8);
+      }
       drawResourceNodeSilhouette(g, {
         x: n.x,
         y: n.y,
