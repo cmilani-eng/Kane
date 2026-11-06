@@ -6,7 +6,7 @@
 import Phaser from 'phaser';
 import { BRAND } from '../../config/brand';
 import { loadMatchPrefs } from '../../database/matchPrefs';
-import { mapCopy, t } from '../../i18n';
+import { difficultyCopy, mapCopy, t } from '../../i18n';
 import { getLobbyStub } from '../../networking/lobbySingleton';
 import type { LobbyStatus } from '../../networking/lobbyStub';
 import { playSfx } from '../audio/sfx';
@@ -28,6 +28,15 @@ export function lobbyStatusLine(status: LobbyStatus, code: string | null): strin
 export function lobbyMapTipLine(): string {
   const map = mapCopy(loadMatchPrefs().mapId);
   return t('menu.mapTip', { label: map.label, blurb: map.blurb });
+}
+
+/** Map · difficulty — same shape as pause.setup for rematch context. */
+export function lobbySetupLine(): string {
+  const prefs = loadMatchPrefs();
+  return t('pause.setup', {
+    map: mapCopy(prefs.mapId).label,
+    difficulty: difficultyCopy(prefs.difficulty).label,
+  });
 }
 
 export function showLobbyPanel(scene: Phaser.Scene, onClose: () => void): void {
@@ -87,12 +96,13 @@ export function showLobbyPanel(scene: Phaser.Scene, onClose: () => void): void {
     .setDepth(302);
 
   const mapTip = scene.add
-    .text(cx, top + 108, lobbyMapTipLine(), {
+    .text(cx, top + 106, `${lobbySetupLine()}\n${lobbyMapTipLine()}`, {
       fontFamily: 'system-ui, sans-serif',
       fontSize: '12px',
       color: '#a8c8c0',
       align: 'center',
       wordWrap: { width: panelW - 40 },
+      lineSpacing: 4,
     })
     .setOrigin(0.5)
     .setDepth(302);
