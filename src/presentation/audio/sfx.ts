@@ -1,7 +1,15 @@
 /**
  * Presentation — lightweight SFX placeholders (Web Audio beeps).
  * No asset files / no secrets. Mute-safe; fails quietly if AudioContext blocked.
+ * Ambient BGM shares mute via `audioContext`.
  */
+import {
+  getAudioContext,
+  isSfxMuted,
+  setSfxMuted,
+} from './audioContext';
+
+export { getAudioContext, isSfxMuted, setSfxMuted };
 
 export type SfxKey =
   | 'select'
@@ -48,44 +56,16 @@ const TONES: Record<SfxKey, Tone[]> = {
   defeat: [{ freq: 220, dur: 0.2, type: 'sawtooth', gain: 0.04 }],
 };
 
-let ctx: AudioContext | null = null;
-let muted = false;
 let lastPlayMs = 0;
-
-function audio(): AudioContext | null {
-  if (typeof window === 'undefined') return null;
-  try {
-    if (!ctx) {
-      const AC =
-        window.AudioContext ||
-        (window as unknown as { webkitAudioContext?: typeof AudioContext })
-          .webkitAudioContext;
-      if (!AC) return null;
-      ctx = new AC();
-    }
-    if (ctx.state === 'suspended') void ctx.resume();
-    return ctx;
-  } catch {
-    return null;
-  }
-}
-
-export function setSfxMuted(value: boolean): void {
-  muted = value;
-}
-
-export function isSfxMuted(): boolean {
-  return muted;
-}
 
 /** Soft rate-limit so spam clicks don’t stack oscillators. */
 export function playSfx(key: SfxKey): void {
-  if (muted) return;
+  if (isSfxMuted()) return;
   const now = performance.now();
   if (now - lastPlayMs < 40) return;
   lastPlayMs = now;
 
-  const ac = audio();
+  const ac = getAudioContext();
   if (!ac) return;
   const tones = TONES[key];
   let t0 = ac.currentTime;
