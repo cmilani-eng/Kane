@@ -32,7 +32,10 @@ function matchupLine(id: SpeciesId): string {
     weak: speciesName(tip.weakVs),
   });
 }
-import { walletOf } from '../../gameplay/battlefield/battlefieldEconomy';
+import {
+  GATHER,
+  walletOf,
+} from '../../gameplay/battlefield/battlefieldEconomy';
 import { RAGE } from '../../gameplay/battlefield/battlefieldRage';
 
 export type SelectionAbilityView = {
@@ -178,6 +181,8 @@ export type SelectionPanelView =
       remaining: number;
       maxAmount: number;
       resourceId: 'gold' | 'magic_crystals';
+      /** Gather amount-per-trip tip (and active count when workers are on this node). */
+      gatherTip: string;
     };
 
 let handlers: SelectionPanelHandlers | null = null;
@@ -895,6 +900,18 @@ export function buildSelectionView(
 
   if (selectedNode && selectedNode.remaining > 0) {
     const def = RESOURCES[selectedNode.resourceId];
+    const gathering = world.units.filter(
+      (u) =>
+        u.team === 'player' &&
+        u.hp > 0 &&
+        u.canGather &&
+        u.gatherNodeId === selectedNode.id,
+    ).length;
+    const perTrip = GATHER.amountPerTrip;
+    const gatherTip =
+      gathering > 0
+        ? t('sel.gatherTipActive', { count: gathering, n: perTrip })
+        : t('sel.gatherTip', { n: perTrip });
     return {
       kind: 'resource',
       title: def.label,
@@ -902,6 +919,7 @@ export function buildSelectionView(
       remaining: selectedNode.remaining,
       maxAmount: selectedNode.maxAmount,
       resourceId: selectedNode.resourceId,
+      gatherTip,
     };
   }
 
@@ -1236,6 +1254,7 @@ function structureSignature(view: SelectionPanelView): string {
       view.title,
       Math.floor(view.remaining),
       Math.floor(view.maxAmount),
+      view.gatherTip,
     ].join('|');
   }
   return [
@@ -1595,7 +1614,8 @@ export function renderSelectionPanel(view: SelectionPanelView): boolean {
       view.resourceId === 'magic_crystals' ? '#7ec8ff' : '#f0c75e',
     );
     meterRoot.hidden = true;
-    controlHintEl.hidden = true;
+    controlHintEl.hidden = false;
+    controlHintEl.textContent = view.gatherTip;
     if (structuralChange) {
       const label =
         view.resourceId === 'magic_crystals'
