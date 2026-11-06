@@ -59,6 +59,8 @@ export class BattlefieldHud {
   readonly heroLine!: Phaser.GameObjects.Text;
   /** CORE fragment ownership + capture/contest progress. */
   readonly coreLine!: Phaser.GameObjects.Text;
+  /** Place-mode gold/crystal cost strip (hidden when not placing). */
+  readonly placeCostStrip!: Phaser.GameObjects.Text;
   readonly hint!: Phaser.GameObjects.Text;
   readonly menuBtn!: Phaser.GameObjects.Text;
   readonly muteBtn!: Phaser.GameObjects.Text;
@@ -248,6 +250,20 @@ export class BattlefieldHud {
       })
       .setScrollFactor(0)
       .setDepth(100);
+
+    this.placeCostStrip = scene.add
+      .text(scene.scale.width / 2, 52, '', {
+        fontFamily: 'system-ui, sans-serif',
+        fontSize: '14px',
+        color: '#fff8e8',
+        backgroundColor: '#122033ee',
+        padding: { x: 14, y: 8 },
+        align: 'center',
+      })
+      .setOrigin(0.5, 0)
+      .setScrollFactor(0)
+      .setDepth(105)
+      .setVisible(false);
 
     this.hint = scene.add
       .text(0, 0, '', {
@@ -523,6 +539,7 @@ export class BattlefieldHud {
       this.status,
       this.heroLine,
       this.coreLine,
+      this.placeCostStrip,
       this.hint,
       this.menuBtn,
       this.muteBtn,
@@ -567,6 +584,9 @@ export class BattlefieldHud {
     this.timerText
       .setPosition(w / 2, pad)
       .setFontSize(this.narrow ? '14px' : '16px');
+    this.placeCostStrip
+      .setPosition(w / 2, pad + (this.narrow ? 34 : 40))
+      .setFontSize(this.narrow ? '12px' : '14px');
 
     const resY = pad + (this.narrow ? 50 : 60);
     this.resourcePanel.setPosition(pad, resY);
@@ -736,6 +756,32 @@ export class BattlefieldHud {
     this.timerText.setText(formatMatchClock(elapsedMs));
   }
 
+  /**
+   * Place-mode cost strip under the match clock.
+   * Pass null to hide when not placing.
+   */
+  setPlacementCost(
+    info: {
+      name: string;
+      gold: number;
+      crystals: number;
+      canPay: boolean;
+    } | null,
+  ): void {
+    if (!info) {
+      this.placeCostStrip.setVisible(false).setText('');
+      return;
+    }
+    const crystalBit =
+      info.crystals > 0 ? `  ·  Crystal ${info.crystals}` : '';
+    const payBit = info.canPay ? '' : '  ·  Need resources';
+    this.placeCostStrip
+      .setVisible(true)
+      .setText(`Place ${info.name}  ·  Gold ${info.gold}${crystalBit}${payBit}`)
+      .setColor(info.canPay ? '#fff8e8' : '#ffb8b8')
+      .setBackgroundColor(info.canPay ? '#122033ee' : '#2a1818ee');
+  }
+
   private applyAttackMoveBtnStyle(): void {
     this.attackMoveBtn.setStyle({
       backgroundColor: this.attackMoveArmed ? '#8a3030' : '#2a3545',
@@ -884,14 +930,19 @@ export class BattlefieldHud {
   controlHint(
     placing: boolean,
     placeName?: string,
-    placeCost?: number,
+    placeCostGold?: number,
     attackMove = false,
+    placeCostCrystals = 0,
   ): string {
     if (attackMove) {
       return 'Attack-move: click ground to march & fight · Esc/RMB cancel';
     }
     if (placing) {
-      return `Place ${placeName ?? 'building'} (${placeCost ?? 0}g) · tap map · B cycle · Esc cancel`;
+      const g = placeCostGold ?? 0;
+      const c = placeCostCrystals;
+      const cost =
+        c > 0 ? `${g}g / ${c}c` : `${g}g`;
+      return `Place ${placeName ?? 'building'} (${cost}) · tap map · B cycle · Esc cancel`;
     }
     if (this.narrow) {
       return 'Help · Home · S stop · A atk-move · Army · pads H/Q/W/E';
