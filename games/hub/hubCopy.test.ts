@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it } from 'vitest';
 import { resetLocaleForTests, setLocale } from '../../src/i18n';
-import { hubBlurb, hubChrome } from './hubCopy';
+import { hubBlurb, hubChrome, hubFooterYear } from './hubCopy';
 
 function memoryStorage(): Storage {
   const data = new Map<string, string>();
@@ -40,9 +40,15 @@ describe('hub copy', () => {
     expect(chrome.live).toBe('En vivo');
     expect(chrome.experimental).toBe('Prelanzamiento');
     expect(chrome.privacy).toBe('Privacidad');
+    expect(chrome.year).toMatch(/^© \d{4}$/);
     expect(hubBlurb('kane', 'English fallback')).toContain('especie');
     expect(hubBlurb('kane', 'English fallback')).not.toContain('Pick a species');
     expect(hubBlurb('blob-evolution', 'English fallback')).toContain('Ángel');
     expect(hubBlurb('later', 'Keep this')).toBe('Keep this');
+  });
+
+  it('formats the hub footer year from the calendar year', () => {
+    expect(hubFooterYear(2026)).toBe('© 2026');
+    expect(hubFooterYear(2031)).toBe('© 2031');
   });
 });

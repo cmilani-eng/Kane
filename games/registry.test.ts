@@ -146,6 +146,9 @@ describe('games registry', () => {
     const hub = readFileSync(resolve(gamesDir, 'index.html'), 'utf8');
     expect(hub).toContain('id="hub-privacy"');
     expect(hub).toContain('id="hub-terms"');
+    expect(hub).toContain('id="hub-year"');
+    const hubTs = readFileSync(resolve(gamesDir, 'hub/hub.ts'), 'utf8');
+    expect(hubTs).toContain("text('hub-year')");
   });
 
 
