@@ -84,6 +84,8 @@ export class BattlefieldHud {
   readonly idleMilPingBtn!: Phaser.GameObjects.Text;
   /** Critical under-attack chip (Keep/hero) — tap to jump camera. */
   readonly attackPingBtn!: Phaser.GameObjects.Text;
+  /** Brief fog-scout sector label (NW…SE). */
+  readonly scoutSectorBtn!: Phaser.GameObjects.Text;
   /** Recenter camera on player keep / hall. */
   readonly baseBtn!: Phaser.GameObjects.Text;
   /** Mobile/desktop open in-match pause overlay. */
@@ -509,6 +511,18 @@ export class BattlefieldHud {
         this.onUnderAttackJump?.(a.x, a.y);
       });
 
+    this.scoutSectorBtn = scene.add
+      .text(12, 168, '', {
+        fontFamily: 'system-ui, sans-serif',
+        fontSize: '12px',
+        color: '#c8f0ff',
+        backgroundColor: '#1a3040cc',
+        padding: { x: 10, y: 6 },
+      })
+      .setScrollFactor(0)
+      .setDepth(101)
+      .setVisible(false);
+
     this.buildAbilityPad(accent);
     this.layout();
     scene.scale.on('resize', () => this.layout());
@@ -606,6 +620,7 @@ export class BattlefieldHud {
       this.idlePingBtn,
       this.idleMilPingBtn,
       this.attackPingBtn,
+      this.scoutSectorBtn,
       this.goldDot,
       this.crystalDot,
       this.supplyDot,
@@ -691,8 +706,13 @@ export class BattlefieldHud {
     this.attackPingBtn
       .setPosition(pad, belowRes + idleMilOffset)
       .setFontSize(this.narrow ? '11px' : '12px');
-    const alertOffset =
+    const attackOffset =
       idleMilOffset + (this.attackPingBtn.visible ? 28 : 0);
+    this.scoutSectorBtn
+      .setPosition(pad, belowRes + attackOffset)
+      .setFontSize(this.narrow ? '11px' : '12px');
+    const alertOffset =
+      attackOffset + (this.scoutSectorBtn.visible ? 28 : 0);
     this.status
       .setPosition(pad, belowRes + alertOffset)
       .setStyle({ wordWrap: { width: Math.min(520, w - pad * 2) } });
@@ -1013,6 +1033,19 @@ export class BattlefieldHud {
       this.attackPingBtn.setVisible(false).setAlpha(1);
     }
     if (wasAttackVisible !== this.attackPingBtn.visible) this.layout();
+
+    const hint = this.world.scoutSectorHint;
+    const wasScoutVisible = this.scoutSectorBtn.visible;
+    if (hint && hint.lifeMs > 0) {
+      const fade = Math.min(1, hint.lifeMs / 400);
+      this.scoutSectorBtn
+        .setVisible(true)
+        .setAlpha(0.55 + 0.45 * fade)
+        .setText(t('hud.scoutSector', { sector: hint.sector }));
+    } else {
+      this.scoutSectorBtn.setVisible(false).setAlpha(1);
+    }
+    if (wasScoutVisible !== this.scoutSectorBtn.visible) this.layout();
 
     // Brutes: live Rage count on match line
     this.matchLine.setText(this.matchupLine());
