@@ -3,12 +3,14 @@ import { mapCopy, t } from '../../i18n';
 import { formatMatchClock } from './matchClock';
 
 describe('end screen map + duration meta', () => {
-  it('formats map name and mm:ss duration for the panel line', () => {
+  it('formats map, difficulty, and mm:ss duration for the panel line', () => {
     const map = mapCopy('ridge').label;
     const clock = formatMatchClock(125_000);
     expect(clock).toBe('2:05');
-    expect(t('end.meta', { map, clock })).toContain(map);
-    expect(t('end.meta', { map, clock })).toContain('2:05');
+    const line = t('end.meta', { map, difficulty: 'Hard', clock });
+    expect(line).toContain(map);
+    expect(line).toContain('Hard');
+    expect(line).toContain('2:05');
   });
 
   it('keeps minutes past 59 for long skirmishes', () => {
