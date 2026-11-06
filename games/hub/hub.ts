@@ -1,5 +1,13 @@
 import './hub.css';
+import {
+  applyDocumentLanguage,
+  getLocale,
+  LOCALE_CHOICES,
+  setLocale,
+  subscribeLocale,
+} from '../../src/i18n';
 import { GAMES, type GameEntry } from '../registry';
+import { hubBlurb, hubChrome } from './hubCopy';
 
 const PILL =
   'inline-block rounded-full px-[11px] py-1.5 text-xs font-extrabold uppercase tracking-[0.08em]';
@@ -11,7 +19,7 @@ function pill(text: string, tone: string): HTMLSpanElement {
   return el;
 }
 
-function gameCard(game: GameEntry): HTMLLIElement {
+function gameCard(game: GameEntry, playLabel: string, experimental: string): HTMLLIElement {
   const item = document.createElement('li');
   const link = document.createElement('a');
   link.className = [
@@ -25,7 +33,7 @@ function gameCard(game: GameEntry): HTMLLIElement {
   pills.className = 'flex flex-wrap justify-center gap-1.5';
   pills.append(pill(game.tagline, 'bg-pill-bg text-pill'));
   if (game.status === 'experimental') {
-    pills.append(pill('Experimental', 'bg-gold-bg text-gold'));
+    pills.append(pill(experimental, 'bg-gold-bg text-gold'));
   }
 
   const title = document.createElement('h2');
@@ -34,7 +42,7 @@ function gameCard(game: GameEntry): HTMLLIElement {
 
   const description = document.createElement('p');
   description.className = 'mt-2 mb-[18px] leading-normal text-muted';
-  description.textContent = game.description;
+  description.textContent = hubBlurb(game.id, game.description);
 
   const play = document.createElement('span');
   play.className = [
@@ -43,15 +51,53 @@ function gameCard(game: GameEntry): HTMLLIElement {
     'group-hover:-translate-y-px group-hover:brightness-108',
     'group-active:translate-y-0.5 group-active:shadow-key-pressed',
   ].join(' ');
-  play.textContent = 'Play';
+  play.textContent = playLabel;
 
   link.append(pills, title, description, play);
   item.append(link);
   return item;
 }
 
-const list = document.getElementById('game-list');
-if (!list) {
-  throw new Error('#game-list root missing');
+function renderLocale(root: HTMLElement): void {
+  const current = getLocale();
+  root.replaceChildren(
+    ...LOCALE_CHOICES.map((choice) => {
+      const button = document.createElement('button');
+      button.type = 'button';
+      button.textContent = choice.short;
+      button.setAttribute('aria-label', choice.label);
+      button.setAttribute('aria-pressed', String(choice.id === current));
+      button.className = [
+        'inline-flex min-h-12 min-w-12 items-center justify-center rounded-xl px-3 text-sm font-extrabold',
+        choice.id === current ? 'bg-gold text-ink-dark' : 'bg-white/10 text-ink',
+      ].join(' ');
+      button.addEventListener('click', () => setLocale(choice.id));
+      return button;
+    }),
+  );
 }
-list.append(...GAMES.map(gameCard));
+
+function text(id: string): HTMLElement {
+  const el = document.getElementById(id);
+  if (!el) throw new Error(`#${id} root missing`);
+  return el;
+}
+
+function render(): void {
+  applyDocumentLanguage();
+  const chrome = hubChrome();
+  document.title = `KANE · ${chrome.title}`;
+  document.querySelector('meta[name="description"]')?.setAttribute('content', chrome.meta);
+  text('hub-locale-label').textContent = chrome.language;
+  text('hub-title').textContent = chrome.title;
+  text('hub-subtitle').textContent = chrome.subtitle;
+  text('hub-privacy').textContent = chrome.privacy;
+  text('hub-terms').textContent = chrome.terms;
+  renderLocale(text('hub-locale'));
+  text('game-list').replaceChildren(
+    ...GAMES.map((game) => gameCard(game, chrome.play, chrome.experimental)),
+  );
+}
+
+render();
+subscribeLocale(render);
