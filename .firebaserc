@@ -1,12 +1,12 @@
 {
   "projects": {
-    "default": "kane-rts-stub"
+    "default": "kane-rts-game"
   },
   "targets": {
-    "kane-rts-stub": {
+    "kane-rts-game": {
       "hosting": {
         "kane-web": [
-          "kane-rts-stub"
+          "kane-rts-game"
         ]
       }
     }

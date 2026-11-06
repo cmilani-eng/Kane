@@ -8,7 +8,7 @@
 |-------|------|
 | Hosting target `kane-web` | `firebase.json` |
 | Preview channel stub meta | `hosting/preview-channel.stub.json` |
-| Project + hosting target map | `.firebaserc` → `kane-rts-stub` / `kane-web` |
+| Project + hosting target map | `.firebaserc` → `kane-rts-game` / `kane-web` |
 | Client preview constants | `src/firebase/hostingPreview.ts` |
 | RTDB rules draft (deny-by-default) | `database.rules.json` + `docs/rtdb-security-rules.md` |
 | Firestore rules draft | `firestore.rules` + `docs/firestore-security-rules.md` |
@@ -72,7 +72,7 @@ Emulator UI: `http://127.0.0.1:4000` · Auth `9099` · RTDB `9000` · Firestore 
 
 Workflow: `.github/workflows/deploy-hosting-dev.yml`  
 Trigger: **push to `dev`** (covers merging a PR into `dev`).  
-Steps: `npm ci` → `npm run build` → `firebase deploy --only hosting:kane-web` (project `kane-rts-stub`, target `kane-web`).
+Steps: `npm ci` → `npm run build` → `firebase deploy --only hosting:kane-web` (project `kane-rts-game`, target `kane-web`).
 
 Local Vite (`npm run dev`) stays the day-to-day playtest path. This pipeline only publishes the Vite `dist/` bundle to Hosting.
 
@@ -89,15 +89,15 @@ Local Vite (`npm run dev`) stays the day-to-day playtest path. This pipeline onl
 2. **GitHub → Settings → Secrets and variables → Actions → New repository secret**
    | Secret name | Value |
    |-------------|--------|
-   | `FIREBASE_SERVICE_ACCOUNT_KANE_RTS_STUB` | Full JSON key of a Google service account that can deploy Hosting to project `kane-rts-stub` |
+   | `FIREBASE_SERVICE_ACCOUNT_KANE_RTS_GAME` | Full JSON key of a Google service account that can deploy Hosting to project `kane-rts-game` |
 3. **Firebase / GCP IAM** for that service account (minimum):
-   - Role **Firebase Hosting Admin** (`roles/firebasehosting.admin`) on project `kane-rts-stub`, **or**
+   - Role **Firebase Hosting Admin** (`roles/firebasehosting.admin`) on project `kane-rts-game`, **or**
    - Broader **Firebase Admin** if you prefer one role for Hosting + related tools
    - The SA also needs permission to create/upload Hosting releases (Hosting Admin covers this)
-4. **Create the key** (Console → IAM → service account → Keys → Add key → JSON), paste the entire JSON into the GitHub secret. **Do not commit the JSON.**
+4. **Create the key** only if the secret is missing. `firebase init hosting:github` already created the service account `github-action-<id>@kane-rts-game.iam.gserviceaccount.com` (Firebase Hosting Admin, Cloud Functions Developer and others) and stored its key as this secret, so there is nothing to create or paste for a normal setup. Otherwise: Console → IAM → service account → Keys → Add key → JSON, and paste the entire JSON into the GitHub secret. **Do not commit the JSON.**
 5. Push or merge something into `dev` and confirm the **Deploy Hosting (dev)** Action succeeds.
 
-If the live Firebase project id is **not** `kane-rts-stub`, update `.firebaserc`, this workflow’s `--project` / secret name, and `.env.example` together before relying on CI.
+If the live Firebase project id is **not** `kane-rts-game`, update `.firebaserc`, this workflow’s `--project` / secret name, and `.env.example` together before relying on CI.
 
 Optional alternative (not used by the workflow): a CI token from `firebase login:ci` as `FIREBASE_TOKEN`. Prefer the service-account JSON + `google-github-actions/auth` path above.
 
