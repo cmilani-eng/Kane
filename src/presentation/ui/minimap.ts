@@ -1,6 +1,7 @@
 /**
  * Battlefield minimap — unit/building dots + click-to-pan.
  * Drawn with scrollFactor 0 for the HUD camera.
+ * Emphasizes camera frame, selection, and order pings (touch-friendly).
  */
 import Phaser from 'phaser';
 import { MAP } from '../../config/balance';
@@ -8,6 +9,7 @@ import {
   enemyRevealed,
   isExplored,
 } from '../../gameplay/battlefield/battlefieldFog';
+import { buildingCanRally } from '../../gameplay/battlefield/battlefieldRally';
 import { isIdleWorker } from '../../gameplay/battlefield/idleWorkers';
 import type { BattlefieldWorld } from '../../gameplay/battlefield/battlefieldWorld';
 import type { RtsCamera } from '../camera/rtsCamera';
@@ -26,6 +28,8 @@ export class Minimap {
   private mapY = 0;
   private mapW = 180;
   private mapH = 120;
+  /** Extra padding around the map for fat-finger pan. */
+  private hitPad = 10;
   private dragging = false;
   private pulseMs = 0;
   /** Extra lift when DOM selection panel is open. */
@@ -41,8 +45,8 @@ export class Minimap {
     this.cameraCtl = cameraCtl;
 
     this.frame = scene.add
-      .rectangle(0, 0, this.mapW + 8, this.mapH + 8, 0x0f1a2e, 0.88)
-      .setStrokeStyle(2, 0xf0c75e, 0.85)
+      .rectangle(0, 0, this.mapW + 8, this.mapH + 8, 0x0f1a2e, 0.9)
+      .setStrokeStyle(2, 0xf0c75e, 0.9)
       .setScrollFactor(0)
       .setDepth(110)
       .setOrigin(0, 0);
@@ -90,17 +94,23 @@ export class Minimap {
     const sw = this.scene.scale.width;
     const sh = this.scene.scale.height;
     const narrow = sw < 720;
-    this.mapW = narrow ? Math.min(140, sw * 0.36) : 180;
+    // Slightly larger on mobile for clarity + finger targets.
+    this.mapW = narrow ? Math.min(168, sw * 0.42) : 196;
     this.mapH = (this.mapW * MAP.height) / MAP.width;
+    this.hitPad = narrow ? 14 : 10;
     const pad = narrow ? 8 : 12;
     this.mapX = sw - pad - this.mapW;
     this.mapY =
       sh - pad - this.mapH - (narrow ? 70 : 78) - this.bottomInset;
 
     this.frame
-      .setSize(this.mapW + 8, this.mapH + 8)
-      .setPosition(this.mapX - 4, this.mapY - 4);
-    this.hit.setSize(this.mapW, this.mapH).setPosition(this.mapX, this.mapY);
+      .setSize(this.mapW + 10, this.mapH + 10)
+      .setPosition(this.mapX - 5, this.mapY - 5)
+      .setStrokeStyle(2.5, 0xf0c75e, 0.95);
+    // Fat-finger hit box extends beyond the painted map.
+    this.hit
+      .setSize(this.mapW + this.hitPad * 2, this.mapH + this.hitPad * 2)
+      .setPosition(this.mapX - this.hitPad, this.mapY - this.hitPad);
   }
 
   private panToPointer(p: Phaser.Input.Pointer): void {
@@ -133,6 +143,8 @@ export class Minimap {
     const sx = this.mapW / MAP.width;
     const sy = this.mapH / MAP.height;
     const fog = this.world.fog;
+    const selPulse = 0.55 + 0.35 * Math.sin(this.pulseMs / 220);
+    const orderPulse = 0.45 + 0.4 * Math.sin(this.pulseMs / 160);
 
     // Explored / visible terrain samples (coarse — cheap)
     const step = 80;
@@ -143,7 +155,12 @@ export class Minimap {
         const y = this.mapY + wy * sy;
         const vis = enemyRevealed(fog, wx, wy);
         g.fillStyle(vis ? 0x1a2a28 : 0x121a22, 1);
-        g.fillRect(x - step * sx * 0.5, y - step * sy * 0.5, step * sx + 1, step * sy + 1);
+        g.fillRect(
+          x - step * sx * 0.5,
+          y - step * sy * 0.5,
+          step * sx + 1,
+          step * sy + 1,
+        );
       }
     }
 
@@ -185,8 +202,25 @@ export class Minimap {
       const x = this.mapX + b.x * sx;
       const y = this.mapY + b.y * sy;
       const player = b.team === 'player';
+      const selected = !!b.selected;
+      if (selected) {
+        g.lineStyle(2, 0xfff8e8, selPulse);
+        g.strokeRect(x - 5, y - 5, 10, 10);
+      }
       g.fillStyle(player ? 0xf0c75e : 0xe87aa8, 1);
-      g.fillRect(x - 3, y - 3, 6, 6);
+      g.fillRect(x - (selected ? 4 : 3), y - (selected ? 4 : 3), selected ? 8 : 6, selected ? 8 : 6);
+
+      // Rally ping for selected production buildings
+      if (selected && player && buildingCanRally(b)) {
+        const rx = this.mapX + b.rallyX * sx;
+        const ry = this.mapY + b.rallyY * sy;
+        g.lineStyle(1.5, 0xf0c75e, orderPulse);
+        g.strokeCircle(rx, ry, 5);
+        g.fillStyle(0xf0c75e, 0.85);
+        g.fillCircle(rx, ry, 2.2);
+        g.lineStyle(1, 0xf0c75e, 0.35);
+        g.lineBetween(x, y, rx, ry);
+      }
     }
 
     // Units
@@ -198,15 +232,41 @@ export class Minimap {
       const y = this.mapY + u.y * sy;
       const player = u.team === 'player';
       if (isIdleWorker(u)) {
-        // Soft attention ring — yellow, slow pulse (not spammy)
         g.lineStyle(1.5, u.carrying > 0 ? 0xffc857 : 0xf0c75e, idlePulse);
         g.strokeCircle(x, y, 5.5);
       }
-      g.fillStyle(player ? 0x5dce6a : 0xe85a5a, 1);
-      g.fillCircle(x, y, u.selected ? 3.2 : 2.2);
+      if (u.selected) {
+        // Selection ring — high-contrast for mobile glance
+        g.lineStyle(2, 0xfff8e8, selPulse);
+        g.strokeCircle(x, y, 6.5);
+        g.fillStyle(player ? 0x8aee95 : 0xff8a8a, 1);
+        g.fillCircle(x, y, 3.8);
+      } else {
+        g.fillStyle(player ? 0x5dce6a : 0xe85a5a, 1);
+        g.fillCircle(x, y, 2.4);
+      }
     }
 
-    // Camera viewport
+    // Order pings — move / attack-move waypoints
+    for (const m of this.world.waypointMarkers ?? []) {
+      const x = this.mapX + m.x * sx;
+      const y = this.mapY + m.y * sy;
+      const atk = m.kind === 'attackMove';
+      const col = atk ? 0xe85a5a : 0xf0c75e;
+      const a = m.fading
+        ? Math.max(0.15, m.lifeMs / m.maxLifeMs) * 0.7
+        : orderPulse;
+      g.lineStyle(2, col, a);
+      g.strokeCircle(x, y, atk ? 7 : 6);
+      g.fillStyle(col, a * 0.85);
+      g.fillCircle(x, y, 2.4);
+      if (atk) {
+        // Small diamond tip for attack-move
+        g.fillTriangle(x, y - 8, x + 3.5, y - 3, x - 3.5, y - 3);
+      }
+    }
+
+    // Camera viewport — gold frame + soft fill so it reads at a glance
     const cam = this.scene.cameras.main;
     const vw = cam.width / cam.zoom;
     const vh = cam.height / cam.zoom;
@@ -214,7 +274,11 @@ export class Minimap {
     const vy = this.mapY + cam.scrollY * sy;
     const vwM = vw * sx;
     const vhM = vh * sy;
-    g.lineStyle(1, 0xffffff, 0.9);
+    g.fillStyle(0xf0c75e, 0.08);
+    g.fillRect(vx, vy, vwM, vhM);
+    g.lineStyle(2.5, 0xf0c75e, 0.95);
     g.strokeRect(vx, vy, vwM, vhM);
+    g.lineStyle(1, 0xfff8e8, 0.55);
+    g.strokeRect(vx + 1.5, vy + 1.5, Math.max(0, vwM - 3), Math.max(0, vhM - 3));
   }
 }
