@@ -66,5 +66,23 @@ describe('controls help copy', () => {
     expect(copy.body).toContain('Shift+Tab');
     expect(copy.body).toMatch(/all → one type → all|todos →/);
   });
+
+  it('lists the minimap attention-ping tip under touch controls', () => {
+    setLocale('en-GB');
+    const en = controlsHelpCopy('nobles');
+    expect(en.body).toContain('Attention mark');
+    expect(en.body).toContain('Hold minimap');
+    expect(en.body).toContain('Double-tap');
+
+    setLocale('pt-BR');
+    const pt = controlsHelpCopy('nobles');
+    expect(pt.body).toContain('Marca de atenção');
+    expect(pt.body).toContain('Segure o minimapa');
+
+    setLocale('es');
+    const es = controlsHelpCopy('nobles');
+    expect(es.body).toContain('Marca de atención');
+    expect(es.body).toContain('Mantén el minimapa');
+  });
 });
 
