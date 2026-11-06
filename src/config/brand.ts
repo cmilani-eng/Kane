@@ -11,3 +11,8 @@ export const BRAND = {
 export function brandDocumentTitle(): string {
   return `${BRAND.name} · ${BRAND.tagline}`;
 }
+
+/** Short meta description for the Kane entry page. */
+export function brandMetaDescription(): string {
+  return `${BRAND.name} · ${BRAND.tagline} — ${BRAND.genre}`;
+}

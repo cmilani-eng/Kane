@@ -62,6 +62,7 @@ This doc is the honest gate before any public preview URL.
 | Blob document title | **OK** — Blob tab is `Blob Evolution 3D · Eat. Evolve. Ascend.` | `games/blob-evolution/index.html` |
 | Legal document titles | **OK** — Privacy / Terms tabs are `KANE · Privacy` / `KANE · Terms` | `games/privacy.html`, `games/terms.html` |
 | Hub meta description | **OK** — picker `#hub-meta` is a short localized blurb | `hub.meta`, `games/index.html` |
+| Kane meta description | **OK** — play `#kane-meta` is name · tagline — genre | `brandMetaDescription`, `games/kane/index.html` |
 
 ## Remaining gaps (honest)
 
