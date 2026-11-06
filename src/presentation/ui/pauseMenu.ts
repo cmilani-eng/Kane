@@ -277,12 +277,25 @@ export class PauseMenu {
       .setScrollFactor(0)
       .setDepth(222)
       .setInteractive({ useHandCursor: true });
-    btn.on('pointerover', () =>
-      btn.setStyle({ backgroundColor: danger ? '#7a4040' : '#3a5565' }),
+    btn.enableFilters();
+    const glow = btn.filters?.internal.addGlow(
+      danger ? 0xe87a7a : 0xf0c75e,
+      3,
+      0,
+      1,
+      false,
+      4,
+      6,
     );
-    btn.on('pointerout', () =>
-      btn.setStyle({ backgroundColor: danger ? '#5a3030' : '#2a4050' }),
-    );
+    if (glow) glow.active = false;
+    btn.on('pointerover', () => {
+      btn.setStyle({ backgroundColor: danger ? '#7a4040' : '#3a5565' });
+      if (glow) glow.active = true;
+    });
+    btn.on('pointerout', () => {
+      btn.setStyle({ backgroundColor: danger ? '#5a3030' : '#2a4050' });
+      if (glow) glow.active = false;
+    });
     btn.on('pointerup', onClick);
     return btn;
   }

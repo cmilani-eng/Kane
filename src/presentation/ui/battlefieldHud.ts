@@ -610,6 +610,17 @@ export class BattlefieldHud {
     return list;
   }
 
+  /** Gold, crystals, and supply are drawn by the Tailwind stock strip. */
+  hidePhaserStock(): void {
+    this.resourcePanel.setVisible(false);
+    this.goldDot.setVisible(false);
+    this.crystalDot.setVisible(false);
+    this.supplyDot.setVisible(false);
+    this.goldText.setVisible(false);
+    this.crystalText.setVisible(false);
+    this.supplyText.setVisible(false);
+  }
+
   /** Lift bottom chrome when the DOM selection panel is open. */
   setBottomInset(px: number): void {
     const next = Math.max(0, Math.floor(px));
