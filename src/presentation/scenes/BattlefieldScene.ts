@@ -324,6 +324,12 @@ export class BattlefieldScene extends Phaser.Scene {
         this.cameraCtl.centerOn(result.focus.x, result.focus.y);
       }
     };
+    this.hud.onIdleMilitary = (result) => {
+      this.clearBuildingSelection();
+      if (result.focus) {
+        this.cameraCtl.centerOn(result.focus.x, result.focus.y);
+      }
+    };
     this.hud.onUnderAttackJump = (x, y) => {
       this.cameraCtl.centerOn(x, y);
     };

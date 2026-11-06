@@ -43,7 +43,7 @@ const TIPS: Record<Exclude<TutorialStepId, 'done'>, string> = {
   attack:
     'Select fighters, then right-click an enemy — or arm A · Atk for attack-move. Stop clears orders.',
   hud:
-    'Handy HUD: Pause / Esc, Home · Base recenters your keep, Army selects combat units, Idle cycles workers.',
+    'Handy HUD: Pause / Esc, Home · Base recenters your keep, Army selects combat, Idle / Idle army cycle standers.',
   heroes:
     'Press H for your hero, then Q / W / E for big moves. When the match ends, Rematch keeps the same species & difficulty!',
 };
