@@ -109,6 +109,7 @@ import { createSkirmishMap } from '../maps/mapManager';
 import { FogOverlay } from '../ui/fogOverlay';
 import { showKaneEndScreen } from '../ui/endScreen';
 import { drawBuildingSilhouette } from '../buildings/buildingSilhouette';
+import { drawResourceNodeSilhouette } from '../resources/resourceNodeSilhouette';
 import { drawCombatFxList } from '../fx/combatFxDraw';
 import { drawCoreFragments } from '../fx/coreFragmentDraw';
 import { drawFormationVisuals } from '../fx/formationVisual';
@@ -775,38 +776,13 @@ export class BattlefieldScene extends Phaser.Scene {
       if (n.remaining <= 0) continue;
       if (view && !inView(view, n.x, n.y)) continue;
       if (!isExplored(this.world.fog, n.x, n.y)) continue;
-      const def = RESOURCES[n.resourceId];
-      const pct = n.remaining / n.maxAmount;
-      g.fillStyle(0x000000, 0.25);
-      g.fillEllipse(n.x, n.y + n.radius * 0.55, n.radius * 1.4, n.radius * 0.45);
-      if (n.resourceId === 'magic_crystals') {
-        g.fillStyle(def.color, 0.4 + 0.5 * pct);
-        g.fillTriangle(
-          n.x,
-          n.y - n.radius,
-          n.x + n.radius * 0.85,
-          n.y + n.radius * 0.7,
-          n.x - n.radius * 0.85,
-          n.y + n.radius * 0.7,
-        );
-        g.fillStyle(0xffffff, 0.55);
-        g.fillTriangle(
-          n.x,
-          n.y - n.radius * 0.45,
-          n.x + n.radius * 0.35,
-          n.y + n.radius * 0.25,
-          n.x - n.radius * 0.35,
-          n.y + n.radius * 0.25,
-        );
-      } else {
-        g.fillStyle(def.color, 0.45 + 0.45 * pct);
-        g.fillCircle(n.x - 4, n.y, n.radius * 0.7);
-        g.fillCircle(n.x + 6, n.y + 2, n.radius * 0.55);
-        g.fillStyle(0xfff0b0, 0.7);
-        g.fillCircle(n.x, n.y - 4, n.radius * 0.35);
-      }
-      g.lineStyle(2, def.color, 0.9);
-      g.strokeCircle(n.x, n.y, n.radius);
+      drawResourceNodeSilhouette(g, {
+        x: n.x,
+        y: n.y,
+        radius: n.radius,
+        resourceId: n.resourceId,
+        remainingPct: n.remaining / n.maxAmount,
+      });
     }
 
     for (const u of this.world.units) {
