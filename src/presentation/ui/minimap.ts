@@ -28,6 +28,8 @@ export class Minimap {
   private mapH = 120;
   private dragging = false;
   private pulseMs = 0;
+  /** Extra lift when DOM selection panel is open. */
+  private bottomInset = 0;
 
   constructor(
     scene: Phaser.Scene,
@@ -77,6 +79,13 @@ export class Minimap {
     return [this.frame, this.gfx, this.hit];
   }
 
+  setBottomInset(px: number): void {
+    const next = Math.max(0, Math.floor(px));
+    if (next === this.bottomInset) return;
+    this.bottomInset = next;
+    this.layout();
+  }
+
   layout(): void {
     const sw = this.scene.scale.width;
     const sh = this.scene.scale.height;
@@ -85,7 +94,8 @@ export class Minimap {
     this.mapH = (this.mapW * MAP.height) / MAP.width;
     const pad = narrow ? 8 : 12;
     this.mapX = sw - pad - this.mapW;
-    this.mapY = sh - pad - this.mapH - (narrow ? 70 : 78);
+    this.mapY =
+      sh - pad - this.mapH - (narrow ? 70 : 78) - this.bottomInset;
 
     this.frame
       .setSize(this.mapW + 8, this.mapH + 8)

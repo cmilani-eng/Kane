@@ -90,6 +90,8 @@ export class BattlefieldHud {
   private groupFlashColor = '#f0c75e';
   private groupFlashUntil = 0;
   private idlePulseMs = 0;
+  /** Extra lift for DOM selection panel (px from bottom). */
+  private bottomInset = 0;
 
   constructor(scene: Phaser.Scene, world: BattlefieldWorld) {
     this.scene = scene;
@@ -477,12 +479,21 @@ export class BattlefieldHud {
     return list;
   }
 
+  /** Lift bottom chrome when the DOM selection panel is open. */
+  setBottomInset(px: number): void {
+    const next = Math.max(0, Math.floor(px));
+    if (next === this.bottomInset) return;
+    this.bottomInset = next;
+    this.layout();
+  }
+
   layout(): void {
     const w = this.scene.scale.width;
     const h = this.scene.scale.height;
     this.narrow = w < 720;
 
     const pad = this.narrow ? 8 : 12;
+    const inset = this.bottomInset;
     const titleSize = this.narrow ? '15px' : '18px';
     this.title.setFontSize(titleSize).setPosition(pad, pad);
     this.matchLine
@@ -541,7 +552,10 @@ export class BattlefieldHud {
     const gap = this.narrow ? 6 : 10;
     const total = this.abilityBtns.length * btnW + (this.abilityBtns.length - 1) * gap;
     let x = (w - total) / 2 + btnW / 2;
-    const y = h - pad - btnH / 2 - (this.narrow ? 36 : 28);
+    // When selection panel is open, tuck hero pads above it; order buttons hide
+    // (panel owns Stop / Atk-move) so we still keep Army reachable on the left.
+    const y =
+      h - pad - btnH / 2 - (this.narrow ? 36 : 28) - inset;
     for (const b of this.abilityBtns) {
       b.bg.setSize(btnW, btnH).setPosition(x, y);
       b.label.setPosition(x, y - 2).setFontSize(this.narrow ? '14px' : '16px');
@@ -553,21 +567,28 @@ export class BattlefieldHud {
     }
 
     const orderFont = this.narrow ? '13px' : '14px';
+    const orderVisible = inset <= 0;
+    this.stopBtn.setVisible(orderVisible);
+    this.attackMoveBtn.setVisible(orderVisible);
     this.stopBtn
-      .setPosition(pad, h - pad)
+      .setPosition(pad, h - pad - inset)
       .setFontSize(orderFont)
       .setOrigin(0, 1)
       .setText(this.narrow ? 'Stop' : 'S · Stop');
     const stopW = this.stopBtn.width;
     this.attackMoveBtn
-      .setPosition(pad + stopW + 8, h - pad)
+      .setPosition(pad + stopW + 8, h - pad - inset)
       .setFontSize(orderFont)
       .setOrigin(0, 1);
     this.applyAttackMoveBtnStyle();
     const atkW = this.attackMoveBtn.width;
     const armyN = countVisibleMilitary(this.world);
+    // Army stays available; sit above the selection panel when open.
     this.armyBtn
-      .setPosition(pad + stopW + 8 + atkW + 8, h - pad)
+      .setPosition(
+        orderVisible ? pad + stopW + 8 + atkW + 8 : pad,
+        h - pad - inset,
+      )
       .setFontSize(orderFont)
       .setOrigin(0, 1)
       .setText(
