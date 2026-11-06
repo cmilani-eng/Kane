@@ -3,6 +3,7 @@
  * Graphics-only (no textures) for Phaser 4 mobile budget.
  */
 import type Phaser from 'phaser';
+import { getEquippedSkin } from '../../database/cosmeticsLoadout';
 import { SPECIES, type SpeciesId } from '../../data/speciesStub';
 import { getUnitType, type UnitTypeId } from '../../data/units';
 
@@ -360,5 +361,6 @@ export function drawSpeciesPreview(
     timeMs,
     seed: speciesId === 'brutes' ? 1 : speciesId === 'nobles' ? 2 : 3,
     phase: 'idle',
+    skinAccent: getEquippedSkin(speciesId).accent,
   });
 }
