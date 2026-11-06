@@ -2,7 +2,6 @@
  * Auth foundation stub — local anonymous session until Firebase Auth SDK wires in.
  * Emulator-ready surface; no network calls.
  */
-import { loadAgeGate, canUseOnlineFeatures } from './ageGate';
 import type { KaneAuthUser } from './types';
 
 const UID_KEY = 'kane.localAuthUid.v1';
@@ -36,7 +35,7 @@ export interface AuthStub {
   /** Local anonymous identity — does not hit the network. */
   signInAnonymousLocal(): KaneAuthUser;
   signOutLocal(): void;
-  /** Ready for friend lobby only when age gate OK (still offline stub). */
+  /** Ready for friend lobby when a local stub user exists (still offline). */
   canEnterLobby(): boolean;
   describe(): string;
 }
@@ -64,7 +63,7 @@ export function createAuthStub(usingEmulator: boolean): AuthStub {
       user = null;
     },
     canEnterLobby() {
-      return canUseOnlineFeatures(loadAgeGate()) && user !== null;
+      return user !== null;
     },
     describe() {
       const u = user;

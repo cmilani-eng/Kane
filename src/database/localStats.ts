@@ -112,7 +112,7 @@ export function resetLocalStats(): LocalStats {
 
 export function formatStatsSummary(stats: LocalStats = loadLocalStats()): string {
   const lines = [
-    `Games started: ${stats.gamesStarted}`,
+    `Games played: ${stats.gamesStarted}`,
     `Wins: ${stats.wins}   ·   Losses: ${stats.losses}`,
     '',
     'By species:',
@@ -120,16 +120,24 @@ export function formatStatsSummary(stats: LocalStats = loadLocalStats()): string
   for (const id of ['brutes', 'nobles', 'weirdos'] as SpeciesId[]) {
     const r = stats.bySpecies[id];
     lines.push(
-      `  ${id}: ${r.started} started · ${r.wins}W / ${r.losses}L`,
+      `  ${id}: ${r.started} played · ${r.wins}W / ${r.losses}L`,
     );
   }
-  lines.push('', '(Counters local — match summaries below / in localStorage)');
   return lines.join('\n');
 }
 
-/** Hash routes: #/admin or #/stats open the panel from the menu. */
+/** Hash route `#/admin` opens Stats with admin tools. */
 export function wantsAdminPanel(): boolean {
   if (typeof location === 'undefined') return false;
   const h = (location.hash || '').toLowerCase();
-  return h === '#/admin' || h === '#admin' || h === '#/stats' || h === '#stats';
+  return h === '#/admin' || h === '#admin';
+}
+
+/** Hash routes `#/admin` or `#/stats` open the Stats panel from the menu. */
+export function wantsStatsPanel(): boolean {
+  if (typeof location === 'undefined') return false;
+  const h = (location.hash || '').toLowerCase();
+  return (
+    wantsAdminPanel() || h === '#/stats' || h === '#stats'
+  );
 }

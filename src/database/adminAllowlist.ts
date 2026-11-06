@@ -135,7 +135,7 @@ export function adminDenyReason(
   id: string = localAdminCandidateId(),
 ): string | null {
   if (canAccessAdmin(id)) return null;
-  return `Denied — ${id} is not on the admin allowlist (mode=allowlist). Set localStorage kane.adminAccessMode.v1=open for local-dev, or add your id to kane.adminAllowlist.v1.`;
+  return `Denied — ${id} is not on the admin allowlist (mode=allowlist). Switch access mode to open for local soft-launch, or add this id to the allowlist.`;
 }
 
 export function formatAdminAllowlist(
@@ -144,11 +144,11 @@ export function formatAdminAllowlist(
   const mode = getAdminAccessMode();
   const you = localAdminCandidateId();
   const lines = [
-    `Admin access mode: ${mode}${mode === 'open' ? ' (local-dev open)' : ''}`,
+    `Access mode: ${mode}${mode === 'open' ? ' (open for soft-launch)' : ''}`,
     `Allowlist (${state.ids.length}):`,
     ...state.ids.map((id) => `  - ${id}`),
     '',
-    `You: ${you} · ${canAccessAdmin(you) ? 'allowed' : 'DENIED'}`,
+    `This device: ${you} · ${canAccessAdmin(you) ? 'allowed' : 'DENIED'}`,
   ];
   return lines.join('\n');
 }

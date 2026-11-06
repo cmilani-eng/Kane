@@ -23,7 +23,7 @@ Production project target: **`kane-rts-game`** (repo retargeted from `kane-rts-s
 ## Assumptions
 
 1. **Client-trusted SP writes** for matches + overview in MVP. Players can inflate their own stats; move to Cloud Functions when competitive integrity matters.
-2. Age gate stays client-side; `users.ageGateOk` / `profiles.ageGateOk` are mirror flags only.
+2. Product is framed 13+; the in-game age-gate screen was removed. `users.ageGateOk` / `profiles.ageGateOk` remain schema mirror flags only (client sets `true`).
 3. Cosmetics are **skins-only** string ids — rules do not prove catalog validity beyond string length.
 4. **Anonymous Auth** and **Email/Password** share the same `isSelf(uid)` rules — any signed-in `request.auth.uid` may read/write their own `users/{uid}` tree. Local-only guests (no Firebase env / SDK off) stay on **localStorage** and never hit Firestore.
 5. Ads stay off; no analytics collection rules here yet.

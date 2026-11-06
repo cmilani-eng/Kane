@@ -1,10 +1,9 @@
 /**
- * Boot — generate placeholders, brief branded splash, then Menu / AgeGate.
+ * Boot — generate placeholders, brief branded splash, then Menu.
  * Splash is short and tap-to-skip (mobile-safe); never a long block.
  */
 import Phaser from 'phaser';
 import { BRAND } from '../../config/brand';
-import { canEnterGame, loadAgeGate } from '../../firebase/ageGate';
 import { registerUnitAnims } from '../animations/unitAnims';
 import { hideDomHud } from '../ui/domHud';
 import {
@@ -132,8 +131,6 @@ export class BootScene extends Phaser.Scene {
   private advance(): void {
     if (this.advanced) return;
     this.advanced = true;
-    const gate = loadAgeGate();
-    // First-run or under-13 → AgeGate; 13+ confirmed → Menu (SP unlocked).
-    this.scene.start(canEnterGame(gate) ? 'Menu' : 'AgeGate');
+    this.scene.start('Menu');
   }
 }

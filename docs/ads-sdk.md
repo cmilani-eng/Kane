@@ -17,6 +17,6 @@ Client stub: [`src/ads/adsSdkStub.ts`](../src/ads/adsSdkStub.ts).
 2. In `initAdsSdkStub()`, **dynamic-import** the vendor SDK only when enabled (keeps the soft-launch bundle clean).
 3. Replace the `console.info` branches in `showMenuBannerStub` / `showPostMatchInterstitialStub` with real banner / interstitial APIs.
 4. Keep **no ads during active battlefield play** — do not call the stub from `BattlefieldScene` combat loops.
-5. Re-check age gate / privacy stubs before serving ads to players.
+5. Re-check privacy / 13+ positioning (no in-game gate) before serving ads to players.
 
 Until those steps land, leave `adsEnabled=false` — Hosting preview and local Vite stay zero ad traffic.
