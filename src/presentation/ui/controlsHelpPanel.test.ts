@@ -59,4 +59,12 @@ describe('controls help copy', () => {
     expect(weirdos.body).not.toContain('>F<');
     expect(weirdos.body).not.toContain('>R<');
   });
+
+  it('lists the Tab cycle tip for mixed selections', () => {
+    const copy = controlsHelpCopy('brutes');
+    expect(copy.body).toContain('Tab');
+    expect(copy.body).toContain('Shift+Tab');
+    expect(copy.body).toMatch(/all → one type → all|todos →/);
+  });
 });
+
