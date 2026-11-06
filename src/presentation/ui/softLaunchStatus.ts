@@ -7,6 +7,7 @@ import { getAdminAccessMode } from '../../database/adminAllowlist';
 import { loadCosmeticsLoadout } from '../../database/cosmeticsLoadout';
 import { loadAgeGate } from '../../firebase/ageGate';
 import { HOSTING_PREVIEW } from '../../firebase/hostingPreview';
+import { getMasterVolume } from '../audio/sfx';
 
 /** Compact one-liner for the title menu. */
 export function softLaunchStatusStrip(): string {
@@ -24,5 +25,7 @@ export function softLaunchStatusStrip(): string {
   const adminBit = `admin ${getAdminAccessMode()}`;
   const loadout = loadCosmeticsLoadout();
   const cosBit = `skin ${loadout.equipped.nobles.replace(/^skin_/, '').slice(0, 8)}`;
-  return `${adsBit} · ${ageBit} · ${hostBit} · ${adminBit} · ${cosBit}`;
+  const volBit = `vol ${Math.round(getMasterVolume() * 100)}`;
+  const pwaBit = 'pwa';
+  return `${adsBit} · ${ageBit} · ${hostBit} · ${adminBit} · ${cosBit} · ${volBit} · ${pwaBit}`;
 }
