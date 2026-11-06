@@ -501,6 +501,31 @@ export function tickBattlefield(world: BattlefieldWorld, dtMs: number): void {
       u.moveTarget = u.path.length > 0 ? u.path.shift()! : null;
     }
   }
+  softSeparateUnits(world);
+}
+
+/** Cheap pairwise push so stacks read as a pack, not a single blob. */
+function softSeparateUnits(world: BattlefieldWorld): void {
+  const units = world.units;
+  const n = units.length;
+  for (let i = 0; i < n; i++) {
+    const a = units[i]!;
+    if (a.hp <= 0) continue;
+    for (let j = i + 1; j < n; j++) {
+      const b = units[j]!;
+      if (b.hp <= 0) continue;
+      const minD = a.radius + b.radius + 2;
+      const d = dist(a.x, a.y, b.x, b.y);
+      if (d >= minD || d < 0.001) continue;
+      const push = ((minD - d) / minD) * 0.45;
+      const nx = (a.x - b.x) / d;
+      const ny = (a.y - b.y) / d;
+      a.x = clamp(a.x + nx * push * a.radius, a.radius, MAP.width - a.radius);
+      a.y = clamp(a.y + ny * push * a.radius, a.radius, MAP.height - a.radius);
+      b.x = clamp(b.x - nx * push * b.radius, b.radius, MAP.width - b.radius);
+      b.y = clamp(b.y - ny * push * b.radius, b.radius, MAP.height - b.radius);
+    }
+  }
 }
 
 export function selectedCount(world: BattlefieldWorld): number {

@@ -494,6 +494,7 @@ export class BattlefieldScene extends Phaser.Scene {
       tickBattlefieldAi(this.world, this.ai, delta);
       tickFog(this.world, this.world.fog);
       tickBattlefieldCombat(this.world, delta);
+      // Attack flash just set (~120) — one SFX per frame max.
       if (this.world.units.some((u) => u.lastAttackFlashMs > 100)) {
         playSfx('attack');
       }
