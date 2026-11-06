@@ -23,6 +23,18 @@ import {
   type BattlefieldWorld,
 } from './battlefieldWorld';
 
+/** Presentation kind — readable cast flashes per hero/ability. */
+export type HeroVfxKind =
+  | 'recruit'
+  | 'smash'
+  | 'buff'
+  | 'heal'
+  | 'zap'
+  | 'portal'
+  | 'chaos'
+  | 'chaos_tick'
+  | 'ring';
+
 export interface HeroVfx {
   x: number;
   y: number;
@@ -31,6 +43,9 @@ export interface HeroVfx {
   lifeMs: number;
   maxLifeMs: number;
   label?: string;
+  heroId?: HeroId;
+  abilityId?: string;
+  kind: HeroVfxKind;
 }
 
 export interface HeroRuntime {
@@ -68,10 +83,48 @@ function pushVfx(
   radius: number,
   color: number,
   lifeMs: number,
-  label?: string,
+  opts: {
+    label?: string;
+    heroId?: HeroId;
+    abilityId?: string;
+    kind?: HeroVfxKind;
+  } = {},
 ): void {
   ensureHeroFields(world);
-  world.vfx.push({ x, y, radius, color, lifeMs, maxLifeMs: lifeMs, label });
+  world.vfx.push({
+    x,
+    y,
+    radius,
+    color,
+    lifeMs,
+    maxLifeMs: lifeMs,
+    label: opts.label,
+    heroId: opts.heroId,
+    abilityId: opts.abilityId,
+    kind: opts.kind ?? 'ring',
+  });
+}
+
+function kindForAbility(abilityId: string): HeroVfxKind {
+  switch (abilityId) {
+    case 'ground_smash':
+    case 'big_bonk':
+      return 'smash';
+    case 'get_angry':
+    case 'royal_order':
+    case 'royal_decree':
+      return 'buff';
+    case 'emergency_repairs':
+      return 'heal';
+    case 'brain_zap':
+      return 'zap';
+    case 'portal_trick':
+      return 'portal';
+    case 'what_is_happening':
+      return 'chaos';
+    default:
+      return 'ring';
+  }
 }
 
 export function findPlayerHero(world: BattlefieldWorld): BattlefieldUnit | null {
@@ -149,7 +202,11 @@ export function recruitHero(
   if (team === 'player') world.heroRuntime = runtime;
   else world.enemyHeroRuntime = runtime;
 
-  pushVfx(world, hero.x, hero.y, 60, pal.accent, 700, 'HERO');
+  pushVfx(world, hero.x, hero.y, 60, pal.accent, 700, {
+    label: 'HERO',
+    heroId: def.id,
+    kind: 'recruit',
+  });
   return true;
 }
 
@@ -179,11 +236,22 @@ export function castHeroAbility(
     slot === 'ultimate'
       ? def.id === 'zoggle'
         ? 0xe87aa8
-        : 0xf0c75e
+        : def.id === 'boniface'
+          ? 0xf0c75e
+          : 0xd4782e
       : def.id === 'zoggle'
         ? pal.accent
-        : pal.primary;
-  pushVfx(world, hero.x, hero.y, ab.radius, color, 550, ab.name);
+        : def.id === 'boniface'
+          ? pal.accent
+          : pal.primary;
+  const life =
+    slot === 'ultimate' ? 720 : kindForAbility(ab.id) === 'buff' ? 640 : 560;
+  pushVfx(world, hero.x, hero.y, ab.radius, color, life, {
+    label: ab.name,
+    heroId: def.id,
+    abilityId: ab.id,
+    kind: kindForAbility(ab.id),
+  });
   return true;
 }
 
@@ -259,7 +327,12 @@ function applyAbility(
     rt.chaosY = hero.y;
     rt.chaosRadius = radius;
     rt.chaosTickMs = 400;
-    pushVfx(world, hero.x, hero.y, radius * 1.05, 0xe87aa8, 900, 'CHAOS');
+    pushVfx(world, hero.x, hero.y, radius * 1.05, 0xe87aa8, 900, {
+      label: 'CHAOS',
+      heroId: 'zoggle',
+      abilityId: 'what_is_happening',
+      kind: 'chaos',
+    });
   }
 
   if (id === 'get_angry') {
@@ -309,10 +382,18 @@ function applyAbility(
     for (const u of world.units) {
       if (u.team !== hero.team) continue;
       if (u.id !== hero.id && dist(hero.x, hero.y, u.x, u.y) > radius) continue;
-      pushVfx(world, u.x, u.y, 28, 0x6ecfbf, 320);
+      pushVfx(world, u.x, u.y, 28, 0x6ecfbf, 340, {
+        heroId: 'zoggle',
+        abilityId: 'portal_trick',
+        kind: 'portal',
+      });
       u.x += ox;
       u.y += oy;
-      pushVfx(world, u.x, u.y, 28, 0xe87aa8, 320);
+      pushVfx(world, u.x, u.y, 28, 0xe87aa8, 340, {
+        heroId: 'zoggle',
+        abilityId: 'portal_trick',
+        kind: 'portal',
+      });
     }
   }
 }
@@ -375,6 +456,11 @@ export function tickHeroes(world: BattlefieldWorld, dtMs: number): void {
           rt.chaosRadius * 0.85,
           0x7a4aa8,
           280,
+          {
+            heroId: 'zoggle',
+            abilityId: 'what_is_happening',
+            kind: 'chaos_tick',
+          },
         );
       }
     }
