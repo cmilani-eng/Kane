@@ -51,6 +51,17 @@ export type SelectionPanelHandlers = {
   castAbility: (slot: HeroAbilitySlot) => void;
   /** Arm building placement from Keep / main hall (existing place mode). */
   placeBuilding: (typeId: BuildingTypeId) => void;
+  /** Toggle Nobles formation lock on selected formation-capable units (F). */
+  toggleFormation: () => void;
+};
+
+/** Nobles formation / stance summary for the selection panel. */
+export type SelectionFormationView = {
+  eligible: number;
+  formed: number;
+  locked: number;
+  /** All eligible units have formation lock on. */
+  allLocked: boolean;
 };
 
 export type SelectionPlaceOption = {
@@ -80,6 +91,8 @@ export type SelectionPanelView =
       attackMoveArmed: boolean;
       /** Present when a single player hero is selected. */
       abilities: SelectionAbilityView[] | null;
+      /** Nobles formation-capable selection — stance lock control. */
+      formation: SelectionFormationView | null;
     }
   | {
       kind: 'building';
@@ -183,6 +196,8 @@ export function ensureSelectionPanel(): HTMLElement {
       handlers.placeBuilding(btn.dataset.typeId as BuildingTypeId);
     } else if (act === 'castAbility' && btn.dataset.slot) {
       handlers.castAbility(btn.dataset.slot as HeroAbilitySlot);
+    } else if (act === 'toggleFormation') {
+      handlers.toggleFormation();
     }
   });
 
@@ -438,6 +453,25 @@ function injectStyles(): void {
     #kane-selection-panel button.is-ability.is-unaffordable .kane-sel-ability-cd {
       color: #e87a7a;
     }
+    #kane-selection-panel button.is-stance {
+      background: #3a4a2a;
+      border-color: #f0c75e;
+      min-width: 96px;
+      text-align: left;
+    }
+    #kane-selection-panel button.is-stance.is-armed {
+      background: #5a7030;
+      border-color: #f0c75e;
+      color: #fff8e8;
+    }
+    #kane-selection-panel button.is-stance .kane-sel-stance-sub {
+      display: block;
+      margin-top: 2px;
+      font-size: 10px;
+      font-weight: 600;
+      color: #c8d8a8;
+      letter-spacing: 0.02em;
+    }
     #kane-selection-panel button:disabled {
       cursor: default;
     }
@@ -677,6 +711,7 @@ export function buildSelectionView(
       tags,
       attackMoveArmed,
       abilities: heroAbilityViews(world, u),
+      formation: formationViewFor(alive),
     };
   }
 
@@ -718,6 +753,27 @@ export function buildSelectionView(
     tags,
     attackMoveArmed,
     abilities: null,
+    formation: formationViewFor(alive),
+  };
+}
+
+function formationViewFor(
+  units: BattlefieldUnit[],
+): SelectionFormationView | null {
+  const eligible = units.filter((u) => {
+    if (u.team !== 'player' || u.hp <= 0 || u.speciesId !== 'nobles') {
+      return false;
+    }
+    return !!getUnitType(u.typeId).usesFormation;
+  });
+  if (eligible.length === 0) return null;
+  const locked = eligible.filter((u) => u.formationLocked).length;
+  const formed = eligible.filter((u) => u.inFormation).length;
+  return {
+    eligible: eligible.length,
+    formed,
+    locked,
+    allLocked: locked === eligible.length,
   };
 }
 
@@ -760,6 +816,9 @@ function structureSignature(view: SelectionPanelView): string {
           )
           .join(',')
       : '';
+    const form = view.formation
+      ? `f${view.formation.eligible}:${view.formation.formed}:${view.formation.locked}:${view.formation.allLocked ? 1 : 0}`
+      : '';
     return [
       'u',
       view.count,
@@ -769,6 +828,7 @@ function structureSignature(view: SelectionPanelView): string {
       view.tags.join(','),
       view.attackMoveArmed ? 1 : 0,
       abs,
+      form,
     ].join('|');
   }
   if (view.kind === 'resource') {
@@ -881,6 +941,47 @@ function placeButtonHtml(p: SelectionPlaceOption): string {
       : ` title="Place ${escapeHtml(p.name)}"`;
   const label = p.armed ? `${p.name} · Armed` : p.name;
   return `<button type="button" class="${classes.join(' ')}" data-act="place" data-type-id="${p.typeId}"${p.affordable ? '' : ' disabled'}${reason}><span class="kane-sel-train-name">${escapeHtml(label)}</span>${trainCostHtml(p.costGold, p.costCrystals)}</button>`;
+}
+
+function formationButtonHtml(f: SelectionFormationView): string {
+  const locked = f.allLocked;
+  const classes = ['is-stance'];
+  if (locked) classes.push('is-armed');
+  const stance = locked ? 'Locked stance' : 'Auto stance';
+  const status =
+    f.eligible === 1
+      ? f.formed
+        ? 'In formation'
+        : 'Not formed'
+      : `${f.formed}/${f.eligible} formed`;
+  const title = locked
+    ? 'title="F · Unlock formation stance (return to auto)"'
+    : 'title="F · Lock formation stance (hold bonuses)"';
+  return `<button type="button" class="${classes.join(' ')}" data-act="toggleFormation" ${title}><span class="kane-sel-train-name">${locked ? 'F · Form lock ON' : 'F · Form lock'}</span><span class="kane-sel-stance-sub">${escapeHtml(stance)} · ${escapeHtml(status)}</span></button>`;
+}
+
+function applyFormationButtonState(
+  btn: HTMLButtonElement,
+  f: SelectionFormationView,
+): void {
+  const locked = f.allLocked;
+  btn.classList.toggle('is-armed', locked);
+  const name = btn.querySelector('.kane-sel-train-name');
+  const sub = btn.querySelector('.kane-sel-stance-sub');
+  if (name) name.textContent = locked ? 'F · Form lock ON' : 'F · Form lock';
+  if (sub) {
+    const stance = locked ? 'Locked stance' : 'Auto stance';
+    const status =
+      f.eligible === 1
+        ? f.formed
+          ? 'In formation'
+          : 'Not formed'
+        : `${f.formed}/${f.eligible} formed`;
+    sub.textContent = `${stance} · ${status}`;
+  }
+  btn.title = locked
+    ? 'F · Unlock formation stance (return to auto)'
+    : 'F · Lock formation stance (hold bonuses)';
 }
 
 function applyTrainAffordability(
@@ -1009,9 +1110,13 @@ export function renderSelectionPanel(view: SelectionPanelView): boolean {
         const abilityHtml = view.abilities
           ? view.abilities.map(abilityButtonHtml).join('')
           : '';
+        const formHtml = view.formation
+          ? formationButtonHtml(view.formation)
+          : '';
         actions.innerHTML = `
         <button type="button" data-act="stop">Stop</button>
         <button type="button" data-act="attackMove" class="${view.attackMoveArmed ? 'is-armed' : ''}">${view.attackMoveArmed ? 'Atk · Armed' : 'Atk-move'}</button>
+        ${formHtml}
         ${abilityHtml}
       `;
       } else {
@@ -1029,6 +1134,12 @@ export function renderSelectionPanel(view: SelectionPanelView): boolean {
             ) as HTMLButtonElement | null;
             if (btn) applyAbilityButtonState(btn, a);
           }
+        }
+        if (view.formation) {
+          const fb = actions.querySelector(
+            '[data-act="toggleFormation"]',
+          ) as HTMLButtonElement | null;
+          if (fb) applyFormationButtonState(fb, view.formation);
         }
       }
       queue.hidden = true;

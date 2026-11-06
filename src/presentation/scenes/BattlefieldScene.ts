@@ -355,6 +355,15 @@ export class BattlefieldScene extends Phaser.Scene {
         if (castHeroAbility(this.world, slot, 'player')) playSfx('ability');
         else playSfx('ui');
       },
+      toggleFormation: () => {
+        if (this.paused || this.matchResult !== 'ongoing') return;
+        if (this.world.speciesId !== 'nobles') {
+          playSfx('ui');
+          return;
+        }
+        toggleFormationSelected(this.world);
+        playSfx('ui');
+      },
     });
     this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => {
       unmountSelectionPanel();
