@@ -17,6 +17,7 @@ import { SPECIES_MATCHUP_TIP, type SpeciesId } from '../../data/speciesStub';
 import { getLocale, speciesCopy, speciesName, t } from '../../i18n';
 import { unitArmorClass } from '../../data/unitArmorClass';
 import { getUnitType, type UnitTypeId } from '../../data/units';
+import { buildingHpMaxLabel } from './buildingHpMax';
 import {
   sharedUnitAttackCooldownLabel,
   unitAttackCooldownLabel,
@@ -245,6 +246,8 @@ export type SelectionPanelView =
       flavor: string;
       hp: number;
       maxHp: number;
+      /** Catalog max-HP tip for the selected building type. */
+      hpMaxTip: string | null;
       /** Building finished construction (can start training). */
       ready: boolean;
       /** 0–1 construction progress while incomplete. */
@@ -556,6 +559,7 @@ export function buildSelectionView(
           })}`,
       hp: b.hp,
       maxHp: b.maxHp,
+      hpMaxTip: buildingHpMaxLabel(b.typeId),
       ready,
       buildPct,
       buildRemainSec: buildRemain,
@@ -1016,6 +1020,7 @@ function structureSignature(view: SelectionPanelView): string {
     view.hasCustomRally ? 1 : 0,
     view.rallyArmed ? 1 : 0,
     view.rallyDistTiles,
+    view.hpMaxTip ?? '',
     view.trains
       .map((t) => `${t.typeId}:${t.canPay ? 1 : 0}:${t.affordable ? 1 : 0}`)
       .join(','),
@@ -1610,6 +1615,9 @@ export function renderSelectionPanel(view: SelectionPanelView): boolean {
       portrait.style.setProperty('--kane-sel-accent', '#3d7ea6');
       if (structuralChange) {
         const bits: string[] = [];
+        if (view.hpMaxTip) {
+          bits.push(`<span>${escapeHtml(view.hpMaxTip)}</span>`);
+        }
         if (view.trains.length) bits.push(`<span>${t('sel.production')}</span>`);
         if (view.places.length) bits.push(`<span>${t('sel.build')}</span>`);
         if (bits.length === 0) bits.push(`<span>${t('sel.noProductionStat')}</span>`);
@@ -1681,13 +1689,16 @@ export function renderSelectionPanel(view: SelectionPanelView): boolean {
         if (structuralChange) queueIcons.innerHTML = '';
         queueLabel.textContent = queueLabelText(view);
         if (structuralChange) {
+          const tip = view.hpMaxTip
+            ? `<span>${escapeHtml(view.hpMaxTip)}</span>`
+            : '';
           stats.innerHTML = `<span>${t('sel.hpStat', {
             hp: Math.ceil(view.hp),
             max: Math.ceil(view.maxHp),
           })}</span><span>${t('sel.buildingPct', {
             pct: Math.floor(view.buildPct * 100),
             sec: view.buildRemainSec,
-          })}</span>`;
+          })}</span>${tip}`;
         } else {
           const spans = stats.querySelectorAll('span');
           if (spans[0]) {
@@ -1701,6 +1712,9 @@ export function renderSelectionPanel(view: SelectionPanelView): boolean {
               pct: Math.floor(view.buildPct * 100),
               sec: view.buildRemainSec,
             });
+          }
+          if (spans[2] && view.hpMaxTip) {
+            spans[2].textContent = view.hpMaxTip;
           }
         }
       } else if (view.trains.length === 0) {
