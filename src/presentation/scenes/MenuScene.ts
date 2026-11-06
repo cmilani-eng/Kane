@@ -461,7 +461,8 @@ export class MenuScene extends Phaser.Scene {
   }
 
   /**
-   * Start Game: signed-in → play; else offer Login / Create / guest (local only).
+   * Start Game: signed-in (email or Firebase anonymous) → play;
+   * else offer Login / Create / Play as guest (anonymous when SDK ready).
    */
   private startMatch(species: SpeciesId): void {
     if (this.anyOverlayOpen()) return;
@@ -479,6 +480,7 @@ export class MenuScene extends Phaser.Scene {
         this.launchMatch(species);
       },
       onGuest: () => {
+        // Local-only fallback when Firebase env is missing.
         this.accountOpen = false;
         this.launchMatch(species);
       },

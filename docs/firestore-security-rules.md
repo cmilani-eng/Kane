@@ -25,7 +25,7 @@ Production project target: **`kane-rts-game`** (repo retargeted from `kane-rts-s
 1. **Client-trusted SP writes** for matches + overview in MVP. Players can inflate their own stats; move to Cloud Functions when competitive integrity matters.
 2. Age gate stays client-side; `users.ageGateOk` / `profiles.ageGateOk` are mirror flags only.
 3. Cosmetics are **skins-only** string ids — rules do not prove catalog validity beyond string length.
-4. Guest / unsigned play stays on **localStorage** and never hits Firestore.
+4. **Anonymous Auth** and **Email/Password** share the same `isSelf(uid)` rules — any signed-in `request.auth.uid` may read/write their own `users/{uid}` tree. Local-only guests (no Firebase env / SDK off) stay on **localStorage** and never hit Firestore.
 5. Ads stay off; no analytics collection rules here yet.
 6. Daily rollup + top-level match summary **writes** remain trusted (Admin SDK / Cloud Functions) when those paths are used.
 7. Validate with Firestore emulator before any prod rules deploy.

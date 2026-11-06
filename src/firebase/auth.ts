@@ -1,11 +1,14 @@
 /**
- * Email/password Auth + session observer.
- * Falls back gracefully when SDK config is missing (guest / local SP).
+ * Email/password + anonymous Auth + session observer.
+ * Falls back gracefully when SDK config is missing (local-only guest SP).
  */
 import {
+  EmailAuthProvider,
   createUserWithEmailAndPassword,
+  linkWithCredential,
   onAuthStateChanged,
   sendPasswordResetEmail,
+  signInAnonymously,
   signInWithEmailAndPassword,
   signOut,
   updateProfile,
@@ -15,6 +18,8 @@ import { getFirebaseAuth, isFirebaseSdkReady } from './app';
 import type { KaneAuthUser } from './types';
 
 export type AuthListener = (user: KaneAuthUser | null) => void;
+
+const GUEST_DISPLAY_NAME = 'Guest';
 
 function mapUser(u: User | null): KaneAuthUser | null {
   if (!u) return null;
@@ -29,17 +34,24 @@ function mapUser(u: User | null): KaneAuthUser | null {
     uid: u.uid,
     displayName:
       u.displayName?.trim() ||
-      u.email?.split('@')[0] ||
-      'Commander',
+      (u.isAnonymous ? GUEST_DISPLAY_NAME : u.email?.split('@')[0] || 'Commander'),
     email: u.email,
     isAnonymous: u.isAnonymous,
     provider,
   };
 }
 
-/** Signed-in email (non-anonymous) account — cloud progression eligible. */
+/**
+ * Firebase Auth session (email or anonymous) — cloud progression eligible
+ * under `users/{uid}` when rules allow. Local stub guests never appear here.
+ */
 export function isCloudAccount(user: KaneAuthUser | null): boolean {
-  return !!user && !user.isAnonymous && user.provider === 'email';
+  return !!user && (user.provider === 'email' || user.provider === 'anonymous');
+}
+
+/** True for Firebase anonymous guests (not email-linked). */
+export function isAnonymousGuest(user: KaneAuthUser | null): boolean {
+  return !!user && user.isAnonymous && user.provider === 'anonymous';
 }
 
 export function authErrorMessage(err: unknown): string {
@@ -64,6 +76,10 @@ export function authErrorMessage(err: unknown): string {
       return 'Network error — check connection or emulator.';
     case 'auth/missing-email':
       return 'Enter your email first.';
+    case 'auth/operation-not-allowed':
+      return 'That sign-in method is disabled in Firebase Console.';
+    case 'auth/credential-already-in-use':
+      return 'That email is already linked to another account — try Log in.';
     default: {
       if (err instanceof Error && err.message) return err.message;
       return 'Something went wrong. Try again.';
@@ -104,6 +120,32 @@ export function subscribeAuth(listener: AuthListener): () => void {
   return () => listeners.delete(listener);
 }
 
+/**
+ * Firebase anonymous guest — real Auth UID for cloud `users/{uid}` paths.
+ * Reuses an existing anonymous session when present.
+ */
+export async function signInAsGuest(): Promise<KaneAuthUser> {
+  const auth = getFirebaseAuth();
+  if (!auth || !isFirebaseSdkReady()) {
+    throw new Error('Firebase Auth is not configured. Add VITE_FIREBASE_* to .env.local.');
+  }
+  if (auth.currentUser?.isAnonymous) {
+    if (!auth.currentUser.displayName?.trim()) {
+      await updateProfile(auth.currentUser, { displayName: GUEST_DISPLAY_NAME });
+    }
+    const mapped = mapUser(auth.currentUser)!;
+    mapped.displayName = mapped.displayName || GUEST_DISPLAY_NAME;
+    emit(mapped);
+    return mapped;
+  }
+  const cred = await signInAnonymously(auth);
+  await updateProfile(cred.user, { displayName: GUEST_DISPLAY_NAME });
+  const mapped = mapUser(cred.user)!;
+  mapped.displayName = GUEST_DISPLAY_NAME;
+  emit(mapped);
+  return mapped;
+}
+
 export async function signUpWithEmail(
   email: string,
   password: string,
@@ -113,16 +155,28 @@ export async function signUpWithEmail(
   if (!auth || !isFirebaseSdkReady()) {
     throw new Error('Firebase Auth is not configured. Add VITE_FIREBASE_* to .env.local.');
   }
-  const cred = await createUserWithEmailAndPassword(
-    auth,
-    email.trim(),
-    password,
-  );
+  const trimmedEmail = email.trim();
   const name = displayName?.trim();
-  if (name) {
-    await updateProfile(cred.user, { displayName: name.slice(0, 32) });
+  // Upgrade anonymous guest in place so cloud `users/{uid}` history is kept.
+  let user: User;
+  if (auth.currentUser?.isAnonymous) {
+    const linked = await linkWithCredential(
+      auth.currentUser,
+      EmailAuthProvider.credential(trimmedEmail, password),
+    );
+    user = linked.user;
+  } else {
+    const cred = await createUserWithEmailAndPassword(
+      auth,
+      trimmedEmail,
+      password,
+    );
+    user = cred.user;
   }
-  const mapped = mapUser(cred.user)!;
+  if (name) {
+    await updateProfile(user, { displayName: name.slice(0, 32) });
+  }
+  const mapped = mapUser(user)!;
   emit(mapped);
   return mapped;
 }

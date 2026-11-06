@@ -29,7 +29,9 @@ export function defaultProfileFromAuth(user: KaneAuthUser): UserProfileDoc {
   const cos = emptyLoadout();
   const now = Date.now();
   return {
-    displayName: user.displayName.slice(0, 32) || 'Commander',
+    displayName:
+      user.displayName.slice(0, 32) ||
+      (user.isAnonymous ? 'Guest' : 'Commander'),
     email: user.email,
     ageGateOk: loadAgeGate().ok,
     createdAtMs: now,

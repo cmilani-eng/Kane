@@ -4,6 +4,8 @@ service cloud.firestore {
     // DRAFT for Cassio review — do NOT deploy without explicit ask.
     // Production project target: kane-rts-game.
 
+    // Email/password and Anonymous Auth both set request.auth.uid —
+    // self-paths treat them the same (no provider check).
     function signedIn() {
       return request.auth != null;
     }
@@ -31,6 +33,7 @@ service cloud.firestore {
     }
 
     // ---- Player account tree (SP MVP — client-trusted writes) ----
+    // Anonymous guests and email users: same isSelf(uid) gate on users/{uid}.
     match /users/{uid} {
       allow read: if isSelf(uid);
       allow create: if isSelf(uid)

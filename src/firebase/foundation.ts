@@ -46,7 +46,7 @@ export function createFirebaseFoundation(): FirebaseFoundation {
   const auth = createAuthStub(useEmulators);
 
   if (sdkReady) {
-    // Live email sessions — do not force local anonymous.
+    // Live Auth sessions (email or Firebase anonymous) — do not force local stub.
     subscribeAuth((user) => {
       if (isCloudAccount(user) && user) {
         void bootstrapCloudAccount(user);
