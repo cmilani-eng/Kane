@@ -46,7 +46,7 @@ export function createKaneGame(parent: HTMLElement): Phaser.Game {
       keyboard: true,
       mouse: true,
     },
-    // Boot → AgeGate (first run) → Menu → Battlefield. Ads stay off.
+    // Boot splash → AgeGate (first run) → Menu → Battlefield. Ads stay off.
     scene: [BootScene, AgeGateScene, MenuScene, BattlefieldScene],
   };
 
