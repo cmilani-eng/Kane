@@ -1,5 +1,5 @@
 /**
- * In-match pause overlay — resume, mute, volume, quit to menu.
+ * In-match pause overlay — resume, mute, volume, rematch, quit to menu.
  * Also shows a frozen match-clock + supply snapshot.
  * ScrollFactor 0; ignore on the zoomed world camera.
  */
@@ -21,6 +21,8 @@ export interface PauseMenuSnapshot {
 export interface PauseMenuOpts {
   scene: Phaser.Scene;
   onResume: () => void;
+  /** Same species / difficulty / map — no menu hop. */
+  onRematch: () => void;
   onQuit: () => void;
   ignoreOnMain: (objs: Phaser.GameObjects.GameObject[]) => void;
 }
@@ -28,6 +30,7 @@ export interface PauseMenuOpts {
 export class PauseMenu {
   private readonly scene: Phaser.Scene;
   private readonly onResume: () => void;
+  private readonly onRematch: () => void;
   private readonly onQuit: () => void;
   private readonly ignoreOnMain: (objs: Phaser.GameObjects.GameObject[]) => void;
   private root: Phaser.GameObjects.GameObject[] = [];
@@ -45,6 +48,7 @@ export class PauseMenu {
   constructor(opts: PauseMenuOpts) {
     this.scene = opts.scene;
     this.onResume = opts.onResume;
+    this.onRematch = opts.onRematch;
     this.onQuit = opts.onQuit;
     this.ignoreOnMain = opts.ignoreOnMain;
   }
@@ -95,7 +99,7 @@ export class PauseMenu {
     const { width, height } = this.scene.scale;
     const short = height < 500;
     const panelW = short ? Math.min(760, width - 24) : Math.min(360, width - 40);
-    const panelH = short ? height - 16 : Math.min(560, height * 0.88);
+    const panelH = short ? height - 16 : Math.min(600, height * 0.9);
     const cx = width / 2;
     const cy = short ? height / 2 : height * 0.48;
     const top = cy - panelH / 2;
@@ -199,7 +203,22 @@ export class PauseMenu {
     this.root.push(
       this.makeBtn(
         cx,
-        short ? btnY0 + gap * 4 + 12 : btnY0 + gap * 4 + 24,
+        short ? btnY0 + gap * 4 + 8 : btnY0 + gap * 4 + 20,
+        t('pause.rematch'),
+        () => {
+          playSfx('ui');
+          this.hide();
+          this.onRematch();
+        },
+        false,
+        short,
+      ),
+    );
+
+    this.root.push(
+      this.makeBtn(
+        cx,
+        short ? btnY0 + gap * 5 + 10 : btnY0 + gap * 5 + 28,
         t('pause.quit'),
         () => {
           playSfx('ui');
@@ -215,7 +234,7 @@ export class PauseMenu {
       ...addLocalePicker({
         scene: this.scene,
         x: cx,
-        y: short ? top + panelH - 28 : cy + panelH * 0.38,
+        y: short ? top + panelH - 22 : cy + panelH * 0.42,
         depth: 222,
         scrollFactor: 0,
       }),

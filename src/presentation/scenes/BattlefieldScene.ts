@@ -431,6 +431,7 @@ export class BattlefieldScene extends Phaser.Scene {
     this.pauseMenu = new PauseMenu({
       scene: this,
       onResume: () => this.setPaused(false),
+      onRematch: () => this.rematchSameSkirmish(),
       onQuit: () => this.scene.start('Menu'),
       ignoreOnMain: (objs) => {
         this.cameras.main.ignore(this.add.container(0, 0, objs));
