@@ -92,6 +92,7 @@ describe('games registry', () => {
     const page = readFileSync(resolve(gamesDir, 'blob-evolution/index.html'), 'utf8');
     expect(page).toContain('id="hub-back"');
     expect(page).toMatch(/id="hub-back"[^>]*href="\/"/);
+    expect(page).toMatch(/id="hub-back"[^>]*aria-label="Back to Games hub"/);
   });
 
   it('marks Kane live and Blob Evolution experimental for hub status badges', () => {
