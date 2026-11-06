@@ -129,7 +129,8 @@ export const enGB = {
   'hub.subtitle': 'Pick a game to play.',
   'hub.meta': 'KANE and friends: pick a game to play.',
   'hub.play': 'Play',
-  'hub.experimental': 'Experimental',
+  'hub.live': 'Live',
+  'hub.experimental': 'Soft launch',
   'hub.kane.blurb':
     'Fantasy real-time strategy. Pick a species, build a base and crush the enemy.',
   'hub.blob.blurb':
@@ -582,7 +583,8 @@ export const ptBR = {
   'hub.subtitle': 'Escolha um jogo.',
   'hub.meta': 'KANE e companhia: escolha um jogo.',
   'hub.play': 'Jogar',
-  'hub.experimental': 'Experimental',
+  'hub.live': 'Ao vivo',
+  'hub.experimental': 'Pré-lançamento',
   'hub.kane.blurb':
     'Estratégia em tempo real de fantasia. Escolha uma espécie, construa uma base e esmague o inimigo.',
   'hub.blob.blurb':
@@ -1031,7 +1033,8 @@ export const es = {
   'hub.subtitle': 'Elige un juego.',
   'hub.meta': 'KANE y compañía: elige un juego.',
   'hub.play': 'Jugar',
-  'hub.experimental': 'Experimental',
+  'hub.live': 'En vivo',
+  'hub.experimental': 'Prelanzamiento',
   'hub.kane.blurb':
     'Estrategia en tiempo real de fantasía. Elige una especie, construye una base y aplasta al enemigo.',
   'hub.blob.blurb':

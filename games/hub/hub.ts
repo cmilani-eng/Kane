@@ -20,7 +20,23 @@ function pill(text: string, tone: string): HTMLSpanElement {
   return el;
 }
 
-function gameCard(game: GameEntry, playLabel: string, experimental: string): HTMLLIElement {
+function statusPill(
+  status: GameEntry['status'],
+  live: string,
+  softLaunch: string,
+): HTMLSpanElement {
+  if (status === 'live') {
+    return pill(live, 'bg-[rgb(123_224_255/0.13)] text-accent');
+  }
+  return pill(softLaunch, 'bg-gold-bg text-gold');
+}
+
+function gameCard(
+  game: GameEntry,
+  playLabel: string,
+  live: string,
+  softLaunch: string,
+): HTMLLIElement {
   const item = document.createElement('li');
   const link = document.createElement('a');
   link.className = [
@@ -32,10 +48,10 @@ function gameCard(game: GameEntry, playLabel: string, experimental: string): HTM
 
   const pills = document.createElement('div');
   pills.className = 'flex flex-wrap justify-center gap-1.5';
-  pills.append(pill(game.tagline, 'bg-pill-bg text-pill'));
-  if (game.status === 'experimental') {
-    pills.append(pill(experimental, 'bg-gold-bg text-gold'));
-  }
+  pills.append(
+    pill(game.tagline, 'bg-pill-bg text-pill'),
+    statusPill(game.status, live, softLaunch),
+  );
 
   const title = document.createElement('h2');
   title.className = 'mt-3 text-[clamp(28px,6vw,36px)] font-bold tracking-[-1.5px]';
@@ -100,7 +116,9 @@ function render(): void {
   terms.href = hubLegalHref('terms');
   renderLocale(text('hub-locale'));
   text('game-list').replaceChildren(
-    ...GAMES.map((game) => gameCard(game, chrome.play, chrome.experimental)),
+    ...GAMES.map((game) =>
+      gameCard(game, chrome.play, chrome.live, chrome.experimental),
+    ),
   );
 }
 

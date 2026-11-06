@@ -34,7 +34,8 @@ describe('hub copy', () => {
     const chrome = hubChrome();
     expect(chrome.title).toBe('Juegos');
     expect(chrome.play).toBe('Jugar');
-    expect(chrome.experimental).toBe('Experimental');
+    expect(chrome.live).toBe('En vivo');
+    expect(chrome.experimental).toBe('Prelanzamiento');
     expect(chrome.privacy).toBe('Privacidad');
     expect(hubBlurb('kane', 'English fallback')).toContain('especie');
     expect(hubBlurb('kane', 'English fallback')).not.toContain('Pick a species');
