@@ -20,6 +20,11 @@ export const flags = {
    * Local SP Vite path works with this false.
    */
   firebaseEmulators: false as const,
+  /**
+   * Phase 7 — Hosting preview channel config is present in-repo.
+   * Does not auto-deploy; local Vite remains the primary SP path.
+   */
+  hostingPreviewConfig: true as const,
 } as const;
 
 export type FeatureFlags = typeof flags;

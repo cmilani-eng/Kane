@@ -6,6 +6,7 @@ import { flags } from '../config/flags';
 import { createAuthStub, type AuthStub } from './authStub';
 import { loadAgeGate, ageGateLabel } from './ageGate';
 import { EMULATOR_ENDPOINTS, emulatorSummary } from './emulatorConfig';
+import { hostingPreviewLabel } from './hostingPreview';
 import { envWantsEmulators, loadFirebasePublicConfig } from './publicConfig';
 
 export interface FirebaseFoundation {
@@ -48,6 +49,7 @@ export function createFirebaseFoundation(): FirebaseFoundation {
         `firebase foundation=${flags.firebaseFoundation ? 'on' : 'off'}`,
         `project=${cfg.projectId}`,
         `emu=${useEmulators ? emulatorSummary(EMULATOR_ENDPOINTS) : 'off'}`,
+        hostingPreviewLabel(),
         `ads=${flags.adsEnabled}`,
         ageGateLabel(gate),
         auth.describe(),

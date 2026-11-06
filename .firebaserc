@@ -1,5 +1,15 @@
 {
   "projects": {
     "default": "kane-rts-stub"
-  }
+  },
+  "targets": {
+    "kane-rts-stub": {
+      "hosting": {
+        "kane-web": [
+          "kane-rts-stub"
+        ]
+      }
+    }
+  },
+  "etags": {}
 }
