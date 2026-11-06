@@ -84,6 +84,10 @@ import {
   type ControlGroups,
 } from '../../gameplay/battlefield/battlefieldOrders';
 import {
+  spawnStopPulses,
+  tickStopFx,
+} from '../../gameplay/battlefield/battlefieldStopFx';
+import {
   clearSelection,
   createBattlefieldWorld,
   issueMoveSelected,
@@ -127,6 +131,7 @@ import {
 import { drawHeroAbilityVfxList } from '../fx/heroAbilityVfx';
 import { drawMutationVisuals } from '../fx/mutationVisual';
 import { drawRageVisuals } from '../fx/rageVisual';
+import { drawStopFxList } from '../fx/stopCommandFeedback';
 import {
   drawUnitSilhouette,
   resolveUnitAnimPhase,
@@ -219,6 +224,7 @@ export class BattlefieldScene extends Phaser.Scene {
     this.hud = new BattlefieldHud(this, this.world);
     this.hud.menuBtn.on('pointerup', () => this.scene.start('Menu'));
     this.hud.onArmAttackMove = () => this.toggleAttackMoveMode();
+    this.hud.onStopSelected = () => this.issueStopCommand();
     this.minimap = new Minimap(this, this.world, this.cameraCtl);
     this.tutorial = createTutorialState();
     this.coach = new TutorialCoach(this, this.tutorial);
@@ -328,7 +334,7 @@ export class BattlefieldScene extends Phaser.Scene {
       if (castHeroAbility(this.world, 'ultimate', 'player')) playSfx('ability');
     });
     this.input.keyboard?.on('keydown-S', () => {
-      if (stopSelected(this.world) > 0) playSfx('ui');
+      this.issueStopCommand();
     });
     this.input.keyboard?.on('keydown-A', () => {
       this.toggleAttackMoveMode();
@@ -564,6 +570,15 @@ export class BattlefieldScene extends Phaser.Scene {
     });
   }
 
+  /** S / Stop — halt selection and flash halt rings. */
+  private issueStopCommand(): void {
+    const n = stopSelected(this.world);
+    if (n <= 0) return;
+    spawnStopPulses(this.world);
+    this.hud.flashStopButton();
+    playSfx('ui');
+  }
+
   private toggleAttackMoveMode(): void {
     if (this.mode === 'attackMove') {
       this.clearAttackMoveMode();
@@ -619,6 +634,7 @@ export class BattlefieldScene extends Phaser.Scene {
         if (fx.lifeMs >= fx.maxLifeMs - delta) playSfx(fx.sfx);
       }
       tickEconomyFx(this.world, delta);
+      tickStopFx(this.world, delta);
       tickBuildings(this.world, delta);
       tickProduction(this.world, delta);
       tickFormations(this.world, delta);
@@ -807,6 +823,7 @@ export class BattlefieldScene extends Phaser.Scene {
 
     drawHeroAbilityVfxList(g, this.world.vfx, view);
     drawEconomyFxList(g, this.world.economyFx, view);
+    drawStopFxList(g, this.world.stopFx, view);
     drawCoreFragments(g, this.world, this.animTimeMs, view);
     drawCombatFxList(g, this.world.combatFx, view);
     drawFormationVisuals(g, this.world, this.animTimeMs);

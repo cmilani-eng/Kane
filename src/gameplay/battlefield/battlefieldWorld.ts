@@ -130,6 +130,8 @@ export interface BattlefieldWorld {
   combatFx: import('./battlefieldCombatFx').CombatFx[];
   /** Gather / deposit ticks & pops (presentation). */
   economyFx: import('./battlefieldEconomyFx').EconomyFx[];
+  /** Brief halt rings when S / Stop is issued. */
+  stopFx: import('./battlefieldStopFx').StopFx[];
   /** Capturable CORE fragments (shattered KANE CORE). */
   coreFragments: import('./battlefieldCoreFragments').CoreFragment[];
   /** Presentation cue — claim SFX window. */
@@ -394,6 +396,7 @@ export function createBattlefieldWorld(
     vfx: [],
     combatFx: [],
     economyFx: [],
+    stopFx: [],
     coreFragments: [],
     coreClaimFlashMs: 0,
     fog: createFogState(),
