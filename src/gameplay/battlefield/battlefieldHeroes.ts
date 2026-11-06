@@ -514,27 +514,57 @@ export function heroIncomingMult(
   return m;
 }
 
-export function heroHudLine(world: BattlefieldWorld): string {
+export interface HeroAbilityHud {
+  name: string;
+  ready: boolean;
+  sec: number;
+}
+
+/** Facts for the hero HUD line. Presentation translates the chrome. */
+export type HeroHudState =
+  | { kind: 'none' }
+  | { kind: 'recruit'; id: HeroId; gold: number; crystals: number }
+  | { kind: 'fallen' }
+  | {
+      kind: 'live';
+      name: string;
+      hp: number;
+      q: HeroAbilityHud;
+      w: HeroAbilityHud;
+      e: HeroAbilityHud;
+      chaosSec: number | null;
+    };
+
+export function heroHudState(world: BattlefieldWorld): HeroHudState {
   ensureHeroFields(world);
   const rt = world.heroRuntime;
   const def = heroForSpecies(world.speciesId);
-  if (!def) return '';
-  const recruitHint =
-    def.id === 'zoggle'
-      ? 'Hero: H recruits ZOGGLE at Weird Core / Portal of Chaos'
-      : def.id === 'boniface'
-        ? 'Hero: H recruits KING BONIFACE at Keep / Academy'
-        : 'Hero: H recruits GRUK at Junkyard / Big Boss Den';
+  if (!def) return { kind: 'none' };
   if (!rt) {
-    return `${recruitHint} (${def.recruitCostGold}g/${def.recruitCostCrystals}c)`;
+    return {
+      kind: 'recruit',
+      id: def.id,
+      gold: def.recruitCostGold,
+      crystals: def.recruitCostCrystals,
+    };
   }
   const hero = world.units.find((u) => u.id === rt.unitId);
-  if (!hero) return 'Hero fallen';
-  const cd = (s: HeroAbilitySlot) =>
-    rt.cds[s] > 0 ? `${Math.ceil(rt.cds[s] / 1000)}s` : 'READY';
-  const chaos =
-    rt.chaosUntilMs > 0
-      ? `  ·  CHAOS ${Math.ceil(rt.chaosUntilMs / 1000)}s`
-      : '';
-  return `${hero.name} HP ${Math.ceil(hero.hp)}  ·  Q ${def.abilities.ability1.name}[${cd('ability1')}]  W ${def.abilities.ability2.name}[${cd('ability2')}]  E ${def.abilities.ultimate.name}[${cd('ultimate')}]${chaos}`;
+  if (!hero) return { kind: 'fallen' };
+  const slot = (s: HeroAbilitySlot, name: string): HeroAbilityHud => {
+    const ms = rt.cds[s];
+    return {
+      name,
+      ready: ms <= 0,
+      sec: ms > 0 ? Math.ceil(ms / 1000) : 0,
+    };
+  };
+  return {
+    kind: 'live',
+    name: hero.name,
+    hp: Math.ceil(hero.hp),
+    q: slot('ability1', def.abilities.ability1.name),
+    w: slot('ability2', def.abilities.ability2.name),
+    e: slot('ultimate', def.abilities.ultimate.name),
+    chaosSec: rt.chaosUntilMs > 0 ? Math.ceil(rt.chaosUntilMs / 1000) : null,
+  };
 }

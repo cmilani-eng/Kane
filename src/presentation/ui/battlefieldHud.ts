@@ -10,7 +10,7 @@ import { difficultyCopy, speciesCopy, speciesName, t } from '../../i18n';
 import { livingByTeam } from '../../gameplay/battlefield/battlefieldCombat';
 import {
   castHeroAbility,
-  heroHudLine,
+  heroHudState,
   recruitHero,
 } from '../../gameplay/battlefield/battlefieldHeroes';
 import {
@@ -23,7 +23,8 @@ import {
   selectOrCycleIdleMilitary,
   type IdleMilitaryChipResult,
 } from '../../gameplay/battlefield/idleMilitary';
-import { coreHudSummary } from '../../gameplay/battlefield/battlefieldCoreFragments';
+import { coreHudModel } from '../../gameplay/battlefield/battlefieldCoreFragments';
+import { CORE_TONE_COLOR, formatCoreLine, formatHeroLine } from './matchStatusCopy';
 import {
   countVisibleMilitary,
   selectAllVisibleMilitary,
@@ -869,23 +870,11 @@ export class BattlefieldHud {
       this.supplyDot.setFillStyle(0xb8c9d9);
     }
     this.status.setText(statusText);
-    this.heroLine.setText(heroHudLine(this.world));
-    const coreText = coreHudSummary(this.world);
+    this.heroLine.setText(formatHeroLine(heroHudState(this.world)));
+    const core = coreHudModel(this.world);
     const wasCore = this.coreLine.visible;
-    this.coreLine.setText(coreText).setVisible(!!coreText);
-    if (coreText.includes('Win hold')) {
-      this.coreLine.setColor('#f0c75e');
-    } else if (coreText.includes('Enemy win')) {
-      this.coreLine.setColor('#e87aa8');
-    } else if (coreText.includes('Capturing')) {
-      this.coreLine.setColor('#7ec8ff');
-    } else if (coreText.includes('Contested')) {
-      this.coreLine.setColor('#f0c75e');
-    } else if (coreText.includes('Enemy capture')) {
-      this.coreLine.setColor('#e87aa8');
-    } else {
-      this.coreLine.setColor('#c8e4ff');
-    }
+    this.coreLine.setText(core ? formatCoreLine(core) : '').setVisible(!!core);
+    this.coreLine.setColor(core ? CORE_TONE_COLOR[core.tone] : '#c8e4ff');
     if (wasCore !== this.coreLine.visible) this.layout();
     const armyN = countVisibleMilitary(this.world);
     this.armyBtn.setText(this.armyLabel(armyN));
