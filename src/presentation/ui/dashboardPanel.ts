@@ -29,6 +29,7 @@ import type { AiDifficultyId } from '../../gameplay/battlefield/aiDifficulty';
 import { difficultyCopy, speciesName, t } from '../../i18n';
 import { playSfx } from '../audio/sfx';
 import { showAuthPanel } from './authPanel';
+import { formatMatchClock } from './matchClock';
 
 const ENGLISH_NAME_FALLBACK = new Set(['Guest', 'Commander']);
 
@@ -71,15 +72,12 @@ export function accountMatchesText(rows: AccountMatch[]): string {
   if (rows.length === 0) return t('account.recentEmpty');
   const lines = [t('stats.recentHead', { n: rows.length })];
   for (const row of rows) {
-    const mins = Math.max(0, Math.round(row.durationMs / 60000));
-    const secs = Math.max(0, Math.round((row.durationMs % 60000) / 1000));
     lines.push(
       t('stats.matchLine', {
         result: row.won ? t('stats.win') : t('stats.loss'),
         species: speciesName(row.species),
         difficulty: difficultyCopy(row.difficulty).label,
-        mins,
-        secs,
+        clock: formatMatchClock(row.durationMs),
       }),
     );
   }

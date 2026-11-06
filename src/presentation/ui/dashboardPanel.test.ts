@@ -59,7 +59,23 @@ describe('account copy', () => {
     expect(played).toContain('Victoria');
     expect(played).toContain('Los Brutos');
     expect(played).toContain('Difícil');
+    expect(played).toContain('1:05');
+    expect(played).not.toContain('1m 5s');
     expect(played).not.toContain('Win');
+  });
+
+  it('formats recent match duration as mm:ss', () => {
+    setLocale('en-GB');
+    const played = accountMatchesText([
+      {
+        won: false,
+        species: 'nobles',
+        difficulty: 'normal',
+        durationMs: 125_000,
+      },
+    ]);
+    expect(played).toContain('2:05');
+    expect(played).not.toContain('2m');
   });
 
   it('translates the profile and the load failure', () => {
