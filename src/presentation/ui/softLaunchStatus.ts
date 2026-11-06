@@ -14,6 +14,11 @@ export function softLaunchKanePathTip(path = '/kane/'): string {
   return path;
 }
 
+/** Canonical Blob Evolution soft-launch play path tip for the menu strip. */
+export function softLaunchBlobPathTip(path = '/blob-evolution/'): string {
+  return path;
+}
+
 /** Compact one-liner for the title menu. */
 export function softLaunchStatusStrip(): string {
   const hostBit = flags.hostingPreviewConfig
@@ -27,6 +32,6 @@ export function softLaunchStatusStrip(): string {
   // Hub picker + canonical Kane / Blob play URLs (see games/PATHS.md).
   const hubBit = 'hub /';
   const playBit = softLaunchKanePathTip();
-  const blobBit = '/blob-evolution';
+  const blobBit = softLaunchBlobPathTip();
   return `${hostBit} · ${adminBit} · ${cosBit} · ${volBit} · ${pwaBit} · ${hubBit} · ${playBit} · ${blobBit}`;
 }
