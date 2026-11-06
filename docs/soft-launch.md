@@ -103,7 +103,8 @@ This doc is the honest gate before any public preview URL.
 | Hub Kane path tip | **OK** — Kane hub card shows Soft-launch path · /kane/ tip | `hubKanePathTip`, `hub.kanePathTip` |
 | Hub Blob path tip | **OK** — Blob Evolution hub card shows Soft-launch path · /blob-evolution/ tip | `hubBlobPathTip`, `hub.blobPathTip` |
 | Hub → Blob path | **OK** — picker cards link `./blob-evolution/`; Vite entry `main.js` guarded in registry tests | `hubLinks`, `games/PATHS.md` |
-| Soft-launch Blob path | **OK** — menu soft-launch strip lists `/blob-evolution` beside hub / `/kane` | `softLaunchStatusStrip` |
+| Soft-launch Kane path tip | **OK** — menu soft-launch strip lists `/kane/` (trailing slash, PATHS.md) | `softLaunchKanePathTip`, `softLaunchStatusStrip` |
+| Soft-launch Blob path | **OK** — menu soft-launch strip lists `/blob-evolution` beside hub / `/kane/` | `softLaunchStatusStrip` |
 | Hub legal footer | **OK** — Privacy / Terms footer hrefs stay `/privacy.html` and `/terms.html` after the games/ move | `hubLegalHref`, `games/privacy.html` |
 | Hub footer year | **OK** — picker footer shows `© {year}` from the calendar year | `hubFooterYear`, `hub.year`, `#hub-year` |
 | Legal hub-back | **OK** — Privacy / Terms use `← Games` `#hub-back` to `/` (Blob parity) | `games/privacy.html`, `games/terms.html` |
@@ -155,4 +156,4 @@ This doc is the honest gate before any public preview URL.
 
 ## Menu status strip
 
-The title menu shows a one-line soft-launch strip (hosting · admin · cosmetics · vol · pwa · hub / · /kane · /blob-evolution) built by `src/presentation/ui/softLaunchStatus.ts`. Ads and age-gate flags stay out of that strip so the main experience stays clean. A ← Games footer link returns to the hub picker at `/`.
+The title menu shows a one-line soft-launch strip (hosting · admin · cosmetics · vol · pwa · hub / · /kane/ · /blob-evolution) built by `src/presentation/ui/softLaunchStatus.ts`. Ads and age-gate flags stay out of that strip so the main experience stays clean. A ← Games footer link returns to the hub picker at `/`.
