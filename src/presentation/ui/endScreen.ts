@@ -10,6 +10,7 @@ import type { SpeciesId } from '../../data/speciesStub';
 import { mapCopy, speciesName, t } from '../../i18n';
 import { playEndFanfare, playSfx } from '../audio/sfx';
 import { formatMatchClock } from './matchClock';
+import { copyEndShareLine, formatEndShareLine } from './endShareLine';
 
 export interface EndScreenOpts {
   scene: Phaser.Scene;
@@ -62,18 +63,19 @@ export function showKaneEndScreen(opts: EndScreenOpts): void {
 
   const short = height < 500;
   const panelW = short ? Math.min(720, width - 24) : Math.min(440, width - 32);
-  const panelH = short ? height - 16 : Math.min(420, height * 0.7);
+  const panelH = short ? height - 16 : Math.min(460, height * 0.74);
   const cy = short ? height / 2 : height * 0.48;
   const top = cy - panelH / 2;
-  const yBrand = short ? top + 18 : cy - panelH * 0.38;
-  const yTitle = short ? top + 62 : cy - panelH * 0.12;
-  const yTag = short ? top + 96 : cy + panelH * 0.08;
-  const ySub = short ? top + 120 : cy + panelH * 0.18;
-  const yMeta = short ? top + 144 : cy + panelH * 0.26;
-  const yRecap = short ? top + 166 : cy + panelH * 0.34;
+  const yBrand = short ? top + 18 : cy - panelH * 0.4;
+  const yTitle = short ? top + 58 : cy - panelH * 0.18;
+  const yTag = short ? top + 90 : cy + panelH * 0.02;
+  const ySub = short ? top + 112 : cy + panelH * 0.12;
+  const yMeta = short ? top + 134 : cy + panelH * 0.2;
+  const yRecap = short ? top + 154 : cy + panelH * 0.28;
+  const yShare = short ? top + 176 : cy + panelH * 0.36;
   const yActions = top + panelH - 36;
-  const yRematch = short ? yActions : cy + panelH * 0.44;
-  const yMenu = short ? yActions : cy + panelH * 0.58;
+  const yRematch = short ? yActions : cy + panelH * 0.48;
+  const yMenu = short ? yActions : cy + panelH * 0.6;
   const xRematch = short ? width / 2 - 110 : width / 2;
   const xMenu = short ? width / 2 + 110 : width / 2;
   const panel = scene.add
@@ -222,6 +224,47 @@ export function showKaneEndScreen(opts: EndScreenOpts): void {
     .setVisible(hasRecap);
   root.push(recap);
 
+  const shareLine = formatEndShareLine({
+    win,
+    speciesName: name,
+    mapLabel,
+    clock,
+    units: playerUnitsLeft,
+    buildings: playerBuildingsLeft,
+  });
+  const shareBtn = scene.add
+    .text(width / 2, yShare, t('end.shareCopy'), {
+      fontFamily: 'system-ui, sans-serif',
+      fontSize: '12px',
+      color: '#c8d8e8',
+      backgroundColor: '#1a2838',
+      padding: { x: 12, y: 6 },
+    })
+    .setOrigin(0.5)
+    .setScrollFactor(0)
+    .setDepth(202)
+    .setAlpha(0)
+    .setInteractive({ useHandCursor: true })
+    .on('pointerover', () => shareBtn.setStyle({ color: accentHex }))
+    .on('pointerout', () => {
+      if (shareBtn.text === t('end.shareCopied')) return;
+      shareBtn.setStyle({ color: '#c8d8e8' });
+    })
+    .on('pointerup', () => {
+      playSfx('ui');
+      void copyEndShareLine(shareLine).then((ok) => {
+        if (!ok) return;
+        shareBtn.setText(t('end.shareCopied'));
+        shareBtn.setStyle({ color: accentHex });
+        scene.time.delayedCall(1600, () => {
+          if (!shareBtn.active) return;
+          shareBtn.setText(t('end.shareCopy'));
+          shareBtn.setStyle({ color: '#c8d8e8' });
+        });
+      });
+    });
+  root.push(shareBtn);
+
   const rematchBtn = scene.add
     .text(xRematch, yRematch, t('end.rematch'), {
       fontFamily: 'Georgia, "Times New Roman", serif',
@@ -286,7 +329,7 @@ export function showKaneEndScreen(opts: EndScreenOpts): void {
     ease: 'Back.easeOut',
   });
   scene.tweens.add({
-    targets: [brand, tag, sub, meta, recap, rematchBtn, menuBtn],
+    targets: [brand, tag, sub, meta, recap, shareBtn, rematchBtn, menuBtn],
     alpha: 1,
     duration: 400,
     delay: 180,
