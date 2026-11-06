@@ -43,6 +43,12 @@ export function lobbyFactionTipLine(): string {
   return t('lobby.factionTip', { name: s.name, blurb: s.motto });
 }
 
+/** Selected difficulty tip — label · blurb from match prefs. */
+export function lobbyDifficultyTipLine(): string {
+  const d = difficultyCopy(loadMatchPrefs().difficulty);
+  return t('lobby.difficultyTip', { label: d.label, blurb: d.blurb });
+}
+
 /** Species · map · difficulty — same shape as pause.setup for rematch context. */
 export function lobbySetupLine(): string {
   const prefs = loadMatchPrefs();
@@ -127,7 +133,7 @@ export function showLobbyPanel(scene: Phaser.Scene, onClose: () => void): void {
     .text(
       cx,
       top + 106,
-      `${lobbySetupLine()}\n${lobbyFactionTipLine()}\n${lobbyMapTipLine()}\n${lobbyMatchLengthTipLine()}`,
+      `${lobbySetupLine()}\n${lobbyFactionTipLine()}\n${lobbyDifficultyTipLine()}\n${lobbyMapTipLine()}\n${lobbyMatchLengthTipLine()}`,
       {
         fontFamily: 'system-ui, sans-serif',
         fontSize: '12px',
