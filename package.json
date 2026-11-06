@@ -9,7 +9,10 @@
     "build": "tsc && vite build",
     "preview": "vite preview --host",
     "emulators": "firebase emulators:start",
-    "emulators:exec": "firebase emulators:exec --only auth,database,firestore"
+    "emulators:exec": "firebase emulators:exec --only auth,database,firestore",
+    "hosting:preview": "npm run build && firebase hosting:channel:deploy kane-preview --expires 7d --only kane-web",
+    "hosting:deploy": "npm run build && firebase deploy --only hosting:kane-web",
+    "hosting:channels": "firebase hosting:channel:list"
   },
   "dependencies": {
     "phaser": "^4.2.1"

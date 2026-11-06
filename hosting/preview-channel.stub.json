@@ -1,0 +1,14 @@
+{
+  "$comment": "Stub metadata for Firebase Hosting preview channels. Not read by the CLI — documents the intended channel name + expiry for humans/scripts.",
+  "siteTarget": "kane-web",
+  "channelId": "kane-preview",
+  "expires": "7d",
+  "localPrimary": "npm run dev",
+  "deployPreview": "npm run hosting:preview",
+  "deployLive": "npm run hosting:deploy",
+  "notes": [
+    "Local Vite remains the primary playtest path.",
+    "Preview channels are optional soft-pipeline URLs after npm run build.",
+    "adsEnabled stays false — zero ad traffic on preview or live."
+  ]
+}
