@@ -19,6 +19,7 @@ import type { AiDifficultyId } from '../../gameplay/battlefield/aiDifficulty';
 import { isSfxMuted, playSfx, setSfxMuted } from '../audio/sfx';
 import { formatMatchClock } from './battlefieldHud';
 import { addLocalePicker } from './localePicker';
+import { pauseDifficultyTipLine } from './pauseDifficultyTip';
 import { pauseMapTipLine } from './pauseMapTip';
 import { pauseSpeciesMottoTipLine } from './pauseSpeciesMottoTip';
 import {
@@ -163,6 +164,7 @@ export class PauseMenu {
     const elapsedLine = t('pause.elapsed', { clock });
     const mapTip = pauseMapTipLine(this.snapshot.mapId);
     const mottoTip = pauseSpeciesMottoTipLine(this.snapshot.speciesId);
+    const difficultyTip = pauseDifficultyTipLine(this.snapshot.difficulty);
     const setupLine = t('pause.setup', {
       species: speciesName(this.snapshot.speciesId),
       map: mapCopy(this.snapshot.mapId).label,
@@ -179,8 +181,9 @@ export class PauseMenu {
     const yElapsed = short ? top + 58 : cy - panelH * 0.34;
     const yMap = short ? top + 76 : cy - panelH * 0.28;
     const yMotto = short ? top + 94 : cy - panelH * 0.23;
-    const ySetup = short ? top + 112 : cy - panelH * 0.18;
-    const ySupply = short ? top + 128 : cy - panelH * 0.12;
+    const yDifficulty = short ? top + 112 : cy - panelH * 0.18;
+    const ySetup = short ? top + 128 : cy - panelH * 0.13;
+    const ySupply = short ? top + 144 : cy - panelH * 0.07;
     const elapsed = this.scene.add
       .text(cx, yElapsed, elapsedLine, {
         fontFamily: 'system-ui, sans-serif',
@@ -212,6 +215,17 @@ export class PauseMenu {
       .setOrigin(0.5)
       .setScrollFactor(0)
       .setDepth(222);
+    const difficultyLine = this.scene.add
+      .text(cx, yDifficulty, difficultyTip, {
+        fontFamily: 'system-ui, sans-serif',
+        fontSize: short ? '11px' : '12px',
+        color: '#c8d8e8',
+        align: 'center',
+        wordWrap: { width: panelW - 40 },
+      })
+      .setOrigin(0.5)
+      .setScrollFactor(0)
+      .setDepth(222);
     const setup = this.scene.add
       .text(cx, ySetup, setupLine, {
         fontFamily: 'system-ui, sans-serif',
@@ -232,10 +246,19 @@ export class PauseMenu {
       .setOrigin(0.5)
       .setScrollFactor(0)
       .setDepth(222);
-    this.root.push(title, brand, elapsed, mapLine, motto, setup, supplyText);
+    this.root.push(
+      title,
+      brand,
+      elapsed,
+      mapLine,
+      motto,
+      difficultyLine,
+      setup,
+      supplyText,
+    );
 
-    // Short layout: elapsed + map + motto + setup + supply need room before Resume.
-    const btnY0 = short ? top + 156 : cy - panelH * 0.02;
+    // Short layout: elapsed + map + motto + difficulty + setup + supply need room.
+    const btnY0 = short ? top + 172 : cy + panelH * 0.02;
     const gap = short ? 36 : Math.min(44, panelH * 0.11);
     this.root.push(
       this.makeBtn(cx, btnY0, t('pause.resume'), () => {
