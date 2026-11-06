@@ -353,7 +353,9 @@ export class BattlefieldScene extends Phaser.Scene {
     this.hud.onUnderAttackJump = (x, y) => {
       this.cameraCtl.centerOn(x, y);
     };
-    this.controlsHelp = createControlsHelpPanel({});
+    this.controlsHelp = createControlsHelpPanel({
+      getSpeciesId: () => this.world.speciesId,
+    });
     mountSelectionPanel({
       stop: () => this.issueStopCommand(),
       attackMove: () => this.toggleAttackMoveMode(),

@@ -2,6 +2,7 @@
  * In-match controls / hotkey cheat sheet.
  * Opens from HUD Help chip or ? / / keys. Mobile-scroll friendly DOM overlay.
  */
+import type { SpeciesId } from '../../data/speciesStub';
 import { t } from '../../i18n';
 import { playSfx } from '../audio/sfx';
 
@@ -140,8 +141,18 @@ function section(label: string): string {
   return `<div class="kane-help-section">${esc(label)}</div>`;
 }
 
+/** Species-only stance keys (Formation / Mutation / Rage). */
+export function speciesHelpRows(speciesId: SpeciesId | null | undefined): string {
+  if (speciesId === 'nobles') return row(t('help.formation'), 'F');
+  if (speciesId === 'weirdos') return row(t('help.mutation'), 'M');
+  if (speciesId === 'brutes') return row(t('help.rage'), 'R');
+  return '';
+}
+
 /** Cheat-sheet copy for the open locale. Key caps stay literal. */
-export function controlsHelpCopy(): {
+export function controlsHelpCopy(
+  speciesId: SpeciesId | null | undefined = null,
+): {
   title: string;
   sub: string;
   gotIt: string;
@@ -149,6 +160,7 @@ export function controlsHelpCopy(): {
   close: string;
   body: string;
 } {
+  const speciesRow = speciesHelpRows(speciesId);
   const body = `
     ${section(t('help.touch'))}
     ${row(t('help.select'), t('help.selectKeys'))}
@@ -171,7 +183,7 @@ export function controlsHelpCopy(): {
     ${section(t('help.hero'))}
     ${row(t('help.recruit'), t('help.recruitKeys'))}
     ${row(t('help.abilities'), 'Q / W / E')}
-    ${row(t('help.speciesActs'), 'F · M · R')}
+    ${speciesRow}
   `;
   return {
     title: t('help.title'),
@@ -186,6 +198,8 @@ export function controlsHelpCopy(): {
 export function createControlsHelpPanel(opts: {
   onOpen?: () => void;
   onClose?: () => void;
+  /** Current player species — filters Formation / Mutation / Rage rows. */
+  getSpeciesId?: () => SpeciesId | null | undefined;
 }): ControlsHelpHandle {
   ensureStyle();
   let open = false;
@@ -211,7 +225,7 @@ export function createControlsHelpPanel(opts: {
     root.setAttribute('role', 'dialog');
     root.setAttribute('aria-modal', 'true');
     root.setAttribute('aria-labelledby', 'kane-help-title');
-    const copy = controlsHelpCopy();
+    const copy = controlsHelpCopy(opts.getSpeciesId?.() ?? null);
     root.innerHTML = `
       <div class="kane-help-card">
         <button type="button" class="kane-help-x" aria-label="${esc(copy.close)}">✕</button>
