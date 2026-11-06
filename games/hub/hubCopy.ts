@@ -7,6 +7,7 @@ const HUB_BLURB: Record<string, MessageKey> = {
 
 export function hubChrome(): {
   title: string;
+  documentTitle: string;
   subtitle: string;
   meta: string;
   play: string;
@@ -18,6 +19,7 @@ export function hubChrome(): {
 } {
   return {
     title: t('hub.title'),
+    documentTitle: t('hub.documentTitle'),
     subtitle: t('hub.subtitle'),
     meta: t('hub.meta'),
     play: t('hub.play'),

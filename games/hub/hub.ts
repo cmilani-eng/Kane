@@ -102,7 +102,7 @@ function text(id: string): HTMLElement {
 function render(): void {
   applyDocumentLanguage();
   const chrome = hubChrome();
-  document.title = `KANE · ${chrome.title}`;
+  document.title = chrome.documentTitle;
   document.querySelector('meta[name="description"]')?.setAttribute('content', chrome.meta);
   text('hub-locale-label').textContent = chrome.language;
   text('hub-title').textContent = chrome.title;
