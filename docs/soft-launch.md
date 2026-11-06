@@ -76,6 +76,7 @@ This doc is the honest gate before any public preview URL.
 | Unit supply tip | **OK** — selection stats show catalog supply cost (1 slot per unit, same-type only) | `unitSupplyCost`, `sel.supplyTip` |
 | Unit train gold tip | **OK** — selection stats show catalog train gold cost (same-type only) | `unitTrainGold`, `sel.trainGoldTip` |
 | Unit train crystal tip | **OK** — selection stats show catalog train crystal cost (same-type only; omitted when 0) | `unitTrainCrystal`, `sel.trainCrystalTip` |
+| Unit role tip | **OK** — selection stats show coarse duty role (worker / combat / hero), distinct from armor class | `unitRole`, `sel.roleTip` |
 | Build remain secs | **OK** — incomplete building selection shows construction seconds beside % | `buildRemainSec`, `sel.buildingPct` |
 | Place build secs | **OK** — place-mode cost strip shows full construction seconds when buildMs > 0 | `hud.placeBuild`, `setPlacementCost` |
 | Stock supply tone | **OK** — DOM stock strip uses the same near-cap/full supply tones as HUD/pause | `stockStrip`, `supplyTone` |
