@@ -528,7 +528,8 @@ export function selectionPanelInsetPx(
     if (short) return 72;
     return narrow ? 96 : 88;
   }
-  // iPhone 17 landscape is only ~402px tall, so the panel stays shorter.
+  // iPhone 17 landscape is only ~402px tall. selectionPanel.css caps the
+  // sheet at 164px, so this lift keeps the ability pads in the gap above it.
   if (short) return 120;
   return narrow ? 188 : 172;
 }
