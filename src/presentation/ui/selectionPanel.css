@@ -267,7 +267,7 @@
     }
   }
   #kane-selection-panel button.is-train {
-    background: var(--color-kane-sky);
+    background: linear-gradient(180deg, #4a4032 0%, #2c261d 100%);
     flex: 1 1 100px;
     max-width: 180px;
     text-align: left;
@@ -309,11 +309,11 @@
     color: var(--color-kane-danger);
   }
   #kane-selection-panel button.is-ability {
-    background: #2a3548;
+    background: linear-gradient(180deg, #4a4032 0%, #2c261d 100%);
     flex: 1 1 96px;
     max-width: 160px;
     text-align: left;
-    border-color: var(--color-kane-ice);
+    border-color: #8a6a2b;
   }
   #kane-selection-panel button.is-ability.is-ultimate {
     border-color: var(--color-kane-gold);
