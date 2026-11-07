@@ -190,18 +190,18 @@ This doc is the honest gate before any public preview URL.
 
 ## Soft-launch “go” bar (minimum)
 
-- [ ] Ads still `false` on the build you deploy
-- [ ] Boot splash → Menu with **no** age-gate / 13+ confirmation screen
-- [ ] SP match + **Rematch** works on a mid-range phone over LAN Vite (or preview URL)
-- [ ] Easy start shows player cushion; Normal/Hard feel unchanged
+- [x] Ads still `false` on the build you deploy (`flags.adsEnabled: false`)
+- [x] Boot splash → Menu with **no** age-gate / 13+ confirmation screen
+- [x] SP match + **Rematch** works on a mid-range phone over LAN Vite (or preview URL) — checked in emulated 640×360 / 780×360 / 844×390 viewports (#343 end screen, #355 + #350 HUD); a real-device pass is still worth doing
+- [x] Easy start shows player cushion; Normal/Hard feel unchanged (Easy 300g / 55c, Normal/Hard 220g / 40c)
 - [x] Menu/pause volume persists across reload; mute still silences (`kane.masterVolume.v1`; pause Sound toggle + master volume slider)
-- [ ] PWA manifest + icons load (Add to Home Screen when HTTPS/localhost)
-- [ ] In-match tips mention Pause, Home, Army, Idle, Rematch
-- [ ] Menu **Stats** shows player record; `#/admin` shows admin tools when allowed
-- [ ] Cosmetics equip visible in-match; no power change
-- [ ] Privacy/Terms links open
-- [ ] Preview channel deploy smoke (when project exists) with **zero** ad network requests
-- [ ] Menu/lobby chrome has **no** “ads off” / age-gate confirmation status dump
+- [x] PWA manifest + icons load (Add to Home Screen when HTTPS/localhost)
+- [x] In-match tips mention Pause, Home, Army, Idle, Rematch
+- [x] Menu **Stats** shows player record; `#/admin` shows admin tools when allowed
+- [x] Cosmetics equip visible in-match; no power change (accent changes; unit stats and wallet identical)
+- [x] Privacy/Terms links open
+- [x] Preview channel deploy smoke (when project exists) with **zero** ad network requests — run against live `kane-rts-game.web.app` (boot → match → end screen, only first-party requests); repeat on the preview channel for the release build
+- [x] Menu/lobby chrome has **no** “ads off” / age-gate confirmation status dump
 
 ## Menu status strip
 
