@@ -36,6 +36,7 @@ This doc is the honest gate before any public preview URL.
 | End units trained tip | **OK** — end screen shows Trained · n from player production completions (not starting roster) | `playerUnitsTrained`, `endUnitsTrainedTipLine`, `end.trainedTip` |
 | End buildings raised tip | **OK** — end screen shows Raised · n from player construction completions (not starting halls) | `playerBuildingsRaised`, `endBuildingsRaisedTipLine`, `end.raisedTip` |
 | End units lost tip | **OK** — end screen shows Lost · n from player unit removals (distinct from kill-ratio line) | `playerUnitLosses`, `endUnitsLostTipLine`, `end.lostTip` |
+| End kills tip | **OK** — end screen shows Kills · n from enemy unit removals (distinct from kill-ratio / Lost tips) | `playerUnitKills`, `endKillsTipLine`, `end.killsTip` |
 | End buildings lost tip | **OK** — end screen shows Razed · n from player building destructions (distinct from units Lost tip) | `playerBuildingsLost`, `endBuildingsLostTipLine`, `end.bldLostTip` |
 | End gathered | **OK** — Keep deposits tally gold/crystal; end panel shows Gathered line | `playerGoldGathered`, `playerCrystalsGathered`, `end.gathered` |
 | End gathered tip | **OK** — end screen shows Gathered · n total deposits (gold+crystals; distinct from g/c breakdown) | `endResourcesGatheredTipLine`, `end.gatheredTip` |

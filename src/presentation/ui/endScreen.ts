@@ -23,6 +23,7 @@ import { endObjectiveResultTipLine } from './endObjectiveResultTip';
 import { endSpeciesPlayedTipLine } from './endSpeciesPlayedTip';
 import { endBuildingsLostTipLine } from './endBuildingsLostTip';
 import { endBuildingsRaisedTipLine } from './endBuildingsRaisedTip';
+import { endKillsTipLine } from './endKillsTip';
 import { endUnitsLostTipLine } from './endUnitsLostTip';
 import { endUnitsTrainedTipLine } from './endUnitsTrainedTip';
 import { endResourcesGatheredTipLine } from './endResourcesGatheredTip';
@@ -151,11 +152,12 @@ export function showKaneEndScreen(opts: EndScreenOpts): void {
   const yObjective = short ? statRowY(4) : cy + panelH * 0.42;
   const yTrained = short ? statRowY(6) : cy + panelH * 0.46;
   const yRaised = short ? statRowY(7) : cy + panelH * 0.5;
-  const yLost = short ? statRowY(8) : cy + panelH * 0.54;
-  const yBldLost = short ? statRowY(9) : cy + panelH * 0.58;
-  const yRecap = short ? statRowY(5) : cy + panelH * 0.62;
-  const yKill = short ? statRowY(10) : cy + panelH * 0.66;
-  const yGathered = short ? statRowY(11) : cy + panelH * 0.7;
+  const yKills = short ? statRowY(8) : cy + panelH * 0.535;
+  const yLost = short ? statRowY(9) : cy + panelH * 0.57;
+  const yBldLost = short ? statRowY(10) : cy + panelH * 0.605;
+  const yRecap = short ? statRowY(5) : cy + panelH * 0.64;
+  const yKill = short ? statRowY(11) : cy + panelH * 0.675;
+  const yGathered = short ? statRowY(12) : cy + panelH * 0.71;
   const yShare = short ? yActions - 44 : cy + panelH * 0.72;
   const yStep = short ? yActions - 44 : cy + panelH * 0.68;
   const yRematch = short ? yActions : cy + panelH * (stepUp ? 0.76 : 0.72);
@@ -409,12 +411,28 @@ export function showKaneEndScreen(opts: EndScreenOpts): void {
     .setVisible(!!raisedTip);
   root.push(raisedTipText);
 
+  const killsTip =
+    playerUnitKills != null ? endKillsTipLine(playerUnitKills) : '';
+  const killsTipText = scene.add
+    .text(statX(8), yKills, killsTip, {
+      fontFamily: 'system-ui, sans-serif',
+      fontSize: '13px',
+      color: '#c8d8e8',
+      align: 'center',
+    })
+    .setOrigin(0.5)
+    .setScrollFactor(0)
+    .setDepth(202)
+    .setAlpha(0)
+    .setVisible(!!killsTip);
+  root.push(killsTipText);
+
   const lostTip =
     playerUnitLosses != null
       ? endUnitsLostTipLine(playerUnitLosses)
       : '';
   const lostTipText = scene.add
-    .text(statX(8), yLost, lostTip, {
+    .text(statX(9), yLost, lostTip, {
       fontFamily: 'system-ui, sans-serif',
       fontSize: '13px',
       color: '#c8d8e8',
@@ -432,7 +450,7 @@ export function showKaneEndScreen(opts: EndScreenOpts): void {
       ? endBuildingsLostTipLine(playerBuildingsLost)
       : '';
   const bldLostTipText = scene.add
-    .text(statX(9), yBldLost, bldLostTip, {
+    .text(statX(10), yBldLost, bldLostTip, {
       fontFamily: 'system-ui, sans-serif',
       fontSize: '13px',
       color: '#c8d8e8',
@@ -476,7 +494,7 @@ export function showKaneEndScreen(opts: EndScreenOpts): void {
       })
     : '';
   const killRatio = scene.add
-    .text(statX(10), yKill, killText, {
+    .text(statX(11), yKill, killText, {
       fontFamily: 'system-ui, sans-serif',
       fontSize: '13px',
       color: '#a8bdd0',
@@ -498,7 +516,7 @@ export function showKaneEndScreen(opts: EndScreenOpts): void {
       )
     : '';
   const gathered = scene.add
-    .text(statX(11), yGathered, gatheredTip, {
+    .text(statX(12), yGathered, gatheredTip, {
       fontFamily: 'system-ui, sans-serif',
       fontSize: '13px',
       color: '#c8d8e8',
@@ -682,6 +700,7 @@ export function showKaneEndScreen(opts: EndScreenOpts): void {
       objectiveTipText,
       trainedTipText,
       raisedTipText,
+      killsTipText,
       lostTipText,
       bldLostTipText,
       recap,
