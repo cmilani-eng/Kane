@@ -70,6 +70,7 @@ import {
   fogExploredCoveragePct,
   minimapFogCoverageTipText,
 } from './minimapFogCoverageTip';
+import { minimapFogAgeTipText } from './minimapFogAgeTip';
 import { minimapCrystalStockTipText } from './minimapCrystalStockTip';
 import { minimapGoldStockTipText } from './minimapGoldStockTip';
 import { minimapMatchClockTipText } from './minimapMatchClockTip';
@@ -123,6 +124,8 @@ export class Minimap {
   private readonly clockLabel: Phaser.GameObjects.Text;
   /** Live max vision reach tip on the minimap chrome. */
   private readonly visionLabel: Phaser.GameObjects.Text;
+  /** Live fog age tip on the minimap chrome (staleness since last reveal). */
+  private readonly fogAgeLabel: Phaser.GameObjects.Text;
   /** Match elapsed ms for the Time · tip (set from scene each refresh). */
   private matchElapsedMs = 0;
 
@@ -390,6 +393,19 @@ export class Minimap {
       .setOrigin(0.5, 0)
       .setAlpha(0.9);
 
+    this.fogAgeLabel = scene.add
+      .text(0, 0, minimapFogAgeTipText(null), {
+        fontFamily: 'Segoe UI, system-ui, sans-serif',
+        fontSize: '10px',
+        color: '#c8d8e8',
+        stroke: '#0a1018',
+        strokeThickness: 3,
+      })
+      .setScrollFactor(0)
+      .setDepth(113)
+      .setOrigin(0.5, 0)
+      .setAlpha(0.9);
+
     this.hit = scene.add
       .rectangle(0, 0, this.mapW, this.mapH, 0x000000, 0.001)
       .setScrollFactor(0)
@@ -473,6 +489,7 @@ export class Minimap {
       this.crystalLabel,
       this.clockLabel,
       this.visionLabel,
+      this.fogAgeLabel,
     ];
   }
 
@@ -928,12 +945,18 @@ export class Minimap {
       .setPosition(this.mapX + this.mapW / 2, this.mapY + this.mapH + 136)
       .setVisible(true);
 
-    // Idle · n under vision when any gatherer is idle
+    // Fog age · ns under vision (staleness since last fog scout reveal)
+    this.fogAgeLabel
+      .setText(minimapFogAgeTipText(this.world.lastFogRevealAgeMs))
+      .setPosition(this.mapX + this.mapW / 2, this.mapY + this.mapH + 148)
+      .setVisible(true);
+
+    // Idle · n under fog age when any gatherer is idle
     const idleN = countIdleWorkers(this.world);
     if (idleN > 0) {
       this.idleLabel
         .setText(minimapIdleWorkerTipText(idleN))
-        .setPosition(this.mapX + this.mapW / 2, this.mapY + this.mapH + 148)
+        .setPosition(this.mapX + this.mapW / 2, this.mapY + this.mapH + 160)
         .setVisible(true);
     } else {
       this.idleLabel.setVisible(false);
