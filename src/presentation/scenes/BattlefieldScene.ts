@@ -180,6 +180,7 @@ import { showKaneEndScreen } from '../ui/endScreen';
 import { resolveMissionObjective } from '../ui/missionObjective';
 import { minimapCameraSectorAt } from '../ui/minimapCameraSectorTip';
 import { fogExploredCoveragePct } from '../ui/minimapFogCoverageTip';
+import { maxPlayerVisionTiles } from '../ui/minimapVisionTip';
 import { pauseSelectedSectorAt } from '../ui/pauseSelectedSectorTip';
 import { PauseMenu } from '../ui/pauseMenu';
 import { publishMatchStock, resetMatchStock } from '../ui/matchUiStore';
@@ -1489,6 +1490,7 @@ export class BattlefieldScene extends Phaser.Scene {
       playerGoldGathered: this.world.playerGoldGathered,
       playerCrystalsGathered: this.world.playerCrystalsGathered,
       playerActions: this.world.playerActions,
+      playerVisionTiles: maxPlayerVisionTiles(this.world),
       reason: matchEndReason(this.world, result),
       onMenu: () => this.scene.start('Menu'),
       onRematch: () => this.rematchSameSkirmish(),
