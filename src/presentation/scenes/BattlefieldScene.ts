@@ -791,6 +791,7 @@ export class BattlefieldScene extends Phaser.Scene {
       heroStatus: minimapHeroStatus(this.world),
       winStreak: matchPrefs.winStreak ?? 0,
       gamesPlayed: matchPrefs.gamesPlayed ?? 0,
+      gamesWon: matchPrefs.gamesWon ?? 0,
       favoriteFactionId: favoriteFactionId(),
     };
   }
