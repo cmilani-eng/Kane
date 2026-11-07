@@ -74,6 +74,7 @@ const HERO_DISPLAY: Record<HeroId, string> = {
 export function ensureHeroFields(world: BattlefieldWorld): void {
   if (world.heroRuntime === undefined) world.heroRuntime = null;
   if (world.enemyHeroRuntime === undefined) world.enemyHeroRuntime = null;
+  if (world.playerHeroDown === undefined) world.playerHeroDown = false;
   if (!world.vfx) world.vfx = [];
 }
 
@@ -200,8 +201,10 @@ export function recruitHero(
   }
 
   const runtime = emptyRuntime(def.id, hero.id);
-  if (team === 'player') world.heroRuntime = runtime;
-  else world.enemyHeroRuntime = runtime;
+  if (team === 'player') {
+    world.heroRuntime = runtime;
+    world.playerHeroDown = false;
+  } else world.enemyHeroRuntime = runtime;
 
   pushVfx(world, hero.x, hero.y, 60, pal.accent, 700, {
     label: 'HERO',
@@ -407,8 +410,10 @@ export function tickHeroes(world: BattlefieldWorld, dtMs: number): void {
     if (!rt) continue;
     const hero = world.units.find((u) => u.id === rt.unitId);
     if (!hero || hero.hp <= 0) {
-      if (rt === world.heroRuntime) world.heroRuntime = null;
-      else world.enemyHeroRuntime = null;
+      if (rt === world.heroRuntime) {
+        world.heroRuntime = null;
+        world.playerHeroDown = true;
+      } else world.enemyHeroRuntime = null;
       continue;
     }
     for (const k of ['ability1', 'ability2', 'ultimate'] as HeroAbilitySlot[]) {

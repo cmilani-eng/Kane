@@ -29,6 +29,7 @@ This doc is the honest gate before any public preview URL.
 | Minimap idle worker tip | **OK** — minimap chrome shows Idle · n when any gatherer is idle (distinct from HUD idle chip) | `minimapIdleWorkerTipText`, `hud.minimapIdle`, `countIdleWorkers` |
 | Minimap army count tip | **OK** — minimap chrome shows Army · n from living player combat units (distinct from HUD Army button) | `minimapArmyCountTipText`, `hud.minimapArmy`, `isMilitaryUnit` |
 | Minimap building count tip | **OK** — minimap chrome shows Buildings · n from living player buildings (distinct from army / supply) | `minimapBuildingCountTipText`, `hud.minimapBuildings` |
+| Minimap hero status tip | **OK** — minimap chrome shows Hero · Ready / Down / sector from recruit state + living location | `minimapHeroStatusTipText`, `hud.minimapHeroReady`, `playerHeroDown` |
 | Attention ping | **OK** — hold minimap to drop a temporary look-here mark (world + minimap); short cooldown + ice deny flash; help notes double-tap recenter; no chat | `battlefieldAttentionPing`, `minimapPingCooldown`, help |
 | Minimap ping sector tip | **OK** — hold-to-ping arms a brief Mark · sector chip (HUD + minimap), distinct from scout sector | `attentionPingSectorHint`, `minimapPingSectorTip`, `hud.pingSector` |
 | Minimap ping age tip | **OK** — minimap ping chip shows Mark · sector · ns age tip (distinct from sector-only HUD mark) | `minimapPingAgeTip`, `hud.pingAge` |
