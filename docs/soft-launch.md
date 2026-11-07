@@ -140,6 +140,7 @@ This doc is the honest gate before any public preview URL.
 | Lobby best duration tip | **OK** — lobby shows Best · mm:ss from shortest winning match in prefs (distinct from last-duration tip) | `lobbyBestDurationTipLine`, `lobby.bestDurationTip`, `matchPrefs.bestDurationMs` |
 | Lobby last outcome tip | **OK** — lobby shows Last · Won/Lost from match prefs lastWon (distinct from duration tip) | `lobbyLastOutcomeTipLine`, `lobby.lastOutcomeWin` / `lastOutcomeLoss`, `matchPrefs.lastWon` |
 | Lobby win streak tip | **OK** — lobby shows Streak · n from consecutive wins in match prefs (distinct from last-outcome tip) | `lobbyWinStreakTipLine`, `lobby.winStreakTip`, `matchPrefs.winStreak` |
+| Lobby games played tip | **OK** — lobby shows Played · n from match prefs gamesPlayed (finished matches; distinct from stats panel) | `lobbyGamesPlayedTipLine`, `lobby.gamesPlayedTip`, `matchPrefs.gamesPlayed` |
 | Lobby difficulty tip | **OK** — lobby shows selected difficulty label · blurb from match prefs | `lobbyDifficultyTipLine`, `lobby.difficultyTip` |
 | Lobby match length | **OK** — lobby shows ~min estimate from recent local summaries (default ~10 min) | `lobbyMatchLengthTipLine`, `lobby.matchLength*` |
 | Hub → Kane path | **OK** — picker cards link `./kane/`; hash forward + manifest start_url match `games/PATHS.md` | `hub.gamePlayHref`, `games/registry.test.ts` |
