@@ -25,6 +25,7 @@ import { buildingBuildCostLabel } from './buildingBuildCost';
 import { buildingBuildTimeLabel } from './buildingBuildTime';
 import { buildingFootprintLabel } from './buildingFootprint';
 import { buildingHpMaxLabel } from './buildingHpMax';
+import { buildingProdQueueLabel } from './buildingProdQueue';
 import {
   sharedUnitAttackCooldownLabel,
   unitAttackCooldownLabel,
@@ -278,6 +279,8 @@ export type SelectionPanelView =
       buildTimeTip: string | null;
       /** Tile cols×rows footprint tip (same as placement ghost). */
       footprintTip: string | null;
+      /** Production-queue tip when the building type can train units. */
+      prodQueueTip: string | null;
       /** Building finished construction (can start training). */
       ready: boolean;
       /** 0–1 construction progress while incomplete. */
@@ -594,6 +597,11 @@ export function buildSelectionView(
       buildCostTip: buildingBuildCostLabel(b.typeId),
       buildTimeTip: buildingBuildTimeLabel(b.typeId),
       footprintTip: buildingFootprintLabel(b.typeId),
+      prodQueueTip: buildingProdQueueLabel(
+        trains.length > 0,
+        b.trainQueue.length,
+        head?.name ?? null,
+      ),
       ready,
       buildPct,
       buildRemainSec: buildRemain,
@@ -1074,6 +1082,7 @@ function structureSignature(view: SelectionPanelView): string {
     view.buildCostTip ?? '',
     view.buildTimeTip ?? '',
     view.footprintTip ?? '',
+    view.prodQueueTip ?? '',
     view.trains
       .map((t) => `${t.typeId}:${t.canPay ? 1 : 0}:${t.affordable ? 1 : 0}`)
       .join(','),
@@ -1698,7 +1707,11 @@ export function renderSelectionPanel(view: SelectionPanelView): boolean {
         if (view.footprintTip) {
           bits.push(`<span>${escapeHtml(view.footprintTip)}</span>`);
         }
-        if (view.trains.length) bits.push(`<span>${t('sel.production')}</span>`);
+        if (view.prodQueueTip) {
+          bits.push(`<span>${escapeHtml(view.prodQueueTip)}</span>`);
+        } else if (view.trains.length) {
+          bits.push(`<span>${t('sel.production')}</span>`);
+        }
         if (view.places.length) bits.push(`<span>${t('sel.build')}</span>`);
         if (bits.length === 0) bits.push(`<span>${t('sel.noProductionStat')}</span>`);
         stats.innerHTML = bits.join('');
