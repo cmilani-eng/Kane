@@ -1,5 +1,7 @@
 /**
- * Catalog vision-radius tip in map tiles (HUD label only).
+ * Catalog vision/sight-radius tip in map tiles (HUD label only).
+ * Format: Sight · {n} — distinct from attack Range · n tip.
+ * Buildings omit (no catalog vision radius).
  */
 import { MAP } from '../../config/balance';
 import { getUnitType, type UnitTypeId } from '../../data/units';
