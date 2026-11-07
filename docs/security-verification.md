@@ -80,8 +80,8 @@ Add a row when a check is done or changes.
 |-------|------|-----|--------|-------|
 | 1. Live Firestore rules | | | | |
 | 2. Live Realtime Database rules | | | | |
-| 3. Anonymous read probes | | | | |
+| 3. Anonymous read probes | 2026-11-07 | Claude, for the owner | Partial. Firestore REST returned 403 for `users`, `matches`, `profiles`, `dailyRollups` and `matchSummaries` with no credentials. Realtime Database default hosts returned 404 | Not a full check. 403 also fits a disabled Firestore API. The RTDB host was not found in the bundle, so confirm it in the console. No data was returned. |
 | 4. Sign-in methods | | | | |
-| 5. Branch protection on `dev` | | | | |
+| 5. Branch protection on `dev` | 2026-11-07 | Claude, through the GitHub API at the owner's request | Enabled. Pull request required, `check` and `rules` required, branch must be current, force pushes and deletion blocked, admins not enforced | Read back through the API. A rejected direct push was not tested. |
 | 6. Deploy service account roles | | | | |
 | 7. Firebase web API key | | | | |
