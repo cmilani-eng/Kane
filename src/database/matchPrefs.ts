@@ -40,6 +40,10 @@ export interface MatchPrefs {
   avgDurationMs?: number;
   /** Finished matches counted into avgDurationMs. Optional for older prefs. */
   avgDurationSamples?: number;
+  /** Career average APM across finished matches. Optional for older prefs. */
+  avgApm?: number;
+  /** Finished matches counted into avgApm. Optional for older prefs. */
+  avgApmSamples?: number;
   /** Finished matches counted on this device. Optional for older prefs. */
   gamesPlayed?: number;
   /** Finished wins counted on this device. Optional for older prefs. */
@@ -82,6 +86,20 @@ function normalizeGamesPlayed(v: unknown): number | undefined {
 function normalizeAvgDurationSamples(v: unknown): number | undefined {
   if (typeof v !== 'number' || !Number.isFinite(v) || v <= 0) return undefined;
   return Math.floor(v);
+}
+
+/** APM may be 0; reject only negative / non-finite. */
+function normalizeAvgApm(v: unknown): number | undefined {
+  if (typeof v !== 'number' || !Number.isFinite(v) || v < 0) return undefined;
+  return Math.floor(v);
+}
+
+/** Same rate math as presentation matchApm (avoid UI import). */
+function sampleMatchApm(actions: number, durationMs: number): number {
+  const a = Math.max(0, Math.floor(actions));
+  const ms = Math.max(0, Math.floor(durationMs));
+  if (ms <= 0) return 0;
+  return Math.round(a / (ms / 60_000));
 }
 
 function normalizeGamesWon(v: unknown): number | undefined {
@@ -135,6 +153,8 @@ export function loadMatchPrefs(): MatchPrefs {
     const avgDurationSamples = normalizeAvgDurationSamples(
       parsed.avgDurationSamples,
     );
+    const avgApm = normalizeAvgApm(parsed.avgApm);
+    const avgApmSamples = normalizeAvgDurationSamples(parsed.avgApmSamples);
     const gamesPlayed = normalizeGamesPlayed(parsed.gamesPlayed);
     const gamesWon = normalizeGamesWon(parsed.gamesWon);
     const speciesPlays = normalizeSpeciesPlays(parsed.speciesPlays);
@@ -152,6 +172,8 @@ export function loadMatchPrefs(): MatchPrefs {
       ...(bestDurationMapId != null ? { bestDurationMapId } : {}),
       ...(avgDurationMs != null ? { avgDurationMs } : {}),
       ...(avgDurationSamples != null ? { avgDurationSamples } : {}),
+      ...(avgApm != null ? { avgApm } : {}),
+      ...(avgApmSamples != null ? { avgApmSamples } : {}),
       ...(gamesPlayed != null ? { gamesPlayed } : {}),
       ...(gamesWon != null ? { gamesWon } : {}),
       ...(speciesPlays != null ? { speciesPlays } : {}),
@@ -177,6 +199,8 @@ export function saveMatchPrefs(prefs: MatchPrefs): void {
     const avgDurationSamples = normalizeAvgDurationSamples(
       prefs.avgDurationSamples,
     );
+    const avgApm = normalizeAvgApm(prefs.avgApm);
+    const avgApmSamples = normalizeAvgDurationSamples(prefs.avgApmSamples);
     const gamesPlayed = normalizeGamesPlayed(prefs.gamesPlayed);
     const gamesWon = normalizeGamesWon(prefs.gamesWon);
     const speciesPlays = normalizeSpeciesPlays(prefs.speciesPlays);
@@ -194,6 +218,8 @@ export function saveMatchPrefs(prefs: MatchPrefs): void {
       ...(bestDurationMapId != null ? { bestDurationMapId } : {}),
       ...(avgDurationMs != null ? { avgDurationMs } : {}),
       ...(avgDurationSamples != null ? { avgDurationSamples } : {}),
+      ...(avgApm != null ? { avgApm } : {}),
+      ...(avgApmSamples != null ? { avgApmSamples } : {}),
       ...(gamesPlayed != null ? { gamesPlayed } : {}),
       ...(gamesWon != null ? { gamesWon } : {}),
       ...(speciesPlays != null ? { speciesPlays } : {}),
@@ -206,7 +232,7 @@ export function saveMatchPrefs(prefs: MatchPrefs): void {
 
 /**
  * Persist prefs (start match or menu change).
- * Optional duration / outcome keep prior values when omitted.
+ * Optional duration / outcome / actions keep prior values when omitted.
  */
 export function rememberMatchPrefs(
   species: SpeciesId,
@@ -214,6 +240,7 @@ export function rememberMatchPrefs(
   mapId: SkirmishMapId = DEFAULT_SKIRMISH_MAP,
   lastDurationMs?: number,
   lastWon?: boolean,
+  playerActions?: number,
 ): void {
   const prev = loadMatchPrefs();
   const duration =
@@ -253,6 +280,22 @@ export function rememberMatchPrefs(
     avgDurationMs = Math.floor((prevAvg * (n - 1) + sample) / n);
     avgDurationSamples = n;
   }
+  let avgApm = prev.avgApm;
+  let avgApmSamples = prev.avgApmSamples;
+  if (
+    lastWon != null &&
+    lastDurationMs != null &&
+    lastDurationMs > 0 &&
+    playerActions != null &&
+    Number.isFinite(playerActions) &&
+    playerActions >= 0
+  ) {
+    const sample = sampleMatchApm(playerActions, lastDurationMs);
+    const n = (prev.avgApmSamples ?? 0) + 1;
+    const prevAvg = prev.avgApm ?? 0;
+    avgApm = Math.floor((prevAvg * (n - 1) + sample) / n);
+    avgApmSamples = n;
+  }
   let gamesPlayed = prev.gamesPlayed;
   let gamesWon = prev.gamesWon;
   let speciesPlays = prev.speciesPlays;
@@ -276,6 +319,8 @@ export function rememberMatchPrefs(
     ...(bestDurationMapId != null ? { bestDurationMapId } : {}),
     ...(avgDurationMs != null ? { avgDurationMs } : {}),
     ...(avgDurationSamples != null ? { avgDurationSamples } : {}),
+    ...(avgApm != null ? { avgApm } : {}),
+    ...(avgApmSamples != null ? { avgApmSamples } : {}),
     ...(gamesPlayed != null ? { gamesPlayed } : {}),
     ...(gamesWon != null ? { gamesWon } : {}),
     ...(speciesPlays != null ? { speciesPlays } : {}),

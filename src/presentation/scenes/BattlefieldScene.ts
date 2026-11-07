@@ -1598,6 +1598,7 @@ export class BattlefieldScene extends Phaser.Scene {
       this.world.mapId,
       durationMs,
       won,
+      this.world.playerActions,
     );
     void writeMatchSummaryFunctionStub({
       id,
