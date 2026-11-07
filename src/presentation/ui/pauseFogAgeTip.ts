@@ -1,6 +1,8 @@
 /**
  * Pause overlay fog-reveal age tip (HUD label only).
- * Distinct from minimap Scout · sector · ns tip — frozen when pause opens.
+ * Format: Fog · {n}s (middot U+00B7) — age of the last fog scout pulse,
+ * frozen when pause opens. Distinct from Fog · pct% / Fog age · /
+ * Scout · sector · ns / Vision ·; own pause-scoped key (`pause.fogAgeTip`).
  */
 import { t } from '../../i18n';
 
