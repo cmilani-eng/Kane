@@ -160,7 +160,7 @@ import {
   makeMatchSummaryId,
 } from '../../database/matchSummary';
 import { getEquippedSkin } from '../../database/cosmeticsLoadout';
-import { rememberMatchPrefs } from '../../database/matchPrefs';
+import { loadMatchPrefs, rememberMatchPrefs } from '../../database/matchPrefs';
 import { isCoachSeen } from '../../database/coachPrefs';
 import { isReduceMotion } from '../../database/motionPrefs';
 import { rematchPrefsFromWorld } from '../../gameplay/battlefield/rematchPrefs';
@@ -787,6 +787,7 @@ export class BattlefieldScene extends Phaser.Scene {
       ).length,
       idleWorkerCount: countIdleWorkers(this.world),
       heroStatus: minimapHeroStatus(this.world),
+      winStreak: loadMatchPrefs().winStreak ?? 0,
     };
   }
 
