@@ -3,7 +3,6 @@
  * KANE and "BUILD. COMMAND. CONQUER." stay in `BRAND` and are not translated.
  */
 export const enGB = {
-  'boot.tap': 'Tap to continue',
   'menu.difficulty': 'Difficulty',
   'menu.practiceTip':
     'Practice · the enemy builds and gathers, but never attacks. Rematch keeps this.',
@@ -770,7 +769,6 @@ export type MessageKey = keyof typeof enGB;
 type Catalog = Record<MessageKey, string>;
 
 export const ptBR = {
-  'boot.tap': 'Toque para continuar',
   'menu.difficulty': 'Dificuldade',
   'menu.practiceTip':
     'Treino · o inimigo constrói e coleta, mas nunca ataca. A revanche mantém isto.',
@@ -1533,7 +1531,6 @@ export const ptBR = {
 } satisfies Catalog;
 
 export const es = {
-  'boot.tap': 'Toca para continuar',
   'menu.difficulty': 'Dificultad',
   'menu.practiceTip':
     'Práctica · el enemigo construye y recolecta, pero nunca ataca. La revancha conserva esto.',
