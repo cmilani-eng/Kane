@@ -21,7 +21,7 @@ const STAGES = [
   { name:'Purple', color:0x8b4fd4, radius:.42, speed:2.35 },
   { name:'Blue', color:0x1e8ef0, radius:.58, speed:3.05 },
   { name:'Green', color:0x2fbf6e, radius:.77, speed:3.85 },
-  { name:'Rock', color:0x7a7468, radius:.98, speed:4.55 },
+  { name:'Rock', color:0x9a9386, radius:.98, speed:4.55 },
   { name:'Rainbow', color:0xffffff, radius:1.18, speed:5.35 },
   { name:'Angel', color:0xfff0a8, radius:1.35, speed:5.9 }
 ];
@@ -152,11 +152,11 @@ function makeRockTexture() {
   const canvas = document.createElement('canvas');
   canvas.width = 256; canvas.height = 256;
   const ctx = canvas.getContext('2d');
-  ctx.fillStyle = '#5e5950';
+  ctx.fillStyle = '#7a7468';
   ctx.fillRect(0, 0, 256, 256);
   for (let i = 0; i < 180; i++) {
-    const shade = 72 + Math.floor(Math.random() * 58);
-    ctx.fillStyle = `rgb(${shade},${shade - 4},${shade - 10})`;
+    const shade = 98 + Math.floor(Math.random() * 62);
+    ctx.fillStyle = `rgb(${shade},${shade - 5},${shade - 12})`;
     const w = 6 + Math.random() * 28;
     const h = 4 + Math.random() * 22;
     ctx.beginPath();
@@ -164,7 +164,7 @@ function makeRockTexture() {
     ctx.fill();
   }
   for (let i = 0; i < 40; i++) {
-    ctx.strokeStyle = `rgba(40,36,30,${0.12 + Math.random() * 0.22})`;
+    ctx.strokeStyle = `rgba(55,50,42,${0.1 + Math.random() * 0.2})`;
     ctx.lineWidth = 1 + Math.random() * 2;
     ctx.beginPath();
     ctx.moveTo(Math.random() * 256, Math.random() * 256);
@@ -221,8 +221,8 @@ function makeBlob(stage, isPlayer=false) {
     });
   } else if (stage === 3) {
     material = new THREE.MeshStandardMaterial({
-      map: makeRockTexture(), color:0x9a9386, roughness:.92, metalness:0,
-      flatShading: true, emissive:0x2a2620, emissiveIntensity:.08
+      map: makeRockTexture(), color:0xb8b0a2, roughness:.88, metalness:0,
+      flatShading: true, emissive:0x3a352e, emissiveIntensity:.1
     });
   } else if (stage === 5) {
     material = new THREE.MeshStandardMaterial({
@@ -755,7 +755,7 @@ function updateHud(force=false){
   const now=performance.now(); if(!force&&now-lastHud<100)return;lastHud=now;
   const remaining=bots.filter(b=>b.alive).length;
   phaserScene.hud.setText(blobHudLine(player.stage, player.radius, player.speed, remaining));
-  phaserScene.hud.setColor(player.stage===4?'#ffdb72':player.stage===3?'#c4bbae':player.stage===2?'#8df4bc':'#b8e3ff');
+  phaserScene.hud.setColor(player.stage===4?'#ffdb72':player.stage===3?'#d8d0c4':player.stage===2?'#8df4bc':'#b8e3ff');
 }
 
 class OverlayScene extends Phaser.Scene {
