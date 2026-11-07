@@ -172,7 +172,7 @@ This doc is the honest gate before any public preview URL.
 5. **Admin allowlist is soft** — default `open` for local-dev; no Custom Claims / server enforcement. Admin **`#/admin`** tools are separate from menu **Stats**.
 6. **Match writes are client-trusted** for SP MVP — Functions deferred; local `#/admin` summaries still device-local.
 7. **Legal copy is placeholder** — not counsel-reviewed.
-8. **Content depth** — three skirmish maps (Crossing / Ridge / Gap). The coach shows once, then stays quiet until Tips is turned back on. A Practice win offers Easy (same species and map); Rematch stays on Practice.
+8. **Content depth** — three skirmish maps (Crossing / Ridge / Gap). The coach shows once, then stays quiet until Tips is turned back on. A win offers the next difficulty (same species and map); Rematch stays on the difficulty just played. Hard has no step up.
 9. **CI is thin** — pull requests run lint, unit tests and the build (`.github/workflows/ci.yml`) and a push to `dev` runs the same checks before auto-deploying Hosting (see `docs/firebase-hosting.md`); there are no browser or gameplay tests yet.
 10. **Cosmetics shop** — explicitly out; free unlocks only.
 11. **No offline service worker** — installability stubs exist; full offline PWA is later (`docs/pwa.md`).
