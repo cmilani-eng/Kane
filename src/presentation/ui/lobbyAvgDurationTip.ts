@@ -1,6 +1,8 @@
 /**
  * Lobby tip for career average match duration from match prefs.
- * Format: Avg time · mm:ss — distinct from Last · / Best · and ~min match-length.
+ * Format: Avg time · {clock} — middot (U+00B7).
+ * Distinct from Last · / Best · / Time · / ~min match-length peers;
+ * same en/pt-BR/es copy as end/pause Avg time · (distinct i18n key / surface).
  */
 import { loadMatchPrefs } from '../../database/matchPrefs';
 import { t } from '../../i18n';
