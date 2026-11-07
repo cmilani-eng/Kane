@@ -194,7 +194,7 @@ This doc is the honest gate before any public preview URL.
 | Friend lobby UI | **OK** — Create / Join / Leave local stub; quiet “no live sync” note | `lobbyPanel`, `lobbyStub` |
 | Lobby map tip | **OK** — lobby shows selected map label · blurb tip from match prefs | `lobbyMapTipLine`, `lobby.mapTip` |
 | Lobby faction tip | **OK** — lobby shows selected species name · motto blurb from match prefs | `lobbyFactionTipLine`, `lobby.factionTip` |
-| Lobby last faction tip | **OK** — lobby shows Last · faction from match prefs species (distinct from Favorite · / Played · n / selected motto tip) | `lobbyLastFactionTipLine`, `lobby.lastFactionTip`, `matchPrefs.species` |
+| Lobby last faction tip | **OK** — lobby shows Last · name (U+00B7) from match prefs species; en/pt-BR/es middot; distinct from Favorite · / Played · / Last · duration / Last · Won-Lost / selected motto tip | `lobbyLastFactionTipLine`, `lobby.lastFactionTip`, `matchPrefs.species` |
 | Lobby favorite faction tip | **OK** — lobby shows Favorite · name (U+00B7) from most-played species in matchPrefs.speciesPlays (middot; distinct from Plays · / Wins · / Streak ·; same copy as pause/end Favorite ·, distinct key/surface from last-faction) | `lobbyFavoriteFactionTipLine`, `lobby.favoriteFactionTip`, `matchPrefs.speciesPlays` |
 | Lobby species plays tip | **OK** — lobby shows Plays · n for favorite species play count from matchPrefs.speciesPlays (distinct from Played · / Wins · / Streak ·; same copy as pause Plays ·) | `lobbySpeciesPlaysTipLine`, `lobby.speciesPlaysTip`, `matchPrefs.speciesPlays` |
 | Lobby last map tip | **OK** — lobby shows Last map · name from match prefs (distinct from selected map blurb tip) | `lobbyLastMapTipLine`, `lobby.lastMapTip` |
