@@ -6,13 +6,15 @@ import {
   unitDamage,
   unitDamageLabel,
 } from './unitDamage';
+import { unitDpsLabel } from './unitDps';
 
 describe('unitDamage', () => {
-  it('reads catalog attack damage for a known unit', () => {
+  it('labels Damage · n from catalog, distinct from DPS tip', () => {
     const n = unitDamage('bonker');
     expect(n).toBe(getUnitType('bonker').dmg);
     expect(unitDamageLabel('bonker')).toBe(t('sel.dmgTip', { n: n! }));
     expect(unitDamageLabel('bonker')).toMatch(/^Damage ·/);
+    expect(unitDamageLabel('bonker')).not.toBe(unitDpsLabel('bonker'));
   });
 
   it('shares a tip only when every selected unit is the same type', () => {
