@@ -115,6 +115,7 @@ import {
   shouldCountGroupHotkey,
 } from '../../gameplay/battlefield/battlefieldGroupFocus';
 import { selectsWholeType } from '../../gameplay/battlefield/battlefieldSelectClick';
+import { countIdleWorkers } from '../../gameplay/battlefield/idleWorkers';
 import { isMilitaryUnit } from '../../gameplay/battlefield/selectMilitary';
 import { touchLongPressAction } from '../../gameplay/battlefield/touchLongPress';
 import {
@@ -774,6 +775,7 @@ export class BattlefieldScene extends Phaser.Scene {
       buildingCount: this.world.buildings.filter(
         (b) => b.team === 'player' && b.hp > 0,
       ).length,
+      idleWorkerCount: countIdleWorkers(this.world),
     };
   }
 
