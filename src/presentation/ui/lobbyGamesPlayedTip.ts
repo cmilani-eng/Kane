@@ -1,6 +1,6 @@
 /**
  * Lobby tip for finished-match count from match prefs.
- * Distinct from stats panel "Games played" line and match-length tip.
+ * Distinct from stats panel and from end/pause Played · tip surfaces.
  */
 import { loadMatchPrefs } from '../../database/matchPrefs';
 import { t } from '../../i18n';
