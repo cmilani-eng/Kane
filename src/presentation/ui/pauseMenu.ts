@@ -36,9 +36,11 @@ import { pauseApmTipLine } from './pauseApmTip';
 import { pauseArmySizeTipLine } from './pauseArmySizeTip';
 import { pauseBuildingCountTipLine } from './pauseBuildingCountTip';
 import { pauseIdleWorkersTipLine } from './pauseIdleWorkersTip';
+import { pauseHeroStatusTipLine } from './pauseHeroStatusTip';
 import { pausePopulationTipLine } from './pausePopulationTip';
 import { pauseSupplyRatioTipLine } from './pauseSupplyRatioTip';
 import type { MapSectorId } from '../../gameplay/battlefield/mapSector';
+import type { MinimapHeroStatus } from './minimapHeroStatusTip';
 import {
   SUPPLY_TONE_COLOR,
   formatSupplyLine,
@@ -73,6 +75,8 @@ export interface PauseMenuSnapshot {
   buildingCount?: number;
   /** Idle player gatherers when pause opens (same countIdleWorkers as minimap). */
   idleWorkerCount?: number;
+  /** Hero Ready / Down / sector when pause opens (same minimapHeroStatus). */
+  heroStatus?: MinimapHeroStatus;
 }
 
 export interface PauseMenuOpts {
@@ -239,6 +243,9 @@ export class PauseMenu {
     const idleTip = pauseIdleWorkersTipLine(
       this.snapshot.idleWorkerCount ?? 0,
     );
+    const heroTip = pauseHeroStatusTipLine(
+      this.snapshot.heroStatus ?? { kind: 'ready' },
+    );
     const apmTip = pauseApmTipLine(
       this.snapshot.playerActions ?? 0,
       this.snapshot.elapsedMs,
@@ -270,9 +277,10 @@ export class PauseMenu {
     const yArmy = short ? top + 208 : cy + panelH * 0.105;
     const yBuildings = short ? top + 220 : cy + panelH * 0.13;
     const yIdle = short ? top + 232 : cy + panelH * 0.155;
-    const yApm = short ? top + 244 : cy + panelH * 0.18;
-    const ySupplyRatio = short ? top + 256 : cy + panelH * 0.205;
-    const ySupply = short ? top + 268 : cy + panelH * 0.235;
+    const yHero = short ? top + 244 : cy + panelH * 0.18;
+    const yApm = short ? top + 256 : cy + panelH * 0.205;
+    const ySupplyRatio = short ? top + 268 : cy + panelH * 0.23;
+    const ySupply = short ? top + 280 : cy + panelH * 0.26;
     const clockLine = this.scene.add
       .text(cx, yClock, clockTip, {
         fontFamily: 'system-ui, sans-serif',
@@ -428,6 +436,16 @@ export class PauseMenu {
       .setOrigin(0.5)
       .setScrollFactor(0)
       .setDepth(222);
+    const heroLine = this.scene.add
+      .text(cx, yHero, heroTip, {
+        fontFamily: 'system-ui, sans-serif',
+        fontSize: short ? '11px' : '12px',
+        color: '#c8d8e8',
+        align: 'center',
+      })
+      .setOrigin(0.5)
+      .setScrollFactor(0)
+      .setDepth(222);
     const apmLine = this.scene.add
       .text(cx, yApm, apmTip, {
         fontFamily: 'system-ui, sans-serif',
@@ -476,13 +494,14 @@ export class PauseMenu {
       armyLine,
       buildingsLine,
       idleLine,
+      heroLine,
       apmLine,
       supplyRatioLine,
       supplyText,
     );
 
     // Short layout: tips + setup + supply need room above buttons.
-    const btnY0 = short ? top + 292 : cy + panelH * 0.27;
+    const btnY0 = short ? top + 304 : cy + panelH * 0.29;
     const gap = short ? 36 : Math.min(44, panelH * 0.11);
     this.root.push(
       this.makeBtn(cx, btnY0, t('pause.resume'), () => {
