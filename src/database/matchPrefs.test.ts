@@ -70,6 +70,17 @@ describe('match prefs rematch restore', () => {
     expect(loadMatchPrefs().winStreak).toBe(0);
   });
 
+  it('tracks shortest winning match duration as best', () => {
+    rememberMatchPrefs('nobles', 'normal', 'crossing', 120_000, true);
+    expect(loadMatchPrefs().bestDurationMs).toBe(120_000);
+    rememberMatchPrefs('brutes', 'easy', 'ridge', 90_000, true);
+    expect(loadMatchPrefs().bestDurationMs).toBe(90_000);
+    rememberMatchPrefs('weirdos', 'hard', 'gap', 150_000, true);
+    expect(loadMatchPrefs().bestDurationMs).toBe(90_000);
+    rememberMatchPrefs('nobles', 'normal', 'crossing', 60_000, false);
+    expect(loadMatchPrefs().bestDurationMs).toBe(90_000);
+  });
+
   it('defaults map to crossing when older prefs omit mapId', () => {
     store.set(
       'kane.matchPrefs.v1',
