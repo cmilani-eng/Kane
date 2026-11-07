@@ -73,7 +73,7 @@ This doc is the honest gate before any public preview URL.
 | Resource gather tip | **OK** — selecting a node shows haul-per-trip + active gatherer count | `selectionPanel`, `sel.gatherTip*` |
 | Supply near-cap tint | **OK** — Supply readout amber within 4 of cap, pink at cap (HUD + pause) | `supplyTone`, `battlefieldHud`, `pauseMenu` |
 | Supply slots left | **OK** — near-cap / full supply lines append remaining slots (or “full”) | `formatSupplyLine`, `pause.supplyNear` / `supplyFull` |
-| Pause supply ratio tip | **OK** — pause shows Supply · used/cap tip above the spaced-slash supply line (distinct from stock/HUD) | `pauseSupplyRatioTipLine`, `pause.supplyRatioTip` |
+| Pause supply tip | **OK** — pause shows Supply · used/cap from living pop vs unitCap at open (distinct surface from minimap Supply / Pop · n / spaced-slash supply line) | `pauseSupplyRatioTipLine`, `pause.supplyRatioTip` |
 | Pause population tip | **OK** — pause shows Pop · n from living player units at open (distinct from Supply · used/cap tip) | `pausePopulationTipLine`, `pause.populationTip` |
 | Pause army size tip | **OK** — pause shows Army · n from living player combat units at open (same isMilitaryUnit filter as minimap; distinct from Pop) | `pauseArmySizeTipLine`, `pause.armyTip`, `isMilitaryUnit` |
 | Pause building count tip | **OK** — pause shows Buildings · n from living player buildings at open (same filter as minimap; distinct from Army / Pop) | `pauseBuildingCountTipLine`, `pause.buildingsTip` |
