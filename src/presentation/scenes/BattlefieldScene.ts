@@ -115,6 +115,7 @@ import {
   shouldCountGroupHotkey,
 } from '../../gameplay/battlefield/battlefieldGroupFocus';
 import { selectsWholeType } from '../../gameplay/battlefield/battlefieldSelectClick';
+import { isMilitaryUnit } from '../../gameplay/battlefield/selectMilitary';
 import { touchLongPressAction } from '../../gameplay/battlefield/touchLongPress';
 import {
   spawnControlGroupAssignFx,
@@ -769,6 +770,7 @@ export class BattlefieldScene extends Phaser.Scene {
       stockGold: walletOf(this.world, 'player').gold,
       stockCrystals: walletOf(this.world, 'player').magic_crystals,
       playerActions: this.world.playerActions,
+      armyCount: this.world.units.filter((u) => isMilitaryUnit(u)).length,
     };
   }
 
