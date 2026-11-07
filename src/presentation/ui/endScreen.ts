@@ -8,7 +8,7 @@ import { BRAND } from '../../config/brand';
 import type { SkirmishMapId } from '../../data/skirmishMaps';
 import type { SpeciesId } from '../../data/speciesStub';
 import type { AiDifficultyId } from '../../gameplay/battlefield/aiDifficulty';
-import { offerPracticeStepUp } from '../../gameplay/battlefield/practiceStepUp';
+import { nextDifficultyAfterWin } from '../../gameplay/battlefield/practiceStepUp';
 import { difficultyCopy, mapCopy, speciesName, t } from '../../i18n';
 import { playEndFanfare, playSfx } from '../audio/sfx';
 import { endDifficultyPlayedTipLine } from './endDifficultyPlayedTip';
@@ -48,9 +48,9 @@ export interface EndScreenOpts {
   onMenu: () => void;
   /** Restart skirmish with the same species + difficulty. */
   onRematch: () => void;
-  /** Difficulty just played. A Practice win can offer Easy. */
+  /** Difficulty just played. A win can offer the next difficulty. */
   difficulty?: AiDifficultyId;
-  /** Start Easy with the same species and map. Shown only after a Practice win. */
+  /** Start the next difficulty with the same species and map. Hidden on a loss and after Hard. */
   onStepUp?: () => void;
   /** Ignore these objects on the zoomed main camera. */
   ignoreOnMain: (objs: Phaser.GameObjects.GameObject[]) => void;
@@ -80,8 +80,8 @@ export function showKaneEndScreen(opts: EndScreenOpts): void {
     difficulty,
     onStepUp,
   } = opts;
-  const stepUp =
-    offerPracticeStepUp(win, difficulty ?? 'normal') && onStepUp != null;
+  const stepUpTo = nextDifficultyAfterWin(win, difficulty ?? 'normal');
+  const stepUp = stepUpTo != null && onStepUp != null;
   const { width, height } = scene.scale;
   const accent = win ? 0xf0c75e : 0xe85a5a;
   const accentHex = win ? '#f0c75e' : '#e87a7a';
@@ -479,13 +479,13 @@ export function showKaneEndScreen(opts: EndScreenOpts): void {
   root.push(shareBtn);
 
   let stepBtn: Phaser.GameObjects.Text | null = null;
-  if (stepUp && onStepUp) {
-    const startEasy = onStepUp;
+  if (stepUpTo && onStepUp) {
+    const startNext = onStepUp;
     const btn = scene.add
       .text(
         width / 2,
         yStep,
-        t('end.tryEasy', { difficulty: difficultyCopy('easy').label }),
+        t('end.tryEasy', { difficulty: difficultyCopy(stepUpTo).label }),
         {
           fontFamily: 'Georgia, "Times New Roman", serif',
           fontSize: short ? '16px' : '18px',
@@ -503,7 +503,7 @@ export function showKaneEndScreen(opts: EndScreenOpts): void {
       .on('pointerout', () => btn.setStyle({ color: '#fff8e8' }))
       .on('pointerup', () => {
         playSfx('ui');
-        startEasy();
+        startNext();
       });
     stepBtn = btn;
     root.push(btn);
