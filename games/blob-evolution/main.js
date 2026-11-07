@@ -6,7 +6,7 @@ import './blob.css';
 const STAGES = [
   { name:'Purple', color:0x9b63df, radius:.42, speed:2.35 },
   { name:'Blue', color:0x269bff, radius:.58, speed:3.05 },
-  { name:'Green', color:0x39d98a, radius:.77, speed:3.85 },
+  { name:'Green', color:0x2fbf6e, radius:.77, speed:3.85 },
   { name:'Rock', color:0x4f4b44, radius:.98, speed:4.55 },
   { name:'Rainbow', color:0xffffff, radius:1.18, speed:5.35 },
   { name:'Angel', color:0xfff0a8, radius:1.35, speed:5.9 }
@@ -46,6 +46,38 @@ function makeRainbowTexture() {
   tex.colorSpace = THREE.SRGBColorSpace;
   tex.wrapS = THREE.RepeatWrapping;
   tex.wrapT = THREE.ClampToEdgeWrapping;
+  return tex;
+}
+
+function makeLeafTexture() {
+  const canvas = document.createElement('canvas');
+  canvas.width = 256; canvas.height = 256;
+  const ctx = canvas.getContext('2d');
+  const g = ctx.createLinearGradient(0, 0, 256, 256);
+  g.addColorStop(0, '#1f8f4c');
+  g.addColorStop(.45, '#34c777');
+  g.addColorStop(1, '#187a3e');
+  ctx.fillStyle = g;
+  ctx.fillRect(0, 0, 256, 256);
+  for (let i = 0; i < 28; i++) {
+    ctx.strokeStyle = `rgba(12,70,35,${0.18 + Math.random() * 0.28})`;
+    ctx.lineWidth = 1.2 + Math.random() * 2.2;
+    const x = Math.random() * 256;
+    ctx.beginPath();
+    ctx.moveTo(x, 0);
+    ctx.quadraticCurveTo(x + (Math.random() - .5) * 40, 128, x + (Math.random() - .5) * 30, 256);
+    ctx.stroke();
+  }
+  for (let i = 0; i < 50; i++) {
+    ctx.fillStyle = `rgba(180,255,170,${0.04 + Math.random() * 0.1})`;
+    ctx.beginPath();
+    ctx.ellipse(Math.random() * 256, Math.random() * 256, 4 + Math.random() * 14, 2 + Math.random() * 6, Math.random() * Math.PI, 0, Math.PI * 2);
+    ctx.fill();
+  }
+  const tex = new THREE.CanvasTexture(canvas);
+  tex.colorSpace = THREE.SRGBColorSpace;
+  tex.wrapS = THREE.RepeatWrapping;
+  tex.wrapT = THREE.RepeatWrapping;
   return tex;
 }
 
@@ -105,6 +137,11 @@ function makeBlob(stage, isPlayer=false) {
       map: rainbowMap, color:0xffffff, roughness:.28, metalness:.08,
       emissive:0xffffff, emissiveMap: rainbowMap, emissiveIntensity:.55
     });
+  } else if (stage === 2) {
+    material = new THREE.MeshStandardMaterial({
+      map: makeLeafTexture(), color:0x7dffb0, roughness:.42, metalness:0,
+      emissive:0x145c32, emissiveIntensity:.22
+    });
   } else if (stage === 3) {
     material = new THREE.MeshStandardMaterial({
       map: makeRockTexture(), color:0x5c574f, roughness:.98, metalness:0,
@@ -136,6 +173,23 @@ function makeBlob(stage, isPlayer=false) {
     pupil.position.set(x+.018,.16,.89); group.add(pupil);
     const shine = new THREE.Mesh(new THREE.SphereGeometry(.022,8,8), new THREE.MeshBasicMaterial({color:0xffffff}));
     shine.position.set(x-.018,.205,.93); group.add(shine);
+  }
+  if (stage === 2) {
+    const leafMat = new THREE.MeshStandardMaterial({
+      color:0x2fbf6e, emissive:0x146b38, emissiveIntensity:.2, roughness:.45, metalness:0
+    });
+    const sprout = new THREE.Mesh(new THREE.SphereGeometry(.28, 14, 10), leafMat);
+    sprout.scale.set(.55, 1.15, .35);
+    sprout.position.set(0, .95, -.05);
+    group.add(sprout);
+    for (const side of [-1, 1]) {
+      const leaf = new THREE.Mesh(new THREE.SphereGeometry(.36, 14, 10), leafMat);
+      leaf.scale.set(.85, .28, .45);
+      leaf.position.set(side * .78, .2, .1);
+      leaf.rotation.z = side * -.55;
+      leaf.rotation.y = side * .25;
+      group.add(leaf);
+    }
   }
   if (stage === 4) {
     const ringColors=[0xff1a1a,0xff8a1a,0xffe01a,0x2adf4a,0x1a8cff,0x7a3dff,0xff1ad6];
