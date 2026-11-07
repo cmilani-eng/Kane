@@ -116,7 +116,7 @@ function spawnNear(
     (b.team === 'player'
       ? { primary: 0x4a7a3a, accent: 0xd4782e }
       : { primary: 0x8a4a9a, accent: 0xc4a0e0 });
-  const angle = Math.random() * Math.PI * 2;
+  const angle = world.rng() * Math.PI * 2;
   const dist = b.radius + 24;
   const u: BattlefieldUnit = spawnUnit(world, {
     team: b.team as BattlefieldTeam,

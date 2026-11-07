@@ -22,6 +22,7 @@ import {
   type AiDifficultyId,
 } from './aiDifficulty';
 import { seedCoreFragments } from './battlefieldCoreFragments';
+import { createRng, type Rng } from './battlefieldRng';
 import { createDefaultNodes } from './battlefieldEconomy';
 import { createFogState, isVisible } from './battlefieldFog';
 import { setUnitPath } from './battlefieldPathfinding';
@@ -121,6 +122,10 @@ export interface BattlefieldUnit {
 
 export interface BattlefieldWorld {
   nextId: number;
+  /** Every random choice in the simulation draws from here (see battlefieldRng.ts). */
+  rng: Rng;
+  /** Time since the fog was last rebuilt, in simulation milliseconds. */
+  fogAccMs: number;
   units: BattlefieldUnit[];
   buildings: BattlefieldBuilding[];
   nodes: ResourceNode[];
@@ -426,12 +431,15 @@ export function createBattlefieldWorld(
   playerSpecies: SpeciesId = 'brutes',
   difficulty: AiDifficultyId = 'normal',
   mapId?: string | null,
+  seed = 1,
 ): BattlefieldWorld {
   const enemySpecies = oppositePlayable(playerSpecies);
   const ai = getAiDifficulty(difficulty);
   const layout = getSkirmishMap(mapId);
   const world: BattlefieldWorld = {
     nextId: 1,
+    rng: createRng(seed),
+    fogAccMs: 0,
     units: [],
     buildings: [],
     nodes: [],
