@@ -9,7 +9,7 @@ const STAGES = [
   { name:'Green', color:0x39d98a, radius:.77, speed:3.85 },
   { name:'Rock', color:0x4f4b44, radius:.98, speed:4.55 },
   { name:'Rainbow', color:0xffffff, radius:1.18, speed:5.35 },
-  { name:'Angel', color:0xfff2b2, radius:1.35, speed:5.9 }
+  { name:'Angel', color:0xfff0a8, radius:1.35, speed:5.9 }
 ];
 const ARENA = 34;
 const BOT_COUNT = 42;
@@ -110,6 +110,11 @@ function makeBlob(stage, isPlayer=false) {
       map: makeRockTexture(), color:0x5c574f, roughness:.98, metalness:0,
       flatShading: true, emissive:0x000000, emissiveIntensity:0
     });
+  } else if (stage === 5) {
+    material = new THREE.MeshStandardMaterial({
+      color:0xfff6d0, roughness:.22, metalness:.12,
+      emissive:0xffe08a, emissiveIntensity:.55
+    });
   } else {
     material = new THREE.MeshStandardMaterial({ color:data.color, roughness:.34, metalness:0, emissive:0x000000, emissiveIntensity:.45 });
   }
@@ -140,11 +145,33 @@ function makeBlob(stage, isPlayer=false) {
     });
   }
   if (stage === 5) {
-    const halo = new THREE.Mesh(new THREE.TorusGeometry(.65,.075,10,48), new THREE.MeshStandardMaterial({color:0xffd95c,emissive:0xffc629,emissiveIntensity:.65}));
-    halo.position.y=1.25; halo.rotation.x=Math.PI/2; group.add(halo);
-    for (const side of [-1,1]) {
-      const wing=new THREE.Mesh(new THREE.SphereGeometry(.48,20,14),new THREE.MeshStandardMaterial({color:0xffffff,roughness:.55}));
-      wing.scale.set(.42,.18,1.05); wing.position.set(side*.92,.25,-.05); wing.rotation.z=side*.35; group.add(wing);
+    const glow = new THREE.Mesh(
+      new THREE.SphereGeometry(1.15, 24, 18),
+      new THREE.MeshBasicMaterial({ color:0xfff1b0, transparent:true, opacity:.18, depthWrite:false })
+    );
+    glow.scale.set(1, .85, 1); group.add(glow);
+
+    const haloMat = new THREE.MeshStandardMaterial({ color:0xffe27a, emissive:0xffd24a, emissiveIntensity:.9, roughness:.25, metalness:.15 });
+    const halo = new THREE.Mesh(new THREE.TorusGeometry(.72, .06, 12, 56), haloMat);
+    halo.position.y = 1.32; halo.rotation.x = Math.PI / 2; group.add(halo);
+    const haloInner = new THREE.Mesh(new THREE.TorusGeometry(.52, .03, 10, 48), new THREE.MeshStandardMaterial({
+      color:0xfff6c8, emissive:0xffe9a0, emissiveIntensity:.75, roughness:.3
+    }));
+    haloInner.position.y = 1.32; haloInner.rotation.x = Math.PI / 2; group.add(haloInner);
+
+    const wingMat = new THREE.MeshStandardMaterial({ color:0xfffaf0, emissive:0xffe9b8, emissiveIntensity:.28, roughness:.4, metalness:.05 });
+    for (const side of [-1, 1]) {
+      const upper = new THREE.Mesh(new THREE.SphereGeometry(.55, 20, 14), wingMat);
+      upper.scale.set(.38, .14, 1.2);
+      upper.position.set(side * 1.05, .38, -.08);
+      upper.rotation.z = side * .42;
+      upper.rotation.y = side * -.18;
+      group.add(upper);
+      const lower = new THREE.Mesh(new THREE.SphereGeometry(.42, 18, 12), wingMat);
+      lower.scale.set(.32, .12, .95);
+      lower.position.set(side * .95, .08, -.02);
+      lower.rotation.z = side * .22;
+      group.add(lower);
     }
   }
   group.userData = { body, stage, isPlayer };
