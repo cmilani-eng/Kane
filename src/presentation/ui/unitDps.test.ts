@@ -1,5 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { t } from '../../i18n';
+import { unitAttackSpeedLabel } from './unitAttackSpeed';
+import { unitDamageLabel } from './unitDamage';
 import { sharedUnitDpsLabel, unitDps, unitDpsLabel } from './unitDps';
 
 describe('unitDps', () => {
@@ -10,12 +12,14 @@ describe('unitDps', () => {
     expect(unitDps('tin_knight')).toBeGreaterThan(0);
   });
 
-  it('formats localized DPS tip', () => {
+  it('labels DPS · n from dmg × rate, distinct from Damage / Rate tips', () => {
     const n = unitDps('scavenger');
     expect(n).not.toBeNull();
     const line = unitDpsLabel('scavenger');
     expect(line).toBe(t('sel.dps', { n: n! }));
-    expect(line).toContain(String(n));
+    expect(line).toMatch(/^DPS ·/);
+    expect(line).not.toBe(unitDamageLabel('scavenger'));
+    expect(line).not.toBe(unitAttackSpeedLabel('scavenger'));
   });
 
   it('shares tip only for same-type selections', () => {
