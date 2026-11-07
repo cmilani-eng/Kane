@@ -17,7 +17,7 @@ describe('pauseSelectionCountTipLine', () => {
     );
     expect(pauseSelectionCountTipLine(4)).toBe('Selected · 4');
     expect(pauseSelectionCountTipLine(4)).toMatch(/^Selected \u00b7 /);
-    expect(pauseSelectionCountTipLine(4)).not.toMatch(/  /);
+    expect(pauseSelectionCountTipLine(4)).not.toMatch(/ {2}/);
     expect(pauseSelectionCountTipLine(0)).toBe(
       t('pause.selectionCountTip', { n: 0 }),
     );
@@ -60,7 +60,7 @@ describe('pauseSelectionCountTipLine', () => {
     );
     expect(pauseSelectionCountTipLine(4)).toBe('Selecionados · 4');
     expect(pauseSelectionCountTipLine(4)).toMatch(/^Selecionados \u00b7 /);
-    expect(pauseSelectionCountTipLine(4)).not.toMatch(/  /);
+    expect(pauseSelectionCountTipLine(4)).not.toMatch(/ {2}/);
 
     const selectedPt = pauseSelectionCountTipLine(4);
     expect(selectedPt).not.toBe(pauseArmySizeTipLine(4));
@@ -86,7 +86,7 @@ describe('pauseSelectionCountTipLine', () => {
     );
     expect(pauseSelectionCountTipLine(4)).toBe('Seleccionados · 4');
     expect(pauseSelectionCountTipLine(4)).toMatch(/^Seleccionados \u00b7 /);
-    expect(pauseSelectionCountTipLine(4)).not.toMatch(/  /);
+    expect(pauseSelectionCountTipLine(4)).not.toMatch(/ {2}/);
 
     const selectedEs = pauseSelectionCountTipLine(4);
     expect(selectedEs).not.toBe(pauseArmySizeTipLine(4));
