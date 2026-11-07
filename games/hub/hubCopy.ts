@@ -1,4 +1,10 @@
 import { t, type MessageKey } from '../../src/i18n';
+import { isPhoneSizedScreen } from '../../src/presentation/ui/screenSize';
+
+/** Kane needs a big screen, so its card cannot start a match on a phone. Blob Evolution plays anywhere. */
+export function hubPlayBlocked(gameId: string, width: number, height: number): boolean {
+  return gameId === 'kane' && isPhoneSizedScreen(width, height);
+}
 
 const HUB_BLURB: Record<string, MessageKey> = {
   kane: 'hub.kane.blurb',

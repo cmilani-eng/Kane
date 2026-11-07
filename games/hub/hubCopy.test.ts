@@ -1,6 +1,19 @@
 import { beforeEach, describe, expect, it } from 'vitest';
 import { resetLocaleForTests, setLocale, t } from '../../src/i18n';
-import { hubBlurb, hubChrome, hubFooterYear } from './hubCopy';
+import { hubBlurb, hubChrome, hubFooterYear, hubPlayBlocked } from './hubCopy';
+
+describe('hubPlayBlocked', () => {
+  it('blocks the Kane card on phone-sized screens only', () => {
+    expect(hubPlayBlocked('kane', 375, 812)).toBe(true);
+    expect(hubPlayBlocked('kane', 812, 375)).toBe(true);
+    expect(hubPlayBlocked('kane', 768, 1024)).toBe(false);
+    expect(hubPlayBlocked('kane', 1440, 900)).toBe(false);
+  });
+
+  it('never blocks Blob Evolution', () => {
+    expect(hubPlayBlocked('blob-evolution', 375, 812)).toBe(false);
+  });
+});
 
 function memoryStorage(): Storage {
   const data = new Map<string, string>();
