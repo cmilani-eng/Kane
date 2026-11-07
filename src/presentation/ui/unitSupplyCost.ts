@@ -1,7 +1,7 @@
 /**
  * Catalog supply-cost tip (HUD label only).
- * Format: Supply · {n} — one slot per living unit (`livingByTeam` / unitCap).
- * Buildings do not consume supply slots in the catalog.
+ * Format: Supply · {n} — middot (U+00B7); one slot per living unit (`livingByTeam` / unitCap).
+ * Distinct from Max HP · / DPS · / Range ·. Buildings do not consume supply slots.
  */
 import type { UnitTypeId } from '../../data/units';
 import { t } from '../../i18n';
