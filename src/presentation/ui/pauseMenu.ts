@@ -32,6 +32,7 @@ import { pauseMapTipLine } from './pauseMapTip';
 import { pauseSpeciesMottoTipLine } from './pauseSpeciesMottoTip';
 import { pauseMatchClockTipLine } from './pauseMatchClockTip';
 import { pauseSelectionCountTipLine } from './pauseSelectionCountTip';
+import { pauseSelectedSectorTipLine } from './pauseSelectedSectorTip';
 import { pauseStockTipLine } from './pauseStockTip';
 import { pauseApmTipLine } from './pauseApmTip';
 import { pauseArmySizeTipLine } from './pauseArmySizeTip';
@@ -66,6 +67,8 @@ export interface PauseMenuSnapshot {
   fogCoveragePct?: number;
   /** Living player units selected when pause opens. */
   selectionCount?: number;
+  /** 3×3 sector of selection centroid when pause opens (if any selected). */
+  selectedSector?: MapSectorId;
   /** Player gold in wallet when pause opens. */
   stockGold?: number;
   /** Player magic crystals in wallet when pause opens. */
@@ -235,6 +238,10 @@ export class PauseMenu {
     const selectionCountTip = pauseSelectionCountTipLine(
       this.snapshot.selectionCount ?? 0,
     );
+    const selectedSectorTip =
+      this.snapshot.selectedSector != null
+        ? pauseSelectedSectorTipLine(this.snapshot.selectedSector)
+        : '';
     const stockTip = pauseStockTipLine(
       this.snapshot.stockGold ?? 0,
       this.snapshot.stockCrystals ?? 0,
@@ -278,16 +285,17 @@ export class PauseMenu {
     const yFogAge = short ? top + 148 : cy - panelH * 0.05;
     const yFogCoverage = short ? top + 160 : cy - panelH * 0.02;
     const ySelection = short ? top + 172 : cy + panelH * 0.015;
-    const yStock = short ? top + 184 : cy + panelH * 0.05;
-    const ySetup = short ? top + 196 : cy + panelH * 0.08;
-    const yPopulation = short ? top + 208 : cy + panelH * 0.105;
-    const yArmy = short ? top + 220 : cy + panelH * 0.13;
-    const yBuildings = short ? top + 232 : cy + panelH * 0.155;
-    const yIdle = short ? top + 244 : cy + panelH * 0.18;
-    const yHero = short ? top + 256 : cy + panelH * 0.205;
-    const yApm = short ? top + 268 : cy + panelH * 0.23;
-    const ySupplyRatio = short ? top + 280 : cy + panelH * 0.26;
-    const ySupply = short ? top + 292 : cy + panelH * 0.29;
+    const ySelectedSector = short ? top + 184 : cy + panelH * 0.05;
+    const yStock = short ? top + 196 : cy + panelH * 0.08;
+    const ySetup = short ? top + 208 : cy + panelH * 0.105;
+    const yPopulation = short ? top + 220 : cy + panelH * 0.13;
+    const yArmy = short ? top + 232 : cy + panelH * 0.155;
+    const yBuildings = short ? top + 244 : cy + panelH * 0.18;
+    const yIdle = short ? top + 256 : cy + panelH * 0.205;
+    const yHero = short ? top + 268 : cy + panelH * 0.23;
+    const yApm = short ? top + 280 : cy + panelH * 0.26;
+    const ySupplyRatio = short ? top + 292 : cy + panelH * 0.29;
+    const ySupply = short ? top + 304 : cy + panelH * 0.32;
     const clockLine = this.scene.add
       .text(cx, yClock, clockTip, {
         fontFamily: 'system-ui, sans-serif',
@@ -393,6 +401,17 @@ export class PauseMenu {
       .setOrigin(0.5)
       .setScrollFactor(0)
       .setDepth(222);
+    const selectedSectorLine = this.scene.add
+      .text(cx, ySelectedSector, selectedSectorTip, {
+        fontFamily: 'system-ui, sans-serif',
+        fontSize: short ? '11px' : '12px',
+        color: '#c8d8e8',
+        align: 'center',
+      })
+      .setOrigin(0.5)
+      .setScrollFactor(0)
+      .setDepth(222)
+      .setVisible(!!selectedSectorTip);
     const stockLine = this.scene.add
       .text(cx, yStock, stockTip, {
         fontFamily: 'system-ui, sans-serif',
@@ -506,6 +525,7 @@ export class PauseMenu {
       fogAgeLine,
       fogCoverageLine,
       selectionLine,
+      selectedSectorLine,
       stockLine,
       setup,
       populationLine,
@@ -519,7 +539,7 @@ export class PauseMenu {
     );
 
     // Short layout: tips + setup + supply need room above buttons.
-    const btnY0 = short ? top + 316 : cy + panelH * 0.32;
+    const btnY0 = short ? top + 328 : cy + panelH * 0.35;
     const gap = short ? 36 : Math.min(44, panelH * 0.11);
     this.root.push(
       this.makeBtn(cx, btnY0, t('pause.resume'), () => {
