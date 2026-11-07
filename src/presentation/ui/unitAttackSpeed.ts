@@ -1,7 +1,9 @@
 /**
  * Catalog attack-speed tip (HUD label only).
- * Format: Rate · {n}/s — attacks per second from attackCooldownMs.
- * Distinct from Atk CD · s tip and DPS tip.
+ * Format: Rate · {n}/s — middot (U+00B7); attacks per second from
+ * attackCooldownMs.
+ * Distinct from Atk CD · / DPS · / Heal · / Damage · / Speed · / Pace ·
+ * peers. Buildings / non-attack units omit.
  */
 import { getUnitType, type UnitTypeId } from '../../data/units';
 import { t } from '../../i18n';
