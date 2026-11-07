@@ -77,6 +77,7 @@ This doc is the honest gate before any public preview URL.
 | Supply slots left | **OK** — near-cap / full supply lines append remaining slots (or “full”) | `formatSupplyLine`, `pause.supplyNear` / `supplyFull` |
 | Pause supply tip | **OK** — pause shows Supply · used/cap from living pop vs unitCap at open (distinct surface from minimap Supply / Pop · n / spaced-slash supply line) | `pauseSupplyRatioTipLine`, `pause.supplyRatioTip` |
 | Pause win streak tip | **OK** — pause shows Streak · n from matchPrefs.winStreak frozen at open (distinct surface from lobby/end Streak tips) | `pauseWinStreakTipLine`, `pause.winStreakTip`, `matchPrefs.winStreak` |
+| Pause games played tip | **OK** — pause shows Played · n from matchPrefs.gamesPlayed frozen at open (distinct surface from end/lobby Played tips) | `pauseGamesPlayedTipLine`, `pause.gamesPlayedTip`, `matchPrefs.gamesPlayed` |
 | Pause population tip | **OK** — pause shows Pop · n from living player units at open (distinct from Supply · used/cap tip) | `pausePopulationTipLine`, `pause.populationTip` |
 | Pause army size tip | **OK** — pause shows Army · n from living player combat units at open (same isMilitaryUnit filter as minimap; distinct from Pop) | `pauseArmySizeTipLine`, `pause.armyTip`, `isMilitaryUnit` |
 | Pause building count tip | **OK** — pause shows Buildings · n from living player buildings at open (same filter as minimap; distinct from Army / Pop) | `pauseBuildingCountTipLine`, `pause.buildingsTip` |

@@ -750,6 +750,7 @@ export class BattlefieldScene extends Phaser.Scene {
     const cam = this.cameras.main;
     const viewW = cam.width / cam.zoom;
     const viewH = cam.height / cam.zoom;
+    const matchPrefs = loadMatchPrefs();
     return {
       elapsedMs: this.matchElapsedMs,
       supplyCurrent: livingByTeam(this.world, 'player'),
@@ -787,7 +788,8 @@ export class BattlefieldScene extends Phaser.Scene {
       ).length,
       idleWorkerCount: countIdleWorkers(this.world),
       heroStatus: minimapHeroStatus(this.world),
-      winStreak: loadMatchPrefs().winStreak ?? 0,
+      winStreak: matchPrefs.winStreak ?? 0,
+      gamesPlayed: matchPrefs.gamesPlayed ?? 0,
     };
   }
 
