@@ -24,10 +24,12 @@ import {
   pauseObjectiveTipLine,
   type MissionObjectiveId,
 } from './missionObjective';
+import { pauseCameraSectorTipLine } from './pauseCameraSectorTip';
 import { pauseDifficultyTipLine } from './pauseDifficultyTip';
 import { pauseMapTipLine } from './pauseMapTip';
 import { pauseSpeciesMottoTipLine } from './pauseSpeciesMottoTip';
 import { pauseSupplyRatioTipLine } from './pauseSupplyRatioTip';
+import type { MapSectorId } from '../../gameplay/battlefield/mapSector';
 import {
   SUPPLY_TONE_COLOR,
   formatSupplyLine,
@@ -44,6 +46,8 @@ export interface PauseMenuSnapshot {
   speciesId: SpeciesId;
   /** Current / last mission objective for the Objective tip. */
   objectiveId?: MissionObjectiveId;
+  /** Camera view-center 3×3 sector frozen when pause opens. */
+  camSector?: MapSectorId;
 }
 
 export interface PauseMenuOpts {
@@ -183,6 +187,10 @@ export class PauseMenu {
       map: mapCopy(this.snapshot.mapId).label,
       difficulty: difficultyCopy(this.snapshot.difficulty).label,
     });
+    const camSectorTip =
+      this.snapshot.camSector != null
+        ? pauseCameraSectorTipLine(this.snapshot.camSector)
+        : '';
     const supplyRatioTip = pauseSupplyRatioTipLine(
       this.snapshot.supplyCurrent,
       this.snapshot.supplyCap,
@@ -200,9 +208,10 @@ export class PauseMenu {
     const yMotto = short ? top + 94 : cy - panelH * 0.23;
     const yDifficulty = short ? top + 112 : cy - panelH * 0.18;
     const yObjective = short ? top + 128 : cy - panelH * 0.13;
-    const ySetup = short ? top + 144 : cy - panelH * 0.08;
-    const ySupplyRatio = short ? top + 158 : cy - panelH * 0.035;
-    const ySupply = short ? top + 172 : cy + panelH * 0.01;
+    const yCamSector = short ? top + 142 : cy - panelH * 0.085;
+    const ySetup = short ? top + 156 : cy - panelH * 0.04;
+    const ySupplyRatio = short ? top + 170 : cy + panelH * 0.005;
+    const ySupply = short ? top + 184 : cy + panelH * 0.05;
     const elapsed = this.scene.add
       .text(cx, yElapsed, elapsedLine, {
         fontFamily: 'system-ui, sans-serif',
@@ -256,6 +265,17 @@ export class PauseMenu {
       .setOrigin(0.5)
       .setScrollFactor(0)
       .setDepth(222);
+    const camSectorLine = this.scene.add
+      .text(cx, yCamSector, camSectorTip, {
+        fontFamily: 'system-ui, sans-serif',
+        fontSize: short ? '11px' : '12px',
+        color: '#c8d8e8',
+        align: 'center',
+      })
+      .setOrigin(0.5)
+      .setScrollFactor(0)
+      .setDepth(222)
+      .setVisible(!!camSectorTip);
     const setup = this.scene.add
       .text(cx, ySetup, setupLine, {
         fontFamily: 'system-ui, sans-serif',
@@ -294,13 +314,14 @@ export class PauseMenu {
       motto,
       difficultyLine,
       objectiveLine,
+      camSectorLine,
       setup,
       supplyRatioLine,
       supplyText,
     );
 
     // Short layout: tips + setup + supply need room above buttons.
-    const btnY0 = short ? top + 196 : cy + panelH * 0.08;
+    const btnY0 = short ? top + 208 : cy + panelH * 0.12;
     const gap = short ? 36 : Math.min(44, panelH * 0.11);
     this.root.push(
       this.makeBtn(cx, btnY0, t('pause.resume'), () => {

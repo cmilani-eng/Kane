@@ -166,6 +166,7 @@ import { createSkirmishMap } from '../maps/mapManager';
 import { FogOverlay } from '../ui/fogOverlay';
 import { showKaneEndScreen } from '../ui/endScreen';
 import { resolveMissionObjective } from '../ui/missionObjective';
+import { minimapCameraSectorAt } from '../ui/minimapCameraSectorTip';
 import { PauseMenu } from '../ui/pauseMenu';
 import { publishMatchStock, resetMatchStock } from '../ui/matchUiStore';
 import {
@@ -731,6 +732,9 @@ export class BattlefieldScene extends Phaser.Scene {
   }
 
   private pauseSnapshot() {
+    const cam = this.cameras.main;
+    const viewW = cam.width / cam.zoom;
+    const viewH = cam.height / cam.zoom;
     return {
       elapsedMs: this.matchElapsedMs,
       supplyCurrent: livingByTeam(this.world, 'player'),
@@ -739,6 +743,12 @@ export class BattlefieldScene extends Phaser.Scene {
       difficulty: this.world.aiDifficulty,
       speciesId: this.world.speciesId,
       objectiveId: resolveMissionObjective(this.world.aiDifficulty),
+      camSector: minimapCameraSectorAt(
+        cam.scrollX,
+        cam.scrollY,
+        viewW,
+        viewH,
+      ),
     };
   }
 
