@@ -1,6 +1,6 @@
 /**
- * Selection HP-ratio tip (HUD label only).
- * Live current/max HP as a whole percent — distinct from Max HP / HP chip.
+ * Selection health tip (HUD label only).
+ * Live current/max HP as HP · {pct}% — distinct from Max HP / HP chip.
  */
 import { t } from '../../i18n';
 
