@@ -140,7 +140,7 @@ This doc is the honest gate before any public preview URL.
 | Train button secs | **OK** — production train browse buttons show full train duration beside Gold/Crystal | `trainFullSec`, `sel.trainSec` |
 | Unit armor class | **OK** — selection stats show GDD role as Armor · class (HUD label only) | `unitArmorClass`, `sel.armorClass` |
 | Unit armor class tip | **OK** — unit selection shows Armor · type tip (middot; distinct from Armor · n value tip and building Structure tip) | `unitArmorClassTip`, `sel.armorTip` |
-| Unit armor value tip | **OK** — selection panel shows Armor · n from unit catalog stats (distinct from Armor · type tip and building Structure tip) | `unitArmorValueLabel`, `sel.armorValueTip`, `unitArmorValue` |
+| Unit armor value tip | **OK** — selection panel shows Armor · n (U+00B7) from unit catalog stats; en/pt-BR/es middot; distinct from Armor · type tip and building Armor · Structure | `unitArmorValueLabel`, `sel.armorValueTip`, `unitArmorValue` |
 | Unit DPS tip | **OK** — selection stats show DPS · n from catalog dmg / attackCooldownMs (same-type only; middot; distinct from Atk CD · / Proj · / Splash · / Range · / Damage · / Rate ·) | `unitDps`, `sel.dps` |
 | Unit heal rate tip | **OK** — selection stats show Heal · n/s from hero healHp / cooldownMs when applicable (same-type only; buildings / non-heal units omit) | `unitHealRate`, `sel.healRateTip` |
 | Unit damage tip | **OK** — selection panel shows Damage · n (U+00B7) from catalog attack damage (same-type only; middot; en/pt-BR/es; distinct from DPS · / Atk CD · / Splash · / Range · and ATK chip) | `unitDamageLabel`, `sel.dmgTip`, `unitDamage` |
