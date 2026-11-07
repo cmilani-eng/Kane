@@ -1,8 +1,9 @@
 /**
  * Minimap living-worker count tip (presentation only).
- * Format: Workers · {n} — middot (U+00B7).
+ * Format: Workers · {n} — middot (U+00B7) with single spaces.
  * Living player gatherers — distinct from Idle · / Army · / Pop ·
- * minimap peers; en/pt-BR/es middot via `hud.minimapWorkers`.
+ * minimap peers and HUD idle chip; en/pt-BR/es middot via
+ * `hud.minimapWorkers`.
  */
 import { t } from '../../i18n';
 
