@@ -165,7 +165,7 @@ This doc is the honest gate before any public preview URL.
 | Unit atk CD tip | **OK** — selection stats show Atk CD · ns from catalog attackCooldownMs (same-type only; distinct from Rate · / DPS · / hero Cooldown Ns) | `unitAttackCooldown`, `sel.atkCdTip` |
 | Unit atk speed tip | **OK** — selection stats show Rate · n/s from catalog attackCooldownMs (same-type only; distinct from Atk CD ·) | `unitAttackSpeed`, `sel.atkSpeedTip` |
 | Unit supply tip | **OK** — selection stats show Supply · n (U+00B7) from catalog (1 slot per unit, same-type only; middot; distinct from Max HP · / DPS · / Range ·; buildings omit) | `unitSupplyCost`, `sel.supplyTip` |
-| Unit train gold tip | **OK** — selection stats show Gold · n from catalog train gold (same-type only; distinct from inline Gold chip) | `unitTrainGold`, `sel.trainGoldTip` |
+| Unit train gold tip | **OK** — selection stats show Gold · n (U+00B7) from catalog train gold (same-type only; middot; distinct from Supply · / Max HP · / DPS · and inline Gold chip; buildings use build-cost tip) | `unitTrainGold`, `sel.trainGoldTip` |
 | Unit train crystal tip | **OK** — selection stats show Crystal · n from catalog train crystals (same-type only; omitted when 0; distinct from inline Crystal chip) | `unitTrainCrystal`, `sel.trainCrystalTip` |
 | Unit train duration tip | **OK** — selection stats show catalog full train seconds (same-type only; omitted when 0) | `unitTrainDuration`, `sel.trainDurationTip` |
 | Unit role tip | **OK** — selection stats show coarse duty role (worker / combat / hero), distinct from armor class | `unitRole`, `sel.roleTip` |
