@@ -1,6 +1,8 @@
 /**
  * Pause overlay selection-count tip (HUD label only).
- * Frozen when pause opens — distinct from selection-panel flavor copy.
+ * Format: Selected · {n} — middot (U+00B7).
+ * Frozen when pause opens — distinct from selection-panel flavor copy
+ * and from minimap `hud.minimapSelected` / `minimapSelectedCountTipText`.
  */
 import { t } from '../../i18n';
 
