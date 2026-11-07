@@ -22,6 +22,7 @@ This doc is the honest gate before any public preview URL.
 | Reduce motion | **OK** — pause toggle disables under-attack camera nudge + quiets fog scout pulses; persists `kane.reduceMotion.v1` | `motionPrefs`, `pauseMenu`, `scoutPulseDraw`, `BattlefieldScene` |
 | Scout sector label | **OK** — fog scout pulse sets a brief HUD chip with 3×3 sector (NW…SE) | `mapSectorAt`, `scoutSectorHint`, `hud.scoutSector` |
 | Minimap scout pulse label | **OK** — fog scout pulse shows short sector mark on the minimap at the reveal | `minimapScoutPulseLabel`, `hud.minimapScoutPulse` |
+| Minimap fog reveal age tip | **OK** — fog scout pulse minimap label shows Scout sector · ns age tip (distinct from sector-only mark) | `minimapFogRevealAgeTip`, `hud.fogRevealAge` |
 | Minimap camera viewport label | **OK** — gold camera frame on the minimap shows a short View mark | `minimapCameraViewportLabel`, `hud.minimapCamView` |
 | Minimap camera sector tip | **OK** — camera frame shows Cam · sector from view-center 3×3 (distinct from View mark) | `minimapCameraSectorTip`, `hud.minimapCamSector` |
 | Attention ping | **OK** — hold minimap to drop a temporary look-here mark (world + minimap); short cooldown + ice deny flash; help notes double-tap recenter; no chat | `battlefieldAttentionPing`, `minimapPingCooldown`, help |
