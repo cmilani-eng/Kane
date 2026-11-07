@@ -760,6 +760,9 @@ export class BattlefieldScene extends Phaser.Scene {
         this.world.lastFogRevealAgeMs != null
           ? this.world.lastFogRevealAgeMs
           : undefined,
+      selectionCount: this.world.units.filter(
+        (u) => u.selected && u.team === 'player' && u.hp > 0,
+      ).length,
     };
   }
 
