@@ -140,6 +140,19 @@ describe('match prefs rematch restore', () => {
     expect(loadMatchPrefs().avgApmSamples).toBe(2);
   });
 
+  it('tracks peak bestApm across finished matches when actions given', () => {
+    rememberMatchPrefs('nobles', 'normal', 'crossing', 60_000, true, 90);
+    expect(loadMatchPrefs().bestApm).toBe(90);
+    rememberMatchPrefs('brutes', 'easy', 'ridge', 120_000, false, 60);
+    expect(loadMatchPrefs().bestApm).toBe(90);
+    rememberMatchPrefs('weirdos', 'hard', 'gap', 60_000, true, 120);
+    expect(loadMatchPrefs().bestApm).toBe(120);
+    rememberMatchPrefs('nobles', 'normal', 'crossing', 60_000, false);
+    expect(loadMatchPrefs().bestApm).toBe(120);
+    rememberMatchPrefs('brutes', 'easy', 'ridge');
+    expect(loadMatchPrefs().bestApm).toBe(120);
+  });
+
   it('counts finished matches as gamesPlayed when outcome is set', () => {
     rememberMatchPrefs('nobles', 'normal', 'crossing', 90_000, true);
     expect(loadMatchPrefs().gamesPlayed).toBe(1);
