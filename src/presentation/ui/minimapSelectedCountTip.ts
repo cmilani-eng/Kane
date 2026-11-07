@@ -1,6 +1,8 @@
 /**
  * Minimap selected-count tip (presentation only).
- * Live selection size — distinct from pause Selected · n tip.
+ * Format: Selected · {n} — middot (U+00B7).
+ * Live selection size — distinct surface from pause Selected · n tip
+ * (`pause.selectionCountTip` / `pauseSelectionCountTipLine`).
  */
 import { t } from '../../i18n';
 
