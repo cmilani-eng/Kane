@@ -122,10 +122,47 @@ describe('signed in as alice', () => {
       await assertFails(as('alice').ref(`lobbies/${code}`).set(lobby()));
     });
 
-    it('stops another player reading or overwriting her lobby', async () => {
+    it('lets a friend see an open lobby by its code and join it', async () => {
       await assertSucceeds(as('alice').ref('lobbies/ABCD').set(lobby()));
-      await assertFails(read(as('bob'), 'lobbies/ABCD'));
+      await assertSucceeds(read(as('bob'), 'lobbies/ABCD'));
+      await assertSucceeds(
+        as('bob').ref('lobbies/ABCD').set({ ...lobby(), guestUid: 'bob', status: 'full' }),
+      );
+    });
+
+    it('does not let a stranger take the host seat, close the lobby, or add a second guest', async () => {
+      await assertSucceeds(as('alice').ref('lobbies/ABCD').set(lobby()));
       await assertFails(as('bob').ref('lobbies/ABCD').set({ ...lobby(), hostUid: 'bob' }));
+      await assertFails(as('bob').ref('lobbies/ABCD').set({ ...lobby(), status: 'closed' }));
+      await assertSucceeds(
+        as('bob').ref('lobbies/ABCD').set({ ...lobby(), guestUid: 'bob', status: 'full' }),
+      );
+      await assertFails(
+        as('carol').ref('lobbies/ABCD').set({ ...lobby(), guestUid: 'carol', status: 'full' }),
+      );
+    });
+
+    it('does not let a friend seat somebody else as the guest', async () => {
+      await assertSucceeds(as('alice').ref('lobbies/ABCD').set(lobby()));
+      await assertFails(
+        as('bob').ref('lobbies/ABCD').set({ ...lobby(), guestUid: 'carol', status: 'full' }),
+      );
+    });
+
+    it('lets only the host close the lobby', async () => {
+      await assertSucceeds(as('alice').ref('lobbies/ABCD').set(lobby()));
+      await assertSucceeds(as('alice').ref('lobbies/ABCD').set({ ...lobby(), status: 'closed' }));
+    });
+
+    it('does not show a lobby that is full or closed to strangers', async () => {
+      await env.withSecurityRulesDisabled(async (ctx) => {
+        await ctx.database().ref('lobbies/WXYZ').set({
+          ...lobby(),
+          guestUid: 'bob',
+          status: 'full',
+        });
+      });
+      await assertFails(read(as('carol'), 'lobbies/WXYZ'));
     });
   });
 
