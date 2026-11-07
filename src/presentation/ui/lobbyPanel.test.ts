@@ -57,10 +57,11 @@ describe('lobby status copy', () => {
     expect(lobbyMapTipLine()).toBe(
       t('lobby.mapTip', { label: map.label, blurb: map.blurb }),
     );
-    expect(lobbyMapTipLine()).toContain('Ridge');
-    expect(lobbyMapTipLine()).toContain('Diagonal bases');
+    expect(lobbyMapTipLine()).toBe('Ridge · Diagonal bases · shifted belt');
+    expect(lobbyMapTipLine()).toMatch(/^Ridge \u00b7 /);
+    expect(lobbyMapTipLine()).toContain(' \u00b7 ');
     setLocale('pt-BR');
-    expect(lobbyMapTipLine()).toContain('Cume');
+    expect(lobbyMapTipLine()).toMatch(/^Cume \u00b7 /);
   });
 
   it('pairs species, map, and difficulty for lobby setup context', () => {

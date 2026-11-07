@@ -52,7 +52,13 @@ export function lobbyStatusLine(status: LobbyStatus, code: string | null): strin
   }
 }
 
-/** Selected skirmish map tip — label · blurb from match prefs. */
+/**
+ * Selected skirmish map tip — {label} · {blurb} (U+00B7) from match prefs.
+ * Blurb may itself contain middots. Same en copy shape as menu map tip,
+ * distinct key/surface (`lobby.mapTip` vs `menu.mapTip`). Distinct from
+ * Last map · / Best map · / Map · w×h / Map · name / difficulty · blurb /
+ * species motto / setup line.
+ */
 export function lobbyMapTipLine(): string {
   const map = mapCopy(loadMatchPrefs().mapId);
   return t('lobby.mapTip', { label: map.label, blurb: map.blurb });
