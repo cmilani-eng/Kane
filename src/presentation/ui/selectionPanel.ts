@@ -31,7 +31,10 @@ import {
   sharedUnitAttackCooldownLabel,
   unitAttackCooldownLabel,
 } from './unitAttackCooldown';
-import { attackRangeLabel } from './unitAttackRange';
+import {
+  sharedUnitAttackRangeLabel,
+  unitAttackRangeLabel,
+} from './unitAttackRange';
 import {
   sharedUnitAttackTypeLabel,
   unitAttackTypeLabel,
@@ -230,6 +233,8 @@ export type SelectionPanelView =
       moveCadenceTip: string | null;
       /** Catalog vision-radius tip when selection shares one unit type. */
       visionTip: string | null;
+      /** Catalog attack-range tip when selection shares one unit type. */
+      rangeTip: string | null;
       /** Catalog max-HP tip when selection shares one unit type. */
       hpMaxTip: string | null;
       /** Catalog attack-cooldown tip when selection shares one unit type. */
@@ -701,6 +706,7 @@ export function buildSelectionView(
       speedTip: unitMoveSpeedLabel(u.typeId),
       moveCadenceTip: unitMoveCadenceLabel(u.typeId),
       visionTip: unitVisionLabel(u.typeId),
+      rangeTip: unitAttackRangeLabel(u.typeId),
       hpMaxTip: unitHpMaxLabel(u.typeId),
       atkCdTip: unitAttackCooldownLabel(u.typeId),
       supplyTip: unitSupplyCostLabel(u.typeId),
@@ -774,6 +780,7 @@ export function buildSelectionView(
     speedTip: sharedUnitMoveSpeedLabel(alive.map((u) => u.typeId)),
     moveCadenceTip: sharedUnitMoveCadenceLabel(alive.map((u) => u.typeId)),
     visionTip: sharedUnitVisionLabel(alive.map((u) => u.typeId)),
+    rangeTip: sharedUnitAttackRangeLabel(alive.map((u) => u.typeId)),
     hpMaxTip: sharedUnitHpMaxLabel(alive.map((u) => u.typeId)),
     atkCdTip: sharedUnitAttackCooldownLabel(alive.map((u) => u.typeId)),
     supplyTip: sharedUnitSupplyCostLabel(alive.map((u) => u.typeId)),
@@ -1059,6 +1066,7 @@ function structureSignature(view: SelectionPanelView): string {
       view.speedTip ?? '',
       view.moveCadenceTip ?? '',
       view.visionTip ?? '',
+      view.rangeTip ?? '',
       view.hpMaxTip ?? '',
       view.atkCdTip ?? '',
       view.supplyTip ?? '',
@@ -1580,11 +1588,8 @@ export function renderSelectionPanel(view: SelectionPanelView): boolean {
       if (structuralChange) {
         const bits: string[] = [];
         if (view.dmg != null) bits.push(`<span>${t('sel.atk')} ${view.dmg}</span>`);
-        if (view.range != null) {
-          const rangeTip = attackRangeLabel(view.range);
-          bits.push(
-            `<span>${escapeHtml(rangeTip ?? `${t('sel.rng')} ${view.range}`)}</span>`,
-          );
+        if (view.rangeTip) {
+          bits.push(`<span>${escapeHtml(view.rangeTip)}</span>`);
         }
         if (view.dpsTip) {
           bits.push(`<span>${escapeHtml(view.dpsTip)}</span>`);
