@@ -49,6 +49,7 @@ import { formatMatchClock } from './matchClock';
 import { attackDirectionArrow } from '../../gameplay/battlefield/attackDirection';
 import { walletOf } from '../../gameplay/battlefield/battlefieldEconomy';
 import { abilityChargesLeft } from './abilityCharges';
+import { hudChipStackTop } from './coreVictoryBanner';
 
 export { formatMatchClock } from './matchClock';
 
@@ -718,7 +719,7 @@ export class BattlefieldHud {
       this.supplyText.setPosition(pad + 294, resY + 8).setFontSize('15px');
     }
 
-    const belowRes = resY + this.resourcePanel.height + 8;
+    const belowRes = hudChipStackTop(w, h);
     this.idlePingBtn
       .setPosition(pad, belowRes)
       .setFontSize(this.narrow ? '11px' : '12px');
