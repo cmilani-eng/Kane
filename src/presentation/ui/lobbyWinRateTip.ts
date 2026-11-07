@@ -1,6 +1,6 @@
 /**
  * Lobby tip for win rate from match prefs (wins / finished games).
- * Distinct from streak, last-outcome, and games-played tips.
+ * Distinct from streak / played tips and from end Win rate tip surface.
  */
 import { loadMatchPrefs } from '../../database/matchPrefs';
 import { t } from '../../i18n';

@@ -1,6 +1,8 @@
 import { beforeEach, describe, expect, it } from 'vitest';
 import { rememberMatchPrefs } from '../../database/matchPrefs';
 import { setLocale, t } from '../../i18n';
+import { endWinRateTipLine } from './endWinRateTip';
+import { lobbyWinsTipLine } from './lobbyWinsTip';
 import {
   lobbyWinRatePercent,
   lobbyWinRateTipLine,
@@ -39,12 +41,17 @@ describe('lobbyWinRateTipLine', () => {
     expect(lobbyWinRatePercent()).toBeNull();
   });
 
-  it('labels Win rate · n% from wins over games played', () => {
+  it('labels Win rate · n%, distinct from Wins tip and end tip key', () => {
     rememberMatchPrefs('nobles', 'normal', 'crossing', 90_000, true);
     rememberMatchPrefs('brutes', 'easy', 'ridge', 60_000, false);
     expect(lobbyWinRatePercent()).toBe(50);
     expect(lobbyWinRateTipLine()).toBe(t('lobby.winRateTip', { n: 50 }));
     expect(lobbyWinRateTipLine()).toMatch(/^Win rate ·/);
+    expect(lobbyWinRateTipLine()).toMatch(/%$/);
+    expect(lobbyWinRateTipLine()).not.toBe(lobbyWinsTipLine());
+    // Same en copy as end tip; distinct i18n key / surface.
+    expect(lobbyWinRateTipLine()).toBe(endWinRateTipLine());
+    expect(endWinRateTipLine()).toBe(t('end.winRateTip', { n: 50 }));
     rememberMatchPrefs('weirdos', 'hard', 'gap', 70_000, true);
     expect(lobbyWinRatePercent()).toBe(67);
     expect(lobbyWinRateTipLine()).toBe(t('lobby.winRateTip', { n: 67 }));
