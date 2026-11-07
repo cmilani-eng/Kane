@@ -21,6 +21,10 @@ import {
   sharedUnitArmorClassTipLabel,
   unitArmorClassTipLabel,
 } from './unitArmorClassTip';
+import {
+  sharedUnitArmorValueLabel,
+  unitArmorValueLabel,
+} from './unitArmorValueTip';
 import { buildingBuildCostLabel } from './buildingBuildCost';
 import { buildingBuildProgressLabel } from './buildingBuildProgress';
 import { buildingBuildTimeLabel } from './buildingBuildTime';
@@ -220,6 +224,8 @@ export type SelectionPanelView =
       range: number | null;
       /** GDD role / armor class label when selection shares one class. */
       armorClass: string | null;
+      /** Catalog numeric armor tip when selection shares one armor value. */
+      armorValueTip: string | null;
       /** Catalog DPS tip when selection shares one unit type. */
       dpsTip: string | null;
       /** Catalog heal-rate tip when selection shares a heal-capable hero. */
@@ -706,6 +712,7 @@ export function buildSelectionView(
       dmg: u.dmg,
       range: u.range,
       armorClass: armorClassLabel(u.typeId),
+      armorValueTip: unitArmorValueLabel(u.typeId),
       dpsTip: unitDpsLabel(u.typeId),
       healRateTip: unitHealRateLabel(u.typeId),
       dmgTip: unitDamageLabel(u.typeId),
@@ -781,6 +788,7 @@ export function buildSelectionView(
     dmg,
     range,
     armorClass: sharedUnitArmorClassTipLabel(alive.map((u) => u.typeId)),
+    armorValueTip: sharedUnitArmorValueLabel(alive.map((u) => u.typeId)),
     dpsTip: sharedUnitDpsLabel(alive.map((u) => u.typeId)),
     healRateTip: sharedUnitHealRateLabel(alive.map((u) => u.typeId)),
     dmgTip: sharedUnitDamageLabel(alive.map((u) => u.typeId)),
@@ -1068,6 +1076,7 @@ function structureSignature(view: SelectionPanelView): string {
       view.dmg ?? '-',
       view.range ?? '-',
       view.armorClass ?? '',
+      view.armorValueTip ?? '',
       view.dpsTip ?? '',
       view.healRateTip ?? '',
       view.dmgTip ?? '',
@@ -1661,6 +1670,9 @@ export function renderSelectionPanel(view: SelectionPanelView): boolean {
         }
         if (view.cargoCapTip) {
           bits.push(`<span>${escapeHtml(view.cargoCapTip)}</span>`);
+        }
+        if (view.armorValueTip) {
+          bits.push(`<span>${escapeHtml(view.armorValueTip)}</span>`);
         }
         if (view.armorClass) {
           bits.push(`<span>${escapeHtml(view.armorClass)}</span>`);

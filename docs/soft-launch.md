@@ -99,6 +99,7 @@ This doc is the honest gate before any public preview URL.
 | Train button secs | **OK** — production train browse buttons show full train duration beside Gold/Crystal | `trainFullSec`, `sel.trainSec` |
 | Unit armor class | **OK** — selection stats show GDD role as Armor · class (HUD label only) | `unitArmorClass`, `sel.armorClass` |
 | Unit armor class tip | **OK** — unit selection shows Armor · class tip (distinct from building Structure tip) | `unitArmorClassTip`, `sel.armorTip` |
+| Unit armor value tip | **OK** — unit selection shows Armor · n from catalog (distinct from armor class role tip) | `unitArmorValueTip`, `sel.armorValueTip`, `unitArmorValue` |
 | Unit DPS tip | **OK** — selection stats show catalog DPS from dmg / attackCooldownMs (same-type only) | `unitDps`, `sel.dps` |
 | Unit heal rate tip | **OK** — selection stats show Heal · n/s from hero healHp / cooldownMs when applicable (same-type only) | `unitHealRate`, `sel.healRateTip` |
 | Unit damage tip | **OK** — selection stats show catalog Damage · n tip (same-type only; distinct from ATK chip / DPS) | `unitDamage`, `sel.dmgTip` |
