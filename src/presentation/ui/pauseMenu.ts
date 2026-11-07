@@ -43,6 +43,7 @@ import { pausePopulationTipLine } from './pausePopulationTip';
 import { pauseSupplyRatioTipLine } from './pauseSupplyRatioTip';
 import { pauseFavoriteFactionTipLine } from './pauseFavoriteFactionTip';
 import { pauseGamesPlayedTipLine } from './pauseGamesPlayedTip';
+import { pauseSpeciesPlaysTipLine } from './pauseSpeciesPlaysTip';
 import { pauseWinsTipLine } from './pauseWinsTip';
 import { pauseWinRateTipLine } from './pauseWinRateTip';
 import { pauseAvgApmTipLine } from './pauseAvgApmTip';
@@ -111,6 +112,8 @@ export interface PauseMenuSnapshot {
   bestApm?: number;
   /** Most-played species from matchPrefs.speciesPlays when pause opens. */
   favoriteFactionId?: SpeciesId | null;
+  /** Favorite species play count from matchPrefs.speciesPlays when pause opens. */
+  speciesPlays?: number;
 }
 
 export interface PauseMenuOpts {
@@ -315,6 +318,8 @@ export class PauseMenu {
     const bestApmTip = pauseBestApmTipLine(this.snapshot.bestApm) ?? '';
     const favoriteFactionTip =
       pauseFavoriteFactionTipLine(this.snapshot.favoriteFactionId) ?? '';
+    const speciesPlaysTip =
+      pauseSpeciesPlaysTipLine(this.snapshot.speciesPlays ?? 0) ?? '';
     const supplyRatioTip = pauseSupplyRatioTipLine(
       this.snapshot.supplyCurrent,
       this.snapshot.supplyCap,
@@ -356,8 +361,9 @@ export class PauseMenu {
     const yAvgApm = short ? top + 376 : cy + panelH * 0.465;
     const yBestApm = short ? top + 388 : cy + panelH * 0.49;
     const yFavoriteFaction = short ? top + 400 : cy + panelH * 0.515;
-    const ySupplyRatio = short ? top + 412 : cy + panelH * 0.54;
-    const ySupply = short ? top + 424 : cy + panelH * 0.565;
+    const ySpeciesPlays = short ? top + 412 : cy + panelH * 0.54;
+    const ySupplyRatio = short ? top + 424 : cy + panelH * 0.565;
+    const ySupply = short ? top + 436 : cy + panelH * 0.59;
     const clockLine = this.scene.add
       .text(cx, yClock, clockTip, {
         fontFamily: 'system-ui, sans-serif',
@@ -664,6 +670,17 @@ export class PauseMenu {
       .setScrollFactor(0)
       .setDepth(222)
       .setVisible(!!favoriteFactionTip);
+    const speciesPlaysLine = this.scene.add
+      .text(cx, ySpeciesPlays, speciesPlaysTip, {
+        fontFamily: 'system-ui, sans-serif',
+        fontSize: short ? '11px' : '12px',
+        color: '#c8d8e8',
+        align: 'center',
+      })
+      .setOrigin(0.5)
+      .setScrollFactor(0)
+      .setDepth(222)
+      .setVisible(!!speciesPlaysTip);
     const supplyRatioLine = this.scene.add
       .text(cx, ySupplyRatio, supplyRatioTip, {
         fontFamily: 'system-ui, sans-serif',
@@ -716,12 +733,13 @@ export class PauseMenu {
       avgApmLine,
       bestApmLine,
       favoriteFactionLine,
+      speciesPlaysLine,
       supplyRatioLine,
       supplyText,
     );
 
     // Short layout: tips + setup + supply need room above buttons.
-    const btnY0 = short ? top + 448 : cy + panelH * 0.595;
+    const btnY0 = short ? top + 460 : cy + panelH * 0.62;
     const gap = short ? 36 : Math.min(44, panelH * 0.11);
     this.root.push(
       this.makeBtn(cx, btnY0, t('pause.resume'), () => {

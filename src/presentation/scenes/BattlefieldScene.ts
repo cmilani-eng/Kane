@@ -162,6 +162,7 @@ import {
 import { getEquippedSkin } from '../../database/cosmeticsLoadout';
 import { loadMatchPrefs, rememberMatchPrefs } from '../../database/matchPrefs';
 import { favoriteFactionId } from '../ui/lobbyFavoriteFactionTip';
+import { lobbySpeciesPlaysCount } from '../ui/lobbySpeciesPlaysTip';
 import { isCoachSeen } from '../../database/coachPrefs';
 import { isReduceMotion } from '../../database/motionPrefs';
 import { rematchPrefsFromWorld } from '../../gameplay/battlefield/rematchPrefs';
@@ -802,6 +803,7 @@ export class BattlefieldScene extends Phaser.Scene {
       avgApm: matchPrefs.avgApm,
       bestApm: matchPrefs.bestApm,
       favoriteFactionId: favoriteFactionId(),
+      speciesPlays: lobbySpeciesPlaysCount() ?? 0,
     };
   }
 
