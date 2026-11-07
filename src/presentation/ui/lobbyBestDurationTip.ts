@@ -1,6 +1,6 @@
 /**
  * Lobby tip for the shortest winning match duration from match prefs.
- * Distinct from last-duration and average match-length tips.
+ * Distinct from last-duration, Avg time ·, and ~min match-length tips.
  */
 import { loadMatchPrefs } from '../../database/matchPrefs';
 import { t } from '../../i18n';
