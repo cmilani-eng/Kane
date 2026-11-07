@@ -9,6 +9,7 @@ import {
   unitAttackRange,
   unitAttackRangeLabel,
 } from './unitAttackRange';
+import { unitVisionLabel } from './unitVision';
 
 describe('unitAttackRange', () => {
   it('converts world-pixel range to map tiles', () => {
@@ -17,7 +18,7 @@ describe('unitAttackRange', () => {
     expect(attackRangeTiles(0)).toBe(0);
   });
 
-  it('labels catalog range as Range · n', () => {
+  it('labels Range · n from catalog attack reach, distinct from Sight tip', () => {
     const def = getUnitType('scavenger');
     const n = attackRangeTiles(def.range);
     expect(n).toBeGreaterThan(0);
@@ -25,6 +26,9 @@ describe('unitAttackRange', () => {
     expect(unitAttackRange('scavenger')).toBe(n);
     expect(unitAttackRangeLabel('scavenger')).toBe(t('sel.rangeTip', { n }));
     expect(unitAttackRangeLabel('scavenger')).toMatch(/^Range ·/);
+    expect(unitAttackRangeLabel('scavenger')).not.toBe(
+      unitVisionLabel('scavenger'),
+    );
     expect(sharedUnitAttackRangeLabel(['scavenger', 'scavenger'])).toBe(
       t('sel.rangeTip', { n }),
     );
