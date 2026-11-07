@@ -2,6 +2,20 @@
 import Phaser from 'phaser';
 import * as THREE from 'three';
 import './blob.css';
+import {
+  applyBlobChrome,
+  blobEaten,
+  blobEndPill,
+  blobHudHint,
+  blobHudLine,
+  blobRpsLose,
+  blobRpsLoseFallback,
+  blobRpsLoseTitle,
+  blobRpsOpen,
+  blobRpsTie,
+  blobRpsWin,
+  blobWin,
+} from './blobCopy';
 
 const STAGES = [
   { name:'Purple', color:0x9b63df, radius:.42, speed:2.35 },
@@ -194,27 +208,30 @@ function playerEat(bot){
   if(player.stage<4) evolvePlayer(player.stage+1);
   checkVictory();
 }
-function loseGame(reason='You were eaten!', copy='Your blob was captured. Try a different route through the arena!'){
+function loseGame(reason, copy){
+  const eaten = blobEaten();
   if(endPanel && !endPanel.hidden && overlay.style.display==='flex' && startPanel.hidden && rpsPanel.hidden)return;
-  running=false; showEnd(false,reason,copy);
+  running=false; showEnd(false, reason || eaten.title, copy || eaten.body);
 }
 function winGame(){
   if(!running)return;
   running=false; evolvePlayer(5);
-  showEnd(true,'You became an Angel!','You ate every other blob in the arena. You are the champion!');
+  const won = blobWin();
+  showEnd(true, won.title, won.body);
 }
 function checkVictory(){ if(bots.every(b=>!b.alive)) winGame(); }
 function showEnd(won,title,copy){
   overlay.style.display='flex'; startPanel.hidden=true; rpsPanel.hidden=true; endPanel.hidden=false;
-  document.getElementById('end-pill').textContent=won?'Ultimate evolution':'Game over';
+  document.getElementById('end-pill').textContent=blobEndPill(won);
   document.getElementById('end-title').textContent=title;
   document.getElementById('end-copy').textContent=copy;
   refreshStick();
 }
 function resetRpsPanel(){
-  document.getElementById('rps-pill').textContent='Rainbow showdown';
-  document.getElementById('rps-title').textContent='Rock Paper Scissors';
-  document.getElementById('rps-copy').textContent='Another Rainbow blob! Choose secretly. Your opponent has already made its hidden choice.';
+  const open = blobRpsOpen();
+  document.getElementById('rps-pill').textContent=open.pill;
+  document.getElementById('rps-title').textContent=open.title;
+  document.getElementById('rps-copy').textContent=open.copy;
   document.getElementById('rps-choices').hidden=false;
   document.getElementById('rps-hint').hidden=false;
   document.getElementById('rps-lose-actions').hidden=true;
@@ -222,9 +239,9 @@ function resetRpsPanel(){
 }
 function showRpsLose(detail){
   duelBot=null; duelBusy=false; running=false;
-  document.getElementById('rps-pill').textContent='Game over';
-  document.getElementById('rps-title').textContent='You lose!';
-  document.getElementById('rps-copy').textContent=detail || 'The other Rainbow blob won Rock Paper Scissors.';
+  document.getElementById('rps-pill').textContent=blobEndPill(false);
+  document.getElementById('rps-title').textContent=blobRpsLoseTitle();
+  document.getElementById('rps-copy').textContent=detail || blobRpsLoseFallback();
   document.getElementById('rps-choices').hidden=true;
   document.getElementById('rps-hint').hidden=true;
   document.getElementById('rps-lose-actions').hidden=false;
@@ -243,13 +260,12 @@ const beats={rock:'scissors',paper:'rock',scissors:'paper'};
 function chooseRPS(choice){
   if(!duelBusy||!duelBot||!duelBot.alive)return;
   const botChoice=['rock','paper','scissors'][Math.floor(Math.random()*3)];
-  const labels={rock:'✊ Rock',paper:'✋ Paper',scissors:'✌️ Scissors'};
-  if(choice===botChoice){ rpsResult.textContent=`Both chose ${labels[choice]}. It's a tie — choose again!`; return; }
+  if(choice===botChoice){ rpsResult.textContent=blobRpsTie(choice); return; }
   if(beats[choice]===botChoice){
-    rpsResult.textContent=`You chose ${labels[choice]}; the bot chose ${labels[botChoice]}. You win!`;
+    rpsResult.textContent=blobRpsWin(choice, botChoice);
     setTimeout(()=>{ if(!duelBot)return; removeBot(duelBot); duelBot=null; duelBusy=false; rpsPanel.hidden=true; overlay.style.display='none'; running=true; refreshStick(); checkVictory(); },900);
   }else{
-    showRpsLose(`You chose ${labels[choice]}; the bot chose ${labels[botChoice]}. You lose!`);
+    showRpsLose(blobRpsLose(choice, botChoice));
   }
 }
 function distance(a,b){return Math.hypot(a.x-b.x,a.z-b.z);}
@@ -371,7 +387,7 @@ function updateHud(force=false){
   if(!phaserScene||!phaserScene.hud||!player)return;
   const now=performance.now(); if(!force&&now-lastHud<100)return;lastHud=now;
   const remaining=bots.filter(b=>b.alive).length;
-  phaserScene.hud.setText(`BLOB EVOLUTION\n${STAGES[player.stage].name.toUpperCase()}  •  SIZE ${player.radius.toFixed(1)}  •  SPEED ${player.speed.toFixed(1)}\nOPPONENTS LEFT: ${remaining}`);
+  phaserScene.hud.setText(blobHudLine(player.stage, player.radius, player.speed, remaining));
   phaserScene.hud.setColor(player.stage===4?'#ffdb72':player.stage===3?'#e1e8f0':player.stage===2?'#8df4bc':'#b8e3ff');
 }
 
@@ -379,10 +395,10 @@ class OverlayScene extends Phaser.Scene {
   constructor(){super({key:'OverlayScene'});}
   create(){
     this.keys=this.input.keyboard.addKeys({w:'W',a:'A',s:'S',d:'D',up:'UP',down:'DOWN',left:'LEFT',right:'RIGHT'});
-    this.hud=this.add.text(22,20,'BLOB EVOLUTION',{fontFamily:'Arial, sans-serif',fontSize:'15px',fontStyle:'bold',color:'#b8e3ff',lineSpacing:5,stroke:'#071321',strokeThickness:4}).setScrollFactor(0);
+    this.hud=this.add.text(118,20,'BLOB EVOLUTION',{fontFamily:'Arial, sans-serif',fontSize:'15px',fontStyle:'bold',color:'#b8e3ff',lineSpacing:5,stroke:'#071321',strokeThickness:4}).setScrollFactor(0);
     this.hud.setDepth(20);
-    this.add.text(22,innerHeight-28,'STICK / WASD  •  BUMP INTO PREY TO EAT',{fontFamily:'Arial, sans-serif',fontSize:'10px',color:'#91a9c1',stroke:'#071321',strokeThickness:3}).setScrollFactor(0).setDepth(20);
-    this.scale.on('resize',size=>{ this.children.list[2]?.setY(size.height-28); });
+    const hint=this.add.text(118,108,blobHudHint(),{fontFamily:'Arial, sans-serif',fontSize:'10px',color:'#91a9c1',stroke:'#071321',strokeThickness:3,wordWrap:{width:Math.max(160,innerWidth-140)}}).setScrollFactor(0).setDepth(20);
+    this.scale.on('resize',size=>{ hint.setWordWrapWidth(Math.max(160,size.width-140)); });
   }
   update(time,delta){
     if(!running||!player)return;
@@ -398,6 +414,7 @@ function startGame(){
   spawnGame();
   refreshStick();
 }
+applyBlobChrome();
 document.getElementById('start-btn').addEventListener('click',startGame);
 document.getElementById('restart-btn').addEventListener('click',startGame);
 document.getElementById('rps-restart-btn').addEventListener('click',startGame);
