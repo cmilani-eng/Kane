@@ -20,6 +20,7 @@ import { endDifficultyPlayedTipLine } from './endDifficultyPlayedTip';
 import { endAvgApmTipLine } from './endAvgApmTip';
 import { endBestApmTipLine } from './endBestApmTip';
 import { endAvgDurationTipLine } from './endAvgDurationTip';
+import { endBestMapTipLine } from './endBestMapTip';
 import { endDurationTipLine } from './endDurationTip';
 import { endMapPlayedTipLine } from './endMapPlayedTip';
 import { endMapSizeTipLine } from './endMapSizeTip';
@@ -192,6 +193,7 @@ export function showKaneEndScreen(opts: EndScreenOpts): void {
   const yFavoriteFaction = short ? yActions - 44 : cy + panelH * 0.784;
   const ySpeciesPlays = short ? yActions - 43.5 : cy + panelH * 0.7848;
   const yAvgDuration = short ? yActions - 43 : cy + panelH * 0.7855;
+  const yBestMap = short ? yActions - 42.75 : cy + panelH * 0.78585;
   const yAvgApm = short ? yActions - 42.5 : cy + panelH * 0.7862;
   const yBestApm = short ? yActions - 42.25 : cy + panelH * 0.7866;
   const yMapSize = short ? yActions - 42 : cy + panelH * 0.787;
@@ -784,6 +786,21 @@ export function showKaneEndScreen(opts: EndScreenOpts): void {
     .setVisible(!!avgDurationTip);
   root.push(avgDurationTipText);
 
+  const bestMapTip = endBestMapTipLine() ?? '';
+  const bestMapTipText = scene.add
+    .text(width / 2, yBestMap, bestMapTip, {
+      fontFamily: 'system-ui, sans-serif',
+      fontSize: '13px',
+      color: '#c8d8e8',
+      align: 'center',
+    })
+    .setOrigin(0.5)
+    .setScrollFactor(0)
+    .setDepth(202)
+    .setAlpha(0)
+    .setVisible(!!bestMapTip);
+  root.push(bestMapTipText);
+
   const avgApmTip = endAvgApmTipLine() ?? '';
   const avgApmTipText = scene.add
     .text(width / 2, yAvgApm, avgApmTip, {
@@ -1003,6 +1020,7 @@ export function showKaneEndScreen(opts: EndScreenOpts): void {
       favoriteFactionTipText,
       speciesPlaysTipText,
       avgDurationTipText,
+      bestMapTipText,
       avgApmTipText,
       bestApmTipText,
       mapSizeTipText,
