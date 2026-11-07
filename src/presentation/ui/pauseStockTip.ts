@@ -1,6 +1,8 @@
 /**
  * Pause overlay resource-stock tip (HUD label only).
- * Frozen when pause opens — distinct from stock strip / HUD gold-crystal lines.
+ * Format: Gold · {n} · Crystal · {m} — middot (U+00B7).
+ * Frozen when pause opens — distinct from minimap Gold · / Crystal ·
+ * singles and from the stock strip / HUD gold-crystal lines.
  */
 import { t } from '../../i18n';
 

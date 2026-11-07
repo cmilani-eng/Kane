@@ -105,7 +105,7 @@ This doc is the honest gate before any public preview URL.
 | Pause fog coverage tip | **OK** — pause shows Fog · pct% from explored fog cells frozen at open (same fogExploredCoveragePct as minimap; distinct from Fog · ns age tip) | `pauseFogCoverageTipLine`, `pause.fogCoverageTip`, `fogExploredCoveragePct` |
 | Pause selection count tip | **OK** — pause shows Selected · n (U+00B7) from living player units selected at open (distinct from sel.selected flavor and minimap `hud.minimapSelected` surface) | `pauseSelectionCountTipLine`, `pause.selectionCountTip` |
 | Pause selected sector tip | **OK** — pause shows Focus · sector from living player selection centroid at open (distinct from Cam · sector / Selected · n) | `pauseSelectedSectorTipLine`, `pause.selectedSectorTip`, `pauseSelectedSectorAt` |
-| Pause resource stock tip | **OK** — pause shows Gold · n · Crystal · m from player wallet frozen at open (distinct from stock strip) | `pauseStockTipLine`, `pause.stockTip` |
+| Pause resource stock tip | **OK** — pause shows Gold · n · Crystal · m (U+00B7) from player wallet frozen at open; en/pt-BR/es middot; distinct from minimap Gold · / Crystal · singles and stock strip | `pauseStockTipLine`, `pause.stockTip` |
 | CORE hold banner secs | **OK** — victory-hold banner shows remaining seconds clearly (Ns + “left”) | `coreVictoryBanner`, `banner.coreHold*` |
 | CORE hold progress tick | **OK** — hold banner progress bar + per-second clock tick | `coreHoldProgress`, `CoreVictoryBanner` |
 | Idle army count | **OK** — Idle army chip leads with idle combat unit count | `battlefieldHud`, `hud.idleArmy`, `countIdleMilitary` |
