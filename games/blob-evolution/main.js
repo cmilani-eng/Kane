@@ -18,7 +18,7 @@ import {
 } from './blobCopy';
 
 const STAGES = [
-  { name:'Purple', color:0x9b63df, radius:.42, speed:2.35 },
+  { name:'Purple', color:0x8b4fd4, radius:.42, speed:2.35 },
   { name:'Blue', color:0x1e8ef0, radius:.58, speed:3.05 },
   { name:'Green', color:0x2fbf6e, radius:.77, speed:3.85 },
   { name:'Rock', color:0x7a7468, radius:.98, speed:4.55 },
@@ -61,6 +61,30 @@ function makeRainbowTexture() {
   tex.colorSpace = THREE.SRGBColorSpace;
   tex.wrapS = THREE.RepeatWrapping;
   tex.wrapT = THREE.ClampToEdgeWrapping;
+  return tex;
+}
+
+function makeVoidTexture() {
+  const canvas = document.createElement('canvas');
+  canvas.width = 256; canvas.height = 256;
+  const ctx = canvas.getContext('2d');
+  const g = ctx.createRadialGradient(120, 100, 10, 128, 128, 150);
+  g.addColorStop(0, '#d2a6ff');
+  g.addColorStop(.4, '#8b4fd4');
+  g.addColorStop(1, '#3a1768');
+  ctx.fillStyle = g;
+  ctx.fillRect(0, 0, 256, 256);
+  for (let i = 0; i < 55; i++) {
+    ctx.fillStyle = `rgba(255,255,255,${0.15 + Math.random() * 0.55})`;
+    const x = Math.random() * 256;
+    const y = Math.random() * 256;
+    const r = 0.6 + Math.random() * 2.2;
+    ctx.beginPath();
+    ctx.arc(x, y, r, 0, Math.PI * 2);
+    ctx.fill();
+  }
+  const tex = new THREE.CanvasTexture(canvas);
+  tex.colorSpace = THREE.SRGBColorSpace;
   return tex;
 }
 
@@ -180,6 +204,11 @@ function makeBlob(stage, isPlayer=false) {
       map: rainbowMap, color:0xffffff, roughness:.28, metalness:.08,
       emissive:0xffffff, emissiveMap: rainbowMap, emissiveIntensity:.55
     });
+  } else if (stage === 0) {
+    material = new THREE.MeshStandardMaterial({
+      map: makeVoidTexture(), color:0xc9a0ff, roughness:.32, metalness:.05,
+      emissive:0x4a1f86, emissiveIntensity:.28
+    });
   } else if (stage === 1) {
     material = new THREE.MeshStandardMaterial({
       map: makeWaterTexture(), color:0xb8e7ff, roughness:.28, metalness:.08,
@@ -221,6 +250,14 @@ function makeBlob(stage, isPlayer=false) {
     pupil.position.set(x+.018,.16,.89); group.add(pupil);
     const shine = new THREE.Mesh(new THREE.SphereGeometry(.022,8,8), new THREE.MeshBasicMaterial({color:0xffffff}));
     shine.position.set(x-.018,.205,.93); group.add(shine);
+  }
+  if (stage === 0) {
+    const sparkMat = new THREE.MeshBasicMaterial({ color:0xf0d7ff, transparent:true, opacity:.85 });
+    [[-.4,.5,.55,.07],[.42,.4,.5,.055],[-.1,.7,.35,.045],[.25,.15,.7,.04]].forEach(([x,y,z,r])=>{
+      const spark = new THREE.Mesh(new THREE.SphereGeometry(r, 8, 8), sparkMat);
+      spark.position.set(x,y,z);
+      group.add(spark);
+    });
   }
   if (stage === 1) {
     const bubbleMat = new THREE.MeshStandardMaterial({
