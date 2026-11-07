@@ -1,12 +1,6 @@
 import { beforeEach, describe, expect, it } from 'vitest';
 import { resetLocaleForTests, setLocale, t } from '../../src/i18n';
-import {
-  hubBlurb,
-  hubBlobPathTip,
-  hubChrome,
-  hubFooterYear,
-  hubKanePathTip,
-} from './hubCopy';
+import { hubBlurb, hubChrome, hubFooterYear } from './hubCopy';
 
 function memoryStorage(): Storage {
   const data = new Map<string, string>();
@@ -70,23 +64,4 @@ describe('hub copy', () => {
     expect(t('hub.experimentalAria')).toBe('Estado: Prelanzamiento');
   });
 
-  it('labels the Kane soft-launch play path on the hub card', () => {
-    setLocale('en-GB');
-    expect(hubKanePathTip()).toBe(
-      t('hub.kanePathTip', { path: '/kane/' }),
-    );
-    expect(hubKanePathTip()).toContain('/kane/');
-    setLocale('pt-BR');
-    expect(hubKanePathTip()).toContain('/kane/');
-  });
-
-  it('labels the Blob Evolution soft-launch play path on the hub card', () => {
-    setLocale('en-GB');
-    expect(hubBlobPathTip()).toBe(
-      t('hub.blobPathTip', { path: '/blob-evolution/' }),
-    );
-    expect(hubBlobPathTip()).toContain('/blob-evolution/');
-    setLocale('es');
-    expect(hubBlobPathTip()).toContain('/blob-evolution/');
-  });
 });
