@@ -179,6 +179,8 @@ export interface BattlefieldWorld {
   playerGoldGathered: number;
   /** Magic crystals deposited at Keep this match (player gathers). */
   playerCrystalsGathered: number;
+  /** Player-issued commands this match (orders, train, place, abilities). */
+  playerActions: number;
   /** Player fog of war (explored / visible). */
   fog: import('./battlefieldFog').FogState;
   /** Skirmish AI difficulty for this match. */
@@ -466,6 +468,7 @@ export function createBattlefieldWorld(
     playerBuildingsLost: 0,
     playerGoldGathered: 0,
     playerCrystalsGathered: 0,
+    playerActions: 0,
     underAttackAlert: {
       lifeMs: 0,
       maxLifeMs: 520,
@@ -594,6 +597,11 @@ export function selectInRect(
   }
 }
 
+/** Count one player command toward end-screen APM. */
+export function recordPlayerAction(world: BattlefieldWorld): void {
+  world.playerActions += 1;
+}
+
 export function issueMoveSelected(
   world: BattlefieldWorld,
   x: number,
@@ -601,6 +609,7 @@ export function issueMoveSelected(
 ): void {
   const selected = world.units.filter((u) => u.selected && u.team === 'player');
   if (selected.length === 0) return;
+  recordPlayerAction(world);
   selected.forEach((u, i) => {
     u.attackTargetId = null;
     u.gatherNodeId = null;
