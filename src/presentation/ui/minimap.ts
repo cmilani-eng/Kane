@@ -72,6 +72,7 @@ import {
 } from './minimapFogCoverageTip';
 import { minimapCrystalStockTipText } from './minimapCrystalStockTip';
 import { minimapGoldStockTipText } from './minimapGoldStockTip';
+import { minimapMatchClockTipText } from './minimapMatchClockTip';
 import { minimapSelectedCountTipText } from './minimapSelectedCountTip';
 import { minimapPopulationTipText } from './minimapPopulationTip';
 import { minimapSupplyTipText } from './minimapSupplyTip';
@@ -114,6 +115,10 @@ export class Minimap {
   private readonly goldLabel: Phaser.GameObjects.Text;
   /** Live crystal-stock tip on the minimap chrome. */
   private readonly crystalLabel: Phaser.GameObjects.Text;
+  /** Live match-clock tip on the minimap chrome. */
+  private readonly clockLabel: Phaser.GameObjects.Text;
+  /** Match elapsed ms for the Time · tip (set from scene each refresh). */
+  private matchElapsedMs = 0;
 
   private mapX = 0;
   private mapY = 0;
@@ -353,6 +358,19 @@ export class Minimap {
       .setOrigin(0.5, 0)
       .setAlpha(0.9);
 
+    this.clockLabel = scene.add
+      .text(0, 0, minimapMatchClockTipText(0), {
+        fontFamily: 'Segoe UI, system-ui, sans-serif',
+        fontSize: '10px',
+        color: '#c8d8e8',
+        stroke: '#0a1018',
+        strokeThickness: 3,
+      })
+      .setScrollFactor(0)
+      .setDepth(113)
+      .setOrigin(0.5, 0)
+      .setAlpha(0.9);
+
     this.hit = scene.add
       .rectangle(0, 0, this.mapW, this.mapH, 0x000000, 0.001)
       .setScrollFactor(0)
@@ -434,6 +452,7 @@ export class Minimap {
       this.selectedLabel,
       this.goldLabel,
       this.crystalLabel,
+      this.clockLabel,
     ];
   }
 
@@ -522,8 +541,10 @@ export class Minimap {
   refresh(
     dtMs = 16,
     selectedBuilding: BattlefieldBuilding | null = null,
+    matchElapsedMs = 0,
   ): void {
     this.selectedBuilding = selectedBuilding;
+    this.matchElapsedMs = Math.max(0, matchElapsedMs);
     this.pulseMs += dtMs;
     if (this.pingCooldownMs > 0) {
       this.pingCooldownMs = Math.max(0, this.pingCooldownMs - dtMs);
@@ -798,17 +819,23 @@ export class Minimap {
       .setPosition(camLabelX, camSectorY)
       .setVisible(true);
 
-    // Supply · used/cap on the minimap chrome (below the map frame)
+    // Time · mm:ss on the minimap chrome (below the map frame)
+    this.clockLabel
+      .setText(minimapMatchClockTipText(this.matchElapsedMs))
+      .setPosition(this.mapX + this.mapW / 2, this.mapY + this.mapH + 4)
+      .setVisible(true);
+
+    // Supply · used/cap under clock
     const pop = livingByTeam(this.world, 'player');
     this.supplyLabel
       .setText(minimapSupplyTipText(pop, flags.unitCap))
-      .setPosition(this.mapX + this.mapW / 2, this.mapY + this.mapH + 4)
+      .setPosition(this.mapX + this.mapW / 2, this.mapY + this.mapH + 16)
       .setVisible(true);
 
     // Pop · n under supply (living player units; distinct from Supply used/cap)
     this.popLabel
       .setText(minimapPopulationTipText(pop))
-      .setPosition(this.mapX + this.mapW / 2, this.mapY + this.mapH + 16)
+      .setPosition(this.mapX + this.mapW / 2, this.mapY + this.mapH + 28)
       .setVisible(true);
 
     // Army · n under pop (living player combat units)
@@ -818,13 +845,13 @@ export class Minimap {
     }
     this.armyLabel
       .setText(minimapArmyCountTipText(armyN))
-      .setPosition(this.mapX + this.mapW / 2, this.mapY + this.mapH + 28)
+      .setPosition(this.mapX + this.mapW / 2, this.mapY + this.mapH + 40)
       .setVisible(true);
 
     // Workers · n under army (living player gatherers; distinct from Idle)
     this.workersLabel
       .setText(minimapWorkerCountTipText(countLivingWorkers(this.world)))
-      .setPosition(this.mapX + this.mapW / 2, this.mapY + this.mapH + 40)
+      .setPosition(this.mapX + this.mapW / 2, this.mapY + this.mapH + 52)
       .setVisible(true);
 
     // Buildings · n under workers (living player buildings)
@@ -834,14 +861,14 @@ export class Minimap {
     }
     this.buildingsLabel
       .setText(minimapBuildingCountTipText(bldN))
-      .setPosition(this.mapX + this.mapW / 2, this.mapY + this.mapH + 52)
+      .setPosition(this.mapX + this.mapW / 2, this.mapY + this.mapH + 64)
       .setVisible(true);
 
     // Hero · Ready / Down / sector under buildings
     const heroStatus = minimapHeroStatus(this.world);
     this.heroLabel
       .setText(minimapHeroStatusTipText(heroStatus))
-      .setPosition(this.mapX + this.mapW / 2, this.mapY + this.mapH + 64)
+      .setPosition(this.mapX + this.mapW / 2, this.mapY + this.mapH + 76)
       .setVisible(true);
 
     // Fog · pct% under hero (explored coverage of the fog grid)
@@ -849,7 +876,7 @@ export class Minimap {
       .setText(
         minimapFogCoverageTipText(fogExploredCoveragePct(this.world.fog)),
       )
-      .setPosition(this.mapX + this.mapW / 2, this.mapY + this.mapH + 76)
+      .setPosition(this.mapX + this.mapW / 2, this.mapY + this.mapH + 88)
       .setVisible(true);
 
     // Selected · n under fog (living player units currently selected)
@@ -859,20 +886,20 @@ export class Minimap {
     }
     this.selectedLabel
       .setText(minimapSelectedCountTipText(selN))
-      .setPosition(this.mapX + this.mapW / 2, this.mapY + this.mapH + 88)
+      .setPosition(this.mapX + this.mapW / 2, this.mapY + this.mapH + 100)
       .setVisible(true);
 
     // Gold · n under selected (player gold wallet; pairs with Crystal)
     const wallet = walletOf(this.world, 'player');
     this.goldLabel
       .setText(minimapGoldStockTipText(wallet.gold))
-      .setPosition(this.mapX + this.mapW / 2, this.mapY + this.mapH + 100)
+      .setPosition(this.mapX + this.mapW / 2, this.mapY + this.mapH + 112)
       .setVisible(true);
 
     // Crystal · n under gold (player magic_crystals wallet)
     this.crystalLabel
       .setText(minimapCrystalStockTipText(wallet.magic_crystals))
-      .setPosition(this.mapX + this.mapW / 2, this.mapY + this.mapH + 112)
+      .setPosition(this.mapX + this.mapW / 2, this.mapY + this.mapH + 124)
       .setVisible(true);
 
     // Idle · n under crystal when any gatherer is idle
@@ -880,7 +907,7 @@ export class Minimap {
     if (idleN > 0) {
       this.idleLabel
         .setText(minimapIdleWorkerTipText(idleN))
-        .setPosition(this.mapX + this.mapW / 2, this.mapY + this.mapH + 124)
+        .setPosition(this.mapX + this.mapW / 2, this.mapY + this.mapH + 136)
         .setVisible(true);
     } else {
       this.idleLabel.setVisible(false);

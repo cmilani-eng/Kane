@@ -1441,7 +1441,7 @@ export class BattlefieldScene extends Phaser.Scene {
     if (this.matchResult === 'ongoing') this.refreshHud(delta);
     this.coach.refresh();
     this.coreBanner.refresh(delta);
-    this.minimap.refresh(delta, this.selectedBuilding);
+    this.minimap.refresh(delta, this.selectedBuilding, this.matchElapsedMs);
   }
 
   private showEndScreen(result: MatchResult): void {

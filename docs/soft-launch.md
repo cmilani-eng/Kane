@@ -36,6 +36,7 @@ This doc is the honest gate before any public preview URL.
 | Minimap selected count tip | **OK** — minimap chrome shows Selected · n from living player selection (distinct from pause Selected tip) | `minimapSelectedCountTipText`, `hud.minimapSelected` |
 | Minimap gold stock tip | **OK** — minimap chrome shows Gold · n from player gold wallet (pairs with Crystal; distinct from pause Gold·Crystal tip) | `minimapGoldStockTipText`, `hud.minimapGold`, `walletOf` |
 | Minimap crystal stock tip | **OK** — minimap chrome shows Crystal · n from player magic_crystals wallet (distinct from pause Gold·Crystal tip) | `minimapCrystalStockTipText`, `hud.minimapCrystal`, `walletOf` |
+| Minimap match clock tip | **OK** — minimap chrome shows Time · mm:ss from live match elapsed (same formatMatchClock as pause/end; distinct surface) | `minimapMatchClockTipText`, `hud.minimapClock`, `formatMatchClock` |
 | Attention ping | **OK** — hold minimap to drop a temporary look-here mark (world + minimap); short cooldown + ice deny flash; help notes double-tap recenter; no chat | `battlefieldAttentionPing`, `minimapPingCooldown`, help |
 | Minimap ping sector tip | **OK** — hold-to-ping arms a brief Mark · sector chip (HUD + minimap), distinct from scout sector | `attentionPingSectorHint`, `minimapPingSectorTip`, `hud.pingSector` |
 | Minimap ping age tip | **OK** — minimap ping chip shows Mark · sector · ns age tip (distinct from sector-only HUD mark) | `minimapPingAgeTip`, `hud.pingAge` |
