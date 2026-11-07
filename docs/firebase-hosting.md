@@ -105,6 +105,25 @@ If the live Firebase project id is **not** `kane-rts-game`, update `.firebaserc`
 
 Optional alternative (not used by the workflow): a CI token from `firebase login:ci` as `FIREBASE_TOKEN`. Prefer the service-account JSON + `google-github-actions/auth` path above.
 
+## Security headers and third-party scripts
+
+Every response carries `X-Content-Type-Options: nosniff`, `X-Frame-Options: DENY`, `Referrer-Policy: strict-origin-when-cross-origin` and a `Permissions-Policy` that turns off camera, microphone, geolocation, payment and USB. They come from the `"source": "**"` rule in `firebase.json` (Hosting adds HSTS itself). If a game ever needs to be embedded or to use one of those features, change that rule on purpose.
+
+All games share one origin, and with it Kane's sign-in session, so a third-party script in any game page can read it. Today every game is bundled by Vite from npm (Phaser, three.js), so no page loads a script from a CDN. If a static game page ever does, it must pin an exact version and carry an integrity hash: `integrity` plus `crossorigin="anonymous"` on a script tag, or an `integrity` map next to `imports` in an import map. `games/security.test.ts` fails otherwise. To hash a file, stream it and compare with a second CDN (nothing needs saving):
+
+```bash
+curl -sfL https://cdn.jsdelivr.net/npm/<pkg>@<version>/<file> | openssl dgst -sha384 -binary | openssl base64 -A
+curl -sfL https://unpkg.com/<pkg>@<version>/<file> | openssl dgst -sha384 -binary | openssl base64 -A
+```
+
+Prefix the result with `sha384-`, and hash every module the file imports (three.js's `three.module.js` imports `three.core.js`). Import-map integrity is only enforced by browsers that support it (current Chromium does); others skip the check and still run the game.
+
+Not covered yet:
+
+- A Content-Security-Policy. It needs a report-only trial first, because the Firebase SDK, the game bundles and any inline scripts or styles all have to be allowed.
+- The live Firestore and Realtime Database rules. `firestore.rules` is marked a draft in the file, so confirm what is actually deployed to the project.
+- Whether the Firebase web API key is restricted to this site's domains in the Google Cloud console.
+
 ## Soft-launch guards
 
 - `flags.adsEnabled === false` — no ad SDK / zero ad traffic on preview
