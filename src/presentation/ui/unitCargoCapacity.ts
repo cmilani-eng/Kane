@@ -1,6 +1,7 @@
 /**
  * Catalog cargo-capacity tip for workers (HUD label only).
- * Max haul slots — distinct from Yield · n per trip and live cargo line.
+ * Format: Cargo · {n} max (U+00B7 middot) — distinct from Yield · n per trip,
+ * Cargo · empty / Cargo · n/cap, and the longer carry-line deposit copy.
  */
 import { getUnitType, type UnitTypeId } from '../../data/units';
 import { t } from '../../i18n';
