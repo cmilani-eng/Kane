@@ -1,6 +1,7 @@
 /**
  * Selection panel catalog move-speed tip (HUD label only).
- * Format: Speed · {n} (tiles/s numeric; distinct from Pace · cadence tip).
+ * Format: Speed · {n} (tiles/s numeric; distinct from Pace · cadence and
+ * Rate · attack-speed tips).
  */
 import { MAP } from '../../config/balance';
 import { getUnitType, type UnitTypeId } from '../../data/units';
