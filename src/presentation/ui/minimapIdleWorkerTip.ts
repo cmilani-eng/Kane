@@ -1,6 +1,6 @@
 /**
  * Minimap idle-worker count tip (presentation only).
- * Distinct from the HUD idle chip / gather-type tip.
+ * Distinct from HUD idle chip, Workers · tip, and pause Idle tip surface.
  */
 import { t } from '../../i18n';
 
