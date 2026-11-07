@@ -9,9 +9,14 @@ import type {
 } from './battlefieldWorld';
 import { clearSelection } from './battlefieldWorld';
 
+/** Living player gatherer (busy or idle). */
+export function isLivingWorker(u: BattlefieldUnit): boolean {
+  return u.team === 'player' && u.canGather && u.hp > 0;
+}
+
 /** Player gatherer with nothing to do right now. */
 export function isIdleWorker(u: BattlefieldUnit): boolean {
-  if (u.team !== 'player' || !u.canGather || u.hp <= 0) return false;
+  if (!isLivingWorker(u)) return false;
   if (u.attackTargetId != null) return false;
   if (u.gatherNodeId != null) return false;
   if (u.moveTarget != null || u.path.length > 0) return false;
@@ -21,6 +26,14 @@ export function isIdleWorker(u: BattlefieldUnit): boolean {
 
 export function listIdleWorkers(world: BattlefieldWorld): BattlefieldUnit[] {
   return world.units.filter(isIdleWorker).sort((a, b) => a.id - b.id);
+}
+
+export function countLivingWorkers(world: BattlefieldWorld): number {
+  let n = 0;
+  for (const u of world.units) {
+    if (isLivingWorker(u)) n++;
+  }
+  return n;
 }
 
 export function countIdleWorkers(world: BattlefieldWorld): number {

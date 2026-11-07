@@ -28,6 +28,7 @@ This doc is the honest gate before any public preview URL.
 | Minimap supply usage tip | **OK** — minimap chrome shows Supply · used/cap from living player units vs unitCap (distinct from pause tip) | `minimapSupplyTipText`, `hud.minimapSupply` |
 | Minimap idle worker tip | **OK** — minimap chrome shows Idle · n when any gatherer is idle (distinct from HUD idle chip) | `minimapIdleWorkerTipText`, `hud.minimapIdle`, `countIdleWorkers` |
 | Minimap army count tip | **OK** — minimap chrome shows Army · n from living player combat units (distinct from HUD Army button) | `minimapArmyCountTipText`, `hud.minimapArmy`, `isMilitaryUnit` |
+| Minimap worker count tip | **OK** — minimap chrome shows Workers · n from living player gatherers (distinct from Idle · n tip) | `minimapWorkerCountTipText`, `hud.minimapWorkers`, `countLivingWorkers` |
 | Minimap building count tip | **OK** — minimap chrome shows Buildings · n from living player buildings (distinct from army / supply) | `minimapBuildingCountTipText`, `hud.minimapBuildings` |
 | Minimap hero status tip | **OK** — minimap chrome shows Hero · Ready / Down / sector from recruit state + living location | `minimapHeroStatusTipText`, `hud.minimapHeroReady`, `playerHeroDown` |
 | Minimap fog coverage tip | **OK** — minimap chrome shows Fog · pct% from explored fog cells (distinct from fog age / scout tips) | `minimapFogCoverageTipText`, `hud.minimapFog`, `fogExploredCoveragePct` |

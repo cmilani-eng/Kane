@@ -23,6 +23,7 @@ import {
 import { buildingCanRally } from '../../gameplay/battlefield/battlefieldRally';
 import {
   countIdleWorkers,
+  countLivingWorkers,
   isIdleWorker,
 } from '../../gameplay/battlefield/idleWorkers';
 import { isMilitaryUnit } from '../../gameplay/battlefield/selectMilitary';
@@ -60,6 +61,7 @@ import { minimapScoutPulseLabelAlpha } from './minimapScoutPulseLabel';
 import { minimapArmyCountTipText } from './minimapArmyCountTip';
 import { minimapBuildingCountTipText } from './minimapBuildingCountTip';
 import { minimapIdleWorkerTipText } from './minimapIdleWorkerTip';
+import { minimapWorkerCountTipText } from './minimapWorkerCountTip';
 import {
   minimapHeroStatus,
   minimapHeroStatusTipText,
@@ -95,6 +97,8 @@ export class Minimap {
   private readonly idleLabel: Phaser.GameObjects.Text;
   /** Live army (combat) count tip on the minimap chrome. */
   private readonly armyLabel: Phaser.GameObjects.Text;
+  /** Live living-worker count tip on the minimap chrome. */
+  private readonly workersLabel: Phaser.GameObjects.Text;
   /** Live building count tip on the minimap chrome. */
   private readonly buildingsLabel: Phaser.GameObjects.Text;
   /** Live hero status tip on the minimap chrome. */
@@ -231,6 +235,19 @@ export class Minimap {
 
     this.armyLabel = scene.add
       .text(0, 0, minimapArmyCountTipText(0), {
+        fontFamily: 'Segoe UI, system-ui, sans-serif',
+        fontSize: '10px',
+        color: '#c8d8e8',
+        stroke: '#0a1018',
+        strokeThickness: 3,
+      })
+      .setScrollFactor(0)
+      .setDepth(113)
+      .setOrigin(0.5, 0)
+      .setAlpha(0.9);
+
+    this.workersLabel = scene.add
+      .text(0, 0, minimapWorkerCountTipText(0), {
         fontFamily: 'Segoe UI, system-ui, sans-serif',
         fontSize: '10px',
         color: '#c8d8e8',
@@ -393,6 +410,7 @@ export class Minimap {
       this.supplyLabel,
       this.idleLabel,
       this.armyLabel,
+      this.workersLabel,
       this.buildingsLabel,
       this.heroLabel,
       this.fogLabel,
@@ -780,21 +798,27 @@ export class Minimap {
       .setPosition(this.mapX + this.mapW / 2, this.mapY + this.mapH + 16)
       .setVisible(true);
 
-    // Buildings · n under army (living player buildings)
+    // Workers · n under army (living player gatherers; distinct from Idle)
+    this.workersLabel
+      .setText(minimapWorkerCountTipText(countLivingWorkers(this.world)))
+      .setPosition(this.mapX + this.mapW / 2, this.mapY + this.mapH + 28)
+      .setVisible(true);
+
+    // Buildings · n under workers (living player buildings)
     let bldN = 0;
     for (const b of this.world.buildings) {
       if (b.team === 'player' && b.hp > 0) bldN++;
     }
     this.buildingsLabel
       .setText(minimapBuildingCountTipText(bldN))
-      .setPosition(this.mapX + this.mapW / 2, this.mapY + this.mapH + 28)
+      .setPosition(this.mapX + this.mapW / 2, this.mapY + this.mapH + 40)
       .setVisible(true);
 
     // Hero · Ready / Down / sector under buildings
     const heroStatus = minimapHeroStatus(this.world);
     this.heroLabel
       .setText(minimapHeroStatusTipText(heroStatus))
-      .setPosition(this.mapX + this.mapW / 2, this.mapY + this.mapH + 40)
+      .setPosition(this.mapX + this.mapW / 2, this.mapY + this.mapH + 52)
       .setVisible(true);
 
     // Fog · pct% under hero (explored coverage of the fog grid)
@@ -802,7 +826,7 @@ export class Minimap {
       .setText(
         minimapFogCoverageTipText(fogExploredCoveragePct(this.world.fog)),
       )
-      .setPosition(this.mapX + this.mapW / 2, this.mapY + this.mapH + 52)
+      .setPosition(this.mapX + this.mapW / 2, this.mapY + this.mapH + 64)
       .setVisible(true);
 
     // Selected · n under fog (living player units currently selected)
@@ -812,20 +836,20 @@ export class Minimap {
     }
     this.selectedLabel
       .setText(minimapSelectedCountTipText(selN))
-      .setPosition(this.mapX + this.mapW / 2, this.mapY + this.mapH + 64)
+      .setPosition(this.mapX + this.mapW / 2, this.mapY + this.mapH + 76)
       .setVisible(true);
 
     // Gold · n under selected (player gold wallet; pairs with Crystal)
     const wallet = walletOf(this.world, 'player');
     this.goldLabel
       .setText(minimapGoldStockTipText(wallet.gold))
-      .setPosition(this.mapX + this.mapW / 2, this.mapY + this.mapH + 76)
+      .setPosition(this.mapX + this.mapW / 2, this.mapY + this.mapH + 88)
       .setVisible(true);
 
     // Crystal · n under gold (player magic_crystals wallet)
     this.crystalLabel
       .setText(minimapCrystalStockTipText(wallet.magic_crystals))
-      .setPosition(this.mapX + this.mapW / 2, this.mapY + this.mapH + 88)
+      .setPosition(this.mapX + this.mapW / 2, this.mapY + this.mapH + 100)
       .setVisible(true);
 
     // Idle · n under crystal when any gatherer is idle
@@ -833,7 +857,7 @@ export class Minimap {
     if (idleN > 0) {
       this.idleLabel
         .setText(minimapIdleWorkerTipText(idleN))
-        .setPosition(this.mapX + this.mapW / 2, this.mapY + this.mapH + 100)
+        .setPosition(this.mapX + this.mapW / 2, this.mapY + this.mapH + 112)
         .setVisible(true);
     } else {
       this.idleLabel.setVisible(false);
