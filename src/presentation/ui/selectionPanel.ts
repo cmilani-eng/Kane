@@ -22,6 +22,7 @@ import {
   unitArmorClassTipLabel,
 } from './unitArmorClassTip';
 import { buildingBuildCostLabel } from './buildingBuildCost';
+import { buildingBuildProgressLabel } from './buildingBuildProgress';
 import { buildingBuildTimeLabel } from './buildingBuildTime';
 import { buildingFootprintLabel } from './buildingFootprint';
 import { buildingHpMaxLabel } from './buildingHpMax';
@@ -280,6 +281,8 @@ export type SelectionPanelView =
       buildCostTip: string | null;
       /** Catalog full build-time tip (omitted when buildMs is 0). */
       buildTimeTip: string | null;
+      /** Live construction progress tip while incomplete. */
+      buildProgressTip: string | null;
       /** Tile cols×rows footprint tip (same as placement ghost). */
       footprintTip: string | null;
       /** Production-queue tip when the building type can train units. */
@@ -599,6 +602,11 @@ export function buildSelectionView(
       armorClass: buildingArmorClassLabel(b.typeId),
       buildCostTip: buildingBuildCostLabel(b.typeId),
       buildTimeTip: buildingBuildTimeLabel(b.typeId),
+      buildProgressTip: buildingBuildProgressLabel(
+        ready,
+        buildPct,
+        buildRemain,
+      ),
       footprintTip: buildingFootprintLabel(b.typeId),
       prodQueueTip: buildingProdQueueLabel(
         trains.length > 0,
@@ -1087,6 +1095,7 @@ function structureSignature(view: SelectionPanelView): string {
     view.armorClass ?? '',
     view.buildCostTip ?? '',
     view.buildTimeTip ?? '',
+    view.buildProgressTip ?? '',
     view.footprintTip ?? '',
     view.prodQueueTip ?? '',
     view.trains
@@ -1712,6 +1721,9 @@ export function renderSelectionPanel(view: SelectionPanelView): boolean {
         }
         if (view.buildTimeTip) {
           bits.push(`<span>${escapeHtml(view.buildTimeTip)}</span>`);
+        }
+        if (view.buildProgressTip) {
+          bits.push(`<span>${escapeHtml(view.buildProgressTip)}</span>`);
         }
         if (view.footprintTip) {
           bits.push(`<span>${escapeHtml(view.footprintTip)}</span>`);
