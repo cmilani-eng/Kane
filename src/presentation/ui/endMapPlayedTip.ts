@@ -1,6 +1,7 @@
 /**
  * End-screen map played tip (HUD label only).
- * Distinct from the meta map · difficulty · clock line.
+ * Format: Map · {name} from match mapId — distinct from Map · w×h size tip
+ * and from the meta map · difficulty · clock line.
  */
 import type { SkirmishMapId } from '../../data/skirmishMaps';
 import { mapCopy, t } from '../../i18n';
