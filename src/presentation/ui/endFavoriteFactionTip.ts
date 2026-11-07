@@ -1,7 +1,9 @@
 /**
  * End-screen career favorite-faction tip (HUD label only).
- * Most-played species from match prefs speciesPlays — distinct surface
- * from lobby Favorite tip and from end species Played tip.
+ * Format: Favorite · {name} — middot (U+00B7); most-played species from
+ * matchPrefs.speciesPlays via favoriteFactionId.
+ * Distinct from Plays · / Wins · / Streak · and from lobby/pause Favorite
+ * surfaces (same en copy; distinct i18n key).
  */
 import { speciesCopy, t } from '../../i18n';
 import { favoriteFactionId } from './lobbyFavoriteFactionTip';
