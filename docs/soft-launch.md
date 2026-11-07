@@ -80,7 +80,7 @@ This doc is the honest gate before any public preview URL.
 | Supply near-cap tint | **OK** — Supply readout amber within 4 of cap, pink at cap (HUD + pause) | `supplyTone`, `battlefieldHud`, `pauseMenu` |
 | Supply slots left | **OK** — near-cap / full supply lines append remaining slots (or “full”) | `formatSupplyLine`, `pause.supplyNear` / `supplyFull` |
 | Pause supply tip | **OK** — pause shows Supply · used/cap from living pop vs unitCap at open (distinct surface from minimap Supply / Pop · n / spaced-slash supply line) | `pauseSupplyRatioTipLine`, `pause.supplyRatioTip` |
-| Pause win streak tip | **OK** — pause shows Streak · n from matchPrefs.winStreak frozen at open (distinct surface from lobby/end Streak tips) | `pauseWinStreakTipLine`, `pause.winStreakTip`, `matchPrefs.winStreak` |
+| Pause win streak tip | **OK** — pause shows Streak · n from matchPrefs.winStreak frozen at open (distinct from lobby/end Streak ·, Loss streak ·, Win rate ·, Best APM ·, Record ·) | `pauseWinStreakTipLine`, `pause.winStreakTip`, `matchPrefs.winStreak` |
 | Pause loss streak tip | **OK** — pause shows Loss streak · n from matchPrefs.lossStreak frozen at open (distinct surface from lobby Loss streak · and pause Streak · tips) | `pauseLossStreakTipLine`, `pause.lossStreakTip`, `matchPrefs.lossStreak` |
 | Pause games played tip | **OK** — pause shows Played · n from matchPrefs.gamesPlayed frozen at open (distinct surface from end/lobby Played tips) | `pauseGamesPlayedTipLine`, `pause.gamesPlayedTip`, `matchPrefs.gamesPlayed` |
 | Pause win rate tip | **OK** — pause shows Win rate · n% from matchPrefs gamesWon / gamesPlayed frozen at open (distinct surface from lobby/end Win rate tips) | `pauseWinRateTipLine`, `pause.winRateTip`, `matchPrefs.gamesWon` |
