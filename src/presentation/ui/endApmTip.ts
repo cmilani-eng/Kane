@@ -1,6 +1,7 @@
 /**
  * End-screen APM tip (HUD label only).
  * Actions per minute from player command tally ÷ match minutes.
+ * Distinct surface from pause APM · tip and Time · duration tip.
  */
 import { t } from '../../i18n';
 
