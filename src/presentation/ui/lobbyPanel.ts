@@ -33,6 +33,7 @@ import { lobbyWinsTipLine } from './lobbyWinsTip';
 import { lobbySpeciesPlaysTipLine } from './lobbySpeciesPlaysTip';
 import { lobbyWinRateTipLine } from './lobbyWinRateTip';
 import { lobbyBestWinStreakTipLine } from './lobbyBestWinStreakTip';
+import { lobbyLossStreakTipLine } from './lobbyLossStreakTip';
 import { lobbyWinStreakTipLine } from './lobbyWinStreakTip';
 
 export function lobbyStatusLine(status: LobbyStatus, code: string | null): string {
@@ -164,6 +165,7 @@ export function showLobbyPanel(scene: Phaser.Scene, onClose: () => void): void {
     lobbyLastOutcomeTipLine(),
     lobbyWinStreakTipLine(),
     lobbyBestWinStreakTipLine(),
+    lobbyLossStreakTipLine(),
     lobbyGamesPlayedTipLine(),
     lobbyWinsTipLine(),
     lobbyLossesTipLine(),

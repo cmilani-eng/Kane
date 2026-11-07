@@ -70,6 +70,19 @@ describe('match prefs rematch restore', () => {
     expect(loadMatchPrefs().winStreak).toBe(0);
   });
 
+  it('tallies loss streak on losses and clears on win', () => {
+    rememberMatchPrefs('nobles', 'normal', 'crossing', 90_000, false);
+    expect(loadMatchPrefs().lossStreak).toBe(1);
+    expect(loadMatchPrefs().winStreak).toBe(0);
+    rememberMatchPrefs('brutes', 'easy', 'ridge', 80_000, false);
+    expect(loadMatchPrefs().lossStreak).toBe(2);
+    rememberMatchPrefs('weirdos', 'hard', 'gap', 70_000, true);
+    expect(loadMatchPrefs().lossStreak).toBe(0);
+    expect(loadMatchPrefs().winStreak).toBe(1);
+    rememberMatchPrefs('nobles', 'normal', 'crossing');
+    expect(loadMatchPrefs().lossStreak).toBe(0);
+  });
+
   it('tracks peak win streak as bestWinStreak across losses', () => {
     rememberMatchPrefs('nobles', 'normal', 'crossing', 90_000, true);
     expect(loadMatchPrefs().bestWinStreak).toBe(1);
