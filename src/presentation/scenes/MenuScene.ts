@@ -62,7 +62,7 @@ export class MenuScene extends Phaser.Scene {
   /** Last played / remembered species — highlighted on the menu. */
   private lastSpecies: SpeciesId = 'nobles';
   private previewGfx: Phaser.GameObjects.Graphics | null = null;
-  private previewSlots: { id: SpeciesId; x: number; y: number }[] = [];
+  private previewSlots: { id: SpeciesId; x: number; y: number; scale: number }[] = [];
   private localeUnsub: (() => void) | null = null;
 
   constructor() {
@@ -149,7 +149,7 @@ export class MenuScene extends Phaser.Scene {
     g.clear();
     const now = this.time.now;
     for (const s of this.previewSlots) {
-      drawSpeciesPreview(g, s.id, s.x, s.y, now, 1.05);
+      drawSpeciesPreview(g, s.id, s.x, s.y, now, s.scale);
     }
   }
 
@@ -852,10 +852,12 @@ export class MenuScene extends Phaser.Scene {
       .rectangle(x, y, w, h, fill, 1)
       .setStrokeStyle(remembered ? 4 : 3, remembered ? 0xf0c75e : stroke)
       .setInteractive({ useHandCursor: true });
+    // Compact cards: the motto needs the full width, so the mascot sits beside the name.
     this.previewSlots.push({
       id: speciesId,
-      x: compact ? x - w / 2 + 36 : x,
-      y: compact ? y : y - 28,
+      x: compact ? x - w / 2 + 22 : x,
+      y: y - 28,
+      scale: compact ? 0.7 : 1.05,
     });
     this.add
       .text(x, compact ? y - 28 : y - 52, name, {
