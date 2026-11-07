@@ -66,13 +66,13 @@ describe('pauseDifficultyTipLine', () => {
     expect(lobbyLastDifficultyTipLine()).toBe('Last difficulty · Hard');
     expect(lobbyLastDifficultyTipLine()).toMatch(/^Last difficulty \u00b7 /);
 
-    // End tip uses double-spaced middot + Difficulty prefix; distinct key/surface.
+    // End tip uses Difficulty · prefix (single-space middot); distinct key/surface.
     expect(tip).not.toBe(endDifficultyPlayedTipLine('hard'));
     expect(endDifficultyPlayedTipLine('hard')).toBe(
       t('end.difficultyTip', { label: d.label }),
     );
-    expect(endDifficultyPlayedTipLine('hard')).toBe('Difficulty  ·  Hard');
-    expect(endDifficultyPlayedTipLine('hard')).toContain('  ·  ');
+    expect(endDifficultyPlayedTipLine('hard')).toBe('Difficulty · Hard');
+    expect(endDifficultyPlayedTipLine('hard')).toMatch(/^Difficulty \u00b7 /);
 
     // Distinct from setup line (double-spaced middots) and sibling pause tips.
     const setup = t('pause.setup', {
@@ -117,7 +117,8 @@ describe('pauseDifficultyTipLine', () => {
     expect(endDifficultyPlayedTipLine('hard')).toBe(
       t('end.difficultyTip', { label: ptD.label }),
     );
-    expect(endDifficultyPlayedTipLine('hard')).toContain('  ·  ');
+    expect(endDifficultyPlayedTipLine('hard')).toBe('Dificuldade · Difícil');
+    expect(endDifficultyPlayedTipLine('hard')).toMatch(/^Dificuldade \u00b7 /);
     expect(pt).not.toBe(
       pauseObjectiveTipLine(missionStateForDifficulty('hard')),
     );
@@ -147,7 +148,8 @@ describe('pauseDifficultyTipLine', () => {
     expect(endDifficultyPlayedTipLine('hard')).toBe(
       t('end.difficultyTip', { label: esD.label }),
     );
-    expect(endDifficultyPlayedTipLine('hard')).toContain('  ·  ');
+    expect(endDifficultyPlayedTipLine('hard')).toBe('Dificultad · Difícil');
+    expect(endDifficultyPlayedTipLine('hard')).toMatch(/^Dificultad \u00b7 /);
     expect(es).not.toBe(
       pauseObjectiveTipLine(missionStateForDifficulty('hard')),
     );
