@@ -1,6 +1,7 @@
 /**
  * Catalog supply-cost tip (HUD label only).
- * Population uses one slot per living unit (`livingByTeam` / unitCap).
+ * Format: Supply · {n} — one slot per living unit (`livingByTeam` / unitCap).
+ * Buildings do not consume supply slots in the catalog.
  */
 import type { UnitTypeId } from '../../data/units';
 import { t } from '../../i18n';
