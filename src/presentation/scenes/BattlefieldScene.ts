@@ -178,6 +178,7 @@ import { FogOverlay } from '../ui/fogOverlay';
 import { showKaneEndScreen } from '../ui/endScreen';
 import { resolveMissionObjective } from '../ui/missionObjective';
 import { minimapCameraSectorAt } from '../ui/minimapCameraSectorTip';
+import { fogExploredCoveragePct } from '../ui/minimapFogCoverageTip';
 import { PauseMenu } from '../ui/pauseMenu';
 import { publishMatchStock, resetMatchStock } from '../ui/matchUiStore';
 import {
@@ -766,6 +767,7 @@ export class BattlefieldScene extends Phaser.Scene {
         this.world.lastFogRevealAgeMs != null
           ? this.world.lastFogRevealAgeMs
           : undefined,
+      fogCoveragePct: fogExploredCoveragePct(this.world.fog),
       selectionCount: this.world.units.filter(
         (u) => u.selected && u.team === 'player' && u.hp > 0,
       ).length,
