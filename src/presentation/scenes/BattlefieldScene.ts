@@ -2,6 +2,7 @@
  * Battlefield — select/move/combat + economy (gather Gold / Magic Crystals).
  * Phaser 4 APIs: https://docs.phaser.io/
  */
+import { SIM_STEP_MS, stepBattlefieldSim } from "../../gameplay/battlefield/battlefieldSimStep";
 import Phaser from 'phaser';
 import { BRAND } from '../../config/brand';
 import { flags } from '../../config/flags';
@@ -24,28 +25,11 @@ import {
   nextDifficultyAfterWin,
   previousDifficultyAfterLoss,
 } from '../../gameplay/battlefield/practiceStepUp';
-import {
-  createAiState,
-  tickBattlefieldAi,
-  type AiState,
-} from '../../gameplay/battlefield/battlefieldAi';
-import {
-  tickFormations,
-  toggleFormationSelected,
-} from '../../gameplay/battlefield/battlefieldFormations';
-import {
-  castHeroAbility,
-  tickHeroes,
-} from '../../gameplay/battlefield/battlefieldHeroes';
-import {
-  tickMutations,
-  toggleMutationSelected,
-} from '../../gameplay/battlefield/battlefieldMutations';
-import {
-  tickRage,
-  toggleRageSelected,
-} from '../../gameplay/battlefield/battlefieldRage';
-import { tickCoreFragments } from '../../gameplay/battlefield/battlefieldCoreFragments';
+import { createAiState, type AiState } from '../../gameplay/battlefield/battlefieldAi';
+import { toggleFormationSelected } from '../../gameplay/battlefield/battlefieldFormations';
+import { castHeroAbility } from '../../gameplay/battlefield/battlefieldHeroes';
+import { toggleMutationSelected } from '../../gameplay/battlefield/battlefieldMutations';
+import { toggleRageSelected } from '../../gameplay/battlefield/battlefieldRage';
 import { BattlefieldHud } from '../ui/battlefieldHud';
 import { Minimap } from '../ui/minimap';
 import {
@@ -64,33 +48,10 @@ import {
   tickTutorial,
   type TutorialState,
 } from '../../gameplay/battlefield/battlefieldTutorial';
-import {
-  buildingBlocks,
-  canAfford,
-  findBuildingAt,
-  placeBuilding,
-  snapBuildingWorld,
-  tickBuildings,
-} from '../../gameplay/battlefield/battlefieldBuildings';
-import {
-  findEnemyAt,
-  issueAttackSelected,
-  livingByTeam,
-  tickBattlefieldCombat,
-} from '../../gameplay/battlefield/battlefieldCombat';
-import {
-  findNodeAt,
-  issueGatherSelected,
-  tickBattlefieldEconomy,
-  walletOf,
-} from '../../gameplay/battlefield/battlefieldEconomy';
-import { tickEconomyFx } from '../../gameplay/battlefield/battlefieldEconomyFx';
-import {
-  cancelQueuedTrain,
-  queueTrain,
-  tickProduction,
-  trainHotkey,
-} from '../../gameplay/battlefield/battlefieldProduction';
+import { buildingBlocks, canAfford, findBuildingAt, placeBuilding, snapBuildingWorld } from '../../gameplay/battlefield/battlefieldBuildings';
+import { findEnemyAt, issueAttackSelected, livingByTeam } from '../../gameplay/battlefield/battlefieldCombat';
+import { findNodeAt, issueGatherSelected, walletOf } from '../../gameplay/battlefield/battlefieldEconomy';
+import { cancelQueuedTrain, queueTrain, trainHotkey } from '../../gameplay/battlefield/battlefieldProduction';
 import {
   evaluateMatch,
   matchEndReason,
@@ -119,43 +80,15 @@ import { countIdleWorkers } from '../../gameplay/battlefield/idleWorkers';
 import { isMilitaryUnit } from '../../gameplay/battlefield/selectMilitary';
 import { minimapHeroStatus } from '../ui/minimapHeroStatusTip';
 import { touchLongPressAction } from '../../gameplay/battlefield/touchLongPress';
-import {
-  spawnControlGroupAssignFx,
-  spawnControlGroupRecallFx,
-  tickControlGroupFx,
-} from '../../gameplay/battlefield/battlefieldControlGroupFx';
-import {
-  spawnStopPulses,
-  tickStopFx,
-} from '../../gameplay/battlefield/battlefieldStopFx';
-import { tickWaypointMarkers } from '../../gameplay/battlefield/battlefieldWaypointMarkers';
+import { spawnControlGroupAssignFx, spawnControlGroupRecallFx } from '../../gameplay/battlefield/battlefieldControlGroupFx';
+import { spawnStopPulses } from '../../gameplay/battlefield/battlefieldStopFx';
 import { findPlayerBasePoint } from '../../gameplay/battlefield/playerBase';
-import {
-  clearSelection,
-  createBattlefieldWorld,
-  findPlayerUnitAt,
-  issueMoveSelected,
-  recordPlayerAction,
-  selectAllVisibleSameType,
-  selectAt,
-  selectInRect,
-  selectedCount,
-  selectedUnits,
-  tickBattlefield,
-  type BattlefieldBuilding,
-  type BattlefieldWorld,
-  type ResourceNode,
-} from '../../gameplay/battlefield/battlefieldWorld';
+import { clearSelection, createBattlefieldWorld, findPlayerUnitAt, issueMoveSelected, recordPlayerAction, selectAllVisibleSameType, selectAt, selectInRect, selectedCount, selectedUnits, type BattlefieldBuilding, type BattlefieldWorld, type ResourceNode } from '../../gameplay/battlefield/battlefieldWorld';
 import {
   enemyRevealed,
   isExplored,
   tickFog,
 } from '../../gameplay/battlefield/battlefieldFog';
-import { tickAttentionPings } from '../../gameplay/battlefield/battlefieldAttentionPing';
-import {
-  spawnScoutPulsesFromFog,
-  tickScoutPulses,
-} from '../../gameplay/battlefield/battlefieldScoutPulse';
 import {
   makeMatchSummaryId,
 } from '../../database/matchSummary';
@@ -238,12 +171,7 @@ import {
   drawUnitSilhouette,
   resolveUnitAnimPhase,
 } from '../units/unitSilhouette';
-import {
-  inView,
-  MOBILE_PERF,
-  viewBoundsFromCamera,
-  type ViewBounds,
-} from '../perf/mobileBudget';
+import { inView, viewBoundsFromCamera, type ViewBounds } from '../perf/mobileBudget';
 
 type PointerMode =
   | 'none'
@@ -253,6 +181,9 @@ type PointerMode =
   | 'place'
   | 'attackMove'
   | 'rally';
+
+/** Most sim steps run in one frame; past this the backlog is dropped (see update). */
+const MAX_SIM_STEPS_PER_FRAME = 8;
 
 export class BattlefieldScene extends Phaser.Scene {
   private world!: BattlefieldWorld;
@@ -314,7 +245,7 @@ export class BattlefieldScene extends Phaser.Scene {
   private animTimeMs = 0;
   /** Enemy building id → last animTimeMs while revealed (leave-vision ghost). */
   private enemyBuildingLastSeen = new Map<number, number>();
-  private fogAccMs = 999;
+  private simAccMs = 0;
   private viewCull: ViewBounds | null = null;
   /** Equipped cosmetics accent for the player species (visual only). */
   private playerSkinAccent = 0xf0c75e;
@@ -340,7 +271,9 @@ export class BattlefieldScene extends Phaser.Scene {
     this.playerSkinAccent = getEquippedSkin(playerSpecies).accent;
 
     const { layer } = createSkirmishMap(this, data?.mapId);
-    this.world = createBattlefieldWorld(playerSpecies, difficulty, data?.mapId);
+    // Picked here, not in the simulation, so each match differs and clients can share the seed.
+    const matchSeed = Math.floor(Math.random() * 0x100000000);
+    this.world = createBattlefieldWorld(playerSpecies, difficulty, data?.mapId, matchSeed);
     this.placeables = placeableBuildings(playerSpecies);
     this.placeIndex = 0;
     this.placeType = this.placeables[0] ?? 'bonker_hut';
@@ -1377,35 +1310,22 @@ export class BattlefieldScene extends Phaser.Scene {
     }
     if (this.matchResult === 'ongoing' && !this.paused) {
       this.matchElapsedMs += delta;
-      tickBattlefield(this.world, delta);
-      tickBattlefieldEconomy(this.world);
       // Mute-aware gather/deposit SFX — fire once while FX is fresh.
       for (const fx of this.world.economyFx) {
         if (fx.lifeMs >= fx.maxLifeMs - delta) playSfx(fx.sfx);
       }
-      tickEconomyFx(this.world, delta);
-      tickStopFx(this.world, delta);
-      tickControlGroupFx(this.world, delta);
-      tickWaypointMarkers(this.world, delta);
-      tickBuildings(this.world, delta);
-      tickProduction(this.world, delta);
-      tickFormations(this.world, delta);
-      tickMutations(this.world, delta);
-      tickRage(this.world, delta);
-      tickHeroes(this.world, delta);
-      tickBattlefieldAi(this.world, this.ai, delta);
-      this.fogAccMs += delta;
-      if (this.fogAccMs >= MOBILE_PERF.fogMs) {
-        this.fogAccMs = 0;
-        tickFog(this.world, this.world.fog);
-        if (this.world.fog.exploredDirty) {
-          spawnScoutPulsesFromFog(this.world, this.world.fog);
-        }
+      // The simulation runs in fixed steps, never on the frame delta, so clients stay in sync.
+      this.simAccMs += delta;
+      for (
+        let steps = 0;
+        this.simAccMs >= SIM_STEP_MS && steps < MAX_SIM_STEPS_PER_FRAME;
+        steps++
+      ) {
+        stepBattlefieldSim(this.world, this.ai);
+        this.simAccMs -= SIM_STEP_MS;
       }
-      tickScoutPulses(this.world, delta);
-      tickAttentionPings(this.world, delta);
-      tickCoreFragments(this.world, delta);
-      tickBattlefieldCombat(this.world, delta);
+      // After a stall (background tab, long pause) drop the backlog rather than racing to catch up.
+      if (this.simAccMs >= SIM_STEP_MS) this.simAccMs = 0;
       // Attack flash just set (~120) — one SFX per frame max.
       if (this.world.units.some((u) => u.lastAttackFlashMs > 100)) {
         playSfx('attack');
