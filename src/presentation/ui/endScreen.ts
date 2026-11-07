@@ -32,6 +32,7 @@ import { endEfficiencyTipLine } from './endEfficiencyTip';
 import { endBestWinStreakTipLine } from './endBestWinStreakTip';
 import { endGamesPlayedTipLine } from './endGamesPlayedTip';
 import { endWinRateTipLine } from './endWinRateTip';
+import { endFavoriteFactionTipLine } from './endFavoriteFactionTip';
 import { endWinStreakTipLine } from './endWinStreakTip';
 import { formatMatchClock } from './matchClock';
 import { copyEndShareLine, formatEndShareLine } from './endShareLine';
@@ -173,7 +174,8 @@ export function showKaneEndScreen(opts: EndScreenOpts): void {
   const yBestStreak = short ? yActions - 58 : cy + panelH * 0.76;
   const yGamesPlayed = short ? yActions - 54 : cy + panelH * 0.772;
   const yWinRate = short ? yActions - 49 : cy + panelH * 0.778;
-  const yShare = short ? yActions - 44 : cy + panelH * 0.785;
+  const yFavoriteFaction = short ? yActions - 46 : cy + panelH * 0.784;
+  const yShare = short ? yActions - 42 : cy + panelH * 0.79;
   const yStep = short ? yActions - 44 : cy + panelH * 0.72;
   const yRematch = short ? yActions : cy + panelH * (stepUp ? 0.8 : 0.76);
   const yMenu = short ? yActions : cy + panelH * (stepUp ? 0.91 : 0.85);
@@ -640,6 +642,21 @@ export function showKaneEndScreen(opts: EndScreenOpts): void {
     .setVisible(!!winRateTip);
   root.push(winRateTipText);
 
+  const favoriteFactionTip = endFavoriteFactionTipLine() ?? '';
+  const favoriteFactionTipText = scene.add
+    .text(width / 2, yFavoriteFaction, favoriteFactionTip, {
+      fontFamily: 'system-ui, sans-serif',
+      fontSize: '13px',
+      color: '#c8d8e8',
+      align: 'center',
+    })
+    .setOrigin(0.5)
+    .setScrollFactor(0)
+    .setDepth(202)
+    .setAlpha(0)
+    .setVisible(!!favoriteFactionTip);
+  root.push(favoriteFactionTipText);
+
   const shareLine = formatEndShareLine({
     win,
     speciesName: name,
@@ -823,6 +840,7 @@ export function showKaneEndScreen(opts: EndScreenOpts): void {
       bestStreakTipText,
       gamesPlayedTipText,
       winRateTipText,
+      favoriteFactionTipText,
       shareBtn,
       ...(stepBtn ? [stepBtn] : []),
       rematchBtn,
