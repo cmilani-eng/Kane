@@ -1,6 +1,9 @@
 /**
  * End-screen buildings-lost tip (HUD label only).
- * Tallied from player building destructions — distinct from units Lost tip.
+ * Format: Razed · {n} — middot (U+00B7).
+ * Tallied from player building destructions.
+ * Distinct from Lost · / Kills · / Raised · / Efficiency · / kill-ratio peers;
+ * end-only combat tip (no lobby/pause twin).
  */
 import { t } from '../../i18n';
 
