@@ -63,6 +63,7 @@ import {
   unitMoveSpeedLabel,
 } from './unitMoveSpeed';
 import { sharedUnitHpMaxLabel, unitHpMaxLabel } from './unitHpMax';
+import { selectionHpRatioTipLine } from './selectionHpRatioTip';
 import {
   sharedUnitSupplyCostLabel,
   unitSupplyCostLabel,
@@ -237,6 +238,8 @@ export type SelectionPanelView =
       rangeTip: string | null;
       /** Catalog max-HP tip when selection shares one unit type. */
       hpMaxTip: string | null;
+      /** Live HP · pct% from current/max for the selection. */
+      hpRatioTip: string | null;
       /** Catalog attack-cooldown tip when selection shares one unit type. */
       atkCdTip: string | null;
       /** Catalog supply-cost tip when selection shares one unit type. */
@@ -286,6 +289,8 @@ export type SelectionPanelView =
       maxHp: number;
       /** Catalog max-HP tip for the selected building type. */
       hpMaxTip: string | null;
+      /** Live HP · pct% from current/max for the building. */
+      hpRatioTip: string | null;
       /** Armor · Structure tip for the selected building type. */
       armorClass: string | null;
       /** Catalog build gold/crystal cost tip (omitted when free). */
@@ -611,6 +616,7 @@ export function buildSelectionView(
       hp: b.hp,
       maxHp: b.maxHp,
       hpMaxTip: buildingHpMaxLabel(b.typeId),
+      hpRatioTip: selectionHpRatioTipLine(b.hp, b.maxHp),
       armorClass: buildingArmorClassLabel(b.typeId),
       buildCostTip: buildingBuildCostLabel(b.typeId),
       buildTimeTip: buildingBuildTimeLabel(b.typeId),
@@ -709,6 +715,7 @@ export function buildSelectionView(
       visionTip: unitVisionLabel(u.typeId),
       rangeTip: unitAttackRangeLabel(u.typeId),
       hpMaxTip: unitHpMaxLabel(u.typeId),
+      hpRatioTip: selectionHpRatioTipLine(u.hp, u.maxHp),
       atkCdTip: unitAttackCooldownLabel(u.typeId),
       supplyTip: unitSupplyCostLabel(u.typeId),
       trainGoldTip: unitTrainGoldLabel(u.typeId),
@@ -783,6 +790,7 @@ export function buildSelectionView(
     visionTip: sharedUnitVisionLabel(alive.map((u) => u.typeId)),
     rangeTip: sharedUnitAttackRangeLabel(alive.map((u) => u.typeId)),
     hpMaxTip: sharedUnitHpMaxLabel(alive.map((u) => u.typeId)),
+    hpRatioTip: selectionHpRatioTipLine(hp, maxHp),
     atkCdTip: sharedUnitAttackCooldownLabel(alive.map((u) => u.typeId)),
     supplyTip: sharedUnitSupplyCostLabel(alive.map((u) => u.typeId)),
     trainGoldTip: sharedUnitTrainGoldLabel(alive.map((u) => u.typeId)),
@@ -1069,6 +1077,7 @@ function structureSignature(view: SelectionPanelView): string {
       view.visionTip ?? '',
       view.rangeTip ?? '',
       view.hpMaxTip ?? '',
+      view.hpRatioTip ?? '',
       view.atkCdTip ?? '',
       view.supplyTip ?? '',
       view.trainGoldTip ?? '',
@@ -1110,6 +1119,7 @@ function structureSignature(view: SelectionPanelView): string {
     view.rallyArmed ? 1 : 0,
     view.rallyDistTiles,
     view.hpMaxTip ?? '',
+    view.hpRatioTip ?? '',
     view.armorClass ?? '',
     view.buildCostTip ?? '',
     view.buildTimeTip ?? '',
@@ -1616,6 +1626,9 @@ export function renderSelectionPanel(view: SelectionPanelView): boolean {
         if (view.hpMaxTip) {
           bits.push(`<span>${escapeHtml(view.hpMaxTip)}</span>`);
         }
+        if (view.hpRatioTip) {
+          bits.push(`<span>${escapeHtml(view.hpRatioTip)}</span>`);
+        }
         if (view.atkCdTip) {
           bits.push(`<span>${escapeHtml(view.atkCdTip)}</span>`);
         }
@@ -1731,6 +1744,9 @@ export function renderSelectionPanel(view: SelectionPanelView): boolean {
         if (view.hpMaxTip) {
           bits.push(`<span>${escapeHtml(view.hpMaxTip)}</span>`);
         }
+        if (view.hpRatioTip) {
+          bits.push(`<span>${escapeHtml(view.hpRatioTip)}</span>`);
+        }
         if (view.armorClass) {
           bits.push(`<span>${escapeHtml(view.armorClass)}</span>`);
         }
@@ -1825,6 +1841,9 @@ export function renderSelectionPanel(view: SelectionPanelView): boolean {
             view.hpMaxTip
               ? `<span>${escapeHtml(view.hpMaxTip)}</span>`
               : '',
+            view.hpRatioTip
+              ? `<span>${escapeHtml(view.hpRatioTip)}</span>`
+              : '',
             view.armorClass
               ? `<span>${escapeHtml(view.armorClass)}</span>`
               : '',
@@ -1862,6 +1881,10 @@ export function renderSelectionPanel(view: SelectionPanelView): boolean {
           let tipIdx = 2;
           if (spans[tipIdx] && view.hpMaxTip) {
             spans[tipIdx].textContent = view.hpMaxTip;
+            tipIdx += 1;
+          }
+          if (spans[tipIdx] && view.hpRatioTip) {
+            spans[tipIdx].textContent = view.hpRatioTip;
             tipIdx += 1;
           }
           if (spans[tipIdx] && view.armorClass) {

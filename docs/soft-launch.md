@@ -105,6 +105,7 @@ This doc is the honest gate before any public preview URL.
 | Unit move cadence tip | **OK** — selection stats show Slow/Medium/Fast pace bucket (shared pace; distinct from numeric speed tip) | `unitMoveCadence`, `sel.moveCadenceTip` |
 | Unit vision tip | **OK** — selection stats show catalog vision radius in map tiles (same-type only) | `unitVision`, `sel.visionTip` |
 | Unit HP max tip | **OK** — selection stats show catalog max HP (same-type only) | `unitHpMax`, `sel.hpMaxTip` |
+| Selection HP ratio tip | **OK** — selection stats show live HP · pct% from current/max (distinct from Max HP / HP chip) | `selectionHpRatioTipLine`, `sel.hpRatioTip` |
 | Building HP max tip | **OK** — building selection stats show catalog Max HP tip | `buildingHpMax`, `sel.hpMaxTip` |
 | Building armor tip | **OK** — building selection stats show Armor · Structure tip | `buildingArmorClass`, `sel.armor.structure` |
 | Building build cost tip | **OK** — building selection stats show catalog Build gold/crystal cost (omitted for free halls) | `buildingBuildCost`, `sel.buildCost*` |
