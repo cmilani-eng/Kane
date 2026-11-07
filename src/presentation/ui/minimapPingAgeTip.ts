@@ -1,7 +1,9 @@
 /**
  * Minimap attention-ping age tip (presentation only).
- * Format: Mark · {sector} · {n}s — distinct from sector-only Mark · {sector},
- * Fog age · ns, and Scout · {sector} · ns.
+ * Format: Mark · {sector} · {n}s — middot (U+00B7).
+ * Distinct from sector-only Mark · {sector} (`hud.pingSector`),
+ * Fog age · ns (`hud.minimapFogAge`), Scout · {sector} · ns (`hud.fogRevealAge`),
+ * and Cam · sector (`hud.minimapCamSector`).
  */
 import { ATTENTION_PING_SECTOR_HINT_MS } from '../../gameplay/battlefield/battlefieldAttentionPing';
 import type { MapSectorId } from '../../gameplay/battlefield/mapSector';
@@ -17,7 +19,7 @@ export function pingAgeSec(
   return Math.floor(age / 1000);
 }
 
-/** Mark · {sector} · {n}s — age tip for the minimap attention ping. */
+/** Mark · {sector} · {n}s — middot (U+00B7) age tip for the minimap attention ping. */
 export function minimapPingAgeTip(
   sector: MapSectorId,
   lifeMs: number,
