@@ -168,6 +168,7 @@ This doc is the honest gate before any public preview URL.
 | Lobby best streak tip | **OK** — lobby shows Best streak · n from peak consecutive wins in match prefs (distinct from current streak) | `lobbyBestWinStreakTipLine`, `lobby.bestWinStreakTip`, `matchPrefs.bestWinStreak` |
 | Lobby games played tip | **OK** — lobby shows Played · n from match prefs gamesPlayed (finished matches; distinct from stats panel) | `lobbyGamesPlayedTipLine`, `lobby.gamesPlayedTip`, `matchPrefs.gamesPlayed` |
 | Lobby losses tip | **OK** — lobby shows Losses · n from gamesPlayed − gamesWon (distinct from Played / Win rate) | `lobbyLossesTipLine`, `lobby.lossesTip`, `matchPrefs.gamesPlayed` / `gamesWon` |
+| Lobby wins tip | **OK** — lobby shows Wins · n from match prefs gamesWon (distinct from Losses / Win rate) | `lobbyWinsTipLine`, `lobby.winsTip`, `matchPrefs.gamesWon` |
 | Lobby win rate tip | **OK** — lobby shows Win rate · n% from match prefs gamesWon / gamesPlayed (distinct from streak / played tips) | `lobbyWinRateTipLine`, `lobby.winRateTip`, `matchPrefs.gamesWon` |
 | Lobby difficulty tip | **OK** — lobby shows selected difficulty label · blurb from match prefs | `lobbyDifficultyTipLine`, `lobby.difficultyTip` |
 | Lobby match length | **OK** — lobby shows ~min estimate from recent local summaries (default ~10 min) | `lobbyMatchLengthTipLine`, `lobby.matchLength*` |
