@@ -763,6 +763,8 @@ export class BattlefieldScene extends Phaser.Scene {
       selectionCount: this.world.units.filter(
         (u) => u.selected && u.team === 'player' && u.hp > 0,
       ).length,
+      stockGold: walletOf(this.world, 'player').gold,
+      stockCrystals: walletOf(this.world, 'player').magic_crystals,
     };
   }
 
