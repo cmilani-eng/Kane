@@ -1,7 +1,9 @@
 /**
  * Minimap fog age tip (presentation only).
- * Seconds since the last fog scout reveal — how stale unrevealed fog is.
- * Distinct from pause Fog · ns (`pause.fogAgeTip`) and Fog · pct% coverage.
+ * Seconds since the last fog scout reveal — Format: Fog age · {n}s
+ * (middot U+00B7). Distinct from pause Fog · ns (`pause.fogAgeTip`),
+ * Fog · pct% coverage (`hud.minimapFog`), and Scout · sector · ns
+ * (`hud.fogRevealAge`).
  */
 import { t } from '../../i18n';
 import { fogAgeSec } from './pauseFogAgeTip';
