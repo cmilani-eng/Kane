@@ -123,6 +123,7 @@ This doc is the honest gate before any public preview URL.
 | Unit cargo capacity tip | **OK** — worker selection stats show Cargo · n max (distinct from Yield per trip / live cargo line) | `unitCargoCapacity`, `sel.cargoCapTip` |
 | Unit current cargo tip | **OK** — worker selection stats show Cargo · empty / Cargo · n/cap (distinct from Cargo · n max / Yield / carry line) | `unitCurrentCargo`, `sel.cargoNowEmpty`, `sel.cargoNowTip` |
 | Unit atk CD tip | **OK** — selection stats show catalog attack cooldown in seconds (same-type only) | `unitAttackCooldown`, `sel.atkCdTip` |
+| Unit atk speed tip | **OK** — selection stats show Rate · n/s from catalog attackCooldownMs (same-type only; distinct from Atk CD) | `unitAttackSpeed`, `sel.atkSpeedTip` |
 | Unit supply tip | **OK** — selection stats show catalog supply cost (1 slot per unit, same-type only) | `unitSupplyCost`, `sel.supplyTip` |
 | Unit train gold tip | **OK** — selection stats show catalog train gold cost (same-type only) | `unitTrainGold`, `sel.trainGoldTip` |
 | Unit train crystal tip | **OK** — selection stats show catalog train crystal cost (same-type only; omitted when 0) | `unitTrainCrystal`, `sel.trainCrystalTip` |
