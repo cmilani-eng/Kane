@@ -10,7 +10,10 @@ import type { SpeciesId } from '../../data/speciesStub';
 import type { AiDifficultyId } from '../../gameplay/battlefield/aiDifficulty';
 import { nextMapAfterHardWin } from '../../gameplay/battlefield/mapStepUp';
 import { nextSpeciesAfterCatalog } from '../../gameplay/battlefield/speciesStepUp';
-import { nextDifficultyAfterWin } from '../../gameplay/battlefield/practiceStepUp';
+import {
+  nextDifficultyAfterWin,
+  previousDifficultyAfterLoss,
+} from '../../gameplay/battlefield/practiceStepUp';
 import { difficultyCopy, mapCopy, speciesName, t } from '../../i18n';
 import { playEndFanfare, playSfx } from '../audio/sfx';
 import { endDifficultyPlayedTipLine } from './endDifficultyPlayedTip';
@@ -56,7 +59,7 @@ export interface EndScreenOpts {
   onRematch: () => void;
   /** Difficulty just played. A win can offer the next difficulty. */
   difficulty?: AiDifficultyId;
-  /** Start the next difficulty with the same species and map. Hidden on a loss and after Hard. */
+  /** Start the next difficulty after a win, or the previous one after a loss. */
   onStepUp?: () => void;
   /** Start the next map at Hard with the same species. Shown only after a Hard win. */
   onTryMap?: () => void;
@@ -93,7 +96,10 @@ export function showKaneEndScreen(opts: EndScreenOpts): void {
     onTryMap,
     onTrySpecies,
   } = opts;
-  const stepUpTo = nextDifficultyAfterWin(win, difficulty ?? 'normal');
+  const played = difficulty ?? 'normal';
+  const stepUpTo =
+    nextDifficultyAfterWin(win, played) ??
+    previousDifficultyAfterLoss(win, played);
   const speciesOffer =
     mapId != null
       ? nextSpeciesAfterCatalog(win, difficulty ?? 'normal', mapId, speciesId)

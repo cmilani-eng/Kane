@@ -20,7 +20,10 @@ import {
 } from '../../gameplay/battlefield/aiDifficulty';
 import { nextMapAfterHardWin } from '../../gameplay/battlefield/mapStepUp';
 import { nextSpeciesAfterCatalog } from '../../gameplay/battlefield/speciesStepUp';
-import { nextDifficultyAfterWin } from '../../gameplay/battlefield/practiceStepUp';
+import {
+  nextDifficultyAfterWin,
+  previousDifficultyAfterLoss,
+} from '../../gameplay/battlefield/practiceStepUp';
 import {
   createAiState,
   tickBattlefieldAi,
@@ -1455,10 +1458,10 @@ export class BattlefieldScene extends Phaser.Scene {
       onRematch: () => this.rematchSameSkirmish(),
       difficulty: this.world.aiDifficulty,
       onStepUp: (() => {
-        const next = nextDifficultyAfterWin(
-          result === 'victory',
-          this.world.aiDifficulty,
-        );
+        const won = result === 'victory';
+        const next =
+          nextDifficultyAfterWin(won, this.world.aiDifficulty) ??
+          previousDifficultyAfterLoss(won, this.world.aiDifficulty);
         return next ? () => this.stepUpDifficulty(next) : undefined;
       })(),
       onTryMap: (() => {
