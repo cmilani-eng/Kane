@@ -2,8 +2,9 @@
  * Pause overlay army-size tip (HUD label only).
  * Format: Army · {n} — middot (U+00B7).
  * Living player combat units at pause — same isMilitaryUnit filter as minimap;
- * distinct surface from minimap Army · tip (`hud.minimapArmy` /
- * `minimapArmyCountTipText`).
+ * same en/pt-BR/es copy as minimap Army · tip (`hud.minimapArmy` /
+ * `minimapArmyCountTipText`), distinct key/surface (`pause.armyTip`).
+ * Distinct from Pop · / Selected · / Buildings · pause chips.
  */
 import { t } from '../../i18n';
 
