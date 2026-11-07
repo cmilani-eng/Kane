@@ -45,6 +45,7 @@ import { pauseFavoriteFactionTipLine } from './pauseFavoriteFactionTip';
 import { pauseGamesPlayedTipLine } from './pauseGamesPlayedTip';
 import { pauseWinRateTipLine } from './pauseWinRateTip';
 import { pauseAvgApmTipLine } from './pauseAvgApmTip';
+import { pauseBestApmTipLine } from './pauseBestApmTip';
 import { pauseAvgDurationTipLine } from './pauseAvgDurationTip';
 import { pauseLossStreakTipLine } from './pauseLossStreakTip';
 import { pauseWinStreakTipLine } from './pauseWinStreakTip';
@@ -102,6 +103,8 @@ export interface PauseMenuSnapshot {
   avgDurationMs?: number;
   /** Career average APM from matchPrefs when pause opens. */
   avgApm?: number;
+  /** Career peak APM from matchPrefs when pause opens. */
+  bestApm?: number;
   /** Most-played species from matchPrefs.speciesPlays when pause opens. */
   favoriteFactionId?: SpeciesId | null;
 }
@@ -298,6 +301,7 @@ export class PauseMenu {
     const avgDurationTip =
       pauseAvgDurationTipLine(this.snapshot.avgDurationMs) ?? '';
     const avgApmTip = pauseAvgApmTipLine(this.snapshot.avgApm) ?? '';
+    const bestApmTip = pauseBestApmTipLine(this.snapshot.bestApm) ?? '';
     const favoriteFactionTip =
       pauseFavoriteFactionTipLine(this.snapshot.favoriteFactionId) ?? '';
     const supplyRatioTip = pauseSupplyRatioTipLine(
@@ -337,9 +341,10 @@ export class PauseMenu {
     const yWinRate = short ? top + 328 : cy + panelH * 0.365;
     const yAvgDuration = short ? top + 340 : cy + panelH * 0.39;
     const yAvgApm = short ? top + 352 : cy + panelH * 0.415;
-    const yFavoriteFaction = short ? top + 364 : cy + panelH * 0.44;
-    const ySupplyRatio = short ? top + 376 : cy + panelH * 0.465;
-    const ySupply = short ? top + 388 : cy + panelH * 0.49;
+    const yBestApm = short ? top + 364 : cy + panelH * 0.44;
+    const yFavoriteFaction = short ? top + 376 : cy + panelH * 0.465;
+    const ySupplyRatio = short ? top + 388 : cy + panelH * 0.49;
+    const ySupply = short ? top + 400 : cy + panelH * 0.515;
     const clockLine = this.scene.add
       .text(cx, yClock, clockTip, {
         fontFamily: 'system-ui, sans-serif',
@@ -602,6 +607,17 @@ export class PauseMenu {
       .setScrollFactor(0)
       .setDepth(222)
       .setVisible(!!avgApmTip);
+    const bestApmLine = this.scene.add
+      .text(cx, yBestApm, bestApmTip, {
+        fontFamily: 'system-ui, sans-serif',
+        fontSize: short ? '11px' : '12px',
+        color: '#c8d8e8',
+        align: 'center',
+      })
+      .setOrigin(0.5)
+      .setScrollFactor(0)
+      .setDepth(222)
+      .setVisible(!!bestApmTip);
     const favoriteFactionLine = this.scene.add
       .text(cx, yFavoriteFaction, favoriteFactionTip, {
         fontFamily: 'system-ui, sans-serif',
@@ -661,13 +677,14 @@ export class PauseMenu {
       winRateLine,
       avgDurationLine,
       avgApmLine,
+      bestApmLine,
       favoriteFactionLine,
       supplyRatioLine,
       supplyText,
     );
 
     // Short layout: tips + setup + supply need room above buttons.
-    const btnY0 = short ? top + 412 : cy + panelH * 0.52;
+    const btnY0 = short ? top + 424 : cy + panelH * 0.545;
     const gap = short ? 36 : Math.min(44, panelH * 0.11);
     this.root.push(
       this.makeBtn(cx, btnY0, t('pause.resume'), () => {
