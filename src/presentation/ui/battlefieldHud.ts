@@ -161,7 +161,7 @@ export class BattlefieldHud {
           : '#d4782e';
 
     this.title = scene.add
-      .text(12, 8, `KANE  ·  ${speciesName(this.speciesId)}`, {
+      .text(124, 8, `KANE  ·  ${speciesName(this.speciesId)}`, {
         fontFamily: 'Georgia, "Times New Roman", serif',
         fontSize: '18px',
         color: '#f5e6c8',
