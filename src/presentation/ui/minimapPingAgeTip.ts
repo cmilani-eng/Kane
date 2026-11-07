@@ -1,6 +1,7 @@
 /**
  * Minimap attention-ping age tip (presentation only).
- * Distinct from the sector-only mark (`hud.pingSector`).
+ * Format: Mark · {sector} · {n}s — distinct from sector-only Mark · {sector},
+ * Fog age · ns, and Scout · {sector} · ns.
  */
 import { ATTENTION_PING_SECTOR_HINT_MS } from '../../gameplay/battlefield/battlefieldAttentionPing';
 import type { MapSectorId } from '../../gameplay/battlefield/mapSector';
