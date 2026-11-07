@@ -41,7 +41,7 @@ This doc is the honest gate before any public preview URL.
 | Minimap vision tip | **OK** — minimap chrome shows Vision · n from max living-player unit vision tiles (distinct from selection Sight · / Fog · %) | `minimapVisionTipText`, `hud.minimapVision`, `maxPlayerVisionTiles` |
 | Minimap enemy count tip | **OK** — minimap chrome shows Enemies · n (U+00B7) from living fog-revealed enemy units; distinct from Army · / Selected · / Vision · | `minimapEnemyCountTipText`, `hud.minimapEnemies`, `countVisibleEnemies` |
 | Attention ping | **OK** — hold minimap to drop a temporary look-here mark (world + minimap); short cooldown + ice deny flash; help notes double-tap recenter; no chat | `battlefieldAttentionPing`, `minimapPingCooldown`, help |
-| Minimap ping sector tip | **OK** — hold-to-ping arms a brief Mark · sector chip (HUD + minimap), distinct from scout sector | `attentionPingSectorHint`, `minimapPingSectorTip`, `hud.pingSector` |
+| Minimap ping sector tip | **OK** — hold-to-ping arms a brief Mark · sector (U+00B7) chip (HUD + minimap); en/pt-BR/es middot; distinct from Mark · sector · ns age / Scout · / Fog age · / Cam · | `attentionPingSectorHint`, `minimapPingSectorTipText`, `hud.pingSector` |
 | Minimap ping age tip | **OK** — minimap ping chip shows Mark · sector · ns age tip (distinct from sector-only Mark · / Fog age · / Scout · sector · ns) | `minimapPingAgeTip`, `hud.pingAge` |
 | End-screen recap | **OK** — standing units/buildings from match-summary `*Left` counts (no invented deaths) | `endScreen`, `end.recap` |
 | End kill ratio | **OK** — kills/losses tallied on unit remove; end panel shows the line | `playerUnitKills`, `playerUnitLosses`, `end.killRatio` |
