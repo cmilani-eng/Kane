@@ -1,6 +1,7 @@
 /**
  * Minimap hero status tip (presentation only).
  * Ready before recruit, Down after death, sector while alive.
+ * Distinct surface from pause Hero · Ready / Down / sector tip.
  */
 import { mapSectorAt, type MapSectorId } from '../../gameplay/battlefield/mapSector';
 import { findPlayerHero } from '../../gameplay/battlefield/battlefieldHeroes';
