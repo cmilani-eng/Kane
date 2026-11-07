@@ -1,7 +1,10 @@
 /**
  * Pause overlay supply tip (HUD label only).
- * Format: Supply · used/cap — distinct from Pop · n, minimap Supply tip,
- * and stock/HUD formatSupplyLine (spaced slash).
+ * Format: Supply · used/cap — middot (U+00B7).
+ * Living pop vs unitCap frozen at pause open — distinct from Pop · /
+ * Army · / Selected · pause peers and stock/HUD formatSupplyLine
+ * (spaced slash); same en/pt-BR/es copy as minimap Supply tip
+ * (`hud.minimapSupply` / `minimapSupplyTipText`), own key.
  */
 import { t } from '../../i18n';
 
