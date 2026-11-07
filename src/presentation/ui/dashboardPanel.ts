@@ -54,6 +54,17 @@ export function accountShownName(
   return anonymous ? t('account.guestAnon') : t('auth.displayPlaceholder');
 }
 
+/** Menu chip. Real names stay as written and clip to 12. Guest and Commander are chrome. */
+export function accountChipName(
+  name: string | null | undefined,
+  anonymous: boolean,
+): string {
+  const raw = name?.trim();
+  if (raw && !ENGLISH_NAME_FALLBACK.has(raw)) return raw.slice(0, 12);
+  const label = anonymous ? t('account.guestShort') : t('auth.displayPlaceholder');
+  return label.slice(0, 12);
+}
+
 export function accountOverviewText(stats: StatsOverviewDoc): string {
   const lines = [
     t('stats.played', { n: stats.gamesStarted }),
