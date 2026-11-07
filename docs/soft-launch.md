@@ -170,7 +170,7 @@ This doc is the honest gate before any public preview URL.
 | Unit train duration tip | **OK** — selection stats show catalog full train seconds (same-type only; omitted when 0) | `unitTrainDuration`, `sel.trainDurationTip` |
 | Unit role tip | **OK** — selection stats show Role · worker/combat/hero (U+00B7) from catalog duty flags; en/pt-BR/es middot; distinct from Armor · class / Species · / Name · | `unitRole`, `sel.roleTip` |
 | Unit species tip | **OK** — selection stats show Species · name (U+00B7) when selection shares one species; en/pt-BR/es middot; distinct from Role · / Name · / Armor · class | `unitSpeciesTip`, `sel.speciesTip` |
-| Unit name tip | **OK** — selection stats show catalog unit name tip when selection shares one type | `unitNameTip`, `sel.nameTip` |
+| Unit name tip | **OK** — selection stats show Name · catalog name (U+00B7) when selection shares one type; en/pt-BR/es middot; distinct from Species · / Role · / Armor · class | `unitNameTip`, `sel.nameTip` |
 | Build remain secs | **OK** — incomplete building selection shows construction seconds beside % | `buildRemainSec`, `sel.buildingPct` |
 | Building build progress tip | **OK** — incomplete building selection stats show Build · pct% · secs left (U+00B7) from live buildPct + remainSec; en/pt-BR/es middot; distinct from catalog Build · {n}s / Building pct · secs / Size · / Queue · | `buildingBuildProgress`, `sel.buildProgressTip` |
 | Place build secs | **OK** — place-mode cost strip shows full construction seconds when buildMs > 0 | `hud.placeBuild`, `setPlacementCost` |
