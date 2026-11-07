@@ -21,7 +21,7 @@ This doc is the honest gate before any public preview URL.
 | Master volume | **OK** — mute-aware slider on menu + pause; persists `kane.masterVolume.v1` | `audioContext`, `volumeSlider`, pause/menu |
 | Reduce motion | **OK** — pause toggle disables under-attack camera nudge + quiets fog scout pulses; persists `kane.reduceMotion.v1` | `motionPrefs`, `pauseMenu`, `scoutPulseDraw`, `BattlefieldScene` |
 | Scout sector label | **OK** — fog scout pulse sets a brief HUD chip with 3×3 sector (NW…SE) | `mapSectorAt`, `scoutSectorHint`, `hud.scoutSector` |
-| Minimap scout pulse label | **OK** — fog scout pulse shows short Scout · sector mark (distinct from age tip / Cam · / Fog tips) | `minimapScoutPulseLabel`, `hud.minimapScoutPulse` |
+| Minimap scout pulse label | **OK** — fog scout pulse shows short Scout · sector (U+00B7) mark; en/pt-BR/es middot; distinct from Scout · sector · ns age / Fog age · / Fog · % / Cam · | `minimapScoutPulseLabel`, `hud.minimapScoutPulse` |
 | Minimap scout sector tip | **OK** — fog scout pulse minimap label shows Scout · sector · ns (U+00B7) age tip; en/pt-BR/es middot; distinct from sector-only Scout · / Fog age · / Fog · % / pause Cam · | `minimapFogRevealAgeTip`, `hud.fogRevealAge` |
 | Minimap camera viewport label | **OK** — gold camera frame on the minimap shows a short View mark | `minimapCameraViewportLabel`, `hud.minimapCamView` |
 | Minimap camera sector tip | **OK** — camera frame shows Cam · sector (U+00B7) from view-center 3×3; en/pt-BR/es middot; same copy as pause Cam tip, distinct key/surface (`hud.minimapCamSector` vs `pause.camSectorTip`); distinct from View mark / Scout · / Focus · | `minimapCameraSectorTip`, `hud.minimapCamSector` |
