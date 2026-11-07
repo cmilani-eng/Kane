@@ -93,6 +93,16 @@ function gameCard(
   ].join(' ');
   play.textContent = playLabel;
 
+  if (game.cover) {
+    // Decorative: the card's aria-label already names the game.
+    const cover = document.createElement('img');
+    cover.className = 'mb-4 aspect-[5/3] w-full rounded-2xl object-cover';
+    cover.src = game.cover;
+    cover.alt = '';
+    cover.loading = 'lazy';
+    cover.decoding = 'async';
+    link.append(cover);
+  }
   link.append(pills, title, description);
   if (blocked) {
     const notice = document.createElement('p');
