@@ -342,10 +342,11 @@ function applyAbility(
     rt.orderUntilMs = 5000;
   }
   if (id === 'emergency_repairs') {
+    const healHp = Math.max(0, def.abilities[slot].healHp ?? 0);
     for (const b of world.buildings) {
       if (b.team !== hero.team) continue;
       if (dist(hero.x, hero.y, b.x, b.y) > radius) continue;
-      b.hp = Math.min(b.maxHp, b.hp + 180);
+      b.hp = Math.min(b.maxHp, b.hp + healHp);
     }
   }
   if (id === 'royal_decree') {

@@ -13,11 +13,11 @@ import {
   type BuildingTypeId,
 } from '../../data/buildings';
 import { type SpeciesId } from '../../data/speciesStub';
-import { getUnitType } from '../../data/units';
 import {
   getAiDifficulty,
   type AiDifficultyId,
 } from '../../gameplay/battlefield/aiDifficulty';
+import { nextDifficultyAfterWin } from '../../gameplay/battlefield/practiceStepUp';
 import {
   createAiState,
   tickBattlefieldAi,
@@ -45,6 +45,7 @@ import { Minimap } from '../ui/minimap';
 import {
   buildSelectionView,
   flashQueueCancel,
+  flashStanceHotkey,
   mountSelectionPanel,
   renderSelectionPanel,
   selectionPanelInsetPx,
@@ -165,6 +166,8 @@ import { RtsCamera } from '../camera/rtsCamera';
 import { createSkirmishMap } from '../maps/mapManager';
 import { FogOverlay } from '../ui/fogOverlay';
 import { showKaneEndScreen } from '../ui/endScreen';
+import { resolveMissionObjective } from '../ui/missionObjective';
+import { minimapCameraSectorAt } from '../ui/minimapCameraSectorTip';
 import { PauseMenu } from '../ui/pauseMenu';
 import { publishMatchStock, resetMatchStock } from '../ui/matchUiStore';
 import {
@@ -182,7 +185,10 @@ import {
   noteEnemyBuildingVisible,
   pruneBuildingGhosts,
 } from '../fx/buildingLastSeenGhost';
-import { drawPlacementGhost } from '../buildings/placementGhost';
+import {
+  drawPlacementGhost,
+  placementFootprintSize,
+} from '../buildings/placementGhost';
 import { drawProductionQueueFeedback } from '../buildings/productionQueueFeedback';
 import { drawResourceNodeSilhouette } from '../resources/resourceNodeSilhouette';
 import { drawCombatFxList } from '../fx/combatFxDraw';
@@ -202,6 +208,8 @@ import { drawControlGroupFxList } from '../fx/controlGroupFeedback';
 import { drawStopFxList } from '../fx/stopCommandFeedback';
 import { drawWaypointMarkers } from '../fx/waypointMarkersDraw';
 import { ControlGroupBadgeLayer } from '../fx/controlGroupBadges';
+import { RallyDistanceLabel } from '../fx/rallyDistanceLabel';
+import { BuildingGhostAgeLabels } from '../fx/buildingGhostAgeLabel';
 import { drawBuildingRallyMarkers } from '../fx/rallyMarkerDraw';
 import { drawGatherTargetHighlights } from '../fx/gatherTargetHighlight';
 import { drawAttentionPingList } from '../fx/attentionPingDraw';
@@ -257,6 +265,8 @@ export class BattlefieldScene extends Phaser.Scene {
   private coach!: TutorialCoach;
   private coreBanner!: CoreVictoryBanner;
   private groupBadges!: ControlGroupBadgeLayer;
+  private rallyDistLabel!: RallyDistanceLabel;
+  private ghostAgeLabels!: BuildingGhostAgeLabels;
   private shiftKey: Phaser.Input.Keyboard.Key | null = null;
   private ctrlKey: Phaser.Input.Keyboard.Key | null = null;
   private altKey: Phaser.Input.Keyboard.Key | null = null;
@@ -388,16 +398,14 @@ export class BattlefieldScene extends Phaser.Scene {
       cancelQueue: (index) => {
         const b = this.selectedBuilding;
         if (!b || b.team !== 'player') return;
-        const q = b.trainQueue;
-        const i =
-          index == null
-            ? q.length - 1
-            : Math.max(0, Math.min(q.length - 1, Math.floor(index)));
-        const typeId = q[i];
-        const name = typeId ? getUnitType(typeId).name : undefined;
-        if (cancelQueuedTrain(this.world, b, index)) {
+        const refunded = cancelQueuedTrain(this.world, b, index);
+        if (refunded) {
           playSfx('ui');
-          flashQueueCancel(name);
+          flashQueueCancel({
+            unitName: refunded.unitName,
+            gold: refunded.gold,
+            crystals: refunded.crystals,
+          });
         } else {
           playSfx('ui');
         }
@@ -480,12 +488,18 @@ export class BattlefieldScene extends Phaser.Scene {
       this.fogOverlay.gfx,
     ]);
     this.groupBadges = new ControlGroupBadgeLayer(this, this.hudCam);
-    this.events.once(Phaser.Scenes.Events.SHUTDOWN, () =>
-      this.groupBadges.destroy(),
-    );
-    this.events.once(Phaser.Scenes.Events.DESTROY, () =>
-      this.groupBadges.destroy(),
-    );
+    this.rallyDistLabel = new RallyDistanceLabel(this, this.hudCam);
+    this.ghostAgeLabels = new BuildingGhostAgeLabels(this, this.hudCam);
+    this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => {
+      this.groupBadges.destroy();
+      this.rallyDistLabel.destroy();
+      this.ghostAgeLabels.destroy();
+    });
+    this.events.once(Phaser.Scenes.Events.DESTROY, () => {
+      this.groupBadges.destroy();
+      this.rallyDistLabel.destroy();
+      this.ghostAgeLabels.destroy();
+    });
     const onResize = (): void => {
       this.hud.layout();
       layoutStockStrip(this.scale.width, this.scale.height);
@@ -566,12 +580,15 @@ export class BattlefieldScene extends Phaser.Scene {
       if (this.paused || this.matchResult !== 'ongoing') return;
       if (this.world.speciesId === 'nobles') {
         toggleFormationSelected(this.world);
+        flashStanceHotkey('formation');
+        playSfx('ui');
       }
     });
     this.input.keyboard?.on('keydown-M', () => {
       if (this.paused || this.matchResult !== 'ongoing') return;
       if (this.world.speciesId === 'weirdos') {
         toggleMutationSelected(this.world);
+        flashStanceHotkey('mutation');
         playSfx('ui');
       }
     });
@@ -579,6 +596,7 @@ export class BattlefieldScene extends Phaser.Scene {
       if (this.paused || this.matchResult !== 'ongoing') return;
       if (this.world.speciesId === 'brutes') {
         toggleRageSelected(this.world);
+        flashStanceHotkey('rage');
         playSfx('ui');
       }
     });
@@ -715,11 +733,23 @@ export class BattlefieldScene extends Phaser.Scene {
   }
 
   private pauseSnapshot() {
+    const cam = this.cameras.main;
+    const viewW = cam.width / cam.zoom;
+    const viewH = cam.height / cam.zoom;
     return {
       elapsedMs: this.matchElapsedMs,
       supplyCurrent: livingByTeam(this.world, 'player'),
       supplyCap: flags.unitCap,
       mapId: this.world.mapId,
+      difficulty: this.world.aiDifficulty,
+      speciesId: this.world.speciesId,
+      objectiveId: resolveMissionObjective(this.world.aiDifficulty),
+      camSector: minimapCameraSectorAt(
+        cam.scrollX,
+        cam.scrollY,
+        viewW,
+        viewH,
+      ),
     };
   }
 
@@ -1406,27 +1436,36 @@ export class BattlefieldScene extends Phaser.Scene {
       durationMs: Math.max(0, Math.floor(this.matchElapsedMs)),
       playerUnitsLeft,
       playerBuildingsLeft,
+      playerUnitKills: this.world.playerUnitKills,
+      playerUnitLosses: this.world.playerUnitLosses,
+      playerUnitsTrained: this.world.playerUnitsTrained,
+      playerBuildingsRaised: this.world.playerBuildingsRaised,
+      playerGoldGathered: this.world.playerGoldGathered,
+      playerCrystalsGathered: this.world.playerCrystalsGathered,
       reason: matchEndReason(this.world, result),
       onMenu: () => this.scene.start('Menu'),
       onRematch: () => this.rematchSameSkirmish(),
       difficulty: this.world.aiDifficulty,
-      onStepUp:
-        result === 'victory' && this.world.aiDifficulty === 'practice'
-          ? () => this.stepUpFromPractice()
-          : undefined,
+      onStepUp: (() => {
+        const next = nextDifficultyAfterWin(
+          result === 'victory',
+          this.world.aiDifficulty,
+        );
+        return next ? () => this.stepUpDifficulty(next) : undefined;
+      })(),
       ignoreOnMain: (objs) => {
         this.cameras.main.ignore(this.add.container(0, 0, objs));
       },
     });
   }
 
-  /** Practice win — same species and map, one step up to Easy. */
-  private stepUpFromPractice(): void {
+  /** Win — same species and map, one step up the difficulty ladder. */
+  private stepUpDifficulty(difficulty: AiDifficultyId): void {
     const { species, mapId } = rematchPrefsFromWorld(this.world);
-    rememberMatchPrefs(species, 'easy', mapId);
+    rememberMatchPrefs(species, difficulty, mapId);
     recordGameStarted(species);
     void maybeRecordCloudGameStarted(species);
-    this.scene.start('Battlefield', { species, difficulty: 'easy', mapId });
+    this.scene.start('Battlefield', { species, difficulty, mapId });
   }
 
   /** End-screen Rematch — same species + difficulty + map, no menu hop. */
@@ -1457,6 +1496,13 @@ export class BattlefieldScene extends Phaser.Scene {
     const won = result === 'victory';
     const species = this.world.speciesId;
     const difficulty = this.world.aiDifficulty;
+    rememberMatchPrefs(
+      species,
+      difficulty,
+      this.world.mapId,
+      durationMs,
+      won,
+    );
     void writeMatchSummaryFunctionStub({
       id,
       version: 1,
@@ -1543,11 +1589,17 @@ export class BattlefieldScene extends Phaser.Scene {
       const gold = def.cost.gold ?? 0;
       const crystals = def.cost.magic_crystals ?? 0;
       const canPay = canAfford(walletOf(this.world, 'player'), def.cost);
+      const foot = placementFootprintSize(this.placeType);
+      const buildSec =
+        def.buildMs > 0 ? Math.max(0, Math.ceil(def.buildMs / 1000)) : 0;
       this.hud.setPlacementCost({
         name: def.name,
         gold,
         crystals,
         canPay,
+        cols: foot.cols,
+        rows: foot.rows,
+        buildSec,
       });
     } else {
       this.hud.setPlacementCost(null);
@@ -1566,6 +1618,7 @@ export class BattlefieldScene extends Phaser.Scene {
       crystals: wallet.magic_crystals,
       supply: livingByTeam(this.world, 'player'),
       supplyCap: flags.unitCap,
+      nowMs: this.matchElapsedMs,
     });
   }
 
@@ -1766,6 +1819,13 @@ export class BattlefieldScene extends Phaser.Scene {
 
     drawGatherTargetHighlights(g, this.world, this.animTimeMs, view);
     this.groupBadges.sync(this.world, this.controlGroups, view);
+    this.rallyDistLabel.sync(this.selectedBuilding, view);
+    this.ghostAgeLabels.sync(
+      this.world,
+      this.enemyBuildingLastSeen,
+      this.animTimeMs,
+      view,
+    );
   }
 
 }

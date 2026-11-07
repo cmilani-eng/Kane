@@ -58,6 +58,15 @@ describe('catalogs', () => {
     expect(translate('es', 'end.victory')).toBe('VICTORIA');
   });
 
+  it('mentions Home on the empty-selection tip', () => {
+    expect(translate('en-GB', 'sel.emptyTip')).toContain('Home');
+    expect(translate('en-GB', 'sel.emptyTip')).toContain('Tab');
+    expect(translate('pt-BR', 'sel.emptyTip')).toContain('Home');
+    expect(translate('pt-BR', 'sel.emptyTip')).toContain('Tab');
+    expect(translate('es', 'sel.emptyTip')).toContain('Home');
+    expect(translate('es', 'sel.emptyTip')).toContain('Tab');
+  });
+
   it('formats the selected map tip from label + blurb', () => {
     expect(
       translate('en-GB', 'menu.mapTip', {

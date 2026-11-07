@@ -14,4 +14,21 @@ describe('pause map line', () => {
       'Mapa  ·  Cresta',
     );
   });
+
+  it('pairs species, map, and difficulty on the pause setup line', () => {
+    expect(
+      translate('en-GB', 'pause.setup', {
+        species: 'The Brutes',
+        map: 'Gap',
+        difficulty: 'Hard',
+      }),
+    ).toBe('The Brutes  ·  Gap  ·  Hard');
+    expect(
+      translate('pt-BR', 'pause.setup', {
+        species: 'Os Brutos',
+        map: 'Brecha',
+        difficulty: 'Difícil',
+      }),
+    ).toBe('Os Brutos  ·  Brecha  ·  Difícil');
+  });
 });

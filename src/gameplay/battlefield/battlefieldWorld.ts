@@ -145,10 +145,14 @@ export interface BattlefieldWorld {
   controlGroupFx: import('./battlefieldControlGroupFx').ControlGroupFx[];
   /** Fog scout reveal pulses (new explored cells). */
   scoutPulses: import('./battlefieldScoutPulse').ScoutPulse[];
+  /** Brief HUD sector label after a scout pulse. */
+  scoutSectorHint: import('./battlefieldScoutPulse').ScoutSectorHint | null;
   /** Move / attack-move ground waypoints. */
   waypointMarkers: import('./battlefieldWaypointMarkers').WaypointMarker[];
   /** Chat-free attention pings (look-here marks). */
   attentionPings: import('./battlefieldAttentionPing').AttentionPing[];
+  /** Brief HUD / minimap sector tip after a hold-to-ping. */
+  attentionPingSectorHint: import('./battlefieldAttentionPing').AttentionPingSectorHint | null;
   /** Capturable CORE fragments (shattered KANE CORE). */
   coreFragments: import('./battlefieldCoreFragments').CoreFragment[];
   /** Presentation cue — claim SFX window. */
@@ -159,6 +163,18 @@ export interface BattlefieldWorld {
   enemyCoreHoldMs: number;
   /** Player under-attack edge alert (enemy damage on friendlies). */
   underAttackAlert: import('./battlefieldUnderAttack').UnderAttackAlert;
+  /** Enemy units removed this match (player kills). */
+  playerUnitKills: number;
+  /** Player units removed this match (losses). */
+  playerUnitLosses: number;
+  /** Player units finished from production queues this match. */
+  playerUnitsTrained: number;
+  /** Player buildings finished from construction this match (not starting halls). */
+  playerBuildingsRaised: number;
+  /** Gold deposited at Keep this match (player gathers). */
+  playerGoldGathered: number;
+  /** Magic crystals deposited at Keep this match (player gathers). */
+  playerCrystalsGathered: number;
   /** Player fog of war (explored / visible). */
   fog: import('./battlefieldFog').FogState;
   /** Skirmish AI difficulty for this match. */
@@ -430,12 +446,20 @@ export function createBattlefieldWorld(
     stopFx: [],
     controlGroupFx: [],
     scoutPulses: [],
+    scoutSectorHint: null,
     waypointMarkers: [],
     attentionPings: [],
+    attentionPingSectorHint: null,
     coreFragments: [],
     coreClaimFlashMs: 0,
     playerCoreHoldMs: 0,
     enemyCoreHoldMs: 0,
+    playerUnitKills: 0,
+    playerUnitLosses: 0,
+    playerUnitsTrained: 0,
+    playerBuildingsRaised: 0,
+    playerGoldGathered: 0,
+    playerCrystalsGathered: 0,
     underAttackAlert: {
       lifeMs: 0,
       maxLifeMs: 520,

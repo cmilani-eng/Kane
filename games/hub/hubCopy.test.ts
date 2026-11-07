@@ -1,6 +1,12 @@
 import { beforeEach, describe, expect, it } from 'vitest';
-import { resetLocaleForTests, setLocale } from '../../src/i18n';
-import { hubBlurb, hubChrome } from './hubCopy';
+import { resetLocaleForTests, setLocale, t } from '../../src/i18n';
+import {
+  hubBlurb,
+  hubBlobPathTip,
+  hubChrome,
+  hubFooterYear,
+  hubKanePathTip,
+} from './hubCopy';
 
 function memoryStorage(): Storage {
   const data = new Map<string, string>();
@@ -33,12 +39,54 @@ describe('hub copy', () => {
     setLocale('es');
     const chrome = hubChrome();
     expect(chrome.title).toBe('Juegos');
+    expect(chrome.documentTitle).toBe('KANE · Selector de juegos');
+    expect(chrome.meta).toBe('KANE · Selector de juegos — RTS de fantasía y más.');
     expect(chrome.play).toBe('Jugar');
-    expect(chrome.experimental).toBe('Experimental');
+    expect(chrome.subtitle).toContain('Enter');
+    expect(chrome.live).toBe('En vivo');
+    expect(chrome.experimental).toBe('Prelanzamiento');
     expect(chrome.privacy).toBe('Privacidad');
+    expect(chrome.year).toMatch(/^© \d{4}$/);
     expect(hubBlurb('kane', 'English fallback')).toContain('especie');
     expect(hubBlurb('kane', 'English fallback')).not.toContain('Pick a species');
     expect(hubBlurb('blob-evolution', 'English fallback')).toContain('Ángel');
     expect(hubBlurb('later', 'Keep this')).toBe('Keep this');
+  });
+
+  it('formats the hub footer year from the calendar year', () => {
+    expect(hubFooterYear(2026)).toBe('© 2026');
+    expect(hubFooterYear(2031)).toBe('© 2031');
+  });
+
+  it('localizes the Live badge accessible label', () => {
+    expect(t('hub.liveAria')).toBe('Status: Live');
+    setLocale('pt-BR');
+    expect(t('hub.liveAria')).toBe('Estado: Ao vivo');
+  });
+
+  it('localizes the Soft launch badge accessible label', () => {
+    expect(t('hub.experimentalAria')).toBe('Status: Soft launch');
+    setLocale('es');
+    expect(t('hub.experimentalAria')).toBe('Estado: Prelanzamiento');
+  });
+
+  it('labels the Kane soft-launch play path on the hub card', () => {
+    setLocale('en-GB');
+    expect(hubKanePathTip()).toBe(
+      t('hub.kanePathTip', { path: '/kane/' }),
+    );
+    expect(hubKanePathTip()).toContain('/kane/');
+    setLocale('pt-BR');
+    expect(hubKanePathTip()).toContain('/kane/');
+  });
+
+  it('labels the Blob Evolution soft-launch play path on the hub card', () => {
+    setLocale('en-GB');
+    expect(hubBlobPathTip()).toBe(
+      t('hub.blobPathTip', { path: '/blob-evolution/' }),
+    );
+    expect(hubBlobPathTip()).toContain('/blob-evolution/');
+    setLocale('es');
+    expect(hubBlobPathTip()).toContain('/blob-evolution/');
   });
 });

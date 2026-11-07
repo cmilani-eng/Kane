@@ -5,9 +5,11 @@ import {
   LOCALE_CHOICES,
   setLocale,
   subscribeLocale,
+  t,
 } from '../../src/i18n';
 import { GAMES, type GameEntry } from '../registry';
-import { hubBlurb, hubChrome } from './hubCopy';
+import { hubBlurb, hubBlobPathTip, hubChrome, hubKanePathTip } from './hubCopy';
+import { gamePlayHref, hubLegalHref } from './hubLinks';
 
 const PILL =
   'inline-block rounded-full px-[11px] py-1.5 text-xs font-extrabold uppercase tracking-[0.08em]';
@@ -19,30 +21,69 @@ function pill(text: string, tone: string): HTMLSpanElement {
   return el;
 }
 
-function gameCard(game: GameEntry, playLabel: string, experimental: string): HTMLLIElement {
+function statusPill(
+  status: GameEntry['status'],
+  live: string,
+  softLaunch: string,
+): HTMLSpanElement {
+  if (status === 'live') {
+    const el = pill(live, 'bg-[rgb(123_224_255/0.13)] text-accent');
+    el.setAttribute('aria-label', t('hub.liveAria'));
+    return el;
+  }
+  const el = pill(softLaunch, 'bg-gold-bg text-gold');
+  el.setAttribute('aria-label', t('hub.experimentalAria'));
+  return el;
+}
+
+function gameCard(
+  game: GameEntry,
+  playLabel: string,
+  live: string,
+  softLaunch: string,
+): HTMLLIElement {
   const item = document.createElement('li');
   const link = document.createElement('a');
   link.className = [
-    'group flex h-full flex-col items-center rounded-3xl border border-white/16 p-[26px]',
+    'hub-card group flex h-full flex-col items-center rounded-3xl border border-white/16 p-[26px]',
     'bg-linear-145 from-panel-from to-panel-to text-center text-ink no-underline shadow-panel',
-    'focus-visible:outline-2 focus-visible:outline-offset-3 focus-visible:outline-accent',
   ].join(' ');
-  link.href = `./${game.id}/`;
+  link.href = gamePlayHref(game.id);
+  link.setAttribute(
+    'aria-label',
+    t('hub.cardOpen', { title: game.title, play: playLabel }),
+  );
 
   const pills = document.createElement('div');
   pills.className = 'flex flex-wrap justify-center gap-1.5';
-  pills.append(pill(game.tagline, 'bg-pill-bg text-pill'));
-  if (game.status === 'experimental') {
-    pills.append(pill(experimental, 'bg-gold-bg text-gold'));
-  }
+  pills.append(
+    pill(game.tagline, 'bg-pill-bg text-pill'),
+    statusPill(game.status, live, softLaunch),
+  );
 
   const title = document.createElement('h2');
   title.className = 'mt-3 text-[clamp(28px,6vw,36px)] font-bold tracking-[-1.5px]';
   title.textContent = game.title;
 
   const description = document.createElement('p');
-  description.className = 'mt-2 mb-[18px] leading-normal text-muted';
+  description.className = 'mt-2 mb-2 leading-normal text-muted';
   description.textContent = hubBlurb(game.id, game.description);
+
+  const pathTipText =
+    game.id === 'kane'
+      ? hubKanePathTip()
+      : game.id === 'blob-evolution'
+        ? hubBlobPathTip()
+        : null;
+  const pathTip = pathTipText
+    ? (() => {
+        const tip = document.createElement('p');
+        tip.className = 'mb-[18px] text-xs font-semibold tracking-wide text-gold';
+        tip.textContent = pathTipText;
+        return tip;
+      })()
+    : null;
+  if (!pathTip) description.classList.add('mb-[18px]');
 
   const play = document.createElement('span');
   play.className = [
@@ -53,7 +94,9 @@ function gameCard(game: GameEntry, playLabel: string, experimental: string): HTM
   ].join(' ');
   play.textContent = playLabel;
 
-  link.append(pills, title, description, play);
+  link.append(pills, title, description);
+  if (pathTip) link.append(pathTip);
+  link.append(play);
   item.append(link);
   return item;
 }
@@ -86,16 +129,23 @@ function text(id: string): HTMLElement {
 function render(): void {
   applyDocumentLanguage();
   const chrome = hubChrome();
-  document.title = `KANE · ${chrome.title}`;
-  document.querySelector('meta[name="description"]')?.setAttribute('content', chrome.meta);
+  document.title = chrome.documentTitle;
+  text('hub-meta').setAttribute('content', chrome.meta);
   text('hub-locale-label').textContent = chrome.language;
   text('hub-title').textContent = chrome.title;
   text('hub-subtitle').textContent = chrome.subtitle;
-  text('hub-privacy').textContent = chrome.privacy;
-  text('hub-terms').textContent = chrome.terms;
+  text('hub-year').textContent = chrome.year;
+  const privacy = text('hub-privacy') as HTMLAnchorElement;
+  const terms = text('hub-terms') as HTMLAnchorElement;
+  privacy.textContent = chrome.privacy;
+  terms.textContent = chrome.terms;
+  privacy.href = hubLegalHref('privacy');
+  terms.href = hubLegalHref('terms');
   renderLocale(text('hub-locale'));
   text('game-list').replaceChildren(
-    ...GAMES.map((game) => gameCard(game, chrome.play, chrome.experimental)),
+    ...GAMES.map((game) =>
+      gameCard(game, chrome.play, chrome.live, chrome.experimental),
+    ),
   );
 }
 

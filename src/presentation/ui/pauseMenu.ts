@@ -6,13 +6,33 @@
 import Phaser from 'phaser';
 import { BRAND } from '../../config/brand';
 import { isReduceMotion, setReduceMotion } from '../../database/motionPrefs';
-import { mapCopy, subscribeLocale, t } from '../../i18n';
+import {
+  difficultyCopy,
+  mapCopy,
+  speciesName,
+  subscribeLocale,
+  t,
+} from '../../i18n';
 import type { SkirmishMapId } from '../../data/skirmishMaps';
+import type { SpeciesId } from '../../data/speciesStub';
+import type { AiDifficultyId } from '../../gameplay/battlefield/aiDifficulty';
 import { isSfxMuted, playSfx, setSfxMuted } from '../audio/sfx';
 import { formatMatchClock } from './battlefieldHud';
 import { addLocalePicker } from './localePicker';
 import {
+  missionStateForDifficulty,
+  pauseObjectiveTipLine,
+  type MissionObjectiveId,
+} from './missionObjective';
+import { pauseCameraSectorTipLine } from './pauseCameraSectorTip';
+import { pauseDifficultyTipLine } from './pauseDifficultyTip';
+import { pauseMapTipLine } from './pauseMapTip';
+import { pauseSpeciesMottoTipLine } from './pauseSpeciesMottoTip';
+import { pauseSupplyRatioTipLine } from './pauseSupplyRatioTip';
+import type { MapSectorId } from '../../gameplay/battlefield/mapSector';
+import {
   SUPPLY_TONE_COLOR,
+  formatSupplyLine,
   supplyTone,
 } from './supplyTone';
 import { createVolumeSlider, type VolumeSliderHandle } from './volumeSlider';
@@ -22,6 +42,12 @@ export interface PauseMenuSnapshot {
   supplyCurrent: number;
   supplyCap: number;
   mapId: SkirmishMapId;
+  difficulty: AiDifficultyId;
+  speciesId: SpeciesId;
+  /** Current / last mission objective for the Objective tip. */
+  objectiveId?: MissionObjectiveId;
+  /** Camera view-center 3×3 sector frozen when pause opens. */
+  camSector?: MapSectorId;
 }
 
 export interface PauseMenuOpts {
@@ -50,6 +76,8 @@ export class PauseMenu {
     supplyCurrent: 0,
     supplyCap: 36,
     mapId: 'crossing',
+    difficulty: 'normal',
+    speciesId: 'nobles',
   };
 
   constructor(opts: PauseMenuOpts) {
@@ -145,35 +173,155 @@ export class PauseMenu {
       .setDepth(222);
 
     const clock = formatMatchClock(this.snapshot.elapsedMs);
-    const mapLine = t('pause.map', { name: mapCopy(this.snapshot.mapId).label });
-    const supply = t('pause.supply', {
-      current: this.snapshot.supplyCurrent,
-      cap: this.snapshot.supplyCap,
+    const elapsedLine = t('pause.elapsed', { clock });
+    const mapTip = pauseMapTipLine(this.snapshot.mapId);
+    const mottoTip = pauseSpeciesMottoTipLine(this.snapshot.speciesId);
+    const difficultyTip = pauseDifficultyTipLine(this.snapshot.difficulty);
+    const mission =
+      this.snapshot.objectiveId != null
+        ? { objectiveId: this.snapshot.objectiveId }
+        : missionStateForDifficulty(this.snapshot.difficulty);
+    const objectiveTip = pauseObjectiveTipLine(mission);
+    const setupLine = t('pause.setup', {
+      species: speciesName(this.snapshot.speciesId),
+      map: mapCopy(this.snapshot.mapId).label,
+      difficulty: difficultyCopy(this.snapshot.difficulty).label,
     });
+    const camSectorTip =
+      this.snapshot.camSector != null
+        ? pauseCameraSectorTipLine(this.snapshot.camSector)
+        : '';
+    const supplyRatioTip = pauseSupplyRatioTipLine(
+      this.snapshot.supplyCurrent,
+      this.snapshot.supplyCap,
+    );
+    const supply = formatSupplyLine(
+      this.snapshot.supplyCurrent,
+      this.snapshot.supplyCap,
+    );
     const tone = supplyTone(
       this.snapshot.supplyCurrent,
       this.snapshot.supplyCap,
     );
-    const snap = this.scene.add
-      .text(
-        cx,
-        short ? top + 74 : cy - panelH * 0.27,
-        `${t('pause.match', { clock })}\n${mapLine}\n${supply}`,
-        {
-          fontFamily: 'system-ui, sans-serif',
-          fontSize: '14px',
-          color: SUPPLY_TONE_COLOR[tone],
-          align: 'center',
-          lineSpacing: 6,
-        },
-      )
+    const yElapsed = short ? top + 58 : cy - panelH * 0.34;
+    const yMap = short ? top + 76 : cy - panelH * 0.28;
+    const yMotto = short ? top + 94 : cy - panelH * 0.23;
+    const yDifficulty = short ? top + 112 : cy - panelH * 0.18;
+    const yObjective = short ? top + 128 : cy - panelH * 0.13;
+    const yCamSector = short ? top + 142 : cy - panelH * 0.085;
+    const ySetup = short ? top + 156 : cy - panelH * 0.04;
+    const ySupplyRatio = short ? top + 170 : cy + panelH * 0.005;
+    const ySupply = short ? top + 184 : cy + panelH * 0.05;
+    const elapsed = this.scene.add
+      .text(cx, yElapsed, elapsedLine, {
+        fontFamily: 'system-ui, sans-serif',
+        fontSize: short ? '15px' : '16px',
+        color: '#f5e6c8',
+        align: 'center',
+      })
       .setOrigin(0.5)
       .setScrollFactor(0)
       .setDepth(222);
-    this.root.push(title, brand, snap);
+    const mapLine = this.scene.add
+      .text(cx, yMap, mapTip, {
+        fontFamily: 'system-ui, sans-serif',
+        fontSize: '13px',
+        color: '#c8d8e8',
+        align: 'center',
+      })
+      .setOrigin(0.5)
+      .setScrollFactor(0)
+      .setDepth(222);
+    const motto = this.scene.add
+      .text(cx, yMotto, mottoTip, {
+        fontFamily: 'system-ui, sans-serif',
+        fontSize: short ? '11px' : '12px',
+        color: '#a8b8c8',
+        align: 'center',
+        wordWrap: { width: panelW - 40 },
+      })
+      .setOrigin(0.5)
+      .setScrollFactor(0)
+      .setDepth(222);
+    const difficultyLine = this.scene.add
+      .text(cx, yDifficulty, difficultyTip, {
+        fontFamily: 'system-ui, sans-serif',
+        fontSize: short ? '11px' : '12px',
+        color: '#c8d8e8',
+        align: 'center',
+        wordWrap: { width: panelW - 40 },
+      })
+      .setOrigin(0.5)
+      .setScrollFactor(0)
+      .setDepth(222);
+    const objectiveLine = this.scene.add
+      .text(cx, yObjective, objectiveTip, {
+        fontFamily: 'system-ui, sans-serif',
+        fontSize: short ? '11px' : '12px',
+        color: '#c8d8e8',
+        align: 'center',
+        wordWrap: { width: panelW - 40 },
+      })
+      .setOrigin(0.5)
+      .setScrollFactor(0)
+      .setDepth(222);
+    const camSectorLine = this.scene.add
+      .text(cx, yCamSector, camSectorTip, {
+        fontFamily: 'system-ui, sans-serif',
+        fontSize: short ? '11px' : '12px',
+        color: '#c8d8e8',
+        align: 'center',
+      })
+      .setOrigin(0.5)
+      .setScrollFactor(0)
+      .setDepth(222)
+      .setVisible(!!camSectorTip);
+    const setup = this.scene.add
+      .text(cx, ySetup, setupLine, {
+        fontFamily: 'system-ui, sans-serif',
+        fontSize: '13px',
+        color: '#9eb4c8',
+        align: 'center',
+      })
+      .setOrigin(0.5)
+      .setScrollFactor(0)
+      .setDepth(222);
+    const supplyRatioLine = this.scene.add
+      .text(cx, ySupplyRatio, supplyRatioTip, {
+        fontFamily: 'system-ui, sans-serif',
+        fontSize: short ? '11px' : '12px',
+        color: '#c8d8e8',
+        align: 'center',
+      })
+      .setOrigin(0.5)
+      .setScrollFactor(0)
+      .setDepth(222);
+    const supplyText = this.scene.add
+      .text(cx, ySupply, supply, {
+        fontFamily: 'system-ui, sans-serif',
+        fontSize: '14px',
+        color: SUPPLY_TONE_COLOR[tone],
+        align: 'center',
+      })
+      .setOrigin(0.5)
+      .setScrollFactor(0)
+      .setDepth(222);
+    this.root.push(
+      title,
+      brand,
+      elapsed,
+      mapLine,
+      motto,
+      difficultyLine,
+      objectiveLine,
+      camSectorLine,
+      setup,
+      supplyRatioLine,
+      supplyText,
+    );
 
-    // Short layout: clock + map + supply need a little more room before Resume.
-    const btnY0 = short ? top + 136 : cy - panelH * 0.12;
+    // Short layout: tips + setup + supply need room above buttons.
+    const btnY0 = short ? top + 208 : cy + panelH * 0.12;
     const gap = short ? 36 : Math.min(44, panelH * 0.11);
     this.root.push(
       this.makeBtn(cx, btnY0, t('pause.resume'), () => {

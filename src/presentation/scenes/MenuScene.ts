@@ -43,6 +43,7 @@ import { showAuthPanel, hideAuthPanel } from '../ui/authPanel';
 import { showCosmeticsPanel } from '../ui/cosmeticsPanel';
 import { showDashboardPanel } from '../ui/dashboardPanel';
 import { showLobbyPanel } from '../ui/lobbyPanel';
+import { hideMenuGamesLink, showMenuGamesLink } from '../ui/menuGamesLink';
 import { softLaunchStatusStrip } from '../ui/softLaunchStatus';
 import { showStatsPanel } from '../ui/statsPanel';
 import { addLocalePicker } from '../ui/localePicker';
@@ -61,7 +62,7 @@ export class MenuScene extends Phaser.Scene {
   /** Last played / remembered species — highlighted on the menu. */
   private lastSpecies: SpeciesId = 'nobles';
   private previewGfx: Phaser.GameObjects.Graphics | null = null;
-  private previewSlots: { id: SpeciesId; x: number; y: number }[] = [];
+  private previewSlots: { id: SpeciesId; x: number; y: number; scale: number }[] = [];
   private localeUnsub: (() => void) | null = null;
 
   constructor() {
@@ -70,6 +71,7 @@ export class MenuScene extends Phaser.Scene {
 
   create(): void {
     hideDomHud();
+    showMenuGamesLink();
     const prefs = loadMatchPrefs();
     this.difficulty = prefs.difficulty;
     this.mapId = prefs.mapId;
@@ -94,6 +96,7 @@ export class MenuScene extends Phaser.Scene {
       this.authUnsub = null;
       this.localeUnsub?.();
       this.localeUnsub = null;
+      hideMenuGamesLink();
       hideAuthPanel();
       hideMenuBannerStub();
     });
@@ -146,7 +149,7 @@ export class MenuScene extends Phaser.Scene {
     g.clear();
     const now = this.time.now;
     for (const s of this.previewSlots) {
-      drawSpeciesPreview(g, s.id, s.x, s.y, now, 1.05);
+      drawSpeciesPreview(g, s.id, s.x, s.y, now, s.scale);
     }
   }
 
@@ -483,31 +486,7 @@ export class MenuScene extends Phaser.Scene {
       )
       .setOrigin(0.5);
 
-    const legalY = height * 0.97;
-    const privacy = this.add
-      .text(width / 2 - 72, legalY, t('menu.privacy'), {
-        fontFamily: 'system-ui, sans-serif',
-        fontSize: '11px',
-        color: '#7ec8ff',
-      })
-      .setOrigin(0.5)
-      .setInteractive({ useHandCursor: true });
-    privacy.on('pointerup', () => {
-      playSfx('ui');
-      if (typeof window !== 'undefined') window.open('/privacy.html', '_blank');
-    });
-    const terms = this.add
-      .text(width / 2 + 72, legalY, t('menu.terms'), {
-        fontFamily: 'system-ui, sans-serif',
-        fontSize: '11px',
-        color: '#7ec8ff',
-      })
-      .setOrigin(0.5)
-      .setInteractive({ useHandCursor: true });
-    terms.on('pointerup', () => {
-      playSfx('ui');
-      if (typeof window !== 'undefined') window.open('/terms.html', '_blank');
-    });
+    this.addLegalFooter(width, height * 0.97);
   }
 
   /**
@@ -553,14 +532,38 @@ export class MenuScene extends Phaser.Scene {
     this.addTipsToggle(78, 42);
 
     this.drawDifficultyRow(width, 78, true);
-    this.drawMapRow(width, 116, true);
+
+    // Compact difficulty buttons hide blurbs — tip only for Practice / Easy / Hard.
+    const shortDiffTip =
+      this.difficulty === 'practice'
+        ? t('menu.practiceTip')
+        : this.difficulty === 'easy'
+          ? t('menu.easyTip')
+          : this.difficulty === 'hard'
+            ? t('menu.hardTip')
+            : null;
+    if (shortDiffTip) {
+      this.add
+        .text(width / 2, 98, shortDiffTip, {
+          fontFamily: 'system-ui, sans-serif',
+          fontSize: '10px',
+          color: '#c8d8a8',
+          align: 'center',
+          wordWrap: { width: Math.min(520, width * 0.92) },
+        })
+        .setOrigin(0.5);
+    }
+
+    const mapY = shortDiffTip ? 120 : 112;
+    this.drawMapRow(width, mapY, true);
 
     // Compact map buttons hide per-tile blurbs — surface the selected map here.
     const shortMap = mapCopy(this.mapId);
+    const mapTipY = mapY + 20;
     this.add
       .text(
         width / 2,
-        138,
+        mapTipY,
         t('menu.mapTip', { label: shortMap.label, blurb: shortMap.blurb }),
         {
           fontFamily: 'system-ui, sans-serif',
@@ -581,10 +584,10 @@ export class MenuScene extends Phaser.Scene {
       { id: 'nobles', fill: 0x3d7ea6, stroke: 0xf0c75e },
       { id: 'weirdos', fill: 0x7a4aa8, stroke: 0x6ecfbf },
     ];
-    const cardH = 90;
+    const cardH = shortDiffTip ? 84 : 90;
     const cardW = Math.min(210, (width - 56) / 3);
     const step = cardW + 12;
-    const cardY = 138 + 14 + cardH / 2;
+    const cardY = mapTipY + 12 + cardH / 2;
     cards.forEach((c, i) => {
       const s = speciesCopy(c.id);
       this.makeSpeciesCard(
@@ -648,29 +651,36 @@ export class MenuScene extends Phaser.Scene {
       })
       .setOrigin(0.5);
 
-    const legalY = height - 14;
-    const privacy = this.add
-      .text(width / 2 - 70, legalY, t('menu.privacy'), {
-        fontFamily: 'system-ui, sans-serif',
-        fontSize: '11px',
-        color: '#7ec8ff',
-      })
-      .setOrigin(0.5)
-      .setInteractive({ useHandCursor: true });
-    privacy.on('pointerup', () => {
-      playSfx('ui');
+    this.addLegalFooter(width, height - 14);
+  }
+
+  /** Games (hub) · Privacy · Terms footer row. */
+  private addLegalFooter(width: number, legalY: number): void {
+    const link = (
+      x: number,
+      label: string,
+      onClick: () => void,
+    ): Phaser.GameObjects.Text =>
+      this.add
+        .text(x, legalY, label, {
+          fontFamily: 'system-ui, sans-serif',
+          fontSize: '11px',
+          color: '#7ec8ff',
+        })
+        .setOrigin(0.5)
+        .setInteractive({ useHandCursor: true })
+        .on('pointerup', () => {
+          playSfx('ui');
+          onClick();
+        });
+
+    link(width / 2 - 100, t('menu.games'), () => {
+      if (typeof window !== 'undefined') window.location.assign('/');
+    });
+    link(width / 2, t('menu.privacy'), () => {
       if (typeof window !== 'undefined') window.open('/privacy.html', '_blank');
     });
-    const terms = this.add
-      .text(width / 2 + 70, legalY, t('menu.terms'), {
-        fontFamily: 'system-ui, sans-serif',
-        fontSize: '11px',
-        color: '#7ec8ff',
-      })
-      .setOrigin(0.5)
-      .setInteractive({ useHandCursor: true });
-    terms.on('pointerup', () => {
-      playSfx('ui');
+    link(width / 2 + 100, t('menu.terms'), () => {
       if (typeof window !== 'undefined') window.open('/terms.html', '_blank');
     });
   }
@@ -842,10 +852,12 @@ export class MenuScene extends Phaser.Scene {
       .rectangle(x, y, w, h, fill, 1)
       .setStrokeStyle(remembered ? 4 : 3, remembered ? 0xf0c75e : stroke)
       .setInteractive({ useHandCursor: true });
+    // Compact cards: the motto needs the full width, so the mascot sits beside the name.
     this.previewSlots.push({
       id: speciesId,
-      x: compact ? x - w / 2 + 36 : x,
-      y: compact ? y : y - 28,
+      x: compact ? x - w / 2 + 22 : x,
+      y: y - 28,
+      scale: compact ? 0.7 : 1.05,
     });
     this.add
       .text(x, compact ? y - 28 : y - 52, name, {

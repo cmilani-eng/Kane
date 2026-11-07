@@ -8,10 +8,30 @@ import {
   subscribeMatchStock,
   type MatchStock,
 } from './matchUiStore';
+import { stockDepositTipLine } from './stockDepositTip';
+import {
+  formatSupplyLine,
+  supplyTone,
+  type SupplyTone,
+} from './supplyTone';
 
 const ROOT_ID = 'kane-stock';
 
 const cleanups = new WeakMap<HTMLElement, () => void>();
+
+/** Tailwind text classes for the DOM stock strip (match Phaser SUPPLY_TONE_COLOR). */
+export const STOCK_SUPPLY_CLASS: Record<SupplyTone, string> = {
+  ok: 'text-kane-ink',
+  near: 'text-kane-gold',
+  full: 'text-kane-pink',
+};
+
+export function stockSupplyClass(
+  current: number,
+  cap: number,
+): string {
+  return STOCK_SUPPLY_CLASS[supplyTone(current, cap)];
+}
 
 function flash(slot: Element | null): void {
   if (!(slot instanceof HTMLElement)) return;
@@ -20,28 +40,33 @@ function flash(slot: Element | null): void {
   slot.classList.add('kane-slot-flash');
 }
 
+function incomeRateText(n: number): string {
+  return n > 0 ? t('hud.incomeRate', { n }) : '';
+}
+
 function paint(root: HTMLElement, stock: MatchStock): void {
   const gold = root.querySelector('[data-slot="gold"] [data-value]');
   const crystals = root.querySelector('[data-slot="crystals"] [data-value]');
   const supply = root.querySelector('[data-slot="supply"] [data-value]');
+  const goldRate = root.querySelector('[data-slot="gold"] [data-rate]');
+  const crystalRate = root.querySelector('[data-slot="crystals"] [data-rate]');
   if (gold) gold.textContent = t('hud.gold', { n: stock.gold });
   if (crystals) crystals.textContent = t('hud.crystals', { n: stock.crystals });
-  if (supply) {
-    supply.textContent = t('pause.supply', {
-      current: stock.supply,
-      cap: stock.supplyCap,
-    });
+  if (goldRate) goldRate.textContent = incomeRateText(stock.goldPerMin);
+  if (crystalRate) {
+    crystalRate.textContent = incomeRateText(stock.crystalsPerMin);
   }
+  if (supply) {
+    supply.textContent = formatSupplyLine(stock.supply, stock.supplyCap);
+  }
+  const depositTip = root.querySelector('[data-deposit-tip]');
+  if (depositTip) depositTip.textContent = stockDepositTipLine();
   const supplySlot = root.querySelector('[data-slot="supply"]');
-  if (supplySlot) {
-    const full = stock.supplyCap > 0 && stock.supply >= stock.supplyCap;
-    const high =
-      !full &&
-      stock.supplyCap > 0 &&
-      stock.supply >= Math.floor(stock.supplyCap * 0.85);
-    supplySlot.classList.toggle('text-[#e87aa8]', full);
-    supplySlot.classList.toggle('text-[#f0c75e]', high);
-    supplySlot.classList.toggle('text-[#d7e6f2]', !full && !high);
+  if (supplySlot instanceof HTMLElement) {
+    for (const cls of Object.values(STOCK_SUPPLY_CLASS)) {
+      supplySlot.classList.remove(cls);
+    }
+    supplySlot.classList.add(stockSupplyClass(stock.supply, stock.supplyCap));
   }
 }
 
@@ -52,22 +77,25 @@ export function mountStockStrip(): void {
   root.setAttribute('aria-live', 'polite');
   root.className = [
     'pointer-events-none fixed z-30 flex items-center gap-3',
-    'rounded-sm border border-[#3a4555] bg-[#0f1a2e]/90',
-    'px-3 font-sans text-sm font-semibold text-[#f5e6c8]',
+    'rounded-sm border border-kane-slate bg-kane-night/90',
+    'px-3 font-sans text-sm font-semibold text-kane-cream',
   ].join(' ');
   root.innerHTML = `
     <div data-slot="gold" class="flex items-center gap-1.5">
-      <span class="size-3 shrink-0 rounded-full bg-[#f0c75e]" aria-hidden="true"></span>
+      <span class="size-3 shrink-0 rounded-full bg-kane-gold" aria-hidden="true"></span>
       <span data-value></span>
+      <span data-rate class="text-xs font-medium text-kane-quiet"></span>
     </div>
     <div data-slot="crystals" class="flex items-center gap-1.5">
-      <span class="size-3 shrink-0 rounded-full bg-[#7ec8ff]" aria-hidden="true"></span>
+      <span class="size-3 shrink-0 rounded-full bg-kane-ice" aria-hidden="true"></span>
+      <span data-value></span>
+      <span data-rate class="text-xs font-medium text-kane-quiet"></span>
+    </div>
+    <div data-slot="supply" class="flex items-center gap-1.5 text-kane-ink">
+      <span class="size-3 shrink-0 rounded-full bg-kane-fog" aria-hidden="true"></span>
       <span data-value></span>
     </div>
-    <div data-slot="supply" class="flex items-center gap-1.5 text-[#d7e6f2]">
-      <span class="size-3 shrink-0 rounded-full bg-[#b8c9d9]" aria-hidden="true"></span>
-      <span data-value></span>
-    </div>
+    <span data-deposit-tip class="text-xs font-medium text-kane-quiet"></span>
   `;
   document.body.appendChild(root);
 

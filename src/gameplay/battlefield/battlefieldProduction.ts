@@ -34,6 +34,13 @@ export function queueTrain(
   return true;
 }
 
+/** Refund amounts returned after a successful queue cancel. */
+export interface QueueCancelRefund {
+  unitName: string;
+  gold: number;
+  crystals: number;
+}
+
 /**
  * Cancel a queued train slot and refund its cost.
  * Defaults to the last queue item (classic RTS). Pass `index` to cancel a specific slot.
@@ -42,24 +49,26 @@ export function cancelQueuedTrain(
   world: BattlefieldWorld,
   building: BattlefieldBuilding,
   index?: number,
-): boolean {
-  if (building.team !== 'player' || building.hp <= 0) return false;
+): QueueCancelRefund | null {
+  if (building.team !== 'player' || building.hp <= 0) return null;
   const q = building.trainQueue;
-  if (q.length === 0) return false;
+  if (q.length === 0) return null;
   const i =
     index == null
       ? q.length - 1
       : Math.max(0, Math.min(q.length - 1, Math.floor(index)));
   const typeId = q[i];
-  if (!typeId) return false;
+  if (!typeId) return null;
   q.splice(i, 1);
   if (i === 0) building.trainProgressMs = 0;
   const udef = getUnitType(typeId);
+  const gold = udef.costGold;
+  const crystals = udef.costCrystals;
   refund(walletOf(world, building.team), {
-    gold: udef.costGold,
-    magic_crystals: udef.costCrystals,
+    gold,
+    magic_crystals: crystals,
   });
-  return true;
+  return { unitName: udef.name, gold, crystals };
 }
 
 export function tickProduction(world: BattlefieldWorld, dtMs: number): void {
@@ -115,6 +124,7 @@ function spawnNear(
     color: def.canGather ? palette.accent : palette.primary,
     speciesId: def.speciesId,
   });
+  if (b.team === 'player') world.playerUnitsTrained += 1;
   // March newly trained units to the building rally point.
   const dx = b.rallyX - u.x;
   const dy = b.rallyY - u.y;

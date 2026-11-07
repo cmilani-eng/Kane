@@ -1,13 +1,29 @@
 /**
  * Friend lobby create/join code UI — local stub only.
  * No RTDB / live MP sync. SP vs AI path stays on Menu species cards.
+ * Shows selected faction motto + skirmish map flavor from match prefs.
  */
 import Phaser from 'phaser';
 import { BRAND } from '../../config/brand';
-import { t } from '../../i18n';
+import { loadMatchPrefs } from '../../database/matchPrefs';
+import { loadMatchSummaries } from '../../database/matchSummary';
+import {
+  difficultyCopy,
+  mapCopy,
+  speciesCopy,
+  speciesName,
+  t,
+} from '../../i18n';
 import { getLobbyStub } from '../../networking/lobbySingleton';
 import type { LobbyStatus } from '../../networking/lobbyStub';
 import { playSfx } from '../audio/sfx';
+import { lobbyLastDifficultyTipLine } from './lobbyLastDifficultyTip';
+import { lobbyLastDurationTipLine } from './lobbyLastDurationTip';
+import { lobbyLastFactionTipLine } from './lobbyLastFactionTip';
+import { lobbyLastMapTipLine } from './lobbyLastMapTip';
+import { lobbyBestDurationTipLine } from './lobbyBestDurationTip';
+import { lobbyLastOutcomeTipLine } from './lobbyLastOutcomeTip';
+import { lobbyWinStreakTipLine } from './lobbyWinStreakTip';
 
 export function lobbyStatusLine(status: LobbyStatus, code: string | null): string {
   switch (status) {
@@ -20,6 +36,48 @@ export function lobbyStatusLine(status: LobbyStatus, code: string | null): strin
     case 'blocked':
       return t('lobby.codeShort');
   }
+}
+
+/** Selected skirmish map tip — label · blurb from match prefs. */
+export function lobbyMapTipLine(): string {
+  const map = mapCopy(loadMatchPrefs().mapId);
+  return t('lobby.mapTip', { label: map.label, blurb: map.blurb });
+}
+
+/** Selected faction motto tip — name · blurb from match prefs. */
+export function lobbyFactionTipLine(): string {
+  const s = speciesCopy(loadMatchPrefs().species);
+  return t('lobby.factionTip', { name: s.name, blurb: s.motto });
+}
+
+/** Selected difficulty tip — label · blurb from match prefs. */
+export function lobbyDifficultyTipLine(): string {
+  const d = difficultyCopy(loadMatchPrefs().difficulty);
+  return t('lobby.difficultyTip', { label: d.label, blurb: d.blurb });
+}
+
+/** Species · map · difficulty — same shape as pause.setup for rematch context. */
+export function lobbySetupLine(): string {
+  const prefs = loadMatchPrefs();
+  return t('pause.setup', {
+    species: speciesName(prefs.species),
+    map: mapCopy(prefs.mapId).label,
+    difficulty: difficultyCopy(prefs.difficulty).label,
+  });
+}
+
+/**
+ * Estimated match length from recent local summaries (rounded minutes).
+ * Falls back to a quiet default when no history yet.
+ */
+export function lobbyMatchLengthTipLine(limit = 8): string {
+  const recent = loadMatchSummaries().summaries.slice(0, limit);
+  if (recent.length === 0) return t('lobby.matchLengthDefault');
+  const avgMs =
+    recent.reduce((sum, s) => sum + Math.max(0, s.durationMs), 0) /
+    recent.length;
+  const mins = Math.max(1, Math.round(avgMs / 60_000));
+  return t('lobby.matchLengthAvg', { n: mins });
 }
 
 export function showLobbyPanel(scene: Phaser.Scene, onClose: () => void): void {
@@ -78,8 +136,36 @@ export function showLobbyPanel(scene: Phaser.Scene, onClose: () => void): void {
     .setOrigin(0.5)
     .setDepth(302);
 
+  const tipStack = [
+    lobbySetupLine(),
+    lobbyFactionTipLine(),
+    lobbyLastFactionTipLine(),
+    lobbyDifficultyTipLine(),
+    lobbyLastDifficultyTipLine(),
+    lobbyMapTipLine(),
+    lobbyLastMapTipLine(),
+    lobbyLastDurationTipLine(),
+    lobbyBestDurationTipLine(),
+    lobbyLastOutcomeTipLine(),
+    lobbyWinStreakTipLine(),
+    lobbyMatchLengthTipLine(),
+  ]
+    .filter(Boolean)
+    .join('\n');
+  const mapTip = scene.add
+    .text(cx, top + 106, tipStack, {
+      fontFamily: 'system-ui, sans-serif',
+      fontSize: '12px',
+      color: '#a8c8c0',
+      align: 'center',
+      wordWrap: { width: panelW - 40 },
+      lineSpacing: 4,
+    })
+    .setOrigin(0.5)
+    .setDepth(302);
+
   const codeText = scene.add
-    .text(cx, short ? top + 128 : cy - 28, '————', {
+    .text(cx, short ? top + 148 : cy - 22, '————', {
       fontFamily: 'Georgia, "Times New Roman", serif',
       fontSize: short ? '28px' : '40px',
       color: '#f0c75e',
@@ -89,7 +175,7 @@ export function showLobbyPanel(scene: Phaser.Scene, onClose: () => void): void {
     .setDepth(302);
 
   const statusText = scene.add
-    .text(cx, short ? top + 164 : cy + 18, '', {
+    .text(cx, short ? top + 184 : cy + 24, '', {
       fontFamily: 'system-ui, sans-serif',
       fontSize: '14px',
       color: '#d7e6f2',
@@ -132,6 +218,7 @@ export function showLobbyPanel(scene: Phaser.Scene, onClose: () => void): void {
     brand,
     title,
     subtitle,
+    mapTip,
     codeText,
     statusText,
     quietNote,

@@ -25,8 +25,15 @@ import {
   type StatsOverviewDoc,
   type UserMatchDoc,
 } from '../../firebase/types';
+import type { SkirmishMapId } from '../../data/skirmishMaps';
 import type { AiDifficultyId } from '../../gameplay/battlefield/aiDifficulty';
-import { difficultyCopy, speciesName, t } from '../../i18n';
+import {
+  difficultyCopy,
+  mapCopy,
+  speciesCopy,
+  speciesName,
+  t,
+} from '../../i18n';
 import { playSfx } from '../audio/sfx';
 import { showAuthPanel } from './authPanel';
 import { formatMatchClock } from './matchClock';
@@ -90,11 +97,14 @@ export function accountProfileText(opts: {
   email: string | null | undefined;
   species: SpeciesId;
   difficulty: AiDifficultyId;
+  mapId: SkirmishMapId;
   skins: { brutes: string; nobles: string; weirdos: string };
 }): string {
   const accountKind = opts.anonymous
     ? t('account.guestAnon')
     : opts.email?.trim() || t('account.signedIn');
+  const map = mapCopy(opts.mapId);
+  const faction = speciesCopy(opts.species);
   return [
     t('account.commander', {
       name: accountShownName(opts.name, opts.anonymous),
@@ -104,7 +114,10 @@ export function accountProfileText(opts: {
     t('account.prefs', {
       species: speciesName(opts.species),
       difficulty: difficultyCopy(opts.difficulty).label,
+      map: map.label,
     }),
+    t('lobby.factionTip', { name: faction.name, blurb: faction.motto }),
+    t('menu.mapTip', { label: map.label, blurb: map.blurb }),
     t('account.skins', {
       brutes: shortSkin(opts.skins.brutes),
       nobles: shortSkin(opts.skins.nobles),
@@ -424,6 +437,8 @@ export function showDashboardPanel(
           email: current.email,
           species: prefs.species,
           difficulty: prefs.difficulty,
+          // Cloud profile prefs omit map; local match prefs keep the skirmish map.
+          mapId: loadMatchPrefs().mapId,
           skins,
         }),
       );

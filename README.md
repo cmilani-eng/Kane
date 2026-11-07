@@ -38,9 +38,9 @@ The site is a game picker at `/`. Each game lives in its own folder under `games
 | Game | Folder | URL | Build | Status |
 |------|--------|-----|-------|--------|
 | KANE | `games/kane/` (code in `src/`) | `/kane/` | `vite` | Live |
-| Blob Evolution 3D | `games/blob-evolution/` | `/blob-evolution/` | `static` | Experimental |
+| Blob Evolution 3D | `games/blob-evolution/` | `/blob-evolution/` | `vite` | Experimental |
 
-`games/games.json` is the list of games. The hub cards, the Vite build inputs and the registry test all read it.
+`games/games.json` is the list of games. The hub cards, the Vite build inputs and the registry test all read it. The path contract — which URL is canonical, and that Kane's client stays in `src/` — is [`games/PATHS.md`](games/PATHS.md).
 
 - **`vite`** games are bundled from `games/<id>/index.html` (TypeScript, npm packages, lint and tests).
 - **`static`** games are copied to `dist/<id>/` untouched, so a single self-contained HTML file (CDN scripts, import maps) works as-is.
@@ -104,4 +104,4 @@ Full list, and how each key maps to StarCraft, Age of Empires and C&C: [docs/hot
 
 ## What’s next
 
-Phase 6 (Firebase emulators + live friend lobby) stays parked. Match writes are still client-trusted. The coach shows once: finishing or skipping it keeps later matches quiet, and the menu Tips switch turns it back on. A Practice win offers Easy with the same species and map; Rematch stays on Practice. Ads stay off.
+Phase 6 (Firebase emulators + live friend lobby) stays parked. Match writes are still client-trusted. The coach shows once: finishing or skipping it keeps later matches quiet, and the menu Tips switch turns it back on. A win offers the next difficulty with the same species and map; Rematch stays on the difficulty just played. Hard has no step up. Ads stay off.

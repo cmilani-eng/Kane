@@ -128,6 +128,7 @@ export function placeBuilding(
     ...defaultRallyFor({ x, y, radius: def.radius }),
   };
   world.buildings.push(b);
+  if (complete && team === 'player') world.playerBuildingsRaised += 1;
   syncStockpilesFromBuildings(world);
   return b;
 }
@@ -164,11 +165,13 @@ export function tickBuildings(world: BattlefieldWorld, dtMs: number): void {
     if (b.buildMs <= 0) {
       b.complete = true;
       b.buildProgress = 1;
+      if (b.team === 'player') world.playerBuildingsRaised += 1;
       continue;
     }
     b.buildProgress = Math.min(1, b.buildProgress + dtMs / b.buildMs);
     if (b.buildProgress >= 1) {
       b.complete = true;
+      if (b.team === 'player') world.playerBuildingsRaised += 1;
       syncStockpilesFromBuildings(world);
     }
   }

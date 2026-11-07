@@ -7,7 +7,23 @@ import { flags } from '../../config/flags';
 import { getAdminAccessMode } from '../../database/adminAllowlist';
 import { loadCosmeticsLoadout } from '../../database/cosmeticsLoadout';
 import { HOSTING_PREVIEW } from '../../firebase/hostingPreview';
+import { t } from '../../i18n';
 import { getMasterVolume } from '../audio/sfx';
+
+/** Hub picker path tip for the menu strip (PATHS.md root). */
+export function softLaunchHubPathTip(path = '/'): string {
+  return t('soft.hubPathTip', { path });
+}
+
+/** Canonical Kane soft-launch play path tip for the menu strip. */
+export function softLaunchKanePathTip(path = '/kane/'): string {
+  return path;
+}
+
+/** Canonical Blob Evolution soft-launch play path tip for the menu strip. */
+export function softLaunchBlobPathTip(path = '/blob-evolution/'): string {
+  return path;
+}
 
 /** Compact one-liner for the title menu. */
 export function softLaunchStatusStrip(): string {
@@ -19,5 +35,9 @@ export function softLaunchStatusStrip(): string {
   const cosBit = `skin ${loadout.equipped.nobles.replace(/^skin_/, '').slice(0, 8)}`;
   const volBit = `vol ${Math.round(getMasterVolume() * 100)}`;
   const pwaBit = 'pwa';
-  return `${hostBit} · ${adminBit} · ${cosBit} · ${volBit} · ${pwaBit}`;
+  // Hub picker + canonical Kane / Blob play URLs (see games/PATHS.md).
+  const hubBit = softLaunchHubPathTip();
+  const playBit = softLaunchKanePathTip();
+  const blobBit = softLaunchBlobPathTip();
+  return `${hostBit} · ${adminBit} · ${cosBit} · ${volBit} · ${pwaBit} · ${hubBit} · ${playBit} · ${blobBit}`;
 }

@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { CATALOGS } from '../../i18n/messages';
+import { t } from '../../i18n';
 import { createBattlefieldWorld } from '../../gameplay/battlefield/battlefieldWorld';
 import { countIdleMilitary } from '../../gameplay/battlefield/idleMilitary';
 
@@ -12,4 +13,15 @@ describe('idle army chip count', () => {
     expect(en.startsWith('{n}')).toBe(true);
     expect(en).toContain('{n}');
   });
+
+  it('formats nearest-threat tip with direction arrow', () => {
+    const line = t('hud.idleArmyThreat', {
+      n: 3,
+      action: 'tap',
+      dir: '→',
+    });
+    expect(line).toContain('3');
+    expect(line).toContain('→');
+  });
 });
+

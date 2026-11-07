@@ -2,6 +2,7 @@
  * Idle military detection — combat units standing still with no attack target.
  * Presentation mirrors the idle-worker HUD chip (select all → cycle + camera).
  */
+import { attackDirectionArrow } from './attackDirection';
 import type {
   BattlefieldUnit,
   BattlefieldWorld,
@@ -27,6 +28,36 @@ export function countIdleMilitary(world: BattlefieldWorld): number {
     if (isIdleMilitary(u)) n++;
   }
   return n;
+}
+
+/**
+ * 8-way arrow from idle-army centroid toward the nearest living enemy unit.
+ * HUD tip only — does not acquire or issue orders. Null when no idles/enemies.
+ */
+export function nearestIdleArmyThreatArrow(
+  world: BattlefieldWorld,
+): string | null {
+  const idles = listIdleMilitary(world);
+  if (idles.length === 0) return null;
+  let sx = 0;
+  let sy = 0;
+  for (const u of idles) {
+    sx += u.x;
+    sy += u.y;
+  }
+  const cx = sx / idles.length;
+  const cy = sy / idles.length;
+
+  let best: { x: number; y: number; d2: number } | null = null;
+  for (const u of world.units) {
+    if (u.team !== 'enemy' || u.hp <= 0) continue;
+    const dx = u.x - cx;
+    const dy = u.y - cy;
+    const d2 = dx * dx + dy * dy;
+    if (!best || d2 < best.d2) best = { x: u.x, y: u.y, d2 };
+  }
+  if (!best) return null;
+  return attackDirectionArrow(cx, cy, best.x, best.y);
 }
 
 export type IdleMilitaryChipResult = {

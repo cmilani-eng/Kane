@@ -5,12 +5,15 @@
  */
 import Phaser from 'phaser';
 import { MAP } from '../../config/balance';
+import { flags } from '../../config/flags';
+import { livingByTeam } from '../../gameplay/battlefield/battlefieldCombat';
 import {
   enemyRevealed,
   isExplored,
 } from '../../gameplay/battlefield/battlefieldFog';
 import {
   attentionPingFade,
+  attentionPingOnCooldown,
   spawnAttentionPing,
 } from '../../gameplay/battlefield/battlefieldAttentionPing';
 import {
@@ -35,6 +38,22 @@ import {
   MINIMAP_FOCUS_FLASH_MS,
   minimapFocusFlashAlpha,
 } from './minimapFocusFlash';
+import {
+  ATTENTION_PING_COOLDOWN_MS,
+  MINIMAP_PING_DENY_FLASH_MS,
+  minimapPingDenyFlashAlpha,
+} from './minimapPingCooldown';
+import { minimapSelectedUnitBlip } from './minimapSelectedBlip';
+import { minimapCameraViewportLabelText } from './minimapCameraViewportLabel';
+import {
+  minimapCameraSectorAt,
+  minimapCameraSectorTipText,
+} from './minimapCameraSectorTip';
+import { minimapPingAgeTip } from './minimapPingAgeTip';
+import { minimapPingSectorTipAlpha } from './minimapPingSectorTip';
+import { minimapFogRevealAgeTip } from './minimapFogRevealAgeTip';
+import { minimapScoutPulseLabelAlpha } from './minimapScoutPulseLabel';
+import { minimapSupplyTipText } from './minimapSupplyTip';
 
 export class Minimap {
   private readonly scene: Phaser.Scene;
@@ -43,6 +62,16 @@ export class Minimap {
   private readonly gfx: Phaser.GameObjects.Graphics;
   private readonly hit: Phaser.GameObjects.Rectangle;
   private readonly frame: Phaser.GameObjects.Rectangle;
+  /** Short sector label when fog scout pulse lands. */
+  private readonly scoutLabel: Phaser.GameObjects.Text;
+  /** Short sector tip when an attention ping lands. */
+  private readonly pingSectorLabel: Phaser.GameObjects.Text;
+  /** Short mark on the camera viewport frame. */
+  private readonly camLabel: Phaser.GameObjects.Text;
+  /** 3×3 sector tip for the camera view center (distinct from View). */
+  private readonly camSectorLabel: Phaser.GameObjects.Text;
+  /** Live supply usage tip on the minimap chrome. */
+  private readonly supplyLabel: Phaser.GameObjects.Text;
 
   private mapX = 0;
   private mapY = 0;
@@ -63,6 +92,10 @@ export class Minimap {
   private holdStartY = 0;
   /** Remaining ms of double-tap recenter flash. */
   private focusFlashMs = 0;
+  /** Remaining ms before another hold-to-ping is allowed. */
+  private pingCooldownMs = 0;
+  /** Remaining ms of ice flash when ping is refused on cooldown. */
+  private pingDenyFlashMs = 0;
 
   constructor(
     scene: Phaser.Scene,
@@ -81,6 +114,71 @@ export class Minimap {
       .setOrigin(0, 0);
 
     this.gfx = scene.add.graphics().setScrollFactor(0).setDepth(111);
+
+    this.scoutLabel = scene.add
+      .text(0, 0, '', {
+        fontFamily: 'Segoe UI, system-ui, sans-serif',
+        fontSize: '11px',
+        color: '#b8e8ff',
+        stroke: '#0a1018',
+        strokeThickness: 3,
+      })
+      .setScrollFactor(0)
+      .setDepth(113)
+      .setOrigin(0.5, 1)
+      .setVisible(false);
+
+    this.pingSectorLabel = scene.add
+      .text(0, 0, '', {
+        fontFamily: 'Segoe UI, system-ui, sans-serif',
+        fontSize: '11px',
+        color: '#e8f4ff',
+        stroke: '#0a1018',
+        strokeThickness: 3,
+      })
+      .setScrollFactor(0)
+      .setDepth(113)
+      .setOrigin(0.5, 1)
+      .setVisible(false);
+
+    this.camLabel = scene.add
+      .text(0, 0, minimapCameraViewportLabelText(), {
+        fontFamily: 'Segoe UI, system-ui, sans-serif',
+        fontSize: '10px',
+        color: '#f0c75e',
+        stroke: '#0a1018',
+        strokeThickness: 3,
+      })
+      .setScrollFactor(0)
+      .setDepth(113)
+      .setOrigin(0.5, 1)
+      .setAlpha(0.9);
+
+    this.camSectorLabel = scene.add
+      .text(0, 0, '', {
+        fontFamily: 'Segoe UI, system-ui, sans-serif',
+        fontSize: '10px',
+        color: '#f5e6c8',
+        stroke: '#0a1018',
+        strokeThickness: 3,
+      })
+      .setScrollFactor(0)
+      .setDepth(113)
+      .setOrigin(0.5, 0)
+      .setAlpha(0.9);
+
+    this.supplyLabel = scene.add
+      .text(0, 0, minimapSupplyTipText(0, flags.unitCap), {
+        fontFamily: 'Segoe UI, system-ui, sans-serif',
+        fontSize: '10px',
+        color: '#c8d8e8',
+        stroke: '#0a1018',
+        strokeThickness: 3,
+      })
+      .setScrollFactor(0)
+      .setDepth(113)
+      .setOrigin(0.5, 0)
+      .setAlpha(0.9);
 
     this.hit = scene.add
       .rectangle(0, 0, this.mapW, this.mapH, 0x000000, 0.001)
@@ -144,7 +242,16 @@ export class Minimap {
   }
 
   objects(): Phaser.GameObjects.GameObject[] {
-    return [this.frame, this.gfx, this.hit];
+    return [
+      this.frame,
+      this.gfx,
+      this.hit,
+      this.scoutLabel,
+      this.pingSectorLabel,
+      this.camLabel,
+      this.camSectorLabel,
+      this.supplyLabel,
+    ];
   }
 
   setBottomInset(px: number): void {
@@ -206,11 +313,17 @@ export class Minimap {
       if (touchLongPressAction(TOUCH_LONG_PRESS_MS, moved) !== 'order') {
         return;
       }
+      if (attentionPingOnCooldown(this.pingCooldownMs)) {
+        this.pingDenyFlashMs = MINIMAP_PING_DENY_FLASH_MS;
+        playSfx('ui');
+        return;
+      }
       const { wx, wy } = this.worldFromPointer({
         x: px,
         y: py,
       } as Phaser.Input.Pointer);
       spawnAttentionPing(this.world, wx, wy);
+      this.pingCooldownMs = ATTENTION_PING_COOLDOWN_MS;
       playSfx('ui');
     });
   }
@@ -229,9 +342,20 @@ export class Minimap {
   ): void {
     this.selectedBuilding = selectedBuilding;
     this.pulseMs += dtMs;
+    if (this.pingCooldownMs > 0) {
+      this.pingCooldownMs = Math.max(0, this.pingCooldownMs - dtMs);
+    }
     if (this.focusFlashMs > 0) {
       this.focusFlashMs = Math.max(0, this.focusFlashMs - dtMs);
       // Keep redrawing while the flash fades.
+      this.refreshAcc = MOBILE_PERF.minimapMs;
+    }
+    if (this.pingDenyFlashMs > 0) {
+      this.pingDenyFlashMs = Math.max(0, this.pingDenyFlashMs - dtMs);
+      this.refreshAcc = MOBILE_PERF.minimapMs;
+    }
+    if ((this.world.scoutSectorHint?.lifeMs ?? 0) > 0) {
+      // Keep redrawing while the scout label fades.
       this.refreshAcc = MOBILE_PERF.minimapMs;
     }
     this.refreshAcc += dtMs;
@@ -245,9 +369,10 @@ export class Minimap {
     g.clear();
 
     const flash = minimapFocusFlashAlpha(this.focusFlashMs);
+    const deny = minimapPingDenyFlashAlpha(this.pingDenyFlashMs);
     this.frame.setStrokeStyle(
-      flash > 0 ? 2.75 : 2,
-      flash > 0 ? 0xfff8e8 : 0xf0c75e,
+      flash > 0 || deny > 0 ? 2.75 : 2,
+      deny > 0 ? 0x7ec8ff : flash > 0 ? 0xfff8e8 : 0xf0c75e,
       flash > 0 ? 0.55 + 0.45 * flash : 0.9,
     );
 
@@ -342,10 +467,10 @@ export class Minimap {
       }
     }
 
-    // Units
+    // Units — unselected base dots (+ idle rings); selected drawn last on top
     const idlePulse = 0.35 + 0.25 * Math.sin(this.pulseMs / 850);
     for (const u of this.world.units) {
-      if (u.hp <= 0) continue;
+      if (u.hp <= 0 || u.selected) continue;
       if (u.team === 'enemy' && !enemyRevealed(fog, u.x, u.y)) continue;
       const x = this.mapX + u.x * sx;
       const y = this.mapY + u.y * sy;
@@ -354,16 +479,8 @@ export class Minimap {
         g.lineStyle(1.5, u.carrying > 0 ? 0xffc857 : 0xf0c75e, idlePulse);
         g.strokeCircle(x, y, 5.5);
       }
-      if (u.selected) {
-        // Selection ring — high-contrast for mobile glance
-        g.lineStyle(2, 0xfff8e8, selPulse);
-        g.strokeCircle(x, y, 6.5);
-        g.fillStyle(player ? 0x8aee95 : 0xff8a8a, 1);
-        g.fillCircle(x, y, 3.8);
-      } else {
-        g.fillStyle(player ? 0x5dce6a : 0xe85a5a, 1);
-        g.fillCircle(x, y, 2.4);
-      }
+      g.fillStyle(player ? 0x5dce6a : 0xe85a5a, 1);
+      g.fillCircle(x, y, 2.4);
     }
 
     // Order pings — move / attack-move waypoints
@@ -401,6 +518,57 @@ export class Minimap {
       g.fillCircle(x, y, 2.6 * Math.max(0.35, life));
     }
 
+    // Fog scout reveal pulses — ice rings + short sector label on the minimap
+    for (const fx of this.world.scoutPulses ?? []) {
+      const life = Math.max(0.05, fx.lifeMs / fx.maxLifeMs);
+      const x = this.mapX + fx.x * sx;
+      const y = this.mapY + fx.y * sy;
+      const a = life * 0.75;
+      g.lineStyle(1.5, 0x7ec8ff, a);
+      g.strokeCircle(x, y, 4 + (1 - life) * 3);
+    }
+    const hint = this.world.scoutSectorHint;
+    if (hint && hint.lifeMs > 0) {
+      const x = Phaser.Math.Clamp(
+        this.mapX + hint.x * sx,
+        this.mapX + 10,
+        this.mapX + this.mapW - 10,
+      );
+      const y = Phaser.Math.Clamp(
+        this.mapY + hint.y * sy,
+        this.mapY + 12,
+        this.mapY + this.mapH - 2,
+      );
+      this.scoutLabel
+        .setText(minimapFogRevealAgeTip(hint.sector, hint.lifeMs))
+        .setPosition(x, y - 6)
+        .setAlpha(minimapScoutPulseLabelAlpha(hint.lifeMs))
+        .setVisible(true);
+    } else {
+      this.scoutLabel.setVisible(false).setAlpha(1);
+    }
+
+    const pingHint = this.world.attentionPingSectorHint;
+    if (pingHint && pingHint.lifeMs > 0) {
+      const x = Phaser.Math.Clamp(
+        this.mapX + pingHint.x * sx,
+        this.mapX + 10,
+        this.mapX + this.mapW - 10,
+      );
+      const y = Phaser.Math.Clamp(
+        this.mapY + pingHint.y * sy,
+        this.mapY + 12,
+        this.mapY + this.mapH - 2,
+      );
+      this.pingSectorLabel
+        .setText(minimapPingAgeTip(pingHint.sector, pingHint.lifeMs))
+        .setPosition(x, y - 6)
+        .setAlpha(minimapPingSectorTipAlpha(pingHint.lifeMs))
+        .setVisible(true);
+    } else {
+      this.pingSectorLabel.setVisible(false).setAlpha(1);
+    }
+
     // Camera viewport — gold frame + soft fill so it reads at a glance
     const cam = this.scene.cameras.main;
     const vw = cam.width / cam.zoom;
@@ -415,5 +583,60 @@ export class Minimap {
     g.strokeRect(vx, vy, vwM, vhM);
     g.lineStyle(1, 0xfff8e8, 0.55);
     g.strokeRect(vx + 1.5, vy + 1.5, Math.max(0, vwM - 3), Math.max(0, vhM - 3));
+    // Short View mark at the top of the camera frame
+    const camLabelX = Phaser.Math.Clamp(
+      vx + vwM / 2,
+      this.mapX + 10,
+      this.mapX + this.mapW - 10,
+    );
+    const camLabelY = Phaser.Math.Clamp(
+      vy - 2,
+      this.mapY + 10,
+      this.mapY + this.mapH - 2,
+    );
+    this.camLabel
+      .setText(minimapCameraViewportLabelText())
+      .setPosition(camLabelX, camLabelY)
+      .setVisible(true);
+    // Cam · sector tip at the bottom of the camera frame (view-center 3×3)
+    const camSector = minimapCameraSectorAt(
+      cam.scrollX,
+      cam.scrollY,
+      vw,
+      vh,
+    );
+    const camSectorY = Phaser.Math.Clamp(
+      vy + vhM + 2,
+      this.mapY + 2,
+      this.mapY + this.mapH - 10,
+    );
+    this.camSectorLabel
+      .setText(minimapCameraSectorTipText(camSector))
+      .setPosition(camLabelX, camSectorY)
+      .setVisible(true);
+
+    // Supply · used/cap on the minimap chrome (below the map frame)
+    const pop = livingByTeam(this.world, 'player');
+    this.supplyLabel
+      .setText(minimapSupplyTipText(pop, flags.unitCap))
+      .setPosition(this.mapX + this.mapW / 2, this.mapY + this.mapH + 4)
+      .setVisible(true);
+
+    // Selected unit blips — on top of camera/order so selection never hides
+    for (const u of this.world.units) {
+      if (u.hp <= 0 || !u.selected) continue;
+      if (u.team === 'enemy' && !enemyRevealed(fog, u.x, u.y)) continue;
+      const x = this.mapX + u.x * sx;
+      const y = this.mapY + u.y * sy;
+      const blip = minimapSelectedUnitBlip(u.team === 'player');
+      if (isIdleWorker(u)) {
+        g.lineStyle(1.5, u.carrying > 0 ? 0xffc857 : 0xf0c75e, idlePulse);
+        g.strokeCircle(x, y, 5.5);
+      }
+      g.lineStyle(2, blip.ring, selPulse);
+      g.strokeCircle(x, y, blip.ringR);
+      g.fillStyle(blip.fill, 1);
+      g.fillCircle(x, y, blip.r);
+    }
   }
 }

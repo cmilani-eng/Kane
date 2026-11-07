@@ -8,9 +8,17 @@ import { BRAND } from '../../config/brand';
 import type { SkirmishMapId } from '../../data/skirmishMaps';
 import type { SpeciesId } from '../../data/speciesStub';
 import type { AiDifficultyId } from '../../gameplay/battlefield/aiDifficulty';
-import { offerPracticeStepUp } from '../../gameplay/battlefield/practiceStepUp';
+import { nextDifficultyAfterWin } from '../../gameplay/battlefield/practiceStepUp';
 import { difficultyCopy, mapCopy, speciesName, t } from '../../i18n';
 import { playEndFanfare, playSfx } from '../audio/sfx';
+import { endDifficultyPlayedTipLine } from './endDifficultyPlayedTip';
+import { endDurationTipLine } from './endDurationTip';
+import { endMapPlayedTipLine } from './endMapPlayedTip';
+import { endObjectiveResultTipLine } from './endObjectiveResultTip';
+import { endSpeciesPlayedTipLine } from './endSpeciesPlayedTip';
+import { endBuildingsRaisedTipLine } from './endBuildingsRaisedTip';
+import { endUnitsLostTipLine } from './endUnitsLostTip';
+import { endUnitsTrainedTipLine } from './endUnitsTrainedTip';
 import { formatMatchClock } from './matchClock';
 import { copyEndShareLine, formatEndShareLine } from './endShareLine';
 
@@ -26,12 +34,24 @@ export interface EndScreenOpts {
   playerUnitsLeft?: number;
   /** Surviving player buildings at end (same as match summary). */
   playerBuildingsLeft?: number;
+  /** Enemy units killed this match (tallied on remove). */
+  playerUnitKills?: number;
+  /** Player units lost this match (tallied on remove). */
+  playerUnitLosses?: number;
+  /** Player units finished from production this match. */
+  playerUnitsTrained?: number;
+  /** Player buildings finished from construction this match. */
+  playerBuildingsRaised?: number;
+  /** Gold deposited at Keep this match. */
+  playerGoldGathered?: number;
+  /** Magic crystals deposited at Keep this match. */
+  playerCrystalsGathered?: number;
   onMenu: () => void;
   /** Restart skirmish with the same species + difficulty. */
   onRematch: () => void;
-  /** Difficulty just played. A Practice win can offer Easy. */
+  /** Difficulty just played. A win can offer the next difficulty. */
   difficulty?: AiDifficultyId;
-  /** Start Easy with the same species and map. Shown only after a Practice win. */
+  /** Start the next difficulty with the same species and map. Hidden on a loss and after Hard. */
   onStepUp?: () => void;
   /** Ignore these objects on the zoomed main camera. */
   ignoreOnMain: (objs: Phaser.GameObjects.GameObject[]) => void;
@@ -48,6 +68,12 @@ export function showKaneEndScreen(opts: EndScreenOpts): void {
     durationMs,
     playerUnitsLeft,
     playerBuildingsLeft,
+    playerUnitKills,
+    playerUnitLosses,
+    playerUnitsTrained,
+    playerBuildingsRaised,
+    playerGoldGathered,
+    playerCrystalsGathered,
     onMenu,
     onRematch,
     ignoreOnMain,
@@ -55,8 +81,8 @@ export function showKaneEndScreen(opts: EndScreenOpts): void {
     difficulty,
     onStepUp,
   } = opts;
-  const stepUp =
-    offerPracticeStepUp(win, difficulty ?? 'normal') && onStepUp != null;
+  const stepUpTo = nextDifficultyAfterWin(win, difficulty ?? 'normal');
+  const stepUp = stepUpTo != null && onStepUp != null;
   const { width, height } = scene.scale;
   const accent = win ? 0xf0c75e : 0xe85a5a;
   const accentHex = win ? '#f0c75e' : '#e87a7a';
@@ -75,20 +101,30 @@ export function showKaneEndScreen(opts: EndScreenOpts): void {
   const panelW = short ? Math.min(720, width - 24) : Math.min(440, width - 32);
   const panelH = short
     ? height - 16
-    : Math.min(stepUp ? 520 : 460, height * (stepUp ? 0.82 : 0.74));
+    : Math.min(stepUp ? 660 : 600, height * (stepUp ? 0.93 : 0.86));
   const cy = short ? height / 2 : height * 0.48;
   const top = cy - panelH / 2;
   const yBrand = short ? top + 18 : cy - panelH * 0.4;
   const yTitle = short ? top + 58 : cy - panelH * 0.18;
   const yTag = short ? top + 90 : cy + panelH * 0.02;
-  const ySub = short ? top + 112 : cy + panelH * 0.12;
-  const yMeta = short ? top + 134 : cy + panelH * 0.2;
-  const yRecap = short ? top + 154 : cy + panelH * 0.28;
-  const yShare = short ? top + (stepUp ? 158 : 176) : cy + panelH * 0.34;
-  const yStep = short ? top + panelH - 72 : cy + panelH * 0.44;
+  const ySub = short ? top + 108 : cy + panelH * 0.1;
+  const yMeta = short ? top + 128 : cy + panelH * 0.17;
+  const yDuration = short ? top + 146 : cy + panelH * 0.22;
+  const ySpecies = short ? top + 160 : cy + panelH * 0.27;
+  const yMap = short ? top + 174 : cy + panelH * 0.32;
+  const yDifficulty = short ? top + 188 : cy + panelH * 0.37;
+  const yObjective = short ? top + 202 : cy + panelH * 0.42;
+  const yTrained = short ? top + 214 : cy + panelH * 0.46;
+  const yRaised = short ? top + 226 : cy + panelH * 0.5;
+  const yLost = short ? top + 238 : cy + panelH * 0.54;
+  const yRecap = short ? top + 250 : cy + panelH * 0.58;
+  const yKill = short ? top + 262 : cy + panelH * 0.62;
+  const yGathered = short ? top + 274 : cy + panelH * 0.66;
+  const yShare = short ? top + (stepUp ? 262 : 280) : cy + panelH * 0.68;
+  const yStep = short ? top + panelH - 72 : cy + panelH * 0.64;
   const yActions = top + panelH - (short ? 28 : 36);
-  const yRematch = short ? yActions : cy + panelH * (stepUp ? 0.56 : 0.48);
-  const yMenu = short ? yActions : cy + panelH * (stepUp ? 0.68 : 0.6);
+  const yRematch = short ? yActions : cy + panelH * (stepUp ? 0.74 : 0.7);
+  const yMenu = short ? yActions : cy + panelH * (stepUp ? 0.86 : 0.8);
   const xRematch = short ? width / 2 - 110 : width / 2;
   const xMenu = short ? width / 2 + 110 : width / 2;
   const panel = scene.add
@@ -195,12 +231,19 @@ export function showKaneEndScreen(opts: EndScreenOpts): void {
   root.push(sub);
 
   const mapLabel = mapId ? mapCopy(mapId).label : '';
+  const difficultyLabel = difficulty
+    ? difficultyCopy(difficulty).label
+    : '';
   const clock =
     durationMs != null ? formatMatchClock(durationMs) : '';
   const metaText =
-    mapLabel && clock
-      ? t('end.meta', { map: mapLabel, clock })
-      : mapLabel || clock;
+    mapLabel && difficultyLabel && clock
+      ? t('end.meta', {
+          map: mapLabel,
+          difficulty: difficultyLabel,
+          clock,
+        })
+      : [mapLabel, difficultyLabel, clock].filter(Boolean).join('  ·  ');
   const meta = scene.add
     .text(width / 2, yMeta, metaText, {
       fontFamily: 'system-ui, sans-serif',
@@ -214,6 +257,138 @@ export function showKaneEndScreen(opts: EndScreenOpts): void {
     .setAlpha(0)
     .setVisible(!!metaText);
   root.push(meta);
+
+  const durationTip =
+    durationMs != null ? endDurationTipLine(durationMs) : '';
+  const duration = scene.add
+    .text(width / 2, yDuration, durationTip, {
+      fontFamily: 'system-ui, sans-serif',
+      fontSize: '13px',
+      color: '#c8d8e8',
+      align: 'center',
+    })
+    .setOrigin(0.5)
+    .setScrollFactor(0)
+    .setDepth(202)
+    .setAlpha(0)
+    .setVisible(!!durationTip);
+  root.push(duration);
+
+  const speciesTip = endSpeciesPlayedTipLine(speciesId);
+  const species = scene.add
+    .text(width / 2, ySpecies, speciesTip, {
+      fontFamily: 'system-ui, sans-serif',
+      fontSize: '13px',
+      color: '#c8d8e8',
+      align: 'center',
+    })
+    .setOrigin(0.5)
+    .setScrollFactor(0)
+    .setDepth(202)
+    .setAlpha(0)
+    .setVisible(!!speciesTip);
+  root.push(species);
+
+  const mapTip = mapId ? endMapPlayedTipLine(mapId) : '';
+  const mapTipText = scene.add
+    .text(width / 2, yMap, mapTip, {
+      fontFamily: 'system-ui, sans-serif',
+      fontSize: '13px',
+      color: '#c8d8e8',
+      align: 'center',
+    })
+    .setOrigin(0.5)
+    .setScrollFactor(0)
+    .setDepth(202)
+    .setAlpha(0)
+    .setVisible(!!mapTip);
+  root.push(mapTipText);
+
+  const difficultyTip = difficulty
+    ? endDifficultyPlayedTipLine(difficulty)
+    : '';
+  const difficultyTipText = scene.add
+    .text(width / 2, yDifficulty, difficultyTip, {
+      fontFamily: 'system-ui, sans-serif',
+      fontSize: '13px',
+      color: '#c8d8e8',
+      align: 'center',
+    })
+    .setOrigin(0.5)
+    .setScrollFactor(0)
+    .setDepth(202)
+    .setAlpha(0)
+    .setVisible(!!difficultyTip);
+  root.push(difficultyTipText);
+
+  const objectiveTip = endObjectiveResultTipLine(win, reason) ?? '';
+  const objectiveTipText = scene.add
+    .text(width / 2, yObjective, objectiveTip, {
+      fontFamily: 'system-ui, sans-serif',
+      fontSize: '13px',
+      color: '#c8d8e8',
+      align: 'center',
+    })
+    .setOrigin(0.5)
+    .setScrollFactor(0)
+    .setDepth(202)
+    .setAlpha(0)
+    .setVisible(!!objectiveTip);
+  root.push(objectiveTipText);
+
+  const trainedTip =
+    playerUnitsTrained != null
+      ? endUnitsTrainedTipLine(playerUnitsTrained)
+      : '';
+  const trainedTipText = scene.add
+    .text(width / 2, yTrained, trainedTip, {
+      fontFamily: 'system-ui, sans-serif',
+      fontSize: '13px',
+      color: '#c8d8e8',
+      align: 'center',
+    })
+    .setOrigin(0.5)
+    .setScrollFactor(0)
+    .setDepth(202)
+    .setAlpha(0)
+    .setVisible(!!trainedTip);
+  root.push(trainedTipText);
+
+  const raisedTip =
+    playerBuildingsRaised != null
+      ? endBuildingsRaisedTipLine(playerBuildingsRaised)
+      : '';
+  const raisedTipText = scene.add
+    .text(width / 2, yRaised, raisedTip, {
+      fontFamily: 'system-ui, sans-serif',
+      fontSize: '13px',
+      color: '#c8d8e8',
+      align: 'center',
+    })
+    .setOrigin(0.5)
+    .setScrollFactor(0)
+    .setDepth(202)
+    .setAlpha(0)
+    .setVisible(!!raisedTip);
+  root.push(raisedTipText);
+
+  const lostTip =
+    playerUnitLosses != null
+      ? endUnitsLostTipLine(playerUnitLosses)
+      : '';
+  const lostTipText = scene.add
+    .text(width / 2, yLost, lostTip, {
+      fontFamily: 'system-ui, sans-serif',
+      fontSize: '13px',
+      color: '#c8d8e8',
+      align: 'center',
+    })
+    .setOrigin(0.5)
+    .setScrollFactor(0)
+    .setDepth(202)
+    .setAlpha(0)
+    .setVisible(!!lostTip);
+  root.push(lostTipText);
 
   const hasRecap =
     playerUnitsLeft != null && playerBuildingsLeft != null;
@@ -237,10 +412,55 @@ export function showKaneEndScreen(opts: EndScreenOpts): void {
     .setVisible(hasRecap);
   root.push(recap);
 
+  const hasKillRatio =
+    playerUnitKills != null && playerUnitLosses != null;
+  const killText = hasKillRatio
+    ? t('end.killRatio', {
+        kills: playerUnitKills,
+        losses: playerUnitLosses,
+      })
+    : '';
+  const killRatio = scene.add
+    .text(width / 2, yKill, killText, {
+      fontFamily: 'system-ui, sans-serif',
+      fontSize: '13px',
+      color: '#a8bdd0',
+      align: 'center',
+    })
+    .setOrigin(0.5)
+    .setScrollFactor(0)
+    .setDepth(202)
+    .setAlpha(0)
+    .setVisible(hasKillRatio);
+  root.push(killRatio);
+
+  const hasGathered =
+    playerGoldGathered != null && playerCrystalsGathered != null;
+  const gatheredText = hasGathered
+    ? t('end.gathered', {
+        gold: playerGoldGathered,
+        crystals: playerCrystalsGathered,
+      })
+    : '';
+  const gathered = scene.add
+    .text(width / 2, yGathered, gatheredText, {
+      fontFamily: 'system-ui, sans-serif',
+      fontSize: '13px',
+      color: '#a8bdd0',
+      align: 'center',
+    })
+    .setOrigin(0.5)
+    .setScrollFactor(0)
+    .setDepth(202)
+    .setAlpha(0)
+    .setVisible(hasGathered);
+  root.push(gathered);
+
   const shareLine = formatEndShareLine({
     win,
     speciesName: name,
     mapLabel,
+    difficultyLabel,
     clock,
     units: playerUnitsLeft,
     buildings: playerBuildingsLeft,
@@ -279,13 +499,13 @@ export function showKaneEndScreen(opts: EndScreenOpts): void {
   root.push(shareBtn);
 
   let stepBtn: Phaser.GameObjects.Text | null = null;
-  if (stepUp && onStepUp) {
-    const startEasy = onStepUp;
+  if (stepUpTo && onStepUp) {
+    const startNext = onStepUp;
     const btn = scene.add
       .text(
         width / 2,
         yStep,
-        t('end.tryEasy', { difficulty: difficultyCopy('easy').label }),
+        t('end.tryEasy', { difficulty: difficultyCopy(stepUpTo).label }),
         {
           fontFamily: 'Georgia, "Times New Roman", serif',
           fontSize: short ? '16px' : '18px',
@@ -303,7 +523,7 @@ export function showKaneEndScreen(opts: EndScreenOpts): void {
       .on('pointerout', () => btn.setStyle({ color: '#fff8e8' }))
       .on('pointerup', () => {
         playSfx('ui');
-        startEasy();
+        startNext();
       });
     stepBtn = btn;
     root.push(btn);
@@ -378,7 +598,17 @@ export function showKaneEndScreen(opts: EndScreenOpts): void {
       tag,
       sub,
       meta,
+      duration,
+      species,
+      mapTipText,
+      difficultyTipText,
+      objectiveTipText,
+      trainedTipText,
+      raisedTipText,
+      lostTipText,
       recap,
+      killRatio,
+      gathered,
       shareBtn,
       ...(stepBtn ? [stepBtn] : []),
       rematchBtn,

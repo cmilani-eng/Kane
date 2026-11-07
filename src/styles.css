@@ -1,4 +1,9 @@
 @import "tailwindcss" source(".");
+@import "./theme.css";
+@import "./presentation/ui/selectionPanel.css";
+
+/* Landscape phones: the login sheet switches to a wide, row-based layout. */
+@custom-variant short (@media (max-height: 499px));
 
 @keyframes kane-slot-flash {
   0% {

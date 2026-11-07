@@ -2,6 +2,7 @@
  * Idle worker detection — empty-handed or holding resources, standing still.
  * Presentation uses this for subtle HUD / minimap attention pings.
  */
+import type { ResourceId } from '../../data/resources';
 import type {
   BattlefieldUnit,
   BattlefieldWorld,
@@ -28,6 +29,28 @@ export function countIdleWorkers(world: BattlefieldWorld): number {
     if (isIdleWorker(u)) n++;
   }
   return n;
+}
+
+/**
+ * Nearest remaining resource type for empty-handed idle workers.
+ * Used by the idle chip to hint a gather target (Gold vs Crystals).
+ */
+export function nearestIdleGatherResource(
+  world: BattlefieldWorld,
+): ResourceId | null {
+  const idles = listIdleWorkers(world).filter((u) => u.carrying <= 0);
+  if (idles.length === 0) return null;
+  let best: { id: ResourceId; d2: number } | null = null;
+  for (const u of idles) {
+    for (const n of world.nodes) {
+      if (n.remaining <= 0) continue;
+      const dx = n.x - u.x;
+      const dy = n.y - u.y;
+      const d2 = dx * dx + dy * dy;
+      if (!best || d2 < best.d2) best = { id: n.resourceId, d2 };
+    }
+  }
+  return best?.id ?? null;
 }
 
 /** Select all idle workers (HUD ping affordance). */

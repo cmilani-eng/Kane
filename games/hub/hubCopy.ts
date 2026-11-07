@@ -5,25 +5,36 @@ const HUB_BLURB: Record<string, MessageKey> = {
   'blob-evolution': 'hub.blob.blurb',
 };
 
+/** Footer copyright year — pass `year` in tests; live path uses the calendar year. */
+export function hubFooterYear(year: number = new Date().getFullYear()): string {
+  return t('hub.year', { n: year });
+}
+
 export function hubChrome(): {
   title: string;
+  documentTitle: string;
   subtitle: string;
   meta: string;
   play: string;
+  live: string;
   experimental: string;
   privacy: string;
   terms: string;
   language: string;
+  year: string;
 } {
   return {
     title: t('hub.title'),
+    documentTitle: t('hub.documentTitle'),
     subtitle: t('hub.subtitle'),
     meta: t('hub.meta'),
     play: t('hub.play'),
+    live: t('hub.live'),
     experimental: t('hub.experimental'),
     privacy: t('menu.privacy'),
     terms: t('menu.terms'),
     language: t('menu.language'),
+    year: hubFooterYear(),
   };
 }
 
@@ -31,4 +42,14 @@ export function hubChrome(): {
 export function hubBlurb(id: string, fallback: string): string {
   const key = HUB_BLURB[id];
   return key ? t(key) : fallback;
+}
+
+/** Soft-launch play path tip for the Kane hub card (`/kane/`). */
+export function hubKanePathTip(path = '/kane/'): string {
+  return t('hub.kanePathTip', { path });
+}
+
+/** Soft-launch play path tip for the Blob Evolution hub card (`/blob-evolution/`). */
+export function hubBlobPathTip(path = '/blob-evolution/'): string {
+  return t('hub.blobPathTip', { path });
 }

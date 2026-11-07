@@ -17,25 +17,20 @@ import {
   resetMatchSummaries,
   type MatchSummaryStore,
 } from '../../database/matchSummary';
-import {
-  formatDailyRollup,
-  loadDailyRollup,
-  resetDailyRollup,
-} from '../../database/dailyStatsRollup';
+import { resetDailyRollup } from '../../database/dailyStatsRollup';
 import {
   adminDenyReason,
   canAccessAdmin,
-  formatAdminAllowlist,
   localAdminCandidateId,
 } from '../../database/adminAllowlist';
 import { formatMatchClock } from './matchClock';
 import {
-  formatModerationLog,
   recordModerationEvent,
   resetModerationLog,
 } from '../../database/moderationStub';
 import { rollupDailyMatchStatsFunctionStub } from '../../server/dailyRollupFunctionStub';
 import { playSfx } from '../audio/sfx';
+import { adminToolsBody } from './statsAdminCopy';
 
 export interface StatsPanelOptions {
   /** Show admin tools (reset / rollup / moderation). Menu Stats stays player-only. */
@@ -180,7 +175,7 @@ export function showStatsPanel(
   const panelW = short ? Math.min(760, width - 24) : Math.min(460, width - 28);
   const panelH = short
     ? height - 16
-    : Math.min(wantAdmin ? 500 : 420, height - 28);
+    : Math.min(wantAdmin ? 620 : 420, height - 28);
   const cx = width / 2;
   const cy = height / 2;
   const top = cy - panelH / 2;
@@ -207,7 +202,7 @@ export function showStatsPanel(
     .setDepth(302);
 
   const title = scene.add
-    .text(cx, top + 52, wantAdmin ? 'Admin' : t('menu.stats'), {
+    .text(cx, top + 52, wantAdmin ? t('stats.admin') : t('menu.stats'), {
       fontFamily: 'Georgia, "Times New Roman", serif',
       fontSize: '26px',
       color: '#f5e6c8',
@@ -219,21 +214,20 @@ export function showStatsPanel(
     .text(
       cx,
       top + 80,
-      wantAdmin
-        ? 'Local tools for soft-launch checks'
-        : t('stats.subtitle'),
+      wantAdmin ? t('stats.adminSub') : t('stats.subtitle'),
       {
         fontFamily: 'system-ui, sans-serif',
         fontSize: '13px',
         color: '#9eb4c8',
+        align: 'center',
+        wordWrap: { width: panelW - 48 },
       },
     )
     .setOrigin(0.5)
     .setDepth(302);
 
-  // Reserve footer for buttons so moderation/body never overlaps controls.
-  const footerH = wantAdmin ? 96 : 56;
-  const bodyBottom = bottom - footerH;
+  // Body ends above the controls. Admin measures the buttons before laying out.
+  let bodyBottom = bottom - 56;
   const bodyWrap = panelW - 48;
 
   const playerBody = scene.add
@@ -295,26 +289,19 @@ export function showStatsPanel(
     }
 
     if (adminBody) {
-      const adminText = [
-        '— Admin tools —',
-        formatDailyRollup(loadDailyRollup(), 3),
-        '',
-        formatAdminAllowlist(),
-        '',
-        formatModerationLog(undefined, 3),
-      ].join('\n');
+      const adminText = adminToolsBody();
       // Keep admin block above the reserved footer so buttons never overlap.
       const adminY = recentBody.y + recentBody.height + 14;
-      const maxLines = Math.max(
-        4,
-        Math.floor(Math.max(40, bodyBottom - adminY - 8) / 16),
-      );
-      const clipped = adminText.split('\n').slice(0, maxLines).join('\n');
-      adminBody.setText(clipped);
+      adminBody.setText(adminText);
       adminBody.setY(adminY);
+      const room = bodyBottom - adminY - 4;
+      while (adminBody.height > room && adminBody.text.includes('\n')) {
+        const lines = adminBody.text.split('\n');
+        lines.pop();
+        adminBody.setText(lines.join('\n'));
+      }
     }
   };
-  layoutBodies();
 
   const closeBtn = scene.add
     .text(cx + panelW / 2 - 18, top + 14, '✕', {
@@ -335,15 +322,25 @@ export function showStatsPanel(
   nodes.push(closeBtn);
 
   if (wantAdmin) {
-    const btnY = bottom - 58;
+    const footerHint = scene.add
+      .text(cx, bottom - 8, t('stats.adminLocal'), {
+        fontFamily: 'system-ui, sans-serif',
+        fontSize: '11px',
+        color: '#6a7f94',
+        align: 'center',
+        wordWrap: { width: panelW - 40 },
+      })
+      .setOrigin(0.5, 1)
+      .setDepth(302);
+    nodes.push(footerHint);
+
     const mkAdminBtn = (
-      x: number,
       label: string,
       bg: string,
       fn: () => void,
-    ): void => {
+    ): Phaser.GameObjects.Text => {
       const btn = scene.add
-        .text(x, btnY, label, {
+        .text(0, 0, label, {
           fontFamily: 'system-ui, sans-serif',
           fontSize: '13px',
           color: '#fff8e8',
@@ -358,38 +355,53 @@ export function showStatsPanel(
           fn();
         });
       nodes.push(btn);
+      return btn;
     };
 
-    mkAdminBtn(cx - 130, 'Reset', '#5a3a3a', () => {
-      if (!canAccessAdmin()) {
-        console.warn('[KANE]', adminDenyReason());
-        destroy();
-        showAdminDenied(scene, onClose);
-        return;
+    const adminButtons = [
+      mkAdminBtn(t('stats.reset'), '#5a3a3a', () => {
+        if (!canAccessAdmin()) {
+          console.warn('[KANE]', adminDenyReason());
+          destroy();
+          showAdminDenied(scene, onClose);
+          return;
+        }
+        resetLocalStats();
+        resetMatchSummaries();
+        resetDailyRollup();
+        resetModerationLog();
+        layoutBodies();
+      }),
+      mkAdminBtn(t('stats.rebuild'), '#2a4a38', () => {
+        void rollupDailyMatchStatsFunctionStub().then(() => layoutBodies());
+      }),
+      mkAdminBtn(t('stats.stubReport'), '#3a4555', () => {
+        recordModerationEvent('report', 'peer-stub', 'Phase 7 moderation stub');
+        layoutBodies();
+      }),
+    ];
+    const gap = 10;
+    const rowWidth =
+      adminButtons.reduce((sum, btn) => sum + btn.width, 0) +
+      gap * (adminButtons.length - 1);
+    const rowCenter =
+      footerHint.y - footerHint.height - 8 - adminButtons[0].height / 2;
+    if (rowWidth <= panelW - 24) {
+      let x = cx - rowWidth / 2;
+      for (const btn of adminButtons) {
+        btn.setPosition(x + btn.width / 2, rowCenter);
+        x += btn.width + gap;
       }
-      resetLocalStats();
-      resetMatchSummaries();
-      resetDailyRollup();
-      resetModerationLog();
-      layoutBodies();
-    });
-    mkAdminBtn(cx, 'Rebuild rollup', '#2a4a38', () => {
-      void rollupDailyMatchStatsFunctionStub().then(() => layoutBodies());
-    });
-    mkAdminBtn(cx + 130, 'Stub report', '#3a4555', () => {
-      recordModerationEvent('report', 'peer-stub', 'Phase 7 moderation stub');
-      layoutBodies();
-    });
-
-    const footerHint = scene.add
-      .text(cx, bottom - 22, 'Admin tools stay local until cloud Functions land', {
-        fontFamily: 'system-ui, sans-serif',
-        fontSize: '11px',
-        color: '#6a7f94',
-      })
-      .setOrigin(0.5)
-      .setDepth(302);
-    nodes.push(footerHint);
+    } else {
+      let y = rowCenter;
+      for (let i = adminButtons.length - 1; i >= 0; i -= 1) {
+        const btn = adminButtons[i];
+        btn.setPosition(cx, y);
+        y -= btn.height + 8;
+      }
+    }
+    bodyBottom =
+      Math.min(...adminButtons.map((btn) => btn.y - btn.height / 2)) - 8;
   } else {
     const done = scene.add
       .text(cx, bottom - 28, t('stats.done'), {
@@ -409,6 +421,9 @@ export function showStatsPanel(
       });
     nodes.push(done);
   }
+
+  playerBody.setY(subtitle.y + subtitle.height + 16);
+  layoutBodies();
 
   const destroy = (): void => {
     for (const n of nodes) n.destroy();

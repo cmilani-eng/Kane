@@ -42,6 +42,45 @@ describe('match prefs rematch restore', () => {
     expect(prefs.mapId).toBe('ridge');
   });
 
+  it('persists last match duration and keeps it when omitted on later remember', () => {
+    rememberMatchPrefs('nobles', 'normal', 'crossing', 125_000);
+    expect(loadMatchPrefs().lastDurationMs).toBe(125_000);
+    rememberMatchPrefs('brutes', 'easy', 'ridge');
+    expect(loadMatchPrefs().lastDurationMs).toBe(125_000);
+    expect(loadMatchPrefs().species).toBe('brutes');
+  });
+
+  it('persists last match outcome and keeps it when omitted on later remember', () => {
+    rememberMatchPrefs('nobles', 'normal', 'crossing', 90_000, true);
+    expect(loadMatchPrefs().lastWon).toBe(true);
+    rememberMatchPrefs('brutes', 'hard', 'ridge', 60_000, false);
+    expect(loadMatchPrefs().lastWon).toBe(false);
+    rememberMatchPrefs('weirdos', 'easy', 'gap');
+    expect(loadMatchPrefs().lastWon).toBe(false);
+  });
+
+  it('tallies win streak on wins and clears on loss', () => {
+    rememberMatchPrefs('nobles', 'normal', 'crossing', 90_000, true);
+    expect(loadMatchPrefs().winStreak).toBe(1);
+    rememberMatchPrefs('brutes', 'easy', 'ridge', 80_000, true);
+    expect(loadMatchPrefs().winStreak).toBe(2);
+    rememberMatchPrefs('weirdos', 'hard', 'gap', 70_000, false);
+    expect(loadMatchPrefs().winStreak).toBe(0);
+    rememberMatchPrefs('nobles', 'normal', 'crossing');
+    expect(loadMatchPrefs().winStreak).toBe(0);
+  });
+
+  it('tracks shortest winning match duration as best', () => {
+    rememberMatchPrefs('nobles', 'normal', 'crossing', 120_000, true);
+    expect(loadMatchPrefs().bestDurationMs).toBe(120_000);
+    rememberMatchPrefs('brutes', 'easy', 'ridge', 90_000, true);
+    expect(loadMatchPrefs().bestDurationMs).toBe(90_000);
+    rememberMatchPrefs('weirdos', 'hard', 'gap', 150_000, true);
+    expect(loadMatchPrefs().bestDurationMs).toBe(90_000);
+    rememberMatchPrefs('nobles', 'normal', 'crossing', 60_000, false);
+    expect(loadMatchPrefs().bestDurationMs).toBe(90_000);
+  });
+
   it('defaults map to crossing when older prefs omit mapId', () => {
     store.set(
       'kane.matchPrefs.v1',

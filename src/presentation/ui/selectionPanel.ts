@@ -16,6 +16,82 @@ import { RESOURCES } from '../../data/resources';
 import { SPECIES_MATCHUP_TIP, type SpeciesId } from '../../data/speciesStub';
 import { getLocale, speciesCopy, speciesName, t } from '../../i18n';
 import { getUnitType, type UnitTypeId } from '../../data/units';
+import { buildingArmorClassLabel } from './buildingArmorClass';
+import {
+  sharedUnitArmorClassTipLabel,
+  unitArmorClassTipLabel,
+} from './unitArmorClassTip';
+import { buildingBuildCostLabel } from './buildingBuildCost';
+import { buildingBuildProgressLabel } from './buildingBuildProgress';
+import { buildingBuildTimeLabel } from './buildingBuildTime';
+import { buildingFootprintLabel } from './buildingFootprint';
+import { buildingHpMaxLabel } from './buildingHpMax';
+import { buildingProdQueueLabel } from './buildingProdQueue';
+import {
+  sharedUnitAttackCooldownLabel,
+  unitAttackCooldownLabel,
+} from './unitAttackCooldown';
+import {
+  sharedUnitAttackRangeLabel,
+  unitAttackRangeLabel,
+} from './unitAttackRange';
+import {
+  sharedUnitAttackTypeLabel,
+  unitAttackTypeLabel,
+} from './unitAttackType';
+import { sharedUnitDamageLabel, unitDamageLabel } from './unitDamage';
+import { sharedUnitDpsLabel, unitDpsLabel } from './unitDps';
+import {
+  sharedUnitHealRateLabel,
+  unitHealRateLabel,
+} from './unitHealRate';
+import {
+  sharedUnitCargoCapacityLabel,
+  unitCargoCapacityLabel,
+} from './unitCargoCapacity';
+import { unitCurrentCargoLabel } from './unitCurrentCargo';
+import {
+  sharedUnitGatherYieldLabel,
+  unitGatherYieldLabel,
+} from './unitGatherYield';
+import {
+  sharedUnitMoveCadenceLabel,
+  unitMoveCadenceLabel,
+} from './unitMoveCadence';
+import {
+  sharedUnitMoveSpeedLabel,
+  unitMoveSpeedLabel,
+} from './unitMoveSpeed';
+import { sharedUnitHpMaxLabel, unitHpMaxLabel } from './unitHpMax';
+import {
+  sharedUnitSupplyCostLabel,
+  unitSupplyCostLabel,
+} from './unitSupplyCost';
+import {
+  sharedUnitRoleLabel,
+  unitRoleLabel,
+} from './unitRole';
+import {
+  sharedUnitNameTipLabel,
+  unitNameTipLabel,
+} from './unitNameTip';
+import {
+  sharedUnitSpeciesTipLabel,
+  unitSpeciesTipLabel,
+} from './unitSpeciesTip';
+import {
+  sharedUnitTrainCrystalLabel,
+  unitTrainCrystalLabel,
+} from './unitTrainCrystal';
+import {
+  sharedUnitTrainDurationLabel,
+  unitTrainDurationLabel,
+} from './unitTrainDuration';
+import {
+  sharedUnitTrainGoldLabel,
+  unitTrainGoldLabel,
+} from './unitTrainGold';
+import { sharedUnitVisionLabel, unitVisionLabel } from './unitVision';
 import type {
   BattlefieldBuilding,
   BattlefieldUnit,
@@ -24,6 +100,7 @@ import type {
 } from '../../gameplay/battlefield/battlefieldWorld';
 import { canAfford } from '../../gameplay/battlefield/battlefieldBuildings';
 import { buildingHasCustomRally } from '../../gameplay/battlefield/battlefieldRally';
+import { rallyDistanceTiles } from '../../gameplay/battlefield/rallyDistance';
 
 function matchupLine(id: SpeciesId): string {
   const tip = SPECIES_MATCHUP_TIP[id];
@@ -31,6 +108,17 @@ function matchupLine(id: SpeciesId): string {
     strong: speciesName(tip.strongVs),
     weak: speciesName(tip.weakVs),
   });
+}
+
+/** Localized armor / role class for a unit type (HUD label only). */
+export function armorClassLabel(typeId: UnitTypeId): string {
+  return unitArmorClassTipLabel(typeId);
+}
+
+/** Set-rally / armed button copy with tile distance (panel echo of world flag). */
+export function rallyButtonLabel(armed: boolean, tiles: number): string {
+  const base = armed ? t('sel.rallyArmed') : t('sel.setRally');
+  return `${base} · ${t('hud.rallyDist', { n: tiles })}`;
 }
 import {
   GATHER,
@@ -51,7 +139,6 @@ export type SelectionAbilityView = {
 };
 
 const PANEL_ID = 'kane-selection-panel';
-const STYLE_ID = 'kane-selection-panel-style';
 
 export type SelectionPanelHandlers = {
   stop: () => void;
@@ -130,6 +217,48 @@ export type SelectionPanelView =
       maxHp: number;
       dmg: number | null;
       range: number | null;
+      /** GDD role / armor class label when selection shares one class. */
+      armorClass: string | null;
+      /** Catalog DPS tip when selection shares one unit type. */
+      dpsTip: string | null;
+      /** Catalog heal-rate tip when selection shares a heal-capable hero. */
+      healRateTip: string | null;
+      /** Catalog attack-damage tip when selection shares one unit type (distinct from ATK chip / DPS). */
+      dmgTip: string | null;
+      /** Melee / Ranged tip when selection shares one attack type. */
+      atkTypeTip: string | null;
+      /** Catalog move-speed tip when selection shares one unit type. */
+      speedTip: string | null;
+      /** Seconds-per-tile pace tip when selection shares one unit type. */
+      moveCadenceTip: string | null;
+      /** Catalog vision-radius tip when selection shares one unit type. */
+      visionTip: string | null;
+      /** Catalog attack-range tip when selection shares one unit type. */
+      rangeTip: string | null;
+      /** Catalog max-HP tip when selection shares one unit type. */
+      hpMaxTip: string | null;
+      /** Catalog attack-cooldown tip when selection shares one unit type. */
+      atkCdTip: string | null;
+      /** Catalog supply-cost tip when selection shares one unit type. */
+      supplyTip: string | null;
+      /** Catalog train gold-cost tip when selection shares one unit type. */
+      trainGoldTip: string | null;
+      /** Catalog train crystal-cost tip when selection shares one unit type. */
+      trainCrystalTip: string | null;
+      /** Catalog full train-duration tip when selection shares one unit type. */
+      trainDurationTip: string | null;
+      /** Coarse duty role tip (worker / combat / hero), distinct from armor class. */
+      roleTip: string | null;
+      /** Species name tip when selection shares one species. */
+      speciesTip: string | null;
+      /** Catalog unit name tip when selection shares one unit type. */
+      nameTip: string | null;
+      /** Catalog gather-yield tip when selection shares worker haul capacity. */
+      yieldTip: string | null;
+      /** Catalog cargo-capacity tip when selection shares worker max haul. */
+      cargoCapTip: string | null;
+      /** Live current cargo tip (Cargo · empty / Cargo · n/cap). */
+      cargoNowTip: string | null;
       tags: string[];
       attackMoveArmed: boolean;
       /** Present when a single player hero is selected. */
@@ -155,15 +284,33 @@ export type SelectionPanelView =
       flavor: string;
       hp: number;
       maxHp: number;
+      /** Catalog max-HP tip for the selected building type. */
+      hpMaxTip: string | null;
+      /** Armor · Structure tip for the selected building type. */
+      armorClass: string | null;
+      /** Catalog build gold/crystal cost tip (omitted when free). */
+      buildCostTip: string | null;
+      /** Catalog full build-time tip (omitted when buildMs is 0). */
+      buildTimeTip: string | null;
+      /** Live construction progress tip while incomplete. */
+      buildProgressTip: string | null;
+      /** Tile cols×rows footprint tip (same as placement ghost). */
+      footprintTip: string | null;
+      /** Production-queue tip when the building type can train units. */
+      prodQueueTip: string | null;
       /** Building finished construction (can start training). */
       ready: boolean;
       /** 0–1 construction progress while incomplete. */
       buildPct: number;
+      /** Whole seconds left on construction (ceil); 0 when ready. */
+      buildRemainSec: number;
       trains: {
         typeId: UnitTypeId;
         name: string;
         costGold: number;
         costCrystals: number;
+        /** Full train duration in whole seconds (ceil of trainMs). */
+        trainSec: number;
         /** Wallet can cover gold + crystals. */
         canPay: boolean;
         /** Ready + canPay — button enabled. */
@@ -173,11 +320,17 @@ export type SelectionPanelView =
       places: SelectionPlaceOption[];
       queue: UnitTypeId[];
       progressPct: number;
+      /** Whole seconds left on the head train slot (ceil). */
+      remainSec: number;
+      /** Head remain + full trainSec for each waiting slot (ceil). */
+      totalSec: number;
       headName: string | null;
       rallyArmed: boolean;
       hasRally: boolean;
       /** Rally differs from the default march point. */
       hasCustomRally: boolean;
+      /** Tile distance from producer to current rally (panel echo). */
+      rallyDistTiles: number;
     }
   | {
       kind: 'resource';
@@ -235,7 +388,6 @@ export function ensureSelectionPanel(): HTMLElement {
     </div>
   `;
   document.body.appendChild(root);
-  injectStyles();
 
   root.addEventListener('pointerdown', (ev) => {
     // Keep taps on the panel from hitting the Phaser canvas underneath.
@@ -278,529 +430,59 @@ export function ensureSelectionPanel(): HTMLElement {
   return root;
 }
 
-function injectStyles(): void {
-  if (document.getElementById(STYLE_ID)) return;
-  const style = document.createElement('style');
-  style.id = STYLE_ID;
-  style.textContent = `
-    #kane-selection-panel {
-      display: none;
-      position: fixed;
-      left: 8px;
-      right: 8px;
-      bottom: calc(8px + env(safe-area-inset-bottom, 0px));
-      z-index: 25;
-      pointer-events: none;
-      font-family: system-ui, -apple-system, sans-serif;
-    }
-    #kane-selection-panel.is-visible {
-      display: block;
-    }
-    #kane-selection-panel.is-empty .kane-sel-portrait,
-    #kane-selection-panel.is-empty .kane-sel-hp,
-    #kane-selection-panel.is-empty .kane-sel-carry,
-    #kane-selection-panel.is-empty .kane-sel-stats,
-    #kane-selection-panel.is-empty .kane-sel-meter,
-    #kane-selection-panel.is-empty .kane-sel-control-hint,
-    #kane-selection-panel.is-empty .kane-sel-actions,
-    #kane-selection-panel.is-empty .kane-sel-queue {
-      display: none !important;
-    }
-    #kane-selection-panel.is-empty .kane-sel-inner {
-      max-width: 420px;
-      padding: 8px 12px 10px;
-    }
-    #kane-selection-panel.is-empty .kane-sel-title {
-      font-size: 13px;
-      color: #c8d8e8;
-    }
-    #kane-selection-panel.is-empty .kane-sel-flavor {
-      font-size: 12px;
-      color: #9eb4c8;
-    }
-    #kane-selection-panel .kane-sel-inner {
-      pointer-events: auto;
-      max-width: 560px;
-      margin: 0 auto;
-      padding: 10px 12px 12px;
-      border: 1.5px solid #f0c75e;
-      border-radius: 6px;
-      background: linear-gradient(180deg, rgba(22,34,54,0.96), rgba(12,20,36,0.96));
-      box-shadow: 0 8px 24px rgba(0,0,0,0.45);
-      color: #f5e6c8;
-    }
-    #kane-selection-panel .kane-sel-main {
-      display: flex;
-      gap: 10px;
-      align-items: flex-start;
-    }
-    #kane-selection-panel .kane-sel-portrait {
-      flex: 0 0 48px;
-      width: 48px;
-      height: 48px;
-      border-radius: 4px;
-      border: 1.5px solid #c9a84c;
-      background: #1a2838;
-      position: relative;
-      overflow: hidden;
-    }
-    #kane-selection-panel .kane-sel-portrait::after {
-      content: '';
-      position: absolute;
-      inset: 8px;
-      border-radius: 3px;
-      background: var(--kane-sel-accent, #f0c75e);
-      opacity: 0.85;
-    }
-    #kane-selection-panel .kane-sel-portrait.is-building::after {
-      border-radius: 2px;
-      inset: 10px 8px 8px;
-      clip-path: polygon(15% 100%, 15% 40%, 50% 12%, 85% 40%, 85% 100%);
-    }
-    #kane-selection-panel .kane-sel-portrait.is-mixed::after {
-      inset: 10px;
-      border-radius: 50%;
-      background: repeating-linear-gradient(
-        45deg,
-        #f0c75e,
-        #f0c75e 4px,
-        #3d7ea6 4px,
-        #3d7ea6 8px
-      );
-    }
-    #kane-selection-panel .kane-sel-info {
-      flex: 1 1 auto;
-      min-width: 0;
-    }
-    #kane-selection-panel .kane-sel-title {
-      font-family: Georgia, "Times New Roman", serif;
-      font-size: 15px;
-      font-weight: 700;
-      color: #fff8e8;
-      line-height: 1.2;
-      white-space: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis;
-    }
-    #kane-selection-panel .kane-sel-flavor {
-      margin-top: 2px;
-      font-size: 11px;
-      color: #9eb4c8;
-      line-height: 1.25;
-      white-space: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis;
-    }
-    #kane-selection-panel .kane-sel-hp {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      margin-top: 6px;
-    }
-    #kane-selection-panel .kane-sel-hp-track {
-      flex: 1 1 auto;
-      height: 10px;
-      border-radius: 3px;
-      background: #0a121c;
-      border: 1px solid #3a4555;
-      overflow: hidden;
-    }
-    #kane-selection-panel .kane-sel-hp-fill {
-      height: 100%;
-      width: 0%;
-      border-radius: 2px;
-      background: linear-gradient(90deg, #3d7ea6, #6ecfbf);
-      transition: width 80ms linear;
-    }
-    #kane-selection-panel .kane-sel-hp-fill.is-low {
-      background: linear-gradient(90deg, #8a3030, #e87a7a);
-      animation: kane-sel-hp-low-pulse 1.1s ease-in-out infinite;
-    }
-    #kane-selection-panel .kane-sel-hp-fill.is-building {
-      background: linear-gradient(90deg, #8a7030, #f0c75e);
-      animation: none;
-    }
-    #kane-selection-panel .kane-sel-hp-text.is-low {
-      color: #e87a7a;
-      animation: kane-sel-hp-text-pulse 1.1s ease-in-out infinite;
-    }
-    @keyframes kane-sel-hp-low-pulse {
-      0%, 100% { filter: brightness(1); opacity: 1; }
-      50% { filter: brightness(1.35); opacity: 0.85; }
-    }
-    @keyframes kane-sel-hp-text-pulse {
-      0%, 100% { opacity: 1; }
-      50% { opacity: 0.55; }
-    }
-    @media (prefers-reduced-motion: reduce) {
-      #kane-selection-panel .kane-sel-hp-fill.is-low,
-      #kane-selection-panel .kane-sel-hp-text.is-low {
-        animation: none;
-      }
-    }
-    #kane-selection-panel .kane-sel-carry {
-      margin-top: 4px;
-      font-size: 12px;
-      font-weight: 600;
-      color: #f0c75e;
-      letter-spacing: 0.02em;
-    }
-    #kane-selection-panel .kane-sel-carry.is-crystal {
-      color: #7ec8ff;
-    }
-    #kane-selection-panel .kane-sel-carry.is-full {
-      color: #fff0c0;
-    }
-    #kane-selection-panel .kane-sel-carry.is-full.is-crystal {
-      color: #d8f0ff;
-    }
-    #kane-selection-panel .kane-sel-hp-text {
-      flex: 0 0 auto;
-      font-size: 12px;
-      font-variant-numeric: tabular-nums;
-      color: #d7e6f2;
-      min-width: 4.5em;
-      text-align: right;
-    }
-    #kane-selection-panel .kane-sel-stats {
-      margin-top: 4px;
-      font-size: 12px;
-      color: #c8d8e8;
-      letter-spacing: 0.02em;
-    }
-    #kane-selection-panel .kane-sel-stats span {
-      margin-right: 10px;
-      white-space: nowrap;
-    }
-    #kane-selection-panel .kane-sel-actions {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 6px;
-      margin-top: 10px;
-    }
-    #kane-selection-panel .kane-sel-actions:empty {
-      display: none;
-    }
-    #kane-selection-panel button {
-      pointer-events: auto;
-      min-height: 44px;
-      min-width: 72px;
-      padding: 8px 10px;
-      border: 1.5px solid #f0c75e;
-      border-radius: 4px;
-      background: #2a4050;
-      color: #fff8e8;
-      font-size: 12px;
-      font-weight: 600;
-      line-height: 1.15;
-      touch-action: manipulation;
-      -webkit-tap-highlight-color: transparent;
-      cursor: pointer;
-    }
-    #kane-selection-panel button:active:not(:disabled) {
-      background: #3a5565;
-    }
-    #kane-selection-panel button.is-armed {
-      background: #8a3030;
-      border-color: #ffb8b8;
-      color: #ffe0e0;
-    }
-    #kane-selection-panel button.is-rally {
-      background: #3a5530;
-    }
-    #kane-selection-panel button.is-rally.is-armed {
-      background: #5a7030;
-      border-color: #f0c75e;
-      color: #fff8e8;
-    }
-    #kane-selection-panel button.is-rally-clear {
-      background: #3a4555;
-      border-color: #6a7a8a;
-    }
-    #kane-selection-panel button.is-cancel {
-      background: #5a3a3a;
-      border-color: #e87a7a;
-    }
-    #kane-selection-panel .kane-sel-queue.is-cancel-flash {
-      animation: kane-sel-cancel-flash 420ms ease-out;
-    }
-    #kane-selection-panel .kane-sel-queue-label.is-flash {
-      color: #f0c75e;
-      font-weight: 700;
-    }
-    @keyframes kane-sel-cancel-flash {
-      0% { background: rgba(232, 122, 122, 0.35); }
-      100% { background: transparent; }
-    }
-    #kane-selection-panel button.is-train {
-      background: #3d7ea6;
-      flex: 1 1 100px;
-      max-width: 180px;
-      text-align: left;
-    }
-    #kane-selection-panel button.is-train .kane-sel-train-name {
-      display: block;
-      font-weight: 700;
-      font-size: 12px;
-      color: #fff8e8;
-    }
-    #kane-selection-panel button.is-train .kane-sel-cost {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 6px;
-      margin-top: 3px;
-      font-weight: 600;
-      font-size: 10px;
-      font-variant-numeric: tabular-nums;
-      letter-spacing: 0.02em;
-    }
-    #kane-selection-panel button.is-train .kane-sel-cost-gold {
-      color: #f0c75e;
-    }
-    #kane-selection-panel button.is-train .kane-sel-cost-crystal {
-      color: #7ec8ff;
-    }
-    #kane-selection-panel button.is-train.is-unaffordable {
-      opacity: 0.55;
-      border-color: #6a7f94;
-      background: #243040;
-    }
-    #kane-selection-panel button.is-train.is-unaffordable .kane-sel-cost-gold,
-    #kane-selection-panel button.is-train.is-unaffordable .kane-sel-cost-crystal {
-      color: #e87a7a;
-    }
-    #kane-selection-panel button.is-ability {
-      background: #2a3548;
-      flex: 1 1 96px;
-      max-width: 160px;
-      text-align: left;
-      border-color: #7ec8ff;
-    }
-    #kane-selection-panel button.is-ability.is-ultimate {
-      border-color: #f0c75e;
-    }
-    #kane-selection-panel button.is-ability .kane-sel-ability-name {
-      display: block;
-      font-weight: 700;
-      font-size: 11px;
-      color: #fff8e8;
-    }
-    #kane-selection-panel button.is-ability .kane-sel-ability-cd {
-      display: block;
-      margin-top: 2px;
-      font-size: 10px;
-      font-variant-numeric: tabular-nums;
-      color: #6ecfbf;
-      letter-spacing: 0.03em;
-    }
-    #kane-selection-panel button.is-ability.is-cooling .kane-sel-ability-cd {
-      color: #f0c75e;
-    }
-    #kane-selection-panel button.is-ability.is-unaffordable {
-      opacity: 0.55;
-      border-color: #6a7f94;
-    }
-    #kane-selection-panel button.is-ability.is-unaffordable .kane-sel-ability-cd {
-      color: #e87a7a;
-    }
-    #kane-selection-panel button.is-stance {
-      background: #3a4a2a;
-      border-color: #f0c75e;
-      min-width: 96px;
-      text-align: left;
-    }
-    #kane-selection-panel button.is-stance.is-armed {
-      background: #5a7030;
-      border-color: #f0c75e;
-      color: #fff8e8;
-    }
-    #kane-selection-panel button.is-stance .kane-sel-stance-sub {
-      display: block;
-      margin-top: 2px;
-      font-size: 10px;
-      font-weight: 600;
-      color: #c8d8a8;
-      letter-spacing: 0.02em;
-    }
-    #kane-selection-panel button.is-rage {
-      background: #5a3020;
-      border-color: #e87a4a;
-      min-width: 96px;
-      text-align: left;
-    }
-    #kane-selection-panel button.is-rage.is-armed {
-      background: #8a4020;
-      border-color: #ffb070;
-      color: #fff0e0;
-    }
-    #kane-selection-panel button.is-rage .kane-sel-stance-sub {
-      color: #ffc8a0;
-    }
-    #kane-selection-panel button.is-mutation {
-      background: #3a2a58;
-      border-color: #6ecfbf;
-      min-width: 96px;
-      text-align: left;
-    }
-    #kane-selection-panel button.is-mutation.is-armed {
-      background: #5a3a78;
-      border-color: #e87aa8;
-      color: #f8e8ff;
-    }
-    #kane-selection-panel button.is-mutation .kane-sel-stance-sub {
-      color: #b8e8d8;
-    }
-    #kane-selection-panel .kane-sel-meter {
-      margin-top: 6px;
-    }
-    #kane-selection-panel .kane-sel-meter-track {
-      height: 8px;
-      border-radius: 3px;
-      background: #0a121c;
-      border: 1px solid #5a3030;
-      overflow: hidden;
-    }
-    #kane-selection-panel .kane-sel-meter-fill {
-      height: 100%;
-      width: 0%;
-      border-radius: 2px;
-      background: linear-gradient(90deg, #8a3030, #e87a4a);
-      transition: width 80ms linear;
-    }
-    #kane-selection-panel .kane-sel-meter-fill.is-locked {
-      background: linear-gradient(90deg, #a04020, #ffb070);
-    }
-    #kane-selection-panel .kane-sel-meter-label {
-      display: block;
-      margin-top: 3px;
-      font-size: 11px;
-      color: #e8b090;
-      line-height: 1.25;
-    }
-    #kane-selection-panel .kane-sel-control-hint {
-      margin-top: 6px;
-      padding: 5px 8px;
-      border-radius: 3px;
-      border: 1px solid #3a5565;
-      background: rgba(18, 28, 40, 0.75);
-      font-size: 11px;
-      color: #b8c9d9;
-      line-height: 1.3;
-    }
-    #kane-selection-panel button:disabled {
-      cursor: default;
-    }
-    #kane-selection-panel .kane-sel-queue {
-      margin-top: 10px;
-      padding-top: 8px;
-      border-top: 1px solid #3a4555;
-    }
-    #kane-selection-panel .kane-sel-queue.is-idle .kane-sel-queue-bar {
-      opacity: 0.35;
-    }
-    #kane-selection-panel .kane-sel-queue-bar {
-      height: 8px;
-      border-radius: 3px;
-      background: #0a121c;
-      border: 1px solid #3a4555;
-      overflow: hidden;
-    }
-    #kane-selection-panel .kane-sel-queue-fill {
-      height: 100%;
-      width: 0%;
-      background: linear-gradient(90deg, #3d7ea6, #f0c75e);
-      transition: width 60ms linear;
-    }
-    #kane-selection-panel .kane-sel-queue-icons {
-      display: flex;
-      gap: 6px;
-      margin-top: 8px;
-      flex-wrap: wrap;
-      min-height: 28px;
-      align-items: center;
-    }
-    #kane-selection-panel .kane-sel-qicon {
-      width: 32px;
-      height: 32px;
-      min-width: 32px;
-      min-height: 32px;
-      padding: 0;
-      border-radius: 4px;
-      border: 1.5px solid #7ec8ff;
-      background: #1a2838;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 10px;
-      font-weight: 700;
-      color: #f5e6c8;
-      position: relative;
-      cursor: pointer;
-      touch-action: manipulation;
-      -webkit-tap-highlight-color: transparent;
-    }
-    #kane-selection-panel .kane-sel-qicon.is-active {
-      border-color: #f0c75e;
-      box-shadow: 0 0 0 1px rgba(240,199,94,0.55);
-      color: #fff8e8;
-    }
-    #kane-selection-panel .kane-sel-qicon:active {
-      border-color: #e87a7a;
-      background: #3a2430;
-    }
-    #kane-selection-panel .kane-sel-qicon .kane-sel-qnum {
-      position: absolute;
-      top: -5px;
-      right: -5px;
-      min-width: 12px;
-      height: 12px;
-      padding: 0 2px;
-      border-radius: 6px;
-      background: #0a1220;
-      border: 1px solid #f0c75e;
-      color: #f0c75e;
-      font-size: 8px;
-      line-height: 11px;
-      text-align: center;
-    }
-    #kane-selection-panel .kane-sel-queue-label {
-      margin-top: 4px;
-      font-size: 11px;
-      color: #9eb4c8;
-      line-height: 1.3;
-    }
-    #kane-selection-panel .kane-sel-queue-label strong {
-      color: #f5e6c8;
-      font-weight: 600;
-    }
-    @media (max-width: 719px) {
-      #kane-selection-panel {
-        left: 6px;
-        right: 6px;
-        bottom: calc(6px + env(safe-area-inset-bottom, 0px));
-      }
-      #kane-selection-panel .kane-sel-inner {
-        padding: 8px 10px 10px;
-      }
-      #kane-selection-panel .kane-sel-title {
-        font-size: 14px;
-      }
-      #kane-selection-panel button {
-        min-height: 42px;
-        font-size: 11px;
-      }
-    }
-  `;
-  document.head.appendChild(style);
-}
-
 export function mountSelectionPanel(next: SelectionPanelHandlers): void {
   handlers = next;
   ensureSelectionPanel();
 }
 
+/** Build refund toast copy including Gold / Crystal amounts. */
+export function formatQueueCancelFlash(opts: {
+  unitName?: string;
+  gold: number;
+  crystals: number;
+}): string {
+  const parts: string[] = [];
+  if (opts.gold > 0) parts.push(t('sel.goldCost', { n: opts.gold }));
+  if (opts.crystals > 0) parts.push(t('sel.crystalCost', { n: opts.crystals }));
+  if (parts.length === 0) {
+    return opts.unitName
+      ? t('sel.cancelFlashNamed', { name: opts.unitName })
+      : t('sel.cancelFlash');
+  }
+  const resources = parts.join(' · ');
+  return opts.unitName
+    ? t('sel.cancelFlashNamedRes', { name: opts.unitName, resources })
+    : t('sel.cancelFlashRes', { resources });
+}
+
+export type StanceHotkeyKind = 'formation' | 'rage' | 'mutation';
+
+const STANCE_HOTKEY_ACT: Record<StanceHotkeyKind, string> = {
+  formation: 'toggleFormation',
+  rage: 'toggleRage',
+  mutation: 'toggleMutation',
+};
+
+/** Brief gold flash on the stance button when F / R / M is pressed. */
+export function flashStanceHotkey(kind: StanceHotkeyKind): void {
+  const root = document.getElementById(PANEL_ID);
+  if (!root) return;
+  const btn = root.querySelector(
+    `[data-act="${STANCE_HOTKEY_ACT[kind]}"]`,
+  ) as HTMLElement | null;
+  if (!btn) return;
+  btn.classList.remove('is-hotkey-echo');
+  void btn.offsetWidth;
+  btn.classList.add('is-hotkey-echo');
+  window.setTimeout(() => btn.classList.remove('is-hotkey-echo'), 320);
+}
+
 /** Brief queue-row flash + refund copy after a successful cancel. */
-export function flashQueueCancel(unitName?: string): void {
+export function flashQueueCancel(opts: {
+  unitName?: string;
+  gold: number;
+  crystals: number;
+}): void {
   const root = document.getElementById(PANEL_ID);
   if (!root) return;
   const queue = root.querySelector('[data-role="queue"]') as HTMLElement | null;
@@ -814,9 +496,7 @@ export function flashQueueCancel(unitName?: string): void {
   queue.classList.add('is-cancel-flash');
   if (label) {
     label.classList.add('is-flash');
-    label.textContent = unitName
-      ? t('sel.cancelFlashNamed', { name: unitName })
-      : t('sel.cancelFlash');
+    label.textContent = formatQueueCancelFlash(opts);
   }
   window.setTimeout(() => {
     queue.classList.remove('is-cancel-flash');
@@ -878,6 +558,7 @@ export function buildSelectionView(
         name: u.name,
         costGold: u.costGold,
         costCrystals: u.costCrystals,
+        trainSec: trainFullSec(u.trainMs),
         canPay,
         affordable: canPay && ready,
       };
@@ -905,9 +586,17 @@ export function buildSelectionView(
       head && head.trainMs > 0
         ? Math.min(1, Math.max(0, b.trainProgressMs / head.trainMs))
         : 0;
+    const remainSec =
+      head && head.trainMs > 0
+        ? trainRemainSec(head.trainMs, b.trainProgressMs)
+        : 0;
+    const totalSec = trainQueueTotalSec(b.trainQueue, remainSec);
     const buildPct = ready
       ? 1
       : Math.min(1, Math.max(0, b.buildProgress));
+    const buildRemain = ready
+      ? 0
+      : buildRemainSec(b.buildMs, b.buildProgress);
     const flavorBase = `${species.name} · ${species.mechanic} · ${matchupLine(bdef.speciesId)}`;
     return {
       kind: 'building',
@@ -916,20 +605,41 @@ export function buildSelectionView(
         ? flavorBase
         : `${flavorBase} · ${t('sel.buildingPct', {
             pct: Math.floor(buildPct * 100),
+            sec: buildRemain,
           })}`,
       hp: b.hp,
       maxHp: b.maxHp,
+      hpMaxTip: buildingHpMaxLabel(b.typeId),
+      armorClass: buildingArmorClassLabel(b.typeId),
+      buildCostTip: buildingBuildCostLabel(b.typeId),
+      buildTimeTip: buildingBuildTimeLabel(b.typeId),
+      buildProgressTip: buildingBuildProgressLabel(
+        ready,
+        buildPct,
+        buildRemain,
+      ),
+      footprintTip: buildingFootprintLabel(b.typeId),
+      prodQueueTip: buildingProdQueueLabel(
+        trains.length > 0,
+        b.trainQueue.length,
+        head?.name ?? null,
+      ),
       ready,
       buildPct,
+      buildRemainSec: buildRemain,
       trains,
       places,
       queue: [...b.trainQueue],
       progressPct,
+      remainSec,
+      totalSec,
       headName: head?.name ?? null,
       rallyArmed,
       hasRally: trains.length > 0,
       hasCustomRally:
         trains.length > 0 && buildingHasCustomRally(b),
+      rallyDistTiles:
+        trains.length > 0 ? rallyDistanceTiles(b) : 0,
     };
   }
 
@@ -988,13 +698,34 @@ export function buildSelectionView(
       maxHp: u.maxHp,
       dmg: u.dmg,
       range: u.range,
+      armorClass: armorClassLabel(u.typeId),
+      dpsTip: unitDpsLabel(u.typeId),
+      healRateTip: unitHealRateLabel(u.typeId),
+      dmgTip: unitDamageLabel(u.typeId),
+      atkTypeTip: unitAttackTypeLabel(u.typeId),
+      speedTip: unitMoveSpeedLabel(u.typeId),
+      moveCadenceTip: unitMoveCadenceLabel(u.typeId),
+      visionTip: unitVisionLabel(u.typeId),
+      rangeTip: unitAttackRangeLabel(u.typeId),
+      hpMaxTip: unitHpMaxLabel(u.typeId),
+      atkCdTip: unitAttackCooldownLabel(u.typeId),
+      supplyTip: unitSupplyCostLabel(u.typeId),
+      trainGoldTip: unitTrainGoldLabel(u.typeId),
+      trainCrystalTip: unitTrainCrystalLabel(u.typeId),
+      trainDurationTip: unitTrainDurationLabel(u.typeId),
+      roleTip: unitRoleLabel(u.typeId),
+      speciesTip: unitSpeciesTipLabel(u.speciesId),
+      nameTip: unitNameTipLabel(u.typeId),
+      yieldTip: unitGatherYieldLabel(u.typeId),
+      cargoCapTip: unitCargoCapacityLabel(u.typeId),
+      cargoNowTip: unitCurrentCargoLabel(alive),
       tags,
       attackMoveArmed,
       abilities: heroAbilityViews(world, u),
       formation: formationViewFor(alive),
       rage: rageViewFor(alive),
       mutation: mutationViewFor(alive),
-      controlHint: controlHintFor(alive),
+      controlHint: controlHintFor(world, alive),
       carryLine: carry.line,
       carryCrystal: carry.crystal,
       carryFull: carry.full,
@@ -1041,13 +772,34 @@ export function buildSelectionView(
     maxHp,
     dmg,
     range,
+    armorClass: sharedUnitArmorClassTipLabel(alive.map((u) => u.typeId)),
+    dpsTip: sharedUnitDpsLabel(alive.map((u) => u.typeId)),
+    healRateTip: sharedUnitHealRateLabel(alive.map((u) => u.typeId)),
+    dmgTip: sharedUnitDamageLabel(alive.map((u) => u.typeId)),
+    atkTypeTip: sharedUnitAttackTypeLabel(alive.map((u) => u.typeId)),
+    speedTip: sharedUnitMoveSpeedLabel(alive.map((u) => u.typeId)),
+    moveCadenceTip: sharedUnitMoveCadenceLabel(alive.map((u) => u.typeId)),
+    visionTip: sharedUnitVisionLabel(alive.map((u) => u.typeId)),
+    rangeTip: sharedUnitAttackRangeLabel(alive.map((u) => u.typeId)),
+    hpMaxTip: sharedUnitHpMaxLabel(alive.map((u) => u.typeId)),
+    atkCdTip: sharedUnitAttackCooldownLabel(alive.map((u) => u.typeId)),
+    supplyTip: sharedUnitSupplyCostLabel(alive.map((u) => u.typeId)),
+    trainGoldTip: sharedUnitTrainGoldLabel(alive.map((u) => u.typeId)),
+    trainCrystalTip: sharedUnitTrainCrystalLabel(alive.map((u) => u.typeId)),
+    trainDurationTip: sharedUnitTrainDurationLabel(alive.map((u) => u.typeId)),
+    roleTip: sharedUnitRoleLabel(alive.map((u) => u.typeId)),
+    speciesTip: sharedUnitSpeciesTipLabel(alive.map((u) => u.speciesId)),
+    nameTip: sharedUnitNameTipLabel(alive.map((u) => u.typeId)),
+    yieldTip: sharedUnitGatherYieldLabel(alive.map((u) => u.typeId)),
+    cargoCapTip: sharedUnitCargoCapacityLabel(alive.map((u) => u.typeId)),
+    cargoNowTip: unitCurrentCargoLabel(alive),
     tags,
     attackMoveArmed,
     abilities: null,
     formation: formationViewFor(alive),
     rage: rageViewFor(alive),
     mutation: mutationViewFor(alive),
-    controlHint: controlHintFor(alive),
+    controlHint: controlHintFor(world, alive),
     carryLine: carry.line,
     carryCrystal: carry.crystal,
     carryFull: carry.full,
@@ -1119,10 +871,28 @@ export function carryLineFor(
   };
 }
 
-function controlHintFor(units: BattlefieldUnit[]): string | null {
+/** Quiet F-hotkey tip with formed/eligible count for Nobles. */
+function formationCountTip(f: SelectionFormationView): string {
+  const count =
+    f.eligible === 1
+      ? t(f.formed ? 'sel.inFormation' : 'sel.notFormed')
+      : t('sel.formedCount', { formed: f.formed, eligible: f.eligible });
+  return `${t('sel.formationTip')} · ${count}`;
+}
+
+/** Append live remaining cooldown when the hero ability is recharging. */
+function abilityNameWithCd(name: string, cdSec: number): string {
+  return cdSec > 0 ? `${name} (${t('hud.heroCd', { sec: cdSec })})` : name;
+}
+
+function controlHintFor(
+  world: BattlefieldWorld,
+  units: BattlefieldUnit[],
+): string | null {
   const player = units.filter((u) => u.team === 'player' && u.hp > 0);
   if (player.length === 0) return null;
   const hasGrabber = player.some((u) => u.typeId === 'grabber');
+  const formation = formationViewFor(units);
   const hero = player.find((u) => !!getUnitType(u.typeId).isHero);
   if (hero) {
     const def = heroForSpecies(hero.speciesId);
@@ -1130,20 +900,26 @@ function controlHintFor(units: BattlefieldUnit[]): string | null {
       const q = def.abilities.ability1;
       const w = def.abilities.ability2;
       const e = def.abilities.ultimate;
+      const cds = heroAbilityViews(world, hero);
+      const qCd = cds?.find((a) => a.slot === 'ability1')?.cdSec ?? 0;
+      const wCd = cds?.find((a) => a.slot === 'ability2')?.cdSec ?? 0;
+      const eCd = cds?.find((a) => a.slot === 'ultimate')?.cdSec ?? 0;
       let tip = t('sel.heroHotkeys', {
         q: q.hotkey,
-        qName: q.name,
+        qName: abilityNameWithCd(q.name, qCd),
         w: w.hotkey,
-        wName: w.name,
+        wName: abilityNameWithCd(w.name, wCd),
         e: e.hotkey,
-        eName: e.name,
+        eName: abilityNameWithCd(e.name, eCd),
       });
       if (hero.speciesId === 'weirdos' && hasGrabber) {
         tip = `${tip} · ${t('sel.grabberMutTip')}`;
       } else if (hero.speciesId === 'weirdos') {
         tip = `${tip} · ${t('sel.mutationTip')}`;
       } else if (hero.speciesId === 'nobles') {
-        tip = `${tip} · ${t('sel.formationTip')}`;
+        tip = formation
+          ? `${tip} · ${formationCountTip(formation)}`
+          : `${tip} · ${t('sel.formationTip')}`;
       } else if (hero.speciesId === 'brutes') {
         tip = `${tip} · ${t('sel.rageTip')}`;
       }
@@ -1152,6 +928,9 @@ function controlHintFor(units: BattlefieldUnit[]): string | null {
   }
   if (hasGrabber) {
     return t('sel.grabberTip');
+  }
+  if (formation) {
+    return formationCountTip(formation);
   }
   return null;
 }
@@ -1279,6 +1058,27 @@ function structureSignature(view: SelectionPanelView): string {
       view.title,
       view.dmg ?? '-',
       view.range ?? '-',
+      view.armorClass ?? '',
+      view.dpsTip ?? '',
+      view.healRateTip ?? '',
+      view.dmgTip ?? '',
+      view.atkTypeTip ?? '',
+      view.speedTip ?? '',
+      view.moveCadenceTip ?? '',
+      view.visionTip ?? '',
+      view.rangeTip ?? '',
+      view.hpMaxTip ?? '',
+      view.atkCdTip ?? '',
+      view.supplyTip ?? '',
+      view.trainGoldTip ?? '',
+      view.trainCrystalTip ?? '',
+      view.trainDurationTip ?? '',
+      view.roleTip ?? '',
+      view.speciesTip ?? '',
+      view.nameTip ?? '',
+      view.yieldTip ?? '',
+      view.cargoCapTip ?? '',
+      view.cargoNowTip ?? '',
       view.tags.join(','),
       view.attackMoveArmed ? 1 : 0,
       abs,
@@ -1307,6 +1107,14 @@ function structureSignature(view: SelectionPanelView): string {
     view.hasRally ? 1 : 0,
     view.hasCustomRally ? 1 : 0,
     view.rallyArmed ? 1 : 0,
+    view.rallyDistTiles,
+    view.hpMaxTip ?? '',
+    view.armorClass ?? '',
+    view.buildCostTip ?? '',
+    view.buildTimeTip ?? '',
+    view.buildProgressTip ?? '',
+    view.footprintTip ?? '',
+    view.prodQueueTip ?? '',
     view.trains
       .map((t) => `${t.typeId}:${t.canPay ? 1 : 0}:${t.affordable ? 1 : 0}`)
       .join(','),
@@ -1317,17 +1125,28 @@ function structureSignature(view: SelectionPanelView): string {
       )
       .join(','),
     view.queue.join(','),
+    view.remainSec,
+    view.totalSec,
     view.headName ?? '',
   ].join('|');
 }
 
-function trainCostHtml(gold: number, crystals: number): string {
+function trainCostHtml(
+  gold: number,
+  crystals: number,
+  trainSec = 0,
+): string {
   const bits = [
     `<span class="kane-sel-cost-gold">${t('sel.goldCost', { n: gold })}</span>`,
   ];
   if (crystals > 0) {
     bits.push(
       `<span class="kane-sel-cost-crystal">${t('sel.crystalCost', { n: crystals })}</span>`,
+    );
+  }
+  if (trainSec > 0) {
+    bits.push(
+      `<span class="kane-sel-cost-sec">${escapeHtml(t('sel.trainSec', { sec: trainSec }))}</span>`,
     );
   }
   return `<span class="kane-sel-cost">${bits.join('')}</span>`;
@@ -1340,7 +1159,7 @@ function abilityButtonHtml(a: SelectionAbilityView): string {
   if (!a.canPay) classes.push('is-unaffordable');
   const castable = a.ready && a.canPay;
   const cdLabel = !a.ready
-    ? `${a.cdSec}s`
+    ? t('sel.cooldown', { n: a.cdSec })
     : !a.canPay
       ? t('sel.needShort', { n: a.costCrystals })
       : t('sel.ready');
@@ -1349,7 +1168,7 @@ function abilityButtonHtml(a: SelectionAbilityView): string {
     : !a.canPay
       ? ` title="${t('sel.needCrystals', { n: a.costCrystals })}"`
       : ` title="${escapeHtml(t('sel.cast', { name: a.name, hotkey: a.hotkey }))}"`;
-  return `<button type="button" class="${classes.join(' ')}" data-act="castAbility" data-slot="${a.slot}"${castable ? '' : ' disabled'}${title}><span class="kane-sel-ability-name">${escapeHtml(a.hotkey)} · ${escapeHtml(a.name)}</span><span class="kane-sel-ability-cd">${cdLabel}</span></button>`;
+  return `<button type="button" class="${classes.join(' ')}" data-act="castAbility" data-slot="${a.slot}"${castable ? '' : ' disabled'}${title}><span class="kane-sel-ability-name">${escapeHtml(a.hotkey)} · ${escapeHtml(a.name)}</span><span class="kane-sel-ability-cd">${escapeHtml(cdLabel)}</span></button>`;
 }
 
 function applyAbilityButtonState(
@@ -1363,7 +1182,7 @@ function applyAbilityButtonState(
   const cd = btn.querySelector('.kane-sel-ability-cd');
   if (cd) {
     cd.textContent = !a.ready
-      ? `${a.cdSec}s`
+      ? t('sel.cooldown', { n: a.cdSec })
       : !a.canPay
         ? t('sel.needShort', { n: a.costCrystals })
         : t('sel.ready');
@@ -1378,6 +1197,7 @@ function trainButtonHtml(unit: {
   name: string;
   costGold: number;
   costCrystals: number;
+  trainSec: number;
   canPay: boolean;
   affordable: boolean;
 }): string {
@@ -1388,7 +1208,7 @@ function trainButtonHtml(unit: {
       ? ` title="${t('sel.needResources')}"`
       : ` title="${t('sel.underConstruction')}"`
     : '';
-  return `<button type="button" class="${classes.join(' ')}" data-act="train" data-type-id="${unit.typeId}"${unit.affordable ? '' : ' disabled'}${reason}><span class="kane-sel-train-name">${escapeHtml(unit.name)}</span>${trainCostHtml(unit.costGold, unit.costCrystals)}</button>`;
+  return `<button type="button" class="${classes.join(' ')}" data-act="train" data-type-id="${unit.typeId}"${unit.affordable ? '' : ' disabled'}${reason}><span class="kane-sel-train-name">${escapeHtml(unit.name)}</span>${trainCostHtml(unit.costGold, unit.costCrystals, unit.trainSec)}</button>`;
 }
 
 function placeButtonHtml(p: SelectionPlaceOption): string {
@@ -1561,11 +1381,52 @@ function applyTrainAffordability(
   }
 }
 
+/** Whole seconds for a full train from trainMs. */
+export function trainFullSec(trainMs: number): number {
+  if (trainMs <= 0) return 0;
+  return Math.max(0, Math.ceil(trainMs / 1000));
+}
+
+/** Whole seconds left on the active train slot (ceil, never negative). */
+export function trainRemainSec(
+  trainMs: number,
+  trainProgressMs: number,
+): number {
+  if (trainMs <= 0) return 0;
+  return Math.max(0, Math.ceil((trainMs - trainProgressMs) / 1000));
+}
+
+/** Head remain + full duration for each waiting queue slot. */
+export function trainQueueTotalSec(
+  queue: readonly UnitTypeId[],
+  remainSec: number,
+): number {
+  if (queue.length === 0) return 0;
+  let total = Math.max(0, remainSec);
+  for (let i = 1; i < queue.length; i++) {
+    total += trainFullSec(getUnitType(queue[i]!).trainMs);
+  }
+  return total;
+}
+
+/** Whole seconds left on construction from buildMs × remaining progress. */
+export function buildRemainSec(
+  buildMs: number,
+  buildProgress: number,
+): number {
+  if (buildMs <= 0) return 0;
+  const p = Math.min(1, Math.max(0, buildProgress));
+  return Math.max(0, Math.ceil((buildMs * (1 - p)) / 1000));
+}
+
 function queueLabelText(
   view: Extract<SelectionPanelView, { kind: 'building' }>,
 ): string {
   if (!view.ready) {
-    return t('sel.buildingPct', { pct: Math.floor(view.buildPct * 100) });
+    return t('sel.buildingPct', {
+      pct: Math.floor(view.buildPct * 100),
+      sec: view.buildRemainSec,
+    });
   }
   if (view.queue.length === 0) {
     if (view.trains.length) {
@@ -1576,16 +1437,19 @@ function queueLabelText(
   const pct = Math.floor(view.progressPct * 100);
   const waiting = view.queue.length - 1;
   const hint = t('sel.cancelHint');
+  const sec = view.remainSec;
   if (view.headName && waiting > 0) {
     return t('sel.trainingWait', {
       name: view.headName,
       pct,
+      sec,
       waiting,
+      total: view.totalSec,
       hint,
     });
   }
   if (view.headName) {
-    return t('sel.training', { name: view.headName, pct, hint });
+    return t('sel.training', { name: view.headName, pct, sec, hint });
   }
   return t('sel.queue', { n: view.queue.length, hint });
 }
@@ -1724,8 +1588,70 @@ export function renderSelectionPanel(view: SelectionPanelView): boolean {
       if (structuralChange) {
         const bits: string[] = [];
         if (view.dmg != null) bits.push(`<span>${t('sel.atk')} ${view.dmg}</span>`);
-        if (view.range != null) bits.push(`<span>${t('sel.rng')} ${view.range}</span>`);
-        for (const t of view.tags) bits.push(`<span>${escapeHtml(t)}</span>`);
+        if (view.rangeTip) {
+          bits.push(`<span>${escapeHtml(view.rangeTip)}</span>`);
+        }
+        if (view.dpsTip) {
+          bits.push(`<span>${escapeHtml(view.dpsTip)}</span>`);
+        }
+        if (view.healRateTip) {
+          bits.push(`<span>${escapeHtml(view.healRateTip)}</span>`);
+        }
+        if (view.dmgTip) {
+          bits.push(`<span>${escapeHtml(view.dmgTip)}</span>`);
+        }
+        if (view.atkTypeTip) {
+          bits.push(`<span>${escapeHtml(view.atkTypeTip)}</span>`);
+        }
+        if (view.speedTip) {
+          bits.push(`<span>${escapeHtml(view.speedTip)}</span>`);
+        }
+        if (view.moveCadenceTip) {
+          bits.push(`<span>${escapeHtml(view.moveCadenceTip)}</span>`);
+        }
+        if (view.visionTip) {
+          bits.push(`<span>${escapeHtml(view.visionTip)}</span>`);
+        }
+        if (view.hpMaxTip) {
+          bits.push(`<span>${escapeHtml(view.hpMaxTip)}</span>`);
+        }
+        if (view.atkCdTip) {
+          bits.push(`<span>${escapeHtml(view.atkCdTip)}</span>`);
+        }
+        if (view.supplyTip) {
+          bits.push(`<span>${escapeHtml(view.supplyTip)}</span>`);
+        }
+        if (view.trainGoldTip) {
+          bits.push(`<span>${escapeHtml(view.trainGoldTip)}</span>`);
+        }
+        if (view.trainCrystalTip) {
+          bits.push(`<span>${escapeHtml(view.trainCrystalTip)}</span>`);
+        }
+        if (view.trainDurationTip) {
+          bits.push(`<span>${escapeHtml(view.trainDurationTip)}</span>`);
+        }
+        if (view.roleTip) {
+          bits.push(`<span>${escapeHtml(view.roleTip)}</span>`);
+        }
+        if (view.speciesTip) {
+          bits.push(`<span>${escapeHtml(view.speciesTip)}</span>`);
+        }
+        if (view.nameTip) {
+          bits.push(`<span>${escapeHtml(view.nameTip)}</span>`);
+        }
+        if (view.yieldTip) {
+          bits.push(`<span>${escapeHtml(view.yieldTip)}</span>`);
+        }
+        if (view.cargoNowTip) {
+          bits.push(`<span>${escapeHtml(view.cargoNowTip)}</span>`);
+        }
+        if (view.cargoCapTip) {
+          bits.push(`<span>${escapeHtml(view.cargoCapTip)}</span>`);
+        }
+        if (view.armorClass) {
+          bits.push(`<span>${escapeHtml(view.armorClass)}</span>`);
+        }
+        for (const tag of view.tags) bits.push(`<span>${escapeHtml(tag)}</span>`);
         stats.innerHTML = bits.join('');
         const abilityHtml = view.abilities
           ? view.abilities.map(abilityButtonHtml).join('')
@@ -1801,12 +1727,34 @@ export function renderSelectionPanel(view: SelectionPanelView): boolean {
       portrait.style.setProperty('--kane-sel-accent', '#3d7ea6');
       if (structuralChange) {
         const bits: string[] = [];
-        if (view.trains.length) bits.push(`<span>${t('sel.production')}</span>`);
+        if (view.hpMaxTip) {
+          bits.push(`<span>${escapeHtml(view.hpMaxTip)}</span>`);
+        }
+        if (view.armorClass) {
+          bits.push(`<span>${escapeHtml(view.armorClass)}</span>`);
+        }
+        if (view.buildCostTip) {
+          bits.push(`<span>${escapeHtml(view.buildCostTip)}</span>`);
+        }
+        if (view.buildTimeTip) {
+          bits.push(`<span>${escapeHtml(view.buildTimeTip)}</span>`);
+        }
+        if (view.buildProgressTip) {
+          bits.push(`<span>${escapeHtml(view.buildProgressTip)}</span>`);
+        }
+        if (view.footprintTip) {
+          bits.push(`<span>${escapeHtml(view.footprintTip)}</span>`);
+        }
+        if (view.prodQueueTip) {
+          bits.push(`<span>${escapeHtml(view.prodQueueTip)}</span>`);
+        } else if (view.trains.length) {
+          bits.push(`<span>${t('sel.production')}</span>`);
+        }
         if (view.places.length) bits.push(`<span>${t('sel.build')}</span>`);
         if (bits.length === 0) bits.push(`<span>${t('sel.noProductionStat')}</span>`);
         stats.innerHTML = bits.join('');
         const rallyBtn = view.hasRally
-          ? `<button type="button" class="is-rally${view.rallyArmed ? ' is-armed' : ''}" data-act="rally">${view.rallyArmed ? t('sel.rallyArmed') : t('sel.setRally')}</button>`
+          ? `<button type="button" class="is-rally${view.rallyArmed ? ' is-armed' : ''}" data-act="rally">${rallyButtonLabel(view.rallyArmed, view.rallyDistTiles)}</button>`
           : '';
         const clearRallyBtn =
           view.hasRally && view.hasCustomRally
@@ -1857,9 +1805,10 @@ export function renderSelectionPanel(view: SelectionPanelView): boolean {
         ) as HTMLButtonElement | null;
         if (rally) {
           rally.classList.toggle('is-armed', view.rallyArmed);
-          rally.textContent = view.rallyArmed
-            ? t('sel.rallyArmed')
-            : t('sel.setRally');
+          rally.textContent = rallyButtonLabel(
+            view.rallyArmed,
+            view.rallyDistTiles,
+          );
         }
       }
 
@@ -1871,12 +1820,30 @@ export function renderSelectionPanel(view: SelectionPanelView): boolean {
         if (structuralChange) queueIcons.innerHTML = '';
         queueLabel.textContent = queueLabelText(view);
         if (structuralChange) {
+          const tips = [
+            view.hpMaxTip
+              ? `<span>${escapeHtml(view.hpMaxTip)}</span>`
+              : '',
+            view.armorClass
+              ? `<span>${escapeHtml(view.armorClass)}</span>`
+              : '',
+            view.buildCostTip
+              ? `<span>${escapeHtml(view.buildCostTip)}</span>`
+              : '',
+            view.buildTimeTip
+              ? `<span>${escapeHtml(view.buildTimeTip)}</span>`
+              : '',
+            view.footprintTip
+              ? `<span>${escapeHtml(view.footprintTip)}</span>`
+              : '',
+          ].join('');
           stats.innerHTML = `<span>${t('sel.hpStat', {
             hp: Math.ceil(view.hp),
             max: Math.ceil(view.maxHp),
           })}</span><span>${t('sel.buildingPct', {
             pct: Math.floor(view.buildPct * 100),
-          })}</span>`;
+            sec: view.buildRemainSec,
+          })}</span>${tips}`;
         } else {
           const spans = stats.querySelectorAll('span');
           if (spans[0]) {
@@ -1888,7 +1855,28 @@ export function renderSelectionPanel(view: SelectionPanelView): boolean {
           if (spans[1]) {
             spans[1].textContent = t('sel.buildingPct', {
               pct: Math.floor(view.buildPct * 100),
+              sec: view.buildRemainSec,
             });
+          }
+          let tipIdx = 2;
+          if (spans[tipIdx] && view.hpMaxTip) {
+            spans[tipIdx].textContent = view.hpMaxTip;
+            tipIdx += 1;
+          }
+          if (spans[tipIdx] && view.armorClass) {
+            spans[tipIdx].textContent = view.armorClass;
+            tipIdx += 1;
+          }
+          if (spans[tipIdx] && view.buildCostTip) {
+            spans[tipIdx].textContent = view.buildCostTip;
+            tipIdx += 1;
+          }
+          if (spans[tipIdx] && view.buildTimeTip) {
+            spans[tipIdx].textContent = view.buildTimeTip;
+            tipIdx += 1;
+          }
+          if (spans[tipIdx] && view.footprintTip) {
+            spans[tipIdx].textContent = view.footprintTip;
           }
         }
       } else if (view.trains.length === 0) {

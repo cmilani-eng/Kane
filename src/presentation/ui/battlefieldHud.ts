@@ -15,12 +15,19 @@ import {
 } from '../../gameplay/battlefield/battlefieldHeroes';
 import {
   countIdleWorkers,
+  nearestIdleGatherResource,
   selectOrCycleIdleWorkers,
   type IdleChipResult,
 } from '../../gameplay/battlefield/idleWorkers';
+import { idleWorkerGatherTypeTip } from './idleWorkerGatherTypeTip';
+import {
+  minimapPingSectorTipAlpha,
+  minimapPingSectorTipText,
+} from './minimapPingSectorTip';
 import {
   countIdleMilitary,
   isIdleMilitary,
+  nearestIdleArmyThreatArrow,
   selectOrCycleIdleMilitary,
   type IdleMilitaryChipResult,
 } from '../../gameplay/battlefield/idleMilitary';
@@ -29,6 +36,7 @@ import { CORE_TONE_COLOR, formatCoreLine, formatHeroLine } from './matchStatusCo
 import {
   SUPPLY_TONE_COLOR,
   SUPPLY_TONE_DOT,
+  formatSupplyLine,
   supplyTone,
 } from './supplyTone';
 import {
@@ -38,6 +46,9 @@ import {
 import type { BattlefieldWorld } from '../../gameplay/battlefield/battlefieldWorld';
 import { isSfxMuted, playSfx, setSfxMuted } from '../audio/sfx';
 import { formatMatchClock } from './matchClock';
+import { attackDirectionArrow } from '../../gameplay/battlefield/attackDirection';
+import { walletOf } from '../../gameplay/battlefield/battlefieldEconomy';
+import { abilityChargesLeft } from './abilityCharges';
 
 export { formatMatchClock } from './matchClock';
 
@@ -83,6 +94,10 @@ export class BattlefieldHud {
   readonly idleMilPingBtn!: Phaser.GameObjects.Text;
   /** Critical under-attack chip (Keep/hero) — tap to jump camera. */
   readonly attackPingBtn!: Phaser.GameObjects.Text;
+  /** Brief fog-scout sector label (NW…SE). */
+  readonly scoutSectorBtn!: Phaser.GameObjects.Text;
+  /** Brief attention-ping sector tip (NW…SE). */
+  readonly pingSectorBtn!: Phaser.GameObjects.Text;
   /** Recenter camera on player keep / hall. */
   readonly baseBtn!: Phaser.GameObjects.Text;
   /** Mobile/desktop open in-match pause overlay. */
@@ -215,7 +230,7 @@ export class BattlefieldHud {
       .setScrollFactor(0)
       .setDepth(100);
     this.supplyText = scene.add
-      .text(294, 76, t('pause.supply', { current: 0, cap: flags.unitCap }), {
+      .text(294, 76, formatSupplyLine(0, flags.unitCap), {
         fontFamily: 'system-ui, sans-serif',
         fontSize: '15px',
         color: '#d7e6f2',
@@ -508,6 +523,30 @@ export class BattlefieldHud {
         this.onUnderAttackJump?.(a.x, a.y);
       });
 
+    this.scoutSectorBtn = scene.add
+      .text(12, 168, '', {
+        fontFamily: 'system-ui, sans-serif',
+        fontSize: '12px',
+        color: '#c8f0ff',
+        backgroundColor: '#1a3040cc',
+        padding: { x: 10, y: 6 },
+      })
+      .setScrollFactor(0)
+      .setDepth(101)
+      .setVisible(false);
+
+    this.pingSectorBtn = scene.add
+      .text(12, 196, '', {
+        fontFamily: 'system-ui, sans-serif',
+        fontSize: '12px',
+        color: '#e8f4ff',
+        backgroundColor: '#1a2838cc',
+        padding: { x: 10, y: 6 },
+      })
+      .setScrollFactor(0)
+      .setDepth(101)
+      .setVisible(false);
+
     this.buildAbilityPad(accent);
     this.layout();
     scene.scale.on('resize', () => this.layout());
@@ -605,6 +644,8 @@ export class BattlefieldHud {
       this.idlePingBtn,
       this.idleMilPingBtn,
       this.attackPingBtn,
+      this.scoutSectorBtn,
+      this.pingSectorBtn,
       this.goldDot,
       this.crystalDot,
       this.supplyDot,
@@ -690,8 +731,18 @@ export class BattlefieldHud {
     this.attackPingBtn
       .setPosition(pad, belowRes + idleMilOffset)
       .setFontSize(this.narrow ? '11px' : '12px');
-    const alertOffset =
+    const attackOffset =
       idleMilOffset + (this.attackPingBtn.visible ? 28 : 0);
+    this.scoutSectorBtn
+      .setPosition(pad, belowRes + attackOffset)
+      .setFontSize(this.narrow ? '11px' : '12px');
+    const scoutOffset =
+      attackOffset + (this.scoutSectorBtn.visible ? 28 : 0);
+    this.pingSectorBtn
+      .setPosition(pad, belowRes + scoutOffset)
+      .setFontSize(this.narrow ? '11px' : '12px');
+    const alertOffset =
+      scoutOffset + (this.pingSectorBtn.visible ? 28 : 0);
     this.status
       .setPosition(pad, belowRes + alertOffset)
       .setStyle({ wordWrap: { width: Math.min(520, w - pad * 2) } });
@@ -857,6 +908,10 @@ export class BattlefieldHud {
       gold: number;
       crystals: number;
       canPay: boolean;
+      cols: number;
+      rows: number;
+      /** Whole seconds to finish construction (omit / 0 when instant). */
+      buildSec?: number;
     } | null,
   ): void {
     if (!info) {
@@ -866,6 +921,10 @@ export class BattlefieldHud {
     const crystalBit =
       info.crystals > 0 ? t('hud.placeCrystal', { n: info.crystals }) : '';
     const payBit = info.canPay ? '' : t('hud.placeNeed');
+    const foot = t('hud.placeFoot', { cols: info.cols, rows: info.rows });
+    const buildSec = info.buildSec ?? 0;
+    const buildBit =
+      buildSec > 0 ? t('hud.placeBuild', { sec: buildSec }) : '';
     this.placeCostStrip
       .setVisible(true)
       .setText(
@@ -874,6 +933,8 @@ export class BattlefieldHud {
           gold: info.gold,
           crystal: crystalBit,
           pay: payBit,
+          foot,
+          build: buildBit,
         }),
       )
       .setColor(info.canPay ? '#fff8e8' : '#ffb8b8')
@@ -898,7 +959,7 @@ export class BattlefieldHud {
     );
     const pop = livingByTeam(this.world, 'player');
     const cap = flags.unitCap;
-    this.supplyText.setText(t('pause.supply', { current: pop, cap }));
+    this.supplyText.setText(formatSupplyLine(pop, cap));
     this.fitResourceStrip();
     const tone = supplyTone(pop, cap);
     this.supplyText.setColor(SUPPLY_TONE_COLOR[tone]);
@@ -940,12 +1001,22 @@ export class BattlefieldHud {
         (u) => u.selected && u.team === 'player' && u.canGather && u.hp > 0,
       );
       const action = t(cycling ? 'hud.idleCycle' : 'hud.idleTap');
+      const gatherTip = holding
+        ? null
+        : idleWorkerGatherTypeTip(nearestIdleGatherResource(this.world));
+      const idleText = holding
+        ? t('hud.idleCargo', { n: idleN, action })
+        : gatherTip
+          ? t('hud.idleGather', {
+              n: idleN,
+              action,
+              tip: gatherTip,
+            })
+          : t('hud.idle', { n: idleN, action });
       this.idlePingBtn
         .setVisible(true)
         .setAlpha(pulse)
-        .setText(
-          t(holding ? 'hud.idleCargo' : 'hud.idle', { n: idleN, action }),
-        );
+        .setText(idleText);
     } else {
       this.idlePingBtn.setVisible(false).setAlpha(1);
     }
@@ -961,10 +1032,14 @@ export class BattlefieldHud {
         (u) => u.selected && isIdleMilitary(u),
       );
       const action = t(cycling ? 'hud.idleCycle' : 'hud.idleTap');
+      const threat = nearestIdleArmyThreatArrow(this.world);
+      const idleArmyText = threat
+        ? t('hud.idleArmyThreat', { n: idleMilN, action, dir: threat })
+        : t('hud.idleArmy', { n: idleMilN, action });
       this.idleMilPingBtn
         .setVisible(true)
         .setAlpha(pulse)
-        .setText(t('hud.idleArmy', { n: idleMilN, action }));
+        .setText(idleArmyText);
     } else {
       this.idleMilPingBtn.setVisible(false).setAlpha(1);
     }
@@ -980,20 +1055,52 @@ export class BattlefieldHud {
       (alert.chipLifeMs ?? 0) > 0;
     if (showAttack && alert) {
       const pulse = 0.7 + 0.3 * Math.sin(this.attackPulseMs / 220);
-      const label =
+      const cam = this.scene.cameras.main;
+      const dir = attackDirectionArrow(
+        cam.midPoint.x,
+        cam.midPoint.y,
+        alert.x,
+        alert.y,
+      );
+      const key =
         alert.kind === 'keep'
-          ? t('hud.attackKeep')
+          ? 'hud.attackKeep'
           : alert.kind === 'hero'
-            ? t('hud.attackHero')
-            : t('hud.attackBase');
+            ? 'hud.attackHero'
+            : 'hud.attackBase';
       this.attackPingBtn
         .setVisible(true)
         .setAlpha(pulse)
-        .setText(label);
+        .setText(t(key, { dir }));
     } else {
       this.attackPingBtn.setVisible(false).setAlpha(1);
     }
     if (wasAttackVisible !== this.attackPingBtn.visible) this.layout();
+
+    const hint = this.world.scoutSectorHint;
+    const wasScoutVisible = this.scoutSectorBtn.visible;
+    if (hint && hint.lifeMs > 0) {
+      const fade = Math.min(1, hint.lifeMs / 400);
+      this.scoutSectorBtn
+        .setVisible(true)
+        .setAlpha(0.55 + 0.45 * fade)
+        .setText(t('hud.scoutSector', { sector: hint.sector }));
+    } else {
+      this.scoutSectorBtn.setVisible(false).setAlpha(1);
+    }
+    if (wasScoutVisible !== this.scoutSectorBtn.visible) this.layout();
+
+    const pingHint = this.world.attentionPingSectorHint;
+    const wasPingVisible = this.pingSectorBtn.visible;
+    if (pingHint && pingHint.lifeMs > 0) {
+      this.pingSectorBtn
+        .setVisible(true)
+        .setAlpha(minimapPingSectorTipAlpha(pingHint.lifeMs))
+        .setText(minimapPingSectorTipText(pingHint.sector));
+    } else {
+      this.pingSectorBtn.setVisible(false).setAlpha(1);
+    }
+    if (wasPingVisible !== this.pingSectorBtn.visible) this.layout();
 
     // Brutes: live Rage count on match line
     this.matchLine.setText(this.matchupLine());
@@ -1012,21 +1119,37 @@ export class BattlefieldHud {
         continue;
       }
       const cd = rt.cds[b.slot];
+      const def = heroForSpecies(this.speciesId);
+      const ab =
+        b.slot === 'ability1'
+          ? def?.abilities.ability1
+          : b.slot === 'ability2'
+            ? def?.abilities.ability2
+            : def?.abilities.ultimate;
+      const name = ab?.name ?? b.key;
       if (cd > 0) {
         b.bg.setAlpha(0.55);
         b.sub.setText(`${Math.ceil(cd / 1000)}s`);
         b.sub.setColor('#f0c75e');
-      } else {
+        continue;
+      }
+      const charges = abilityChargesLeft(
+        walletOf(this.world, 'player').magic_crystals,
+        ab?.costCrystals ?? 0,
+      );
+      if (charges == null) {
         b.bg.setAlpha(1);
-        const def = heroForSpecies(this.speciesId);
-        const name =
-          b.slot === 'ability1'
-            ? def?.abilities.ability1.name
-            : b.slot === 'ability2'
-              ? def?.abilities.ability2.name
-              : def?.abilities.ultimate.name;
-        b.sub.setText(name ?? b.key);
+        b.sub.setText(name);
         b.sub.setColor('#b8c9d9');
+      } else {
+        b.sub.setText(t('hud.abilityCharges', { name, n: charges }));
+        if (charges <= 0) {
+          b.bg.setAlpha(0.55);
+          b.sub.setColor('#e87aa8');
+        } else {
+          b.bg.setAlpha(1);
+          b.sub.setColor('#b8c9d9');
+        }
       }
     }
   }
