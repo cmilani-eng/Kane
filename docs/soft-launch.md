@@ -33,6 +33,7 @@ This doc is the honest gate before any public preview URL.
 | Minimap building count tip | **OK** — minimap chrome shows Buildings · n from living player buildings (distinct surface from pause Buildings tip / army / supply) | `minimapBuildingCountTipText`, `hud.minimapBuildings` |
 | Minimap hero status tip | **OK** — minimap chrome shows Hero · Ready / Down / sector from recruit state + living location (distinct surface from pause Hero tip) | `minimapHeroStatusTipText`, `hud.minimapHeroReady`, `playerHeroDown` |
 | Minimap fog coverage tip | **OK** — minimap chrome shows Fog · pct% from explored fog cells (distinct from fog age / scout tips) | `minimapFogCoverageTipText`, `hud.minimapFog`, `fogExploredCoveragePct` |
+| Minimap fog age tip | **OK** — minimap chrome shows Fog age · ns from lastFogRevealAgeMs (distinct from pause Fog · ns / Fog · pct% / Scout sector · ns) | `minimapFogAgeTipText`, `hud.minimapFogAge`, `lastFogRevealAgeMs` |
 | Minimap selected count tip | **OK** — minimap chrome shows Selected · n from living player selection (distinct from pause Selected tip) | `minimapSelectedCountTipText`, `hud.minimapSelected` |
 | Minimap gold stock tip | **OK** — minimap chrome shows Gold · n from player gold wallet (pairs with Crystal; distinct from pause Gold·Crystal tip) | `minimapGoldStockTipText`, `hud.minimapGold`, `walletOf` |
 | Minimap crystal stock tip | **OK** — minimap chrome shows Crystal · n from player magic_crystals wallet (distinct from pause Gold·Crystal tip) | `minimapCrystalStockTipText`, `hud.minimapCrystal`, `walletOf` |
