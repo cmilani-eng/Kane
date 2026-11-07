@@ -1,5 +1,8 @@
 /**
  * Selection species-name tip (HUD label only).
+ * Format: Species · {name} — middot (U+00B7).
+ * Distinct from Role · / Name · / Armor · class;
+ * selection-only tip (no lobby/pause twin).
  */
 import type { SpeciesId } from '../../data/speciesStub';
 import { speciesName, t } from '../../i18n';
