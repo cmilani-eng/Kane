@@ -272,6 +272,8 @@
     display: block;
     font-weight: 700;
     font-size: 12px;
+    line-height: 1.25;
+    overflow-wrap: anywhere;
     color: var(--color-kane-parchment);
   }
   #kane-selection-panel button.is-train .kane-sel-cost {

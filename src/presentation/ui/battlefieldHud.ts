@@ -703,9 +703,15 @@ export class BattlefieldHud {
       .setFontSize(this.narrow ? '14px' : '16px');
     this.placeCostStrip
       .setPosition(w / 2, placeCostStripTop(w, h, this.coreBannerUp))
-      .setFontSize(this.narrow || h < 500 ? '12px' : '14px');
-
-    const resY = pad + (this.narrow ? 50 : 60);
+      .setFontSize(this.narrow || h < 500 ? '12px' : '14px')
+      .setStyle({
+        wordWrap: { width: Math.max(200, w - pad * 2) },
+        align: 'center',
+      });
+    const stripBottom = this.placeCostStrip.visible
+      ? this.placeCostStrip.y + this.placeCostStrip.height + 6
+      : 0;
+    const resY = Math.max(pad + (this.narrow ? 50 : 60), stripBottom);
     const stackedRes = this.narrow && h >= 500;
     this.resourcePanel.setPosition(pad, resY);
     this.resourcePanel.width = stackedRes
