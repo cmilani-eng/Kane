@@ -49,7 +49,11 @@ import { formatMatchClock } from './matchClock';
 import { attackDirectionArrow } from '../../gameplay/battlefield/attackDirection';
 import { walletOf } from '../../gameplay/battlefield/battlefieldEconomy';
 import { abilityChargesLeft } from './abilityCharges';
-import { hudChipStackTop } from './coreVictoryBanner';
+import {
+  hudChipStackTop,
+  PLACE_COST_BLOCK_H,
+  placeCostStripTop,
+} from './coreVictoryBanner';
 
 export { formatMatchClock } from './matchClock';
 
@@ -693,8 +697,8 @@ export class BattlefieldHud {
       .setPosition(w / 2, pad)
       .setFontSize(this.narrow ? '14px' : '16px');
     this.placeCostStrip
-      .setPosition(w / 2, pad + (this.narrow ? 34 : 40))
-      .setFontSize(this.narrow ? '12px' : '14px');
+      .setPosition(w / 2, placeCostStripTop(w, h))
+      .setFontSize(this.narrow || h < 500 ? '12px' : '14px');
 
     const resY = pad + (this.narrow ? 50 : 60);
     this.resourcePanel.setPosition(pad, resY);
@@ -719,7 +723,9 @@ export class BattlefieldHud {
       this.supplyText.setPosition(pad + 294, resY + 8).setFontSize('15px');
     }
 
-    const belowRes = hudChipStackTop(w, h);
+    const placeBlock =
+      h < 500 && this.placeCostStrip.visible ? PLACE_COST_BLOCK_H : 0;
+    const belowRes = hudChipStackTop(w, h) + placeBlock;
     this.idlePingBtn
       .setPosition(pad, belowRes)
       .setFontSize(this.narrow ? '11px' : '12px');
@@ -917,6 +923,7 @@ export class BattlefieldHud {
   ): void {
     if (!info) {
       this.placeCostStrip.setVisible(false).setText('');
+      this.layout();
       return;
     }
     const crystalBit =
@@ -940,6 +947,7 @@ export class BattlefieldHud {
       )
       .setColor(info.canPay ? '#fff8e8' : '#ffb8b8')
       .setBackgroundColor(info.canPay ? '#122033ee' : '#2a1818ee');
+    this.layout();
   }
 
   private applyAttackMoveBtnStyle(): void {

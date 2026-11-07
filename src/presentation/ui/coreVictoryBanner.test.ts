@@ -5,6 +5,7 @@ import {
   coreHoldProgress,
   coreHoldRemainSec,
   hudChipStackTop,
+  placeCostStripTop,
 } from './coreVictoryBanner';
 
 describe('coreHoldRemainSec', () => {
@@ -26,6 +27,17 @@ describe('hudChipStackTop', () => {
   it('starts below the CORE banner on a short screen', () => {
     expect(hudChipStackTop(874, 402)).toBe(coreBannerBottom(874, 402) + 8);
     expect(hudChipStackTop(390, 400)).toBe(coreBannerBottom(390, 400) + 8);
+  });
+});
+
+describe('placeCostStripTop', () => {
+  it('stays under the match clock on a tall screen', () => {
+    expect(placeCostStripTop(1280, 800)).toBe(52);
+    expect(placeCostStripTop(390, 800)).toBe(42);
+  });
+
+  it('sits under the CORE banner on a short screen', () => {
+    expect(placeCostStripTop(874, 402)).toBe(coreBannerBottom(874, 402) + 8);
   });
 });
 

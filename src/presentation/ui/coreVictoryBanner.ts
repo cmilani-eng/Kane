@@ -57,6 +57,21 @@ export function hudChipStackTop(width: number, height: number): number {
   return Math.max(belowRes, coreBannerBottom(width, height) + 8);
 }
 
+/** How far the left chips drop while the place-cost strip is on screen. */
+export const PLACE_COST_BLOCK_H = 40;
+
+/**
+ * Top of the building place-cost strip.
+ * Tall screens keep it under the match clock.
+ * Short screens park it under the CORE banner, clear of the stock strip.
+ */
+export function placeCostStripTop(width: number, height: number): number {
+  const narrow = width < 720;
+  const pad = narrow ? 8 : 12;
+  if (height >= 500) return pad + (narrow ? 34 : 40);
+  return coreBannerBottom(width, height) + 8;
+}
+
 export class CoreVictoryBanner {
   private readonly scene: Phaser.Scene;
   private readonly world: BattlefieldWorld;
