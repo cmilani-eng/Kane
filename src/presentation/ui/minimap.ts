@@ -58,6 +58,7 @@ import { minimapPingSectorTipAlpha } from './minimapPingSectorTip';
 import { minimapFogRevealAgeTip } from './minimapFogRevealAgeTip';
 import { minimapScoutPulseLabelAlpha } from './minimapScoutPulseLabel';
 import { minimapArmyCountTipText } from './minimapArmyCountTip';
+import { minimapBuildingCountTipText } from './minimapBuildingCountTip';
 import { minimapIdleWorkerTipText } from './minimapIdleWorkerTip';
 import { minimapSupplyTipText } from './minimapSupplyTip';
 
@@ -82,6 +83,8 @@ export class Minimap {
   private readonly idleLabel: Phaser.GameObjects.Text;
   /** Live army (combat) count tip on the minimap chrome. */
   private readonly armyLabel: Phaser.GameObjects.Text;
+  /** Live building count tip on the minimap chrome. */
+  private readonly buildingsLabel: Phaser.GameObjects.Text;
 
   private mapX = 0;
   private mapY = 0;
@@ -217,6 +220,19 @@ export class Minimap {
       .setOrigin(0.5, 0)
       .setAlpha(0.9);
 
+    this.buildingsLabel = scene.add
+      .text(0, 0, minimapBuildingCountTipText(0), {
+        fontFamily: 'Segoe UI, system-ui, sans-serif',
+        fontSize: '10px',
+        color: '#c8d8e8',
+        stroke: '#0a1018',
+        strokeThickness: 3,
+      })
+      .setScrollFactor(0)
+      .setDepth(113)
+      .setOrigin(0.5, 0)
+      .setAlpha(0.9);
+
     this.hit = scene.add
       .rectangle(0, 0, this.mapW, this.mapH, 0x000000, 0.001)
       .setScrollFactor(0)
@@ -290,6 +306,7 @@ export class Minimap {
       this.supplyLabel,
       this.idleLabel,
       this.armyLabel,
+      this.buildingsLabel,
     ];
   }
 
@@ -671,12 +688,22 @@ export class Minimap {
       .setPosition(this.mapX + this.mapW / 2, this.mapY + this.mapH + 16)
       .setVisible(true);
 
-    // Idle · n under army when any gatherer is idle
+    // Buildings · n under army (living player buildings)
+    let bldN = 0;
+    for (const b of this.world.buildings) {
+      if (b.team === 'player' && b.hp > 0) bldN++;
+    }
+    this.buildingsLabel
+      .setText(minimapBuildingCountTipText(bldN))
+      .setPosition(this.mapX + this.mapW / 2, this.mapY + this.mapH + 28)
+      .setVisible(true);
+
+    // Idle · n under buildings when any gatherer is idle
     const idleN = countIdleWorkers(this.world);
     if (idleN > 0) {
       this.idleLabel
         .setText(minimapIdleWorkerTipText(idleN))
-        .setPosition(this.mapX + this.mapW / 2, this.mapY + this.mapH + 28)
+        .setPosition(this.mapX + this.mapW / 2, this.mapY + this.mapH + 40)
         .setVisible(true);
     } else {
       this.idleLabel.setVisible(false);
