@@ -5,6 +5,8 @@
  */
 import Phaser from 'phaser';
 import { MAP } from '../../config/balance';
+import { flags } from '../../config/flags';
+import { livingByTeam } from '../../gameplay/battlefield/battlefieldCombat';
 import {
   enemyRevealed,
   isExplored,
@@ -51,6 +53,7 @@ import { minimapPingAgeTip } from './minimapPingAgeTip';
 import { minimapPingSectorTipAlpha } from './minimapPingSectorTip';
 import { minimapFogRevealAgeTip } from './minimapFogRevealAgeTip';
 import { minimapScoutPulseLabelAlpha } from './minimapScoutPulseLabel';
+import { minimapSupplyTipText } from './minimapSupplyTip';
 
 export class Minimap {
   private readonly scene: Phaser.Scene;
@@ -67,6 +70,8 @@ export class Minimap {
   private readonly camLabel: Phaser.GameObjects.Text;
   /** 3×3 sector tip for the camera view center (distinct from View). */
   private readonly camSectorLabel: Phaser.GameObjects.Text;
+  /** Live supply usage tip on the minimap chrome. */
+  private readonly supplyLabel: Phaser.GameObjects.Text;
 
   private mapX = 0;
   private mapY = 0;
@@ -162,6 +167,19 @@ export class Minimap {
       .setOrigin(0.5, 0)
       .setAlpha(0.9);
 
+    this.supplyLabel = scene.add
+      .text(0, 0, minimapSupplyTipText(0, flags.unitCap), {
+        fontFamily: 'Segoe UI, system-ui, sans-serif',
+        fontSize: '10px',
+        color: '#c8d8e8',
+        stroke: '#0a1018',
+        strokeThickness: 3,
+      })
+      .setScrollFactor(0)
+      .setDepth(113)
+      .setOrigin(0.5, 0)
+      .setAlpha(0.9);
+
     this.hit = scene.add
       .rectangle(0, 0, this.mapW, this.mapH, 0x000000, 0.001)
       .setScrollFactor(0)
@@ -232,6 +250,7 @@ export class Minimap {
       this.pingSectorLabel,
       this.camLabel,
       this.camSectorLabel,
+      this.supplyLabel,
     ];
   }
 
@@ -594,6 +613,13 @@ export class Minimap {
     this.camSectorLabel
       .setText(minimapCameraSectorTipText(camSector))
       .setPosition(camLabelX, camSectorY)
+      .setVisible(true);
+
+    // Supply · used/cap on the minimap chrome (below the map frame)
+    const pop = livingByTeam(this.world, 'player');
+    this.supplyLabel
+      .setText(minimapSupplyTipText(pop, flags.unitCap))
+      .setPosition(this.mapX + this.mapW / 2, this.mapY + this.mapH + 4)
       .setVisible(true);
 
     // Selected unit blips — on top of camera/order so selection never hides
