@@ -45,6 +45,7 @@ import { showCosmeticsPanel } from '../ui/cosmeticsPanel';
 import { accountChipName, showDashboardPanel } from '../ui/dashboardPanel';
 import { flags } from '../../config/flags';
 import { showLobbyPanel } from '../ui/lobbyPanel';
+import { isPhoneSizedScreen } from '../ui/screenSize';
 import { hideMenuGamesLink, showMenuGamesLink } from '../ui/menuGamesLink';
 import { softLaunchStatusStrip } from '../ui/softLaunchStatus';
 import { showStatsPanel } from '../ui/statsPanel';
@@ -227,10 +228,34 @@ export class MenuScene extends Phaser.Scene {
     }
   }
 
+  /**
+   * Kane needs a big screen. On a phone the menu stays drawn, but a veil and a message cover
+   * it, and startMatch refuses to start a match (see isPhoneSizedScreen).
+   */
+  private addBigScreenNotice(width: number, height: number): void {
+    if (!isPhoneSizedScreen(width, height)) return;
+    this.add
+      .rectangle(width / 2, height / 2, width, height, 0x0a1220, 0.84)
+      .setScrollFactor(0)
+      .setDepth(400);
+    this.add
+      .text(width / 2, height / 2, t('menu.bigScreen'), {
+        fontFamily: 'system-ui, sans-serif',
+        fontSize: '18px',
+        color: '#fff8e8',
+        align: 'center',
+        wordWrap: { width: width * 0.8 },
+      })
+      .setOrigin(0.5)
+      .setScrollFactor(0)
+      .setDepth(401);
+  }
+
   private buildLayout(intro: boolean): void {
     const { width, height } = this.scale;
     this.menuZoom = 1;
     this.resetMenuCamera();
+    this.addBigScreenNotice(width, height);
     // iPhone 17 landscape is wide (~874) and short (~402). Percentage rows overlap.
     if (height < 500) {
       this.buildShortLayout(intro, width, height);
@@ -865,6 +890,7 @@ export class MenuScene extends Phaser.Scene {
    * else offer Login / Create / Play as guest (anonymous when SDK ready).
    */
   private startMatch(species: SpeciesId): void {
+    if (isPhoneSizedScreen(this.scale.width, this.scale.height)) return;
     if (this.anyOverlayOpen()) return;
     if (isCloudAccount(getCurrentAuthUser())) {
       this.launchMatch(species);
