@@ -26,6 +26,7 @@ import {
 } from './missionObjective';
 import { pauseCameraSectorTipLine } from './pauseCameraSectorTip';
 import { pauseDifficultyTipLine } from './pauseDifficultyTip';
+import { pauseFogAgeTipLine } from './pauseFogAgeTip';
 import { pauseMapTipLine } from './pauseMapTip';
 import { pauseSpeciesMottoTipLine } from './pauseSpeciesMottoTip';
 import { pauseSupplyRatioTipLine } from './pauseSupplyRatioTip';
@@ -48,6 +49,8 @@ export interface PauseMenuSnapshot {
   objectiveId?: MissionObjectiveId;
   /** Camera view-center 3×3 sector frozen when pause opens. */
   camSector?: MapSectorId;
+  /** Age of the last fog scout reveal (ms), frozen when pause opens. */
+  fogAgeMs?: number;
 }
 
 export interface PauseMenuOpts {
@@ -191,6 +194,10 @@ export class PauseMenu {
       this.snapshot.camSector != null
         ? pauseCameraSectorTipLine(this.snapshot.camSector)
         : '';
+    const fogAgeTip =
+      this.snapshot.fogAgeMs != null
+        ? pauseFogAgeTipLine(this.snapshot.fogAgeMs)
+        : '';
     const supplyRatioTip = pauseSupplyRatioTipLine(
       this.snapshot.supplyCurrent,
       this.snapshot.supplyCap,
@@ -209,9 +216,10 @@ export class PauseMenu {
     const yDifficulty = short ? top + 112 : cy - panelH * 0.18;
     const yObjective = short ? top + 128 : cy - panelH * 0.13;
     const yCamSector = short ? top + 142 : cy - panelH * 0.085;
-    const ySetup = short ? top + 156 : cy - panelH * 0.04;
-    const ySupplyRatio = short ? top + 170 : cy + panelH * 0.005;
-    const ySupply = short ? top + 184 : cy + panelH * 0.05;
+    const yFogAge = short ? top + 154 : cy - panelH * 0.055;
+    const ySetup = short ? top + 168 : cy - panelH * 0.015;
+    const ySupplyRatio = short ? top + 182 : cy + panelH * 0.03;
+    const ySupply = short ? top + 196 : cy + panelH * 0.075;
     const elapsed = this.scene.add
       .text(cx, yElapsed, elapsedLine, {
         fontFamily: 'system-ui, sans-serif',
@@ -276,6 +284,17 @@ export class PauseMenu {
       .setScrollFactor(0)
       .setDepth(222)
       .setVisible(!!camSectorTip);
+    const fogAgeLine = this.scene.add
+      .text(cx, yFogAge, fogAgeTip, {
+        fontFamily: 'system-ui, sans-serif',
+        fontSize: short ? '11px' : '12px',
+        color: '#c8d8e8',
+        align: 'center',
+      })
+      .setOrigin(0.5)
+      .setScrollFactor(0)
+      .setDepth(222)
+      .setVisible(!!fogAgeTip);
     const setup = this.scene.add
       .text(cx, ySetup, setupLine, {
         fontFamily: 'system-ui, sans-serif',
@@ -315,13 +334,14 @@ export class PauseMenu {
       difficultyLine,
       objectiveLine,
       camSectorLine,
+      fogAgeLine,
       setup,
       supplyRatioLine,
       supplyText,
     );
 
     // Short layout: tips + setup + supply need room above buttons.
-    const btnY0 = short ? top + 208 : cy + panelH * 0.12;
+    const btnY0 = short ? top + 220 : cy + panelH * 0.14;
     const gap = short ? 36 : Math.min(44, panelH * 0.11);
     this.root.push(
       this.makeBtn(cx, btnY0, t('pause.resume'), () => {

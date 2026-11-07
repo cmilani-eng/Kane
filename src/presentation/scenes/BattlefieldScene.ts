@@ -750,6 +750,10 @@ export class BattlefieldScene extends Phaser.Scene {
         viewW,
         viewH,
       ),
+      fogAgeMs:
+        this.world.lastFogRevealAgeMs != null
+          ? this.world.lastFogRevealAgeMs
+          : undefined,
     };
   }
 
