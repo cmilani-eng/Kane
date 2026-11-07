@@ -179,6 +179,7 @@ import { showKaneEndScreen } from '../ui/endScreen';
 import { resolveMissionObjective } from '../ui/missionObjective';
 import { minimapCameraSectorAt } from '../ui/minimapCameraSectorTip';
 import { fogExploredCoveragePct } from '../ui/minimapFogCoverageTip';
+import { pauseSelectedSectorAt } from '../ui/pauseSelectedSectorTip';
 import { PauseMenu } from '../ui/pauseMenu';
 import { publishMatchStock, resetMatchStock } from '../ui/matchUiStore';
 import {
@@ -771,6 +772,12 @@ export class BattlefieldScene extends Phaser.Scene {
       selectionCount: this.world.units.filter(
         (u) => u.selected && u.team === 'player' && u.hp > 0,
       ).length,
+      selectedSector:
+        pauseSelectedSectorAt(
+          this.world.units.filter(
+            (u) => u.selected && u.team === 'player' && u.hp > 0,
+          ),
+        ) ?? undefined,
       stockGold: walletOf(this.world, 'player').gold,
       stockCrystals: walletOf(this.world, 'player').magic_crystals,
       playerActions: this.world.playerActions,
