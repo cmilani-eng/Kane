@@ -38,6 +38,7 @@ import { endFavoriteFactionTipLine } from './endFavoriteFactionTip';
 import { endLossesTipLine } from './endLossesTip';
 import { endWinsTipLine } from './endWinsTip';
 import { endWinStreakTipLine } from './endWinStreakTip';
+import { endLossStreakTipLine } from './endLossStreakTip';
 import { endVisionTipLine } from './endVisionTip';
 import { formatMatchClock } from './matchClock';
 import { copyEndShareLine, formatEndShareLine } from './endShareLine';
@@ -179,6 +180,7 @@ export function showKaneEndScreen(opts: EndScreenOpts): void {
   const yKill = short ? statRowY(13) : cy + panelH * 0.695;
   const yGathered = short ? statRowY(14) : cy + panelH * 0.73;
   const yStreak = short ? statRowY(15) : cy + panelH * 0.745;
+  const yLossStreak = short ? yActions - 60 : cy + panelH * 0.752;
   const yBestStreak = short ? yActions - 58 : cy + panelH * 0.76;
   const yGamesPlayed = short ? yActions - 54 : cy + panelH * 0.772;
   const yWinRate = short ? yActions - 49 : cy + panelH * 0.778;
@@ -641,6 +643,21 @@ export function showKaneEndScreen(opts: EndScreenOpts): void {
     .setVisible(!!streakTip);
   root.push(streakTipText);
 
+  const lossStreakTip = endLossStreakTipLine() ?? '';
+  const lossStreakTipText = scene.add
+    .text(width / 2, yLossStreak, lossStreakTip, {
+      fontFamily: 'system-ui, sans-serif',
+      fontSize: '13px',
+      color: '#c8d8e8',
+      align: 'center',
+    })
+    .setOrigin(0.5)
+    .setScrollFactor(0)
+    .setDepth(202)
+    .setAlpha(0)
+    .setVisible(!!lossStreakTip);
+  root.push(lossStreakTipText);
+
   const bestStreakTip = endBestWinStreakTipLine() ?? '';
   const bestStreakTipText = scene.add
     .text(width / 2, yBestStreak, bestStreakTip, {
@@ -926,6 +943,7 @@ export function showKaneEndScreen(opts: EndScreenOpts): void {
       apmTipText,
       efficiencyTipText,
       streakTipText,
+      lossStreakTipText,
       bestStreakTipText,
       gamesPlayedTipText,
       winRateTipText,
