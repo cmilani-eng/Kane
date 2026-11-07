@@ -161,6 +161,7 @@ import {
 } from '../../database/matchSummary';
 import { getEquippedSkin } from '../../database/cosmeticsLoadout';
 import { loadMatchPrefs, rememberMatchPrefs } from '../../database/matchPrefs';
+import { favoriteFactionId } from '../ui/lobbyFavoriteFactionTip';
 import { isCoachSeen } from '../../database/coachPrefs';
 import { isReduceMotion } from '../../database/motionPrefs';
 import { rematchPrefsFromWorld } from '../../gameplay/battlefield/rematchPrefs';
@@ -790,6 +791,7 @@ export class BattlefieldScene extends Phaser.Scene {
       heroStatus: minimapHeroStatus(this.world),
       winStreak: matchPrefs.winStreak ?? 0,
       gamesPlayed: matchPrefs.gamesPlayed ?? 0,
+      favoriteFactionId: favoriteFactionId(),
     };
   }
 
