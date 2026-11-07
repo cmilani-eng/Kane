@@ -32,6 +32,8 @@ export interface MatchPrefs {
   bestWinStreak?: number;
   /** Shortest winning match duration (ms). Optional for older prefs. */
   bestDurationMs?: number;
+  /** Map of the shortest winning match. Optional for older prefs. */
+  bestDurationMapId?: SkirmishMapId;
   /** Finished matches counted on this device. Optional for older prefs. */
   gamesPlayed?: number;
   /** Finished wins counted on this device. Optional for older prefs. */
@@ -114,6 +116,9 @@ export function loadMatchPrefs(): MatchPrefs {
     const winStreak = normalizeWinStreak(parsed.winStreak);
     const bestWinStreak = normalizeWinStreak(parsed.bestWinStreak);
     const bestDurationMs = normalizeDurationMs(parsed.bestDurationMs);
+    const bestDurationMapId = isSkirmishMapId(parsed.bestDurationMapId)
+      ? parsed.bestDurationMapId
+      : undefined;
     const gamesPlayed = normalizeGamesPlayed(parsed.gamesPlayed);
     const gamesWon = normalizeGamesWon(parsed.gamesWon);
     const speciesPlays = normalizeSpeciesPlays(parsed.speciesPlays);
@@ -127,6 +132,7 @@ export function loadMatchPrefs(): MatchPrefs {
       ...(winStreak != null ? { winStreak } : {}),
       ...(bestWinStreak != null ? { bestWinStreak } : {}),
       ...(bestDurationMs != null ? { bestDurationMs } : {}),
+      ...(bestDurationMapId != null ? { bestDurationMapId } : {}),
       ...(gamesPlayed != null ? { gamesPlayed } : {}),
       ...(gamesWon != null ? { gamesWon } : {}),
       ...(speciesPlays != null ? { speciesPlays } : {}),
@@ -144,6 +150,9 @@ export function saveMatchPrefs(prefs: MatchPrefs): void {
     const winStreak = normalizeWinStreak(prefs.winStreak);
     const bestWinStreak = normalizeWinStreak(prefs.bestWinStreak);
     const bestDurationMs = normalizeDurationMs(prefs.bestDurationMs);
+    const bestDurationMapId = isSkirmishMapId(prefs.bestDurationMapId)
+      ? prefs.bestDurationMapId
+      : undefined;
     const gamesPlayed = normalizeGamesPlayed(prefs.gamesPlayed);
     const gamesWon = normalizeGamesWon(prefs.gamesWon);
     const speciesPlays = normalizeSpeciesPlays(prefs.speciesPlays);
@@ -157,6 +166,7 @@ export function saveMatchPrefs(prefs: MatchPrefs): void {
       ...(winStreak != null ? { winStreak } : {}),
       ...(bestWinStreak != null ? { bestWinStreak } : {}),
       ...(bestDurationMs != null ? { bestDurationMs } : {}),
+      ...(bestDurationMapId != null ? { bestDurationMapId } : {}),
       ...(gamesPlayed != null ? { gamesPlayed } : {}),
       ...(gamesWon != null ? { gamesWon } : {}),
       ...(speciesPlays != null ? { speciesPlays } : {}),
@@ -193,16 +203,17 @@ export function rememberMatchPrefs(
     }
   }
   let bestDurationMs = prev.bestDurationMs;
+  let bestDurationMapId = prev.bestDurationMapId;
   if (
     lastWon === true &&
     lastDurationMs != null &&
     lastDurationMs > 0
   ) {
     const nextBest = Math.floor(lastDurationMs);
-    bestDurationMs =
-      prev.bestDurationMs == null || nextBest < prev.bestDurationMs
-        ? nextBest
-        : prev.bestDurationMs;
+    if (prev.bestDurationMs == null || nextBest < prev.bestDurationMs) {
+      bestDurationMs = nextBest;
+      bestDurationMapId = mapId;
+    }
   }
   let gamesPlayed = prev.gamesPlayed;
   let gamesWon = prev.gamesWon;
@@ -223,6 +234,7 @@ export function rememberMatchPrefs(
     ...(winStreak != null ? { winStreak } : {}),
     ...(bestWinStreak != null ? { bestWinStreak } : {}),
     ...(bestDurationMs != null ? { bestDurationMs } : {}),
+    ...(bestDurationMapId != null ? { bestDurationMapId } : {}),
     ...(gamesPlayed != null ? { gamesPlayed } : {}),
     ...(gamesWon != null ? { gamesWon } : {}),
     ...(speciesPlays != null ? { speciesPlays } : {}),
