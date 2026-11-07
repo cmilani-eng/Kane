@@ -12,7 +12,7 @@
           ".validate": "newData.isString() && newData.val().length > 0 && (!data.exists() || data.val() === newData.val())"
         },
         "guestUid": {
-          ".validate": "newData.isString() && newData.val() === auth.uid"
+          ".validate": "newData.isString() && (newData.val() === auth.uid || newData.val() === data.val())"
         },
         "createdAt": {
           ".validate": "newData.isNumber() && newData.val() <= now"

@@ -154,6 +154,26 @@ describe('signed in as alice', () => {
       await assertSucceeds(as('alice').ref('lobbies/ABCD').set({ ...lobby(), status: 'closed' }));
     });
 
+    it('lets the host close a lobby that already has a guest, keeping the guest seat', async () => {
+      await assertSucceeds(as('alice').ref('lobbies/ABCD').set(lobby()));
+      await assertSucceeds(
+        as('bob').ref('lobbies/ABCD').set({ ...lobby(), guestUid: 'bob', status: 'full' }),
+      );
+      await assertSucceeds(
+        as('alice').ref('lobbies/ABCD').set({ ...lobby(), guestUid: 'bob', status: 'closed' }),
+      );
+    });
+
+    it('does not let the host replace the guest seat with someone else', async () => {
+      await assertSucceeds(as('alice').ref('lobbies/ABCD').set(lobby()));
+      await assertSucceeds(
+        as('bob').ref('lobbies/ABCD').set({ ...lobby(), guestUid: 'bob', status: 'full' }),
+      );
+      await assertFails(
+        as('alice').ref('lobbies/ABCD').set({ ...lobby(), guestUid: 'carol', status: 'closed' }),
+      );
+    });
+
     it('does not show a lobby that is full or closed to strangers', async () => {
       await env.withSecurityRulesDisabled(async (ctx) => {
         await ctx.database().ref('lobbies/WXYZ').set({
