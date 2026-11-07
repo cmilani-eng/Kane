@@ -32,6 +32,8 @@ export interface MatchPrefs {
   bestDurationMs?: number;
   /** Finished matches counted on this device. Optional for older prefs. */
   gamesPlayed?: number;
+  /** Finished wins counted on this device. Optional for older prefs. */
+  gamesWon?: number;
 }
 
 function canStore(): boolean {
@@ -65,6 +67,11 @@ function normalizeGamesPlayed(v: unknown): number | undefined {
   return Math.floor(v);
 }
 
+function normalizeGamesWon(v: unknown): number | undefined {
+  if (typeof v !== 'number' || !Number.isFinite(v) || v < 0) return undefined;
+  return Math.floor(v);
+}
+
 export function defaultMatchPrefs(): MatchPrefs {
   return {
     version: 1,
@@ -86,6 +93,7 @@ export function loadMatchPrefs(): MatchPrefs {
     const winStreak = normalizeWinStreak(parsed.winStreak);
     const bestDurationMs = normalizeDurationMs(parsed.bestDurationMs);
     const gamesPlayed = normalizeGamesPlayed(parsed.gamesPlayed);
+    const gamesWon = normalizeGamesWon(parsed.gamesWon);
     return {
       version: 1,
       species: isSpeciesId(parsed.species) ? parsed.species : base.species,
@@ -96,6 +104,7 @@ export function loadMatchPrefs(): MatchPrefs {
       ...(winStreak != null ? { winStreak } : {}),
       ...(bestDurationMs != null ? { bestDurationMs } : {}),
       ...(gamesPlayed != null ? { gamesPlayed } : {}),
+      ...(gamesWon != null ? { gamesWon } : {}),
     };
   } catch {
     return base;
@@ -110,6 +119,7 @@ export function saveMatchPrefs(prefs: MatchPrefs): void {
     const winStreak = normalizeWinStreak(prefs.winStreak);
     const bestDurationMs = normalizeDurationMs(prefs.bestDurationMs);
     const gamesPlayed = normalizeGamesPlayed(prefs.gamesPlayed);
+    const gamesWon = normalizeGamesWon(prefs.gamesWon);
     const next: MatchPrefs = {
       version: 1,
       species: isSpeciesId(prefs.species) ? prefs.species : 'nobles',
@@ -120,6 +130,7 @@ export function saveMatchPrefs(prefs: MatchPrefs): void {
       ...(winStreak != null ? { winStreak } : {}),
       ...(bestDurationMs != null ? { bestDurationMs } : {}),
       ...(gamesPlayed != null ? { gamesPlayed } : {}),
+      ...(gamesWon != null ? { gamesWon } : {}),
     };
     localStorage.setItem(KEY, JSON.stringify(next));
   } catch {
@@ -161,8 +172,10 @@ export function rememberMatchPrefs(
         : prev.bestDurationMs;
   }
   let gamesPlayed = prev.gamesPlayed;
+  let gamesWon = prev.gamesWon;
   if (lastWon != null) {
     gamesPlayed = (prev.gamesPlayed ?? 0) + 1;
+    if (lastWon) gamesWon = (prev.gamesWon ?? 0) + 1;
   }
   saveMatchPrefs({
     version: 1,
@@ -174,6 +187,7 @@ export function rememberMatchPrefs(
     ...(winStreak != null ? { winStreak } : {}),
     ...(bestDurationMs != null ? { bestDurationMs } : {}),
     ...(gamesPlayed != null ? { gamesPlayed } : {}),
+    ...(gamesWon != null ? { gamesWon } : {}),
   });
   // Cloud sync when signed in (best-effort; guest stays local).
   // Cloud profile still stores species + difficulty only.

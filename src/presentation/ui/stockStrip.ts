@@ -124,15 +124,16 @@ export function layoutStockStrip(width: number, height: number): void {
   const root = document.getElementById(ROOT_ID);
   if (!root) return;
   const narrow = width < 720;
+  const stacked = narrow && height >= 500;
   const pad = narrow ? 8 : 12;
-  const resY = pad + (narrow || height < 500 ? 50 : 60);
+  const resY = pad + (narrow ? 50 : 60);
   root.style.left = `${pad}px`;
   root.style.top = `${resY}px`;
-  root.style.height = narrow ? '76px' : '36px';
-  root.classList.toggle('flex-col', narrow);
-  root.classList.toggle('items-start', narrow);
-  root.classList.toggle('justify-center', !narrow);
-  root.classList.toggle('gap-1', narrow);
+  root.style.height = stacked ? '76px' : '36px';
+  root.classList.toggle('flex-col', stacked);
+  root.classList.toggle('items-start', stacked);
+  root.classList.toggle('justify-center', !stacked);
+  root.classList.toggle('gap-1', stacked);
 }
 
 export function unmountStockStrip(): void {

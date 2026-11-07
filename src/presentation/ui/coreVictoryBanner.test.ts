@@ -28,6 +28,11 @@ describe('hudChipStackTop', () => {
     expect(hudChipStackTop(874, 402)).toBe(coreBannerBottom(874, 402) + 8);
     expect(hudChipStackTop(390, 400)).toBe(coreBannerBottom(390, 400) + 8);
   });
+
+  it('short screens sit under the resource strip while the banner is hidden', () => {
+    expect(hudChipStackTop(640, 360, false)).toBe(8 + 50 + 36 + 8);
+    expect(hudChipStackTop(874, 402, false)).toBe(12 + 60 + 36 + 8);
+  });
 });
 
 describe('placeCostStripTop', () => {
@@ -39,6 +44,10 @@ describe('placeCostStripTop', () => {
   it('sits under the CORE banner on a short screen', () => {
     expect(placeCostStripTop(874, 402)).toBe(coreBannerBottom(874, 402) + 8);
   });
+
+  it('sits under the resource strip on a short screen while the banner is hidden', () => {
+    expect(placeCostStripTop(640, 360, false)).toBe(hudChipStackTop(640, 360, false));
+  });
 });
 
 describe('coreBannerCenterY', () => {
@@ -48,10 +57,10 @@ describe('coreBannerCenterY', () => {
   });
 
   it('clears the stock strip on a short screen', () => {
-    // Wide short strip: top 62, height 36, bottom 98. Panel is 76 tall.
-    expect(coreBannerCenterY(874, 402)).toBe(98 + 8 + 38);
+    // Wide short strip: top 72, height 36, bottom 108. Panel is 76 tall.
+    expect(coreBannerCenterY(874, 402)).toBe(108 + 8 + 38);
     // Narrow short strip is 76 tall, so the banner drops further.
-    expect(coreBannerCenterY(390, 400)).toBe(8 + 50 + 76 + 8 + 38);
+    expect(coreBannerCenterY(390, 400)).toBe(8 + 50 + 36 + 8 + 38);
   });
 });
 

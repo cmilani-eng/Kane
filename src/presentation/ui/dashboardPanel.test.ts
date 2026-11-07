@@ -5,6 +5,7 @@ import {
   accountLoadErrorText,
   accountMatchesText,
   accountOverviewText,
+  accountChipName,
   accountProfileText,
   accountShownName,
 } from './dashboardPanel';
@@ -81,6 +82,9 @@ describe('account copy', () => {
   it('translates the profile and the load failure', () => {
     setLocale('es');
     expect(accountShownName('Guest', true)).toBe('Invitado (anónimo)');
+    expect(accountChipName('Guest', true)).toBe('Invitado');
+    expect(accountChipName('Commander', false)).toBe('Comandante');
+    expect(accountChipName('Ada Lovelace the', false)).toBe('Ada Lovelace');
     const profile = accountProfileText({
       name: 'Ada',
       anonymous: false,
@@ -111,5 +115,12 @@ describe('account copy', () => {
     });
     expect(failed).toContain('No se pudieron cargar');
     expect(failed).not.toContain('Could not load');
+  });
+
+  it('keeps the guest chip short in pt-BR', () => {
+    setLocale('pt-BR');
+    expect(accountChipName('Guest', true)).toBe('Convidado');
+    expect(accountChipName('Guest', true).length).toBeLessThanOrEqual(12);
+    expect(accountChipName('Commander', false)).toBe('Comandante');
   });
 });

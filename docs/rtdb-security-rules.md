@@ -27,7 +27,7 @@ Local Vite / SP vs AI **never** talks to RTDB today (lobby + stats are localStor
 6. **Daily rollups** are produced by a trusted writer (Cloud Function / Admin SDK). Rules keep `.write: false` on `stats/daily` for clients so `#/admin` rollup stubs stay local until Functions deploy.
 7. **Moderation** events are Admin-SDK-only writes; clients may read their own authored events later if needed.
 8. **Ads** remain off (`adsEnabled=false`) — unrelated to RTDB, listed so soft-launch posture stays consistent.
-9. **Emulator testing:** `firebase emulators:start` + rules unit tests (future) before any prod deploy.
+9. **Emulator testing:** `firebase emulators:start` + the rules unit tests (`npm run test:rules`) before any prod deploy.
 
 ## Out of scope (this draft)
 
@@ -35,7 +35,11 @@ Local Vite / SP vs AI **never** talks to RTDB today (lobby + stats are localStor
 - Live MP sync / presence
 - Admin allowlist enforcement inside RTDB (allowlist is still local stub / future Custom Claims)
 
-## How to validate later
+## How to validate
+
+`npm run test:rules` runs [`rules-tests/database.rules.test.ts`](../rules-tests/database.rules.test.ts) against the Database emulator (needs Java 21; CI runs it on every pull request). What is actually deployed to the project is checked by hand: see [security-verification.md](./security-verification.md).
+
+To exercise the rules from the app instead:
 
 ```bash
 # With firebase-tools + emulators

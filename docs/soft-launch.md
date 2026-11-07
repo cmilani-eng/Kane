@@ -37,6 +37,7 @@ This doc is the honest gate before any public preview URL.
 | End units lost tip | **OK** — end screen shows Lost · n from player unit removals (distinct from kill-ratio line) | `playerUnitLosses`, `endUnitsLostTipLine`, `end.lostTip` |
 | End buildings lost tip | **OK** — end screen shows Razed · n from player building destructions (distinct from units Lost tip) | `playerBuildingsLost`, `endBuildingsLostTipLine`, `end.bldLostTip` |
 | End gathered | **OK** — Keep deposits tally gold/crystal; end panel shows Gathered line | `playerGoldGathered`, `playerCrystalsGathered`, `end.gathered` |
+| End gathered tip | **OK** — end screen shows Gathered · n total deposits (gold+crystals; distinct from g/c breakdown) | `endResourcesGatheredTipLine`, `end.gatheredTip` |
 | Worker carry | **OK** — selection panel shows live carry `n/capacity` + resource label when workers haul | `selectionPanel`, `sel.cargo` |
 | Fog last-seen | **OK** — brief fade silhouette for enemy buildings after leaving vision (~2.5s) with whole-second age label | `buildingLastSeenGhost`, `BuildingGhostAgeLabels`, `hud.ghostAge` |
 | Fog ghost sector tip | **OK** — leave-vision building ghosts show 3×3 last-seen sector tip (distinct from age) | `buildingGhostSectorTip`, `hud.ghostSector` |
@@ -57,6 +58,7 @@ This doc is the honest gate before any public preview URL.
 | Pause supply ratio tip | **OK** — pause shows Supply · used/cap tip above the spaced-slash supply line (distinct from stock/HUD) | `pauseSupplyRatioTipLine`, `pause.supplyRatioTip` |
 | Pause camera sector tip | **OK** — pause shows Cam · sector from view-center 3×3 frozen at open (distinct from minimap Cam mark) | `pauseCameraSectorTipLine`, `pause.camSectorTip` |
 | Pause fog age tip | **OK** — pause shows Fog · ns from last fog scout reveal age frozen at open (distinct from minimap sector age) | `pauseFogAgeTipLine`, `pause.fogAgeTip`, `lastFogRevealAgeMs` |
+| Pause selection count tip | **OK** — pause shows Selected · n from living player units selected at open (distinct from sel.selected flavor) | `pauseSelectionCountTipLine`, `pause.selectionCountTip` |
 | CORE hold banner secs | **OK** — victory-hold banner shows remaining seconds clearly (Ns + “left”) | `coreVictoryBanner`, `banner.coreHold*` |
 | CORE hold progress tick | **OK** — hold banner progress bar + per-second clock tick | `coreHoldProgress`, `CoreVictoryBanner` |
 | Idle army count | **OK** — Idle army chip leads with idle combat unit count | `battlefieldHud`, `hud.idleArmy`, `countIdleMilitary` |
@@ -142,6 +144,7 @@ This doc is the honest gate before any public preview URL.
 | Lobby last outcome tip | **OK** — lobby shows Last · Won/Lost from match prefs lastWon (distinct from duration tip) | `lobbyLastOutcomeTipLine`, `lobby.lastOutcomeWin` / `lastOutcomeLoss`, `matchPrefs.lastWon` |
 | Lobby win streak tip | **OK** — lobby shows Streak · n from consecutive wins in match prefs (distinct from last-outcome tip) | `lobbyWinStreakTipLine`, `lobby.winStreakTip`, `matchPrefs.winStreak` |
 | Lobby games played tip | **OK** — lobby shows Played · n from match prefs gamesPlayed (finished matches; distinct from stats panel) | `lobbyGamesPlayedTipLine`, `lobby.gamesPlayedTip`, `matchPrefs.gamesPlayed` |
+| Lobby win rate tip | **OK** — lobby shows Win rate · n% from match prefs gamesWon / gamesPlayed (distinct from streak / played tips) | `lobbyWinRateTipLine`, `lobby.winRateTip`, `matchPrefs.gamesWon` |
 | Lobby difficulty tip | **OK** — lobby shows selected difficulty label · blurb from match prefs | `lobbyDifficultyTipLine`, `lobby.difficultyTip` |
 | Lobby match length | **OK** — lobby shows ~min estimate from recent local summaries (default ~10 min) | `lobbyMatchLengthTipLine`, `lobby.matchLength*` |
 | Hub → Kane path | **OK** — picker cards link `./kane/`; hash forward + manifest start_url match `games/PATHS.md` | `hub.gamePlayHref`, `games/registry.test.ts` |

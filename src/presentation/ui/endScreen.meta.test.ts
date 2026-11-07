@@ -34,5 +34,12 @@ describe('end screen map + duration meta', () => {
     expect(line).toContain('120');
     expect(line).toContain('45');
   });
+
+  it('formats total gathered tip from deposit tallies', () => {
+    const tip = t('end.gatheredTip', { n: 165 });
+    expect(tip).toMatch(/^Gathered ·/);
+    expect(tip).toContain('165');
+  });
 });
+
 
