@@ -33,6 +33,7 @@ This doc is the honest gate before any public preview URL.
 | End kill ratio | **OK** — kills/losses tallied on unit remove; end panel shows the line | `playerUnitKills`, `playerUnitLosses`, `end.killRatio` |
 | End units trained tip | **OK** — end screen shows Trained · n from player production completions (not starting roster) | `playerUnitsTrained`, `endUnitsTrainedTipLine`, `end.trainedTip` |
 | End buildings raised tip | **OK** — end screen shows Raised · n from player construction completions (not starting halls) | `playerBuildingsRaised`, `endBuildingsRaisedTipLine`, `end.raisedTip` |
+| End units lost tip | **OK** — end screen shows Lost · n from player unit removals (distinct from kill-ratio line) | `playerUnitLosses`, `endUnitsLostTipLine`, `end.lostTip` |
 | End gathered | **OK** — Keep deposits tally gold/crystal; end panel shows Gathered line | `playerGoldGathered`, `playerCrystalsGathered`, `end.gathered` |
 | Worker carry | **OK** — selection panel shows live carry `n/capacity` + resource label when workers haul | `selectionPanel`, `sel.cargo` |
 | Fog last-seen | **OK** — brief fade silhouette for enemy buildings after leaving vision (~2.5s) with whole-second age label | `buildingLastSeenGhost`, `BuildingGhostAgeLabels`, `hud.ghostAge` |
