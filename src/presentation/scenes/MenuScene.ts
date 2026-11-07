@@ -44,7 +44,7 @@ import { showAuthPanel, hideAuthPanel } from '../ui/authPanel';
 import { showCosmeticsPanel } from '../ui/cosmeticsPanel';
 import { accountChipName, showDashboardPanel } from '../ui/dashboardPanel';
 import { flags } from '../../config/flags';
-import { showLobbyPanel } from '../ui/lobbyPanel';
+import { showLobbyCard } from '../ui/lobbyCard';
 import { isPhoneSizedScreen } from '../ui/screenSize';
 import { hideMenuGamesLink, showMenuGamesLink } from '../ui/menuGamesLink';
 import { softLaunchStatusStrip } from '../ui/softLaunchStatus';
@@ -187,7 +187,7 @@ export class MenuScene extends Phaser.Scene {
     this.lobbyOpen = true;
     playSfx('ui');
     this.resetMenuCamera();
-    showLobbyPanel(this, () => {
+    showLobbyCard(() => {
       this.lobbyOpen = false;
       this.fitMenuCamera();
     });
