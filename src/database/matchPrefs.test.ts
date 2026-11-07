@@ -90,6 +90,17 @@ describe('match prefs rematch restore', () => {
     expect(loadMatchPrefs().gamesPlayed).toBe(2);
   });
 
+  it('tallies gamesWon on wins only', () => {
+    rememberMatchPrefs('nobles', 'normal', 'crossing', 90_000, true);
+    expect(loadMatchPrefs().gamesWon).toBe(1);
+    rememberMatchPrefs('brutes', 'easy', 'ridge', 60_000, false);
+    expect(loadMatchPrefs().gamesWon).toBe(1);
+    rememberMatchPrefs('weirdos', 'hard', 'gap', 70_000, true);
+    expect(loadMatchPrefs().gamesWon).toBe(2);
+    rememberMatchPrefs('nobles', 'normal', 'crossing');
+    expect(loadMatchPrefs().gamesWon).toBe(2);
+  });
+
   it('defaults map to crossing when older prefs omit mapId', () => {
     store.set(
       'kane.matchPrefs.v1',
