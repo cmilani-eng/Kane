@@ -31,6 +31,7 @@ import { lobbyLastOutcomeTipLine } from './lobbyLastOutcomeTip';
 import { lobbyFavoriteFactionTipLine } from './lobbyFavoriteFactionTip';
 import { lobbyGamesPlayedTipLine } from './lobbyGamesPlayedTip';
 import { lobbyLossesTipLine } from './lobbyLossesTip';
+import { lobbyRecordTipLine } from './lobbyRecordTip';
 import { lobbyWinsTipLine } from './lobbyWinsTip';
 import { lobbySpeciesPlaysTipLine } from './lobbySpeciesPlaysTip';
 import { lobbyWinRateTipLine } from './lobbyWinRateTip';
@@ -173,6 +174,7 @@ export function showLobbyPanel(scene: Phaser.Scene, onClose: () => void): void {
     lobbyGamesPlayedTipLine(),
     lobbyWinsTipLine(),
     lobbyLossesTipLine(),
+    lobbyRecordTipLine(),
     lobbyWinRateTipLine(),
     lobbyMatchLengthTipLine(),
   ]
