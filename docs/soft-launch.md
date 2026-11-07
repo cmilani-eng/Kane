@@ -125,7 +125,7 @@ This doc is the honest gate before any public preview URL.
 | Unit armor class | **OK** — selection stats show GDD role as Armor · class (HUD label only) | `unitArmorClass`, `sel.armorClass` |
 | Unit armor class tip | **OK** — unit selection shows Armor · class tip (distinct from building Structure tip) | `unitArmorClassTip`, `sel.armorTip` |
 | Unit armor value tip | **OK** — selection panel shows Armor · n from unit catalog stats (distinct from Armor · class role tip and building Structure tip) | `unitArmorValueLabel`, `sel.armorValueTip`, `unitArmorValue` |
-| Unit DPS tip | **OK** — selection stats show catalog DPS from dmg / attackCooldownMs (same-type only) | `unitDps`, `sel.dps` |
+| Unit DPS tip | **OK** — selection stats show DPS · n from catalog dmg / attackCooldownMs (same-type only; distinct from Damage · / Rate · tips) | `unitDps`, `sel.dps` |
 | Unit heal rate tip | **OK** — selection stats show Heal · n/s from hero healHp / cooldownMs when applicable (same-type only; buildings / non-heal units omit) | `unitHealRate`, `sel.healRateTip` |
 | Unit damage tip | **OK** — selection panel shows Damage · n from catalog attack damage (same-type only; distinct from ATK chip / DPS tip) | `unitDamageLabel`, `sel.dmgTip`, `unitDamage` |
 | Unit attack type tip | **OK** — selection stats show Melee / Ranged tip from catalog reach (same-type or shared type) | `unitAttackType`, `sel.atkTypeTip` |
