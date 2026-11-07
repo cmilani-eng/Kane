@@ -29,6 +29,7 @@ import { endUnitsTrainedTipLine } from './endUnitsTrainedTip';
 import { endResourcesGatheredTipLine } from './endResourcesGatheredTip';
 import { endApmTipLine } from './endApmTip';
 import { endEfficiencyTipLine } from './endEfficiencyTip';
+import { endBestWinStreakTipLine } from './endBestWinStreakTip';
 import { endWinStreakTipLine } from './endWinStreakTip';
 import { formatMatchClock } from './matchClock';
 import { copyEndShareLine, formatEndShareLine } from './endShareLine';
@@ -167,7 +168,8 @@ export function showKaneEndScreen(opts: EndScreenOpts): void {
   const yKill = short ? statRowY(13) : cy + panelH * 0.695;
   const yGathered = short ? statRowY(14) : cy + panelH * 0.73;
   const yStreak = short ? statRowY(15) : cy + panelH * 0.745;
-  const yShare = short ? yActions - 44 : cy + panelH * 0.77;
+  const yBestStreak = short ? yActions - 58 : cy + panelH * 0.76;
+  const yShare = short ? yActions - 44 : cy + panelH * 0.785;
   const yStep = short ? yActions - 44 : cy + panelH * 0.72;
   const yRematch = short ? yActions : cy + panelH * (stepUp ? 0.8 : 0.76);
   const yMenu = short ? yActions : cy + panelH * (stepUp ? 0.91 : 0.85);
@@ -589,6 +591,21 @@ export function showKaneEndScreen(opts: EndScreenOpts): void {
     .setVisible(!!streakTip);
   root.push(streakTipText);
 
+  const bestStreakTip = endBestWinStreakTipLine() ?? '';
+  const bestStreakTipText = scene.add
+    .text(width / 2, yBestStreak, bestStreakTip, {
+      fontFamily: 'system-ui, sans-serif',
+      fontSize: '13px',
+      color: '#c8d8e8',
+      align: 'center',
+    })
+    .setOrigin(0.5)
+    .setScrollFactor(0)
+    .setDepth(202)
+    .setAlpha(0)
+    .setVisible(!!bestStreakTip);
+  root.push(bestStreakTipText);
+
   const shareLine = formatEndShareLine({
     win,
     speciesName: name,
@@ -769,6 +786,7 @@ export function showKaneEndScreen(opts: EndScreenOpts): void {
       apmTipText,
       efficiencyTipText,
       streakTipText,
+      bestStreakTipText,
       shareBtn,
       ...(stepBtn ? [stepBtn] : []),
       rematchBtn,
