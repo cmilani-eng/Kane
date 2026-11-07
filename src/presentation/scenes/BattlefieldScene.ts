@@ -1428,6 +1428,7 @@ export class BattlefieldScene extends Phaser.Scene {
       playerUnitKills: this.world.playerUnitKills,
       playerUnitLosses: this.world.playerUnitLosses,
       playerUnitsTrained: this.world.playerUnitsTrained,
+      playerBuildingsRaised: this.world.playerBuildingsRaised,
       playerGoldGathered: this.world.playerGoldGathered,
       playerCrystalsGathered: this.world.playerCrystalsGathered,
       reason: matchEndReason(this.world, result),
