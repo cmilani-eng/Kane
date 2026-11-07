@@ -1,7 +1,9 @@
 /**
  * End-screen career loss-streak tip (HUD label only).
- * Consecutive losses from match prefs after result write — distinct surface from
- * lobby/pause Loss streak · and end Streak · (win) tips.
+ * Format: Loss streak · {n} — middot (U+00B7).
+ * Consecutive losses from match prefs after result write. Same en/pt-BR/es copy
+ * as lobby/pause Loss streak · tips; distinct i18n key / surface. Distinct from
+ * Streak · / Best streak · / Losses · peers.
  */
 import { loadMatchPrefs } from '../../database/matchPrefs';
 import { t } from '../../i18n';
