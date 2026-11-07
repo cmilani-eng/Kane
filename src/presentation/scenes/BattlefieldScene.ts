@@ -768,6 +768,7 @@ export class BattlefieldScene extends Phaser.Scene {
       ).length,
       stockGold: walletOf(this.world, 'player').gold,
       stockCrystals: walletOf(this.world, 'player').magic_crystals,
+      playerActions: this.world.playerActions,
     };
   }
 

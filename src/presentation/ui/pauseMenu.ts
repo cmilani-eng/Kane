@@ -32,6 +32,7 @@ import { pauseSpeciesMottoTipLine } from './pauseSpeciesMottoTip';
 import { pauseMatchClockTipLine } from './pauseMatchClockTip';
 import { pauseSelectionCountTipLine } from './pauseSelectionCountTip';
 import { pauseStockTipLine } from './pauseStockTip';
+import { pauseApmTipLine } from './pauseApmTip';
 import { pausePopulationTipLine } from './pausePopulationTip';
 import { pauseSupplyRatioTipLine } from './pauseSupplyRatioTip';
 import type { MapSectorId } from '../../gameplay/battlefield/mapSector';
@@ -61,6 +62,8 @@ export interface PauseMenuSnapshot {
   stockGold?: number;
   /** Player magic crystals in wallet when pause opens. */
   stockCrystals?: number;
+  /** Player-issued commands so far (for APM tip). */
+  playerActions?: number;
 }
 
 export interface PauseMenuOpts {
@@ -220,6 +223,10 @@ export class PauseMenu {
     const populationTip = pausePopulationTipLine(
       this.snapshot.supplyCurrent,
     );
+    const apmTip = pauseApmTipLine(
+      this.snapshot.playerActions ?? 0,
+      this.snapshot.elapsedMs,
+    );
     const supplyRatioTip = pauseSupplyRatioTipLine(
       this.snapshot.supplyCurrent,
       this.snapshot.supplyCap,
@@ -244,8 +251,9 @@ export class PauseMenu {
     const yStock = short ? top + 172 : cy + panelH * 0.015;
     const ySetup = short ? top + 184 : cy + panelH * 0.05;
     const yPopulation = short ? top + 196 : cy + panelH * 0.08;
-    const ySupplyRatio = short ? top + 208 : cy + panelH * 0.11;
-    const ySupply = short ? top + 220 : cy + panelH * 0.15;
+    const yApm = short ? top + 208 : cy + panelH * 0.105;
+    const ySupplyRatio = short ? top + 220 : cy + panelH * 0.13;
+    const ySupply = short ? top + 232 : cy + panelH * 0.165;
     const clockLine = this.scene.add
       .text(cx, yClock, clockTip, {
         fontFamily: 'system-ui, sans-serif',
@@ -371,6 +379,16 @@ export class PauseMenu {
       .setOrigin(0.5)
       .setScrollFactor(0)
       .setDepth(222);
+    const apmLine = this.scene.add
+      .text(cx, yApm, apmTip, {
+        fontFamily: 'system-ui, sans-serif',
+        fontSize: short ? '11px' : '12px',
+        color: '#c8d8e8',
+        align: 'center',
+      })
+      .setOrigin(0.5)
+      .setScrollFactor(0)
+      .setDepth(222);
     const supplyRatioLine = this.scene.add
       .text(cx, ySupplyRatio, supplyRatioTip, {
         fontFamily: 'system-ui, sans-serif',
@@ -406,12 +424,13 @@ export class PauseMenu {
       stockLine,
       setup,
       populationLine,
+      apmLine,
       supplyRatioLine,
       supplyText,
     );
 
     // Short layout: tips + setup + supply need room above buttons.
-    const btnY0 = short ? top + 244 : cy + panelH * 0.21;
+    const btnY0 = short ? top + 256 : cy + panelH * 0.22;
     const gap = short ? 36 : Math.min(44, panelH * 0.11);
     this.root.push(
       this.makeBtn(cx, btnY0, t('pause.resume'), () => {

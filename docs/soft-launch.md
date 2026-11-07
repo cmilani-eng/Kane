@@ -64,6 +64,7 @@ This doc is the honest gate before any public preview URL.
 | Supply slots left | **OK** — near-cap / full supply lines append remaining slots (or “full”) | `formatSupplyLine`, `pause.supplyNear` / `supplyFull` |
 | Pause supply ratio tip | **OK** — pause shows Supply · used/cap tip above the spaced-slash supply line (distinct from stock/HUD) | `pauseSupplyRatioTipLine`, `pause.supplyRatioTip` |
 | Pause population tip | **OK** — pause shows Pop · n from living player units at open (distinct from Supply · used/cap tip) | `pausePopulationTipLine`, `pause.populationTip` |
+| Pause APM tip | **OK** — pause shows APM · n from playerActions ÷ elapsed minutes at open (same math as end APM tip) | `pauseApmTipLine`, `matchApm`, `pause.apmTip` |
 | Pause camera sector tip | **OK** — pause shows Cam · sector from view-center 3×3 frozen at open (distinct from minimap Cam mark) | `pauseCameraSectorTipLine`, `pause.camSectorTip` |
 | Pause fog age tip | **OK** — pause shows Fog · ns from last fog scout reveal age frozen at open (distinct from minimap sector age) | `pauseFogAgeTipLine`, `pause.fogAgeTip`, `lastFogRevealAgeMs` |
 | Pause selection count tip | **OK** — pause shows Selected · n from living player units selected at open (distinct from sel.selected flavor) | `pauseSelectionCountTipLine`, `pause.selectionCountTip` |
