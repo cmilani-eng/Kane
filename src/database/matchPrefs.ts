@@ -22,6 +22,8 @@ export interface MatchPrefs {
   species: SpeciesId;
   difficulty: AiDifficultyId;
   mapId: SkirmishMapId;
+  /** Last finished match duration (ms). Optional for older prefs. */
+  lastDurationMs?: number;
 }
 
 function canStore(): boolean {
@@ -52,11 +54,18 @@ export function loadMatchPrefs(): MatchPrefs {
     const raw = localStorage.getItem(KEY);
     if (!raw) return base;
     const parsed = JSON.parse(raw) as Partial<MatchPrefs>;
+    const lastDurationMs =
+      typeof parsed.lastDurationMs === 'number' &&
+      Number.isFinite(parsed.lastDurationMs) &&
+      parsed.lastDurationMs > 0
+        ? Math.floor(parsed.lastDurationMs)
+        : undefined;
     return {
       version: 1,
       species: isSpeciesId(parsed.species) ? parsed.species : base.species,
       difficulty: getAiDifficulty(parsed.difficulty).id,
       mapId: isSkirmishMapId(parsed.mapId) ? parsed.mapId : base.mapId,
+      ...(lastDurationMs != null ? { lastDurationMs } : {}),
     };
   } catch {
     return base;
@@ -66,11 +75,18 @@ export function loadMatchPrefs(): MatchPrefs {
 export function saveMatchPrefs(prefs: MatchPrefs): void {
   if (!canStore()) return;
   try {
+    const lastDurationMs =
+      typeof prefs.lastDurationMs === 'number' &&
+      Number.isFinite(prefs.lastDurationMs) &&
+      prefs.lastDurationMs > 0
+        ? Math.floor(prefs.lastDurationMs)
+        : undefined;
     const next: MatchPrefs = {
       version: 1,
       species: isSpeciesId(prefs.species) ? prefs.species : 'nobles',
       difficulty: getAiDifficulty(prefs.difficulty).id,
       mapId: isSkirmishMapId(prefs.mapId) ? prefs.mapId : DEFAULT_SKIRMISH_MAP,
+      ...(lastDurationMs != null ? { lastDurationMs } : {}),
     };
     localStorage.setItem(KEY, JSON.stringify(next));
   } catch {
@@ -78,13 +94,25 @@ export function saveMatchPrefs(prefs: MatchPrefs): void {
   }
 }
 
-/** Persist prefs (start match or menu change). */
+/** Persist prefs (start match or menu change). Optional duration keeps prior when omitted. */
 export function rememberMatchPrefs(
   species: SpeciesId,
   difficulty: AiDifficultyId,
   mapId: SkirmishMapId = DEFAULT_SKIRMISH_MAP,
+  lastDurationMs?: number,
 ): void {
-  saveMatchPrefs({ version: 1, species, difficulty, mapId });
+  const prev = loadMatchPrefs();
+  const duration =
+    lastDurationMs != null && lastDurationMs > 0
+      ? Math.floor(lastDurationMs)
+      : prev.lastDurationMs;
+  saveMatchPrefs({
+    version: 1,
+    species,
+    difficulty,
+    mapId,
+    ...(duration != null ? { lastDurationMs: duration } : {}),
+  });
   // Cloud sync when signed in (best-effort; guest stays local).
   // Cloud profile still stores species + difficulty only.
   void import('../firebase/cloudProgression')

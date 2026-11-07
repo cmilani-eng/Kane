@@ -42,6 +42,14 @@ describe('match prefs rematch restore', () => {
     expect(prefs.mapId).toBe('ridge');
   });
 
+  it('persists last match duration and keeps it when omitted on later remember', () => {
+    rememberMatchPrefs('nobles', 'normal', 'crossing', 125_000);
+    expect(loadMatchPrefs().lastDurationMs).toBe(125_000);
+    rememberMatchPrefs('brutes', 'easy', 'ridge');
+    expect(loadMatchPrefs().lastDurationMs).toBe(125_000);
+    expect(loadMatchPrefs().species).toBe('brutes');
+  });
+
   it('defaults map to crossing when older prefs omit mapId', () => {
     store.set(
       'kane.matchPrefs.v1',
