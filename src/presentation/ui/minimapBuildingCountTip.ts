@@ -1,6 +1,6 @@
 /**
  * Minimap building count tip (presentation only).
- * Living player buildings — distinct from army / supply / idle tips.
+ * Living player buildings — distinct from army / supply and from pause Buildings tip.
  */
 import { t } from '../../i18n';
 
