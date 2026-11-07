@@ -76,7 +76,7 @@ describe('games registry', () => {
   it.each(GAMES.filter((game) => game.cover).map((game) => [game.id, game.cover!]))(
     '%s cover is a file that ships in public/',
     (_id, cover) => {
-      expect(cover).toMatch(/^\/covers\/[a-z0-9-]+\.(jpg|png|webp)$/);
+      expect(cover).toMatch(/^\/covers\/[a-z0-9-]+\.(jpg|png|webp|svg)$/);
       const file = resolve(gamesDir, '..', 'public', cover.slice(1));
       expect(existsSync(file)).toBe(true);
     },
