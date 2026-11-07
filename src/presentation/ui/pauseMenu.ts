@@ -29,6 +29,7 @@ import { pauseDifficultyTipLine } from './pauseDifficultyTip';
 import { pauseFogAgeTipLine } from './pauseFogAgeTip';
 import { pauseMapTipLine } from './pauseMapTip';
 import { pauseSpeciesMottoTipLine } from './pauseSpeciesMottoTip';
+import { pauseSelectionCountTipLine } from './pauseSelectionCountTip';
 import { pauseSupplyRatioTipLine } from './pauseSupplyRatioTip';
 import type { MapSectorId } from '../../gameplay/battlefield/mapSector';
 import {
@@ -51,6 +52,8 @@ export interface PauseMenuSnapshot {
   camSector?: MapSectorId;
   /** Age of the last fog scout reveal (ms), frozen when pause opens. */
   fogAgeMs?: number;
+  /** Living player units selected when pause opens. */
+  selectionCount?: number;
 }
 
 export interface PauseMenuOpts {
@@ -198,6 +201,9 @@ export class PauseMenu {
       this.snapshot.fogAgeMs != null
         ? pauseFogAgeTipLine(this.snapshot.fogAgeMs)
         : '';
+    const selectionCountTip = pauseSelectionCountTipLine(
+      this.snapshot.selectionCount ?? 0,
+    );
     const supplyRatioTip = pauseSupplyRatioTipLine(
       this.snapshot.supplyCurrent,
       this.snapshot.supplyCap,
@@ -217,9 +223,10 @@ export class PauseMenu {
     const yObjective = short ? top + 128 : cy - panelH * 0.13;
     const yCamSector = short ? top + 142 : cy - panelH * 0.085;
     const yFogAge = short ? top + 154 : cy - panelH * 0.055;
-    const ySetup = short ? top + 168 : cy - panelH * 0.015;
-    const ySupplyRatio = short ? top + 182 : cy + panelH * 0.03;
-    const ySupply = short ? top + 196 : cy + panelH * 0.075;
+    const ySelection = short ? top + 166 : cy - panelH * 0.025;
+    const ySetup = short ? top + 178 : cy + panelH * 0.015;
+    const ySupplyRatio = short ? top + 192 : cy + panelH * 0.055;
+    const ySupply = short ? top + 206 : cy + panelH * 0.1;
     const elapsed = this.scene.add
       .text(cx, yElapsed, elapsedLine, {
         fontFamily: 'system-ui, sans-serif',
@@ -295,6 +302,16 @@ export class PauseMenu {
       .setScrollFactor(0)
       .setDepth(222)
       .setVisible(!!fogAgeTip);
+    const selectionLine = this.scene.add
+      .text(cx, ySelection, selectionCountTip, {
+        fontFamily: 'system-ui, sans-serif',
+        fontSize: short ? '11px' : '12px',
+        color: '#c8d8e8',
+        align: 'center',
+      })
+      .setOrigin(0.5)
+      .setScrollFactor(0)
+      .setDepth(222);
     const setup = this.scene.add
       .text(cx, ySetup, setupLine, {
         fontFamily: 'system-ui, sans-serif',
@@ -335,13 +352,14 @@ export class PauseMenu {
       objectiveLine,
       camSectorLine,
       fogAgeLine,
+      selectionLine,
       setup,
       supplyRatioLine,
       supplyText,
     );
 
     // Short layout: tips + setup + supply need room above buttons.
-    const btnY0 = short ? top + 220 : cy + panelH * 0.14;
+    const btnY0 = short ? top + 230 : cy + panelH * 0.16;
     const gap = short ? 36 : Math.min(44, panelH * 0.11);
     this.root.push(
       this.makeBtn(cx, btnY0, t('pause.resume'), () => {
