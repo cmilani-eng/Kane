@@ -35,6 +35,7 @@ import { endGamesPlayedTipLine } from './endGamesPlayedTip';
 import { endWinRateTipLine } from './endWinRateTip';
 import { endFavoriteFactionTipLine } from './endFavoriteFactionTip';
 import { endLossesTipLine } from './endLossesTip';
+import { endWinsTipLine } from './endWinsTip';
 import { endWinStreakTipLine } from './endWinStreakTip';
 import { formatMatchClock } from './matchClock';
 import { copyEndShareLine, formatEndShareLine } from './endShareLine';
@@ -176,8 +177,9 @@ export function showKaneEndScreen(opts: EndScreenOpts): void {
   const yBestStreak = short ? yActions - 58 : cy + panelH * 0.76;
   const yGamesPlayed = short ? yActions - 54 : cy + panelH * 0.772;
   const yWinRate = short ? yActions - 49 : cy + panelH * 0.778;
-  const yLosses = short ? yActions - 47 : cy + panelH * 0.781;
-  const yFavoriteFaction = short ? yActions - 45 : cy + panelH * 0.784;
+  const yWins = short ? yActions - 48 : cy + panelH * 0.78;
+  const yLosses = short ? yActions - 46 : cy + panelH * 0.782;
+  const yFavoriteFaction = short ? yActions - 44 : cy + panelH * 0.784;
   const yMapSize = short ? yActions - 42 : cy + panelH * 0.787;
   const yShare = short ? yActions - 39 : cy + panelH * 0.793;
   const yStep = short ? yActions - 44 : cy + panelH * 0.72;
@@ -661,6 +663,21 @@ export function showKaneEndScreen(opts: EndScreenOpts): void {
     .setVisible(!!winRateTip);
   root.push(winRateTipText);
 
+  const winsTip = endWinsTipLine() ?? '';
+  const winsTipText = scene.add
+    .text(width / 2, yWins, winsTip, {
+      fontFamily: 'system-ui, sans-serif',
+      fontSize: '13px',
+      color: '#c8d8e8',
+      align: 'center',
+    })
+    .setOrigin(0.5)
+    .setScrollFactor(0)
+    .setDepth(202)
+    .setAlpha(0)
+    .setVisible(!!winsTip);
+  root.push(winsTipText);
+
   const lossesTip = endLossesTipLine() ?? '';
   const lossesTipText = scene.add
     .text(width / 2, yLosses, lossesTip, {
@@ -874,6 +891,7 @@ export function showKaneEndScreen(opts: EndScreenOpts): void {
       bestStreakTipText,
       gamesPlayedTipText,
       winRateTipText,
+      winsTipText,
       lossesTipText,
       favoriteFactionTipText,
       mapSizeTipText,
