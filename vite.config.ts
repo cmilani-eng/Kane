@@ -71,9 +71,24 @@ export default defineConfig({
   publicDir: resolve(repoRoot, 'public'),
   plugins: [tailwindcss(), staticGamesPlugin()],
   base: './',
+  resolve: {
+    // Kane's sources live outside the Vite root and are served via /@fs.
+    // Pin Firebase to one copy so Auth registers on the same app instance.
+    dedupe: [
+      'firebase',
+      '@firebase/app',
+      '@firebase/auth',
+      '@firebase/firestore',
+      '@firebase/component',
+      '@firebase/util',
+    ],
+  },
   server: {
     host: true,
     port: 5173,
+    fs: {
+      allow: [repoRoot],
+    },
   },
   build: {
     outDir: resolve(repoRoot, 'dist'),

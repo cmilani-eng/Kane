@@ -22,9 +22,12 @@ const SECTION = 'mt-3 mb-1 text-[11px] font-bold tracking-[0.06em] text-kane-gol
 const ROOT_CLASS = [
   'fixed inset-0 z-60 box-border flex items-center justify-center bg-kane-scrim px-3 font-sans',
   'pt-[max(12px,env(safe-area-inset-top))] pb-[max(12px,env(safe-area-inset-bottom))]',
+  'short:top-[104px] short:right-0 short:bottom-[112px] short:left-0 short:items-stretch',
+  'short:px-3 short:pt-0 short:pb-0',
 ].join(' ');
 const CARD_CLASS = [
   'relative box-border flex max-h-[min(560px,92vh)] w-[min(440px,100%)] flex-col overflow-hidden',
+  'short:h-full short:max-h-full short:w-[min(720px,100%)]',
   'rounded border-2 border-kane-gold/85 bg-kane-card text-kane-ink',
   "before:pointer-events-none before:absolute before:inset-x-0.5 before:top-0.5 before:h-1 before:bg-kane-gold/90 before:content-['']",
 ].join(' ');
@@ -129,16 +132,16 @@ export function createControlsHelpPanel(opts: {
     const copy = controlsHelpCopy(opts.getSpeciesId?.() ?? null);
     root.innerHTML = `
       <div class="${CARD_CLASS}">
-        <button type="button" class="kane-help-x absolute top-2.5 right-2.5 min-h-9 min-w-10 cursor-pointer touch-manipulation rounded-xs bg-kane-iron text-base text-kane-fog" aria-label="${esc(copy.close)}">✕</button>
-        <div class="flex-none px-[18px] pt-[18px] pb-2.5 text-center">
+        <button type="button" class="kane-help-x absolute top-2.5 right-2.5 min-h-9 min-w-10 cursor-pointer touch-manipulation rounded-xs bg-kane-iron text-base text-kane-fog short:top-1.5 short:min-h-11 short:min-w-11" aria-label="${esc(copy.close)}">✕</button>
+        <div class="flex-none px-[18px] pt-[18px] pb-2.5 text-center short:px-11 short:pt-2 short:pb-0.5">
           <div class="font-kane-serif text-[13px] font-bold tracking-[0.04em] text-kane-gold">KANE</div>
-          <div class="mt-1 font-kane-serif text-2xl/normal text-kane-cream" id="kane-help-title">${esc(copy.title)}</div>
-          <p class="mt-1.5 text-[13px] text-kane-muted">${esc(copy.sub)}</p>
+          <div class="mt-1 font-kane-serif text-2xl/normal text-kane-cream short:mt-0 short:text-xl" id="kane-help-title">${esc(copy.title)}</div>
+          <p class="mt-1.5 text-[13px] text-kane-muted short:mt-0.5">${esc(copy.sub)}</p>
         </div>
         <div class="flex-auto overflow-y-auto overscroll-contain px-[18px] pt-1 pb-2 [-webkit-overflow-scrolling:touch]">${copy.body}</div>
         <div class="flex flex-none flex-col items-center gap-2 px-[18px] pt-2.5 pb-3.5">
           <button type="button" class="kane-help-close min-h-12 min-w-[120px] cursor-pointer touch-manipulation rounded-xs bg-kane-steel px-[18px] py-2.5 text-sm/normal font-semibold text-kane-parchment">${esc(copy.gotIt)}</button>
-          <div class="text-center text-[11px] text-kane-quiet">${esc(copy.closeHint)}</div>
+          <div class="text-center text-[11px] text-kane-quiet short:hidden">${esc(copy.closeHint)}</div>
         </div>
       </div>
     `;
