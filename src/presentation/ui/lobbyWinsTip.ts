@@ -1,6 +1,8 @@
 /**
  * Lobby tip for career wins from match prefs.
- * Distinct from Win rate / Losses / Played tips.
+ * Format: Wins · {n} — middot (U+00B7).
+ * Distinct from Played · / Record · / Streak · / Win rate · peers
+ * and from pause/end Wins · tips (same en copy; distinct i18n key).
  */
 import { loadMatchPrefs } from '../../database/matchPrefs';
 import { t } from '../../i18n';

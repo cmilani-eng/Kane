@@ -207,7 +207,7 @@ This doc is the honest gate before any public preview URL.
 | Lobby loss streak tip | **OK** — lobby shows Loss streak · n from matchPrefs.lossStreak (distinct from Streak · / Best streak · / Losses ·) | `lobbyLossStreakTipLine`, `lobby.lossStreakTip`, `matchPrefs.lossStreak` |
 | Lobby games played tip | **OK** — lobby shows Played · n from matchPrefs.gamesPlayed (distinct from Record · / Streak · / Win rate · / Plays ·; same copy as end/pause Played ·) | `lobbyGamesPlayedTipLine`, `lobby.gamesPlayedTip`, `matchPrefs.gamesPlayed` |
 | Lobby losses tip | **OK** — lobby shows Losses · n from gamesPlayed − gamesWon (distinct from Played / Win rate) | `lobbyLossesTipLine`, `lobby.lossesTip`, `matchPrefs.gamesPlayed` / `gamesWon` |
-| Lobby wins tip | **OK** — lobby shows Wins · n from match prefs gamesWon (distinct from Losses / Win rate) | `lobbyWinsTipLine`, `lobby.winsTip`, `matchPrefs.gamesWon` |
+| Lobby wins tip | **OK** — lobby shows Wins · n from matchPrefs.gamesWon (distinct from Played · / Record · / Streak · / Win rate ·; same copy as pause/end Wins ·) | `lobbyWinsTipLine`, `lobby.winsTip`, `matchPrefs.gamesWon` |
 | Lobby win/loss record tip | **OK** — lobby shows Record · w–l from gamesWon / (gamesPlayed − gamesWon) (distinct from Wins · / Losses · / Win rate ·) | `lobbyRecordTipLine`, `lobby.recordTip`, `matchPrefs.gamesWon` / `gamesPlayed` |
 | Lobby win rate tip | **OK** — lobby shows Win rate · n% from matchPrefs gamesWon / gamesPlayed (distinct surface from end Win rate tip / streak / played tips) | `lobbyWinRateTipLine`, `lobby.winRateTip`, `matchPrefs.gamesWon` |
 | Lobby difficulty tip | **OK** — lobby shows selected difficulty label · blurb from match prefs | `lobbyDifficultyTipLine`, `lobby.difficultyTip` |
