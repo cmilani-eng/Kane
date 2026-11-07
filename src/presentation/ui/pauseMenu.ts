@@ -45,6 +45,7 @@ import { pauseFavoriteFactionTipLine } from './pauseFavoriteFactionTip';
 import { pauseGamesPlayedTipLine } from './pauseGamesPlayedTip';
 import { pauseWinRateTipLine } from './pauseWinRateTip';
 import { pauseAvgDurationTipLine } from './pauseAvgDurationTip';
+import { pauseLossStreakTipLine } from './pauseLossStreakTip';
 import { pauseWinStreakTipLine } from './pauseWinStreakTip';
 import type { MapSectorId } from '../../gameplay/battlefield/mapSector';
 import type { MinimapHeroStatus } from './minimapHeroStatusTip';
@@ -90,6 +91,8 @@ export interface PauseMenuSnapshot {
   heroStatus?: MinimapHeroStatus;
   /** Career win streak from matchPrefs when pause opens. */
   winStreak?: number;
+  /** Career loss streak from matchPrefs when pause opens. */
+  lossStreak?: number;
   /** Career finished matches from matchPrefs when pause opens. */
   gamesPlayed?: number;
   /** Career wins from matchPrefs when pause opens. */
@@ -280,6 +283,8 @@ export class PauseMenu {
     );
     const winStreakTip =
       pauseWinStreakTipLine(this.snapshot.winStreak ?? 0) ?? '';
+    const lossStreakTip =
+      pauseLossStreakTipLine(this.snapshot.lossStreak ?? 0) ?? '';
     const gamesPlayedTip =
       pauseGamesPlayedTipLine(this.snapshot.gamesPlayed ?? 0) ?? '';
     const winRateTip =
@@ -323,12 +328,13 @@ export class PauseMenu {
     const yHero = short ? top + 268 : cy + panelH * 0.23;
     const yApm = short ? top + 280 : cy + panelH * 0.26;
     const yWinStreak = short ? top + 292 : cy + panelH * 0.29;
-    const yGamesPlayed = short ? top + 304 : cy + panelH * 0.315;
-    const yWinRate = short ? top + 316 : cy + panelH * 0.34;
-    const yAvgDuration = short ? top + 328 : cy + panelH * 0.365;
-    const yFavoriteFaction = short ? top + 340 : cy + panelH * 0.39;
-    const ySupplyRatio = short ? top + 352 : cy + panelH * 0.415;
-    const ySupply = short ? top + 364 : cy + panelH * 0.44;
+    const yLossStreak = short ? top + 304 : cy + panelH * 0.315;
+    const yGamesPlayed = short ? top + 316 : cy + panelH * 0.34;
+    const yWinRate = short ? top + 328 : cy + panelH * 0.365;
+    const yAvgDuration = short ? top + 340 : cy + panelH * 0.39;
+    const yFavoriteFaction = short ? top + 352 : cy + panelH * 0.415;
+    const ySupplyRatio = short ? top + 364 : cy + panelH * 0.44;
+    const ySupply = short ? top + 376 : cy + panelH * 0.465;
     const clockLine = this.scene.add
       .text(cx, yClock, clockTip, {
         fontFamily: 'system-ui, sans-serif',
@@ -536,6 +542,17 @@ export class PauseMenu {
       .setScrollFactor(0)
       .setDepth(222)
       .setVisible(!!winStreakTip);
+    const lossStreakLine = this.scene.add
+      .text(cx, yLossStreak, lossStreakTip, {
+        fontFamily: 'system-ui, sans-serif',
+        fontSize: short ? '11px' : '12px',
+        color: '#c8d8e8',
+        align: 'center',
+      })
+      .setOrigin(0.5)
+      .setScrollFactor(0)
+      .setDepth(222)
+      .setVisible(!!lossStreakTip);
     const gamesPlayedLine = this.scene.add
       .text(cx, yGamesPlayed, gamesPlayedTip, {
         fontFamily: 'system-ui, sans-serif',
@@ -623,6 +640,7 @@ export class PauseMenu {
       heroLine,
       apmLine,
       winStreakLine,
+      lossStreakLine,
       gamesPlayedLine,
       winRateLine,
       avgDurationLine,
@@ -632,7 +650,7 @@ export class PauseMenu {
     );
 
     // Short layout: tips + setup + supply need room above buttons.
-    const btnY0 = short ? top + 388 : cy + panelH * 0.47;
+    const btnY0 = short ? top + 400 : cy + panelH * 0.495;
     const gap = short ? 36 : Math.min(44, panelH * 0.11);
     this.root.push(
       this.makeBtn(cx, btnY0, t('pause.resume'), () => {
