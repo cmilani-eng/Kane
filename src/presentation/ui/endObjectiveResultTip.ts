@@ -1,6 +1,8 @@
 /**
  * End-screen objective result tip (HUD label only).
- * Distinct from subtitle body copy and pause Objective · mission tip.
+ * Format: Objective · {text} — middot (U+00B7) from match end reason.
+ * Distinct from pause Objective · mission tip (same template, distinct
+ * key/surface + body) / Difficulty · / Map · / meta map · difficulty · clock.
  */
 import type { MatchEndReason } from '../../gameplay/battlefield/battlefieldVictory';
 import { t } from '../../i18n';
@@ -15,7 +17,7 @@ export function endObjectiveResultText(
   return t(`end.objectiveResult.${reason}.${outcome}`);
 }
 
-/** Objective · {text} tip from match end reason. */
+/** Objective · {text} — end-reason framing (middot U+00B7). */
 export function endObjectiveResultTipLine(
   win: boolean,
   reason: MatchEndReason | undefined,
