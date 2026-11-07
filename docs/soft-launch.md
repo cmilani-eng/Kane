@@ -45,7 +45,7 @@ This doc is the honest gate before any public preview URL.
 | Minimap ping age tip | **OK** — minimap ping chip shows Mark · sector · ns age tip (distinct from sector-only Mark · / Fog age · / Scout · sector · ns) | `minimapPingAgeTip`, `hud.pingAge` |
 | End-screen recap | **OK** — standing units/buildings from match-summary `*Left` counts (no invented deaths) | `endScreen`, `end.recap` |
 | End kill ratio | **OK** — kills/losses tallied on unit remove; end panel shows the line | `playerUnitKills`, `playerUnitLosses`, `end.killRatio` |
-| End units trained tip | **OK** — end screen shows Trained · n from player production completions (not starting roster) | `playerUnitsTrained`, `endUnitsTrainedTipLine`, `end.trainedTip` |
+| End units trained tip | **OK** — end screen shows Trained · n (U+00B7) from player production completions (not starting roster); en/pt-BR/es middot; distinct from Raised · / Lost · / Kills · / Razed · / Gathered · | `playerUnitsTrained`, `endUnitsTrainedTipLine`, `end.trainedTip` |
 | End buildings raised tip | **OK** — end screen shows Raised · n from player construction completions (not starting halls) | `playerBuildingsRaised`, `endBuildingsRaisedTipLine`, `end.raisedTip` |
 | End units lost tip | **OK** — end screen shows Lost · n (U+00B7) from player unit removals; en/pt-BR/es middot; distinct from Kills · / Razed · / Efficiency · / Losses · / kill-ratio | `playerUnitLosses`, `endUnitsLostTipLine`, `end.lostTip` |
 | End kills tip | **OK** — end screen shows Kills · n (U+00B7) from enemy unit removals; en/pt-BR/es middot; distinct from Lost · / Razed · / Efficiency · / kill-ratio | `playerUnitKills`, `endKillsTipLine`, `end.killsTip` |
