@@ -41,6 +41,7 @@ import {
   sharedUnitCargoCapacityLabel,
   unitCargoCapacityLabel,
 } from './unitCargoCapacity';
+import { unitCurrentCargoLabel } from './unitCurrentCargo';
 import {
   sharedUnitGatherYieldLabel,
   unitGatherYieldLabel,
@@ -244,6 +245,8 @@ export type SelectionPanelView =
       yieldTip: string | null;
       /** Catalog cargo-capacity tip when selection shares worker max haul. */
       cargoCapTip: string | null;
+      /** Live current cargo tip (Cargo · empty / Cargo · n/cap). */
+      cargoNowTip: string | null;
       tags: string[];
       attackMoveArmed: boolean;
       /** Present when a single player hero is selected. */
@@ -694,6 +697,7 @@ export function buildSelectionView(
       nameTip: unitNameTipLabel(u.typeId),
       yieldTip: unitGatherYieldLabel(u.typeId),
       cargoCapTip: unitCargoCapacityLabel(u.typeId),
+      cargoNowTip: unitCurrentCargoLabel(alive),
       tags,
       attackMoveArmed,
       abilities: heroAbilityViews(world, u),
@@ -765,6 +769,7 @@ export function buildSelectionView(
     nameTip: sharedUnitNameTipLabel(alive.map((u) => u.typeId)),
     yieldTip: sharedUnitGatherYieldLabel(alive.map((u) => u.typeId)),
     cargoCapTip: sharedUnitCargoCapacityLabel(alive.map((u) => u.typeId)),
+    cargoNowTip: unitCurrentCargoLabel(alive),
     tags,
     attackMoveArmed,
     abilities: null,
@@ -1048,6 +1053,7 @@ function structureSignature(view: SelectionPanelView): string {
       view.nameTip ?? '',
       view.yieldTip ?? '',
       view.cargoCapTip ?? '',
+      view.cargoNowTip ?? '',
       view.tags.join(','),
       view.attackMoveArmed ? 1 : 0,
       abs,
@@ -1609,6 +1615,9 @@ export function renderSelectionPanel(view: SelectionPanelView): boolean {
         }
         if (view.yieldTip) {
           bits.push(`<span>${escapeHtml(view.yieldTip)}</span>`);
+        }
+        if (view.cargoNowTip) {
+          bits.push(`<span>${escapeHtml(view.cargoNowTip)}</span>`);
         }
         if (view.cargoCapTip) {
           bits.push(`<span>${escapeHtml(view.cargoCapTip)}</span>`);
