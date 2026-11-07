@@ -125,6 +125,21 @@ describe('match prefs rematch restore', () => {
     expect(loadMatchPrefs().avgDurationSamples).toBe(2);
   });
 
+  it('tracks career average APM across wins and losses when actions given', () => {
+    rememberMatchPrefs('nobles', 'normal', 'crossing', 60_000, true, 120);
+    expect(loadMatchPrefs().avgApm).toBe(120);
+    expect(loadMatchPrefs().avgApmSamples).toBe(1);
+    rememberMatchPrefs('brutes', 'easy', 'ridge', 120_000, false, 60);
+    expect(loadMatchPrefs().avgApm).toBe(75);
+    expect(loadMatchPrefs().avgApmSamples).toBe(2);
+    rememberMatchPrefs('weirdos', 'hard', 'gap', 60_000, true);
+    expect(loadMatchPrefs().avgApm).toBe(75);
+    expect(loadMatchPrefs().avgApmSamples).toBe(2);
+    rememberMatchPrefs('nobles', 'normal', 'crossing');
+    expect(loadMatchPrefs().avgApm).toBe(75);
+    expect(loadMatchPrefs().avgApmSamples).toBe(2);
+  });
+
   it('counts finished matches as gamesPlayed when outcome is set', () => {
     rememberMatchPrefs('nobles', 'normal', 'crossing', 90_000, true);
     expect(loadMatchPrefs().gamesPlayed).toBe(1);
