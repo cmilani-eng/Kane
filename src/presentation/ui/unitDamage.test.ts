@@ -12,6 +12,7 @@ describe('unitDamage', () => {
     const n = unitDamage('bonker');
     expect(n).toBe(getUnitType('bonker').dmg);
     expect(unitDamageLabel('bonker')).toBe(t('sel.dmgTip', { n: n! }));
+    expect(unitDamageLabel('bonker')).toMatch(/^Damage ·/);
   });
 
   it('shares a tip only when every selected unit is the same type', () => {
