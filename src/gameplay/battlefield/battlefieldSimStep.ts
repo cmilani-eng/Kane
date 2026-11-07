@@ -50,7 +50,8 @@ export function stepBattlefieldSim(
   tickMutations(world, dtMs);
   tickRage(world, dtMs);
   tickHeroes(world, dtMs);
-  tickBattlefieldAi(world, ai, dtMs);
+  // In a two-player match the enemy team takes orders from the other player, so the AI stays off.
+  if (!world.pvp) tickBattlefieldAi(world, ai, dtMs);
   world.fogAccMs += dtMs;
   if (world.fogAccMs >= FOG_STEP_MS) {
     world.fogAccMs = 0;

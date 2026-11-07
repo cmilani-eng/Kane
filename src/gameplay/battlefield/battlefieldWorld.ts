@@ -126,6 +126,8 @@ export interface BattlefieldWorld {
   rng: Rng;
   /** Time since the fog was last rebuilt, in simulation milliseconds. */
   fogAccMs: number;
+  /** A two-player match: the enemy team is driven by the other player's orders, not the AI. */
+  pvp: boolean;
   units: BattlefieldUnit[];
   buildings: BattlefieldBuilding[];
   nodes: ResourceNode[];
@@ -440,6 +442,7 @@ export function createBattlefieldWorld(
     nextId: 1,
     rng: createRng(seed),
     fogAccMs: 0,
+    pvp: false,
     units: [],
     buildings: [],
     nodes: [],
@@ -619,8 +622,24 @@ export function issueMoveSelected(
   y: number,
 ): void {
   const selected = world.units.filter((u) => u.selected && u.team === 'player');
+  moveUnitsForTeam(world, 'player', selected, x, y);
+}
+
+/**
+ * Moves `units` (all of `team`) in formation to (x, y). Both the local player's
+ * orders and a remote player's relayed orders run through here, so both sides
+ * change the world the same way.
+ */
+export function moveUnitsForTeam(
+  world: BattlefieldWorld,
+  team: BattlefieldTeam,
+  units: readonly BattlefieldUnit[],
+  x: number,
+  y: number,
+): void {
+  const selected = units;
   if (selected.length === 0) return;
-  recordPlayerAction(world);
+  if (team === 'player') recordPlayerAction(world);
   selected.forEach((u, i) => {
     u.attackTargetId = null;
     u.gatherNodeId = null;
