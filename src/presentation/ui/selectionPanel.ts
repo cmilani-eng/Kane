@@ -50,6 +50,10 @@ import {
 import { sharedUnitDamageLabel, unitDamageLabel } from './unitDamage';
 import { sharedUnitDpsLabel, unitDpsLabel } from './unitDps';
 import {
+  sharedUnitSplashRadiusLabel,
+  unitSplashRadiusLabel,
+} from './unitSplashRadius';
+import {
   sharedUnitHealRateLabel,
   unitHealRateLabel,
 } from './unitHealRate';
@@ -236,6 +240,8 @@ export type SelectionPanelView =
       healRateTip: string | null;
       /** Catalog attack-damage tip when selection shares one unit type (distinct from ATK chip / DPS). */
       dmgTip: string | null;
+      /** Catalog splash / AoE radius tip when selection shares one splash value. */
+      splashTip: string | null;
       /** Melee / Ranged tip when selection shares one attack type. */
       atkTypeTip: string | null;
       /** Catalog move-speed tip when selection shares one unit type. */
@@ -722,6 +728,7 @@ export function buildSelectionView(
       dpsTip: unitDpsLabel(u.typeId),
       healRateTip: unitHealRateLabel(u.typeId),
       dmgTip: unitDamageLabel(u.typeId),
+      splashTip: unitSplashRadiusLabel(u.typeId),
       atkTypeTip: unitAttackTypeLabel(u.typeId),
       speedTip: unitMoveSpeedLabel(u.typeId),
       moveCadenceTip: unitMoveCadenceLabel(u.typeId),
@@ -799,6 +806,7 @@ export function buildSelectionView(
     dpsTip: sharedUnitDpsLabel(alive.map((u) => u.typeId)),
     healRateTip: sharedUnitHealRateLabel(alive.map((u) => u.typeId)),
     dmgTip: sharedUnitDamageLabel(alive.map((u) => u.typeId)),
+    splashTip: sharedUnitSplashRadiusLabel(alive.map((u) => u.typeId)),
     atkTypeTip: sharedUnitAttackTypeLabel(alive.map((u) => u.typeId)),
     speedTip: sharedUnitMoveSpeedLabel(alive.map((u) => u.typeId)),
     moveCadenceTip: sharedUnitMoveCadenceLabel(alive.map((u) => u.typeId)),
@@ -1088,6 +1096,7 @@ function structureSignature(view: SelectionPanelView): string {
       view.dpsTip ?? '',
       view.healRateTip ?? '',
       view.dmgTip ?? '',
+      view.splashTip ?? '',
       view.atkTypeTip ?? '',
       view.speedTip ?? '',
       view.moveCadenceTip ?? '',
@@ -1628,6 +1637,9 @@ export function renderSelectionPanel(view: SelectionPanelView): boolean {
         }
         if (view.dmgTip) {
           bits.push(`<span>${escapeHtml(view.dmgTip)}</span>`);
+        }
+        if (view.splashTip) {
+          bits.push(`<span>${escapeHtml(view.splashTip)}</span>`);
         }
         if (view.atkTypeTip) {
           bits.push(`<span>${escapeHtml(view.atkTypeTip)}</span>`);

@@ -137,6 +137,7 @@ This doc is the honest gate before any public preview URL.
 | Unit DPS tip | **OK** — selection stats show DPS · n from catalog dmg / attackCooldownMs (same-type only; distinct from Damage · / Rate · tips) | `unitDps`, `sel.dps` |
 | Unit heal rate tip | **OK** — selection stats show Heal · n/s from hero healHp / cooldownMs when applicable (same-type only; buildings / non-heal units omit) | `unitHealRate`, `sel.healRateTip` |
 | Unit damage tip | **OK** — selection panel shows Damage · n from catalog attack damage (same-type only; distinct from ATK chip / DPS tip) | `unitDamageLabel`, `sel.dmgTip`, `unitDamage` |
+| Unit splash radius tip | **OK** — selection stats show Splash · n from catalog AoE/blast radius in map tiles (shared splash only; omitted when none; distinct from Range · / Damage · / Atk · type) | `unitSplashRadius`, `sel.splashTip` |
 | Unit attack type tip | **OK** — selection stats show Atk · Melee/Ranged tip from catalog reach (middot; same-type or shared type; distinct from Damage · / DPS · / Atk CD ·) | `unitAttackType`, `sel.atkTypeTip` |
 | Unit range tip | **OK** — selection stats show Range · n from catalog attack reach in map tiles (same-type only; distinct from Sight tip) | `unitAttackRangeLabel`, `sel.rangeTip` |
 | Unit speed tip | **OK** — selection stats show Speed · n from catalog move speed in tiles/s (same-type only; distinct from Pace · cadence / Rate · atk tips) | `unitMoveSpeed`, `sel.speedTip` |
