@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { t } from '../../i18n';
+import { unitDpsLabel } from './unitDps';
 import {
   sharedUnitHealRateLabel,
   unitHealRate,
@@ -11,6 +12,9 @@ describe('unitHealRate', () => {
     // 180 HP / 14s ≈ 13 HP/s
     expect(unitHealRate('boniface')).toBe(13);
     expect(unitHealRateLabel('boniface')).toBe(t('sel.healRateTip', { n: 13 }));
+    expect(unitHealRateLabel('boniface')).toMatch(/^Heal ·/);
+    expect(unitHealRateLabel('boniface')).toMatch(/\/s$/);
+    expect(unitHealRateLabel('boniface')).not.toBe(unitDpsLabel('boniface'));
     expect(unitHealRate('gruk')).toBeNull();
     expect(unitHealRateLabel('scavenger')).toBeNull();
   });

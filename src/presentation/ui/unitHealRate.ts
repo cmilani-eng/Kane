@@ -1,6 +1,7 @@
 /**
  * Catalog heal-rate tip from hero repair/heal abilities (HUD label only).
- * Whole HP/s = round(healHp * 1000 / cooldownMs) — same shape as DPS tip.
+ * Format: Heal · {n}/s — whole HP/s = round(healHp * 1000 / cooldownMs).
+ * Buildings / non-heal units omit (no catalog heal cast).
  */
 import { HEROES } from '../../data/heroes';
 import { getUnitType, type UnitTypeId } from '../../data/units';
