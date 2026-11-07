@@ -50,10 +50,13 @@ describe('endGamesPlayedTipLine', () => {
     expect(endGamesPlayedTipLine()).toBe(pauseGamesPlayedTipLine(2));
     expect(lobbyGamesPlayedTipLine()).toBe(t('lobby.gamesPlayedTip', { n: 2 }));
     expect(pauseGamesPlayedTipLine(2)).toBe(t('pause.gamesPlayedTip', { n: 2 }));
-    // Distinct from end species Played · faction tip (double-spaced middot).
+    // Distinct from end species Played · faction tip (same en prefix, name value).
     expect(endGamesPlayedTipLine()).not.toBe(
       endSpeciesPlayedTipLine('nobles'),
     );
+    expect(endSpeciesPlayedTipLine('nobles')).toBe('Played · The Nobles');
+    expect(endSpeciesPlayedTipLine('nobles')).toMatch(/^Played \u00b7 /);
+    expect(endSpeciesPlayedTipLine('nobles')).not.toMatch(/ {2}/);
     // Distinct from peer career tips (Record · / Streak · / Win rate · / Best streak ·).
     expect(endGamesPlayedTipLine()).not.toBe(lobbyRecordTipLine());
     expect(lobbyRecordTipLine()).toBe(t('lobby.recordTip', { w: 2, l: 0 }));
