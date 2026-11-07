@@ -1,6 +1,7 @@
 /**
  * Minimap supply usage tip (presentation only).
- * Distinct from pause Supply · used/cap tip and HUD spaced-slash line.
+ * Format: Supply · used/cap — distinct surface from pause Supply tip,
+ * Pop · n tip, and HUD spaced-slash line.
  */
 import { t } from '../../i18n';
 
