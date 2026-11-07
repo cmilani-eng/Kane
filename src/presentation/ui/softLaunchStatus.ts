@@ -7,7 +7,13 @@ import { flags } from '../../config/flags';
 import { getAdminAccessMode } from '../../database/adminAllowlist';
 import { loadCosmeticsLoadout } from '../../database/cosmeticsLoadout';
 import { HOSTING_PREVIEW } from '../../firebase/hostingPreview';
+import { t } from '../../i18n';
 import { getMasterVolume } from '../audio/sfx';
+
+/** Hub picker path tip for the menu strip (PATHS.md root). */
+export function softLaunchHubPathTip(path = '/'): string {
+  return t('soft.hubPathTip', { path });
+}
 
 /** Canonical Kane soft-launch play path tip for the menu strip. */
 export function softLaunchKanePathTip(path = '/kane/'): string {
@@ -30,7 +36,7 @@ export function softLaunchStatusStrip(): string {
   const volBit = `vol ${Math.round(getMasterVolume() * 100)}`;
   const pwaBit = 'pwa';
   // Hub picker + canonical Kane / Blob play URLs (see games/PATHS.md).
-  const hubBit = 'hub /';
+  const hubBit = softLaunchHubPathTip();
   const playBit = softLaunchKanePathTip();
   const blobBit = softLaunchBlobPathTip();
   return `${hostBit} · ${adminBit} · ${cosBit} · ${volBit} · ${pwaBit} · ${hubBit} · ${playBit} · ${blobBit}`;
