@@ -41,6 +41,14 @@ describe('skirmish maps', () => {
     expect(gap.coreFragments.length).toBe(3);
   });
 
+  it('scatters rich gold veins on every map', () => {
+    for (const id of SKIRMISH_MAP_ORDER) {
+      const gold = SKIRMISH_MAPS[id].nodes.filter((n) => n.resourceId === 'gold');
+      expect(gold.length).toBeGreaterThanOrEqual(8);
+      for (const vein of gold) expect(vein.amount).toBeGreaterThanOrEqual(900);
+    }
+  });
+
   it('falls back to the default map for unknown ids', () => {
     expect(getSkirmishMap('nope').id).toBe(DEFAULT_SKIRMISH_MAP);
     expect(getSkirmishMap(null).id).toBe('crossing');
