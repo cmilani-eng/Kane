@@ -39,6 +39,7 @@ This doc is the honest gate before any public preview URL.
 | Minimap crystal stock tip | **OK** — minimap chrome shows Crystal · n from player magic_crystals wallet (distinct from pause Gold·Crystal tip) | `minimapCrystalStockTipText`, `hud.minimapCrystal`, `walletOf` |
 | Minimap match clock tip | **OK** — minimap chrome shows Time · mm:ss from live match elapsed (same formatMatchClock as pause/end; distinct surface) | `minimapMatchClockTipText`, `hud.minimapClock`, `formatMatchClock` |
 | Minimap vision tip | **OK** — minimap chrome shows Vision · n from max living-player unit vision tiles (distinct from selection Sight · / Fog · %) | `minimapVisionTipText`, `hud.minimapVision`, `maxPlayerVisionTiles` |
+| Minimap enemy count tip | **OK** — minimap chrome shows Enemies · n (U+00B7) from living fog-revealed enemy units; distinct from Army · / Selected · / Vision · | `minimapEnemyCountTipText`, `hud.minimapEnemies`, `countVisibleEnemies` |
 | Attention ping | **OK** — hold minimap to drop a temporary look-here mark (world + minimap); short cooldown + ice deny flash; help notes double-tap recenter; no chat | `battlefieldAttentionPing`, `minimapPingCooldown`, help |
 | Minimap ping sector tip | **OK** — hold-to-ping arms a brief Mark · sector chip (HUD + minimap), distinct from scout sector | `attentionPingSectorHint`, `minimapPingSectorTip`, `hud.pingSector` |
 | Minimap ping age tip | **OK** — minimap ping chip shows Mark · sector · ns age tip (distinct from sector-only Mark · / Fog age · / Scout · sector · ns) | `minimapPingAgeTip`, `hud.pingAge` |
