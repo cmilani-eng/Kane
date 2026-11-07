@@ -17,6 +17,7 @@ import {
 import { difficultyCopy, mapCopy, speciesName, t } from '../../i18n';
 import { playEndFanfare, playSfx } from '../audio/sfx';
 import { endDifficultyPlayedTipLine } from './endDifficultyPlayedTip';
+import { endAvgApmTipLine } from './endAvgApmTip';
 import { endAvgDurationTipLine } from './endAvgDurationTip';
 import { endDurationTipLine } from './endDurationTip';
 import { endMapPlayedTipLine } from './endMapPlayedTip';
@@ -188,6 +189,7 @@ export function showKaneEndScreen(opts: EndScreenOpts): void {
   const yLosses = short ? yActions - 46 : cy + panelH * 0.782;
   const yFavoriteFaction = short ? yActions - 44 : cy + panelH * 0.784;
   const yAvgDuration = short ? yActions - 43 : cy + panelH * 0.7855;
+  const yAvgApm = short ? yActions - 42.5 : cy + panelH * 0.7862;
   const yMapSize = short ? yActions - 42 : cy + panelH * 0.787;
   const yVision = short ? yActions - 40 : cy + panelH * 0.79;
   const yShare = short ? yActions - 39 : cy + panelH * 0.793;
@@ -763,6 +765,21 @@ export function showKaneEndScreen(opts: EndScreenOpts): void {
     .setVisible(!!avgDurationTip);
   root.push(avgDurationTipText);
 
+  const avgApmTip = endAvgApmTipLine() ?? '';
+  const avgApmTipText = scene.add
+    .text(width / 2, yAvgApm, avgApmTip, {
+      fontFamily: 'system-ui, sans-serif',
+      fontSize: '13px',
+      color: '#c8d8e8',
+      align: 'center',
+    })
+    .setOrigin(0.5)
+    .setScrollFactor(0)
+    .setDepth(202)
+    .setAlpha(0)
+    .setVisible(!!avgApmTip);
+  root.push(avgApmTipText);
+
   const shareLine = formatEndShareLine({
     win,
     speciesName: name,
@@ -951,6 +968,7 @@ export function showKaneEndScreen(opts: EndScreenOpts): void {
       lossesTipText,
       favoriteFactionTipText,
       avgDurationTipText,
+      avgApmTipText,
       mapSizeTipText,
       visionTipText,
       shareBtn,

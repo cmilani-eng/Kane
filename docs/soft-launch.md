@@ -171,6 +171,7 @@ This doc is the honest gate before any public preview URL.
 | End meta difficulty | **OK** — end screen meta line shows map · difficulty · mm:ss | `endScreen`, `end.meta` |
 | End duration tip | **OK** — end screen shows Time · mm:ss from match elapsed (same formatMatchClock; distinct surface from pause/minimap Time tips / APM) | `endDurationTipLine`, `end.durationTip` |
 | End avg duration tip | **OK** — end screen shows Avg time · mm:ss from matchPrefs.avgDurationMs after prefs write (distinct surface from lobby/pause Avg time · and this-match Time · tips) | `endAvgDurationTipLine`, `end.avgDurationTip`, `matchPrefs.avgDurationMs` |
+| End avg APM tip | **OK** — end screen shows Avg APM · n from matchPrefs.avgApm after prefs write (distinct surface from lobby/pause Avg APM · and this-match APM · tips) | `endAvgApmTipLine`, `end.avgApmTip`, `matchPrefs.avgApm` |
 | End species tip | **OK** — end screen shows dedicated Played · faction tip under duration | `endSpeciesPlayedTipLine`, `end.speciesTip` |
 | End map tip | **OK** — end screen shows Map · name from match mapId (distinct from Map · w×h size tip / meta line) | `endMapPlayedTipLine`, `end.mapTip` |
 | End map size tip | **OK** — end screen shows Map · w×h from match mapId + MAP catalog bounds (distinct surface from lobby Map size / end Map · name) | `endMapSizeTipLine`, `end.mapSizeTip`, `MAP` |
