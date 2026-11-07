@@ -1,10 +1,12 @@
 import { beforeEach, describe, expect, it } from 'vitest';
 import { rememberMatchPrefs } from '../../database/matchPrefs';
 import { speciesCopy, setLocale, t } from '../../i18n';
+import { endFavoriteFactionTipLine } from './endFavoriteFactionTip';
 import {
   favoriteFactionId,
   lobbyFavoriteFactionTipLine,
 } from './lobbyFavoriteFactionTip';
+import { lobbyLastFactionTipLine } from './lobbyLastFactionTip';
 
 function memoryStorage(): Storage {
   const data = new Map<string, string>();
@@ -39,7 +41,7 @@ describe('lobbyFavoriteFactionTipLine', () => {
     expect(lobbyFavoriteFactionTipLine()).toBeNull();
   });
 
-  it('labels Favorite · name for the most-played species', () => {
+  it('labels Favorite · name, distinct from Last tip and end tip key', () => {
     rememberMatchPrefs('nobles', 'normal', 'crossing', 90_000, true);
     rememberMatchPrefs('brutes', 'easy', 'ridge', 60_000, false);
     rememberMatchPrefs('brutes', 'hard', 'gap', 70_000, true);
@@ -49,5 +51,11 @@ describe('lobbyFavoriteFactionTipLine', () => {
       t('lobby.favoriteFactionTip', { name }),
     );
     expect(lobbyFavoriteFactionTipLine()).toMatch(/^Favorite ·/);
+    expect(lobbyFavoriteFactionTipLine()).not.toBe(lobbyLastFactionTipLine());
+    // Same en copy as end tip; distinct i18n key / surface.
+    expect(lobbyFavoriteFactionTipLine()).toBe(endFavoriteFactionTipLine());
+    expect(endFavoriteFactionTipLine()).toBe(
+      t('end.favoriteFactionTip', { name }),
+    );
   });
 });

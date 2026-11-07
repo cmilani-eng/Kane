@@ -173,7 +173,7 @@ This doc is the honest gate before any public preview URL.
 | Lobby map tip | **OK** — lobby shows selected map label · blurb tip from match prefs | `lobbyMapTipLine`, `lobby.mapTip` |
 | Lobby faction tip | **OK** — lobby shows selected species name · motto blurb from match prefs | `lobbyFactionTipLine`, `lobby.factionTip` |
 | Lobby last faction tip | **OK** — lobby shows Last · faction from match prefs species (distinct from Favorite · / Played · n / selected motto tip) | `lobbyLastFactionTipLine`, `lobby.lastFactionTip`, `matchPrefs.species` |
-| Lobby favorite faction tip | **OK** — lobby shows Favorite · name from most-played species in match prefs speciesPlays (distinct from last-faction) | `lobbyFavoriteFactionTipLine`, `lobby.favoriteFactionTip`, `matchPrefs.speciesPlays` |
+| Lobby favorite faction tip | **OK** — lobby shows Favorite · name from most-played species in matchPrefs speciesPlays (distinct surface from end Favorite tip / last-faction) | `lobbyFavoriteFactionTipLine`, `lobby.favoriteFactionTip`, `matchPrefs.speciesPlays` |
 | Lobby species plays tip | **OK** — lobby shows Plays · n for favorite species play count from speciesPlays (distinct from Played · / Favorite · / Last ·) | `lobbySpeciesPlaysTipLine`, `lobby.speciesPlaysTip`, `matchPrefs.speciesPlays` |
 | Lobby last map tip | **OK** — lobby shows Last map · name from match prefs (distinct from selected map blurb tip) | `lobbyLastMapTipLine`, `lobby.lastMapTip` |
 | Lobby last map size tip | **OK** — lobby shows Map · w×h from remembered map prefs + MAP catalog (distinct from Last map name tip) | `lobbyLastMapSizeTipLine`, `lobby.lastMapSizeTip`, `MAP` |
