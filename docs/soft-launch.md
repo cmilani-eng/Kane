@@ -26,6 +26,7 @@ This doc is the honest gate before any public preview URL.
 | Minimap camera viewport label | **OK** — gold camera frame on the minimap shows a short View mark | `minimapCameraViewportLabel`, `hud.minimapCamView` |
 | Minimap camera sector tip | **OK** — camera frame shows Cam · sector from view-center 3×3 (distinct from View mark) | `minimapCameraSectorTip`, `hud.minimapCamSector` |
 | Minimap supply usage tip | **OK** — minimap chrome shows Supply · used/cap from living player units vs unitCap (distinct from pause tip) | `minimapSupplyTipText`, `hud.minimapSupply` |
+| Minimap population tip | **OK** — minimap chrome shows Pop · n from living player units (distinct from Supply · used/cap; same count as pause Pop) | `minimapPopulationTipText`, `hud.minimapPop`, `livingByTeam` |
 | Minimap idle worker tip | **OK** — minimap chrome shows Idle · n when any gatherer is idle (distinct from HUD idle chip) | `minimapIdleWorkerTipText`, `hud.minimapIdle`, `countIdleWorkers` |
 | Minimap army count tip | **OK** — minimap chrome shows Army · n from living player combat units (distinct from HUD Army button) | `minimapArmyCountTipText`, `hud.minimapArmy`, `isMilitaryUnit` |
 | Minimap worker count tip | **OK** — minimap chrome shows Workers · n from living player gatherers (distinct from Idle · n tip) | `minimapWorkerCountTipText`, `hud.minimapWorkers`, `countLivingWorkers` |
