@@ -74,6 +74,7 @@ This doc is the honest gate before any public preview URL.
 | Pause army size tip | **OK** — pause shows Army · n from living player combat units at open (same isMilitaryUnit filter as minimap; distinct from Pop) | `pauseArmySizeTipLine`, `pause.armyTip`, `isMilitaryUnit` |
 | Pause building count tip | **OK** — pause shows Buildings · n from living player buildings at open (same filter as minimap; distinct from Army / Pop) | `pauseBuildingCountTipLine`, `pause.buildingsTip` |
 | Pause idle workers tip | **OK** — pause shows Idle · n from idle player gatherers at open (same countIdleWorkers as minimap; distinct from Army / Pop) | `pauseIdleWorkersTipLine`, `pause.idleTip`, `countIdleWorkers` |
+| Pause hero status tip | **OK** — pause shows Hero · Ready / Down / sector frozen at open (same minimapHeroStatus logic; distinct surface from minimap tip) | `pauseHeroStatusTipLine`, `pause.heroReady`, `minimapHeroStatus` |
 | Pause APM tip | **OK** — pause shows APM · n from playerActions ÷ elapsed minutes at open (same math as end APM tip) | `pauseApmTipLine`, `matchApm`, `pause.apmTip` |
 | Pause camera sector tip | **OK** — pause shows Cam · sector from view-center 3×3 frozen at open (distinct from minimap Cam mark) | `pauseCameraSectorTipLine`, `pause.camSectorTip` |
 | Pause fog age tip | **OK** — pause shows Fog · ns from last fog scout reveal age frozen at open (distinct from minimap sector age) | `pauseFogAgeTipLine`, `pause.fogAgeTip`, `lastFogRevealAgeMs` |

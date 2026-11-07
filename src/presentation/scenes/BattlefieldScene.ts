@@ -117,6 +117,7 @@ import {
 import { selectsWholeType } from '../../gameplay/battlefield/battlefieldSelectClick';
 import { countIdleWorkers } from '../../gameplay/battlefield/idleWorkers';
 import { isMilitaryUnit } from '../../gameplay/battlefield/selectMilitary';
+import { minimapHeroStatus } from '../ui/minimapHeroStatusTip';
 import { touchLongPressAction } from '../../gameplay/battlefield/touchLongPress';
 import {
   spawnControlGroupAssignFx,
@@ -776,6 +777,7 @@ export class BattlefieldScene extends Phaser.Scene {
         (b) => b.team === 'player' && b.hp > 0,
       ).length,
       idleWorkerCount: countIdleWorkers(this.world),
+      heroStatus: minimapHeroStatus(this.world),
     };
   }
 
