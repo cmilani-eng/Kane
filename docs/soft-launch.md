@@ -46,6 +46,7 @@ This doc is the honest gate before any public preview URL.
 | End gathered tip | **OK** — end screen shows Gathered · n total deposits (gold+crystals; distinct from g/c breakdown) | `endResourcesGatheredTipLine`, `end.gatheredTip` |
 | End APM tip | **OK** — end screen shows APM · n from player commands ÷ match minutes | `playerActions`, `endApmTipLine`, `end.apmTip` |
 | End efficiency tip | **OK** — end screen shows Efficiency · pct% from kills/(kills+losses) (distinct from Kills / Lost / kill-ratio) | `endEfficiencyTipLine`, `end.efficiencyTip` |
+| End win streak tip | **OK** — end screen shows Streak · n from matchPrefs after prefs write (distinct surface from lobby streak tip) | `endWinStreakTipLine`, `end.winStreakTip`, `matchPrefs.winStreak` |
 | Worker carry | **OK** — selection panel shows live carry `n/capacity` + resource label when workers haul | `selectionPanel`, `sel.cargo` |
 | Fog last-seen | **OK** — brief fade silhouette for enemy buildings after leaving vision (~2.5s) with whole-second age label | `buildingLastSeenGhost`, `BuildingGhostAgeLabels`, `hud.ghostAge` |
 | Fog ghost sector tip | **OK** — leave-vision building ghosts show 3×3 last-seen sector tip (distinct from age) | `buildingGhostSectorTip`, `hud.ghostSector` |

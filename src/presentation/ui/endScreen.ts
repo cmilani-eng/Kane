@@ -29,6 +29,7 @@ import { endUnitsTrainedTipLine } from './endUnitsTrainedTip';
 import { endResourcesGatheredTipLine } from './endResourcesGatheredTip';
 import { endApmTipLine } from './endApmTip';
 import { endEfficiencyTipLine } from './endEfficiencyTip';
+import { endWinStreakTipLine } from './endWinStreakTip';
 import { formatMatchClock } from './matchClock';
 import { copyEndShareLine, formatEndShareLine } from './endShareLine';
 
@@ -165,7 +166,8 @@ export function showKaneEndScreen(opts: EndScreenOpts): void {
   const yBldLost = short ? statRowY(12) : cy + panelH * 0.66;
   const yKill = short ? statRowY(13) : cy + panelH * 0.695;
   const yGathered = short ? statRowY(14) : cy + panelH * 0.73;
-  const yShare = short ? yActions - 44 : cy + panelH * 0.755;
+  const yStreak = short ? statRowY(15) : cy + panelH * 0.745;
+  const yShare = short ? yActions - 44 : cy + panelH * 0.77;
   const yStep = short ? yActions - 44 : cy + panelH * 0.72;
   const yRematch = short ? yActions : cy + panelH * (stepUp ? 0.8 : 0.76);
   const yMenu = short ? yActions : cy + panelH * (stepUp ? 0.91 : 0.85);
@@ -572,6 +574,21 @@ export function showKaneEndScreen(opts: EndScreenOpts): void {
     .setVisible(!!efficiencyTip);
   root.push(efficiencyTipText);
 
+  const streakTip = endWinStreakTipLine() ?? '';
+  const streakTipText = scene.add
+    .text(statX(15), yStreak, streakTip, {
+      fontFamily: 'system-ui, sans-serif',
+      fontSize: '13px',
+      color: '#c8d8e8',
+      align: 'center',
+    })
+    .setOrigin(0.5)
+    .setScrollFactor(0)
+    .setDepth(202)
+    .setAlpha(0)
+    .setVisible(!!streakTip);
+  root.push(streakTipText);
+
   const shareLine = formatEndShareLine({
     win,
     speciesName: name,
@@ -751,6 +768,7 @@ export function showKaneEndScreen(opts: EndScreenOpts): void {
       gathered,
       apmTipText,
       efficiencyTipText,
+      streakTipText,
       shareBtn,
       ...(stepBtn ? [stepBtn] : []),
       rematchBtn,
