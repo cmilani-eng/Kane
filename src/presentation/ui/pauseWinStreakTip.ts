@@ -1,7 +1,9 @@
 /**
  * Pause overlay career win-streak tip (HUD label only).
+ * Format: Streak · {n} — middot (U+00B7).
  * Frozen matchPrefs.winStreak at pause open — distinct surface from
- * lobby/end Streak · tips.
+ * lobby/end Streak · tips and from Loss streak · / Win rate · /
+ * Best APM · / Record · peers.
  */
 import { t } from '../../i18n';
 
