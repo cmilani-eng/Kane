@@ -1,5 +1,6 @@
 /**
  * Catalog max-HP tip (HUD label only).
+ * Format: Max HP · {n} — distinct from live HP · pct% and HP chip.
  */
 import { getUnitType, type UnitTypeId } from '../../data/units';
 import { t } from '../../i18n';

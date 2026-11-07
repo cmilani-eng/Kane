@@ -21,6 +21,8 @@ describe('selectionHpRatioTipLine', () => {
     expect(selectionHpRatioTipLine(50, 100)).not.toBe(
       unitHpMaxLabel('scavenger'),
     );
-    expect(unitHpMaxLabel('scavenger')).toMatch(/^Max HP /);
+    expect(unitHpMaxLabel('scavenger')).toMatch(/^Max HP \u00b7 /);
+    expect(unitHpMaxLabel('scavenger')).toBe('Max HP · 55');
+    expect(selectionHpRatioTipLine(50, 100)).not.toMatch(/Max HP/);
   });
 });
