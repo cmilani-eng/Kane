@@ -1,7 +1,10 @@
 /**
  * Minimap supply usage tip (presentation only).
- * Format: Supply · used/cap — distinct surface from pause Supply tip,
- * Pop · n tip, and HUD spaced-slash line.
+ * Format: Supply · used/cap — middot (U+00B7).
+ * Living player population vs unitCap — distinct from Pop · /
+ * Army · / Selected · minimap peers and stock/HUD formatSupplyLine
+ * (spaced slash); same en/pt-BR/es copy as pause Supply tip
+ * (`pause.supplyRatioTip` / `pauseSupplyRatioTipLine`), own key.
  */
 import { t } from '../../i18n';
 
