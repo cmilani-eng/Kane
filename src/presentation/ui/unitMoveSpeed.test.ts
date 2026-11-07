@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { MAP } from '../../config/balance';
 import { getUnitType } from '../../data/units';
 import { t } from '../../i18n';
+import { unitMoveCadenceLabel } from './unitMoveCadence';
 import {
   moveSpeedTilesPerSec,
   sharedUnitMoveSpeedLabel,
@@ -16,10 +17,14 @@ describe('unitMoveSpeed', () => {
     expect(moveSpeedTilesPerSec(0)).toBeNull();
   });
 
-  it('labels catalog speed for a known unit', () => {
+  it('labels Speed · n from catalog, distinct from Pace tip', () => {
     const n = unitMoveSpeed('scavenger');
     expect(n).toBe(moveSpeedTilesPerSec(getUnitType('scavenger').speed));
     expect(unitMoveSpeedLabel('scavenger')).toBe(t('sel.speedTip', { n: n! }));
+    expect(unitMoveSpeedLabel('scavenger')).toMatch(/^Speed ·/);
+    expect(unitMoveSpeedLabel('scavenger')).not.toBe(
+      unitMoveCadenceLabel('scavenger'),
+    );
     expect(sharedUnitMoveSpeedLabel(['scavenger', 'scavenger'])).toBe(
       t('sel.speedTip', { n: n! }),
     );
