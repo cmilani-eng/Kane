@@ -41,6 +41,7 @@ export function ensureScoutPulses(world: BattlefieldWorld): void {
 
 export function ensureScoutSectorHint(world: BattlefieldWorld): void {
   if (world.scoutSectorHint === undefined) world.scoutSectorHint = null;
+  if (world.lastFogRevealAgeMs === undefined) world.lastFogRevealAgeMs = null;
 }
 
 export function tickScoutPulses(world: BattlefieldWorld, dtMs: number): void {
@@ -55,6 +56,9 @@ export function tickScoutPulses(world: BattlefieldWorld, dtMs: number): void {
   if (world.scoutSectorHint) {
     world.scoutSectorHint.lifeMs -= dtMs;
     if (world.scoutSectorHint.lifeMs <= 0) world.scoutSectorHint = null;
+  }
+  if (world.lastFogRevealAgeMs != null) {
+    world.lastFogRevealAgeMs += dtMs;
   }
 }
 
@@ -99,5 +103,6 @@ export function spawnScoutPulsesFromFog(
       x: last.x,
       y: last.y,
     };
+    world.lastFogRevealAgeMs = 0;
   }
 }

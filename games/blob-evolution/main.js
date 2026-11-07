@@ -20,10 +20,10 @@ import {
 const STAGES = [
   { name:'Purple', color:0x9b63df, radius:.42, speed:2.35 },
   { name:'Blue', color:0x269bff, radius:.58, speed:3.05 },
-  { name:'Green', color:0x39d98a, radius:.77, speed:3.85 },
-  { name:'Rock', color:0x8d9aa9, radius:.98, speed:4.55 },
+  { name:'Green', color:0x2fbf6e, radius:.77, speed:3.85 },
+  { name:'Rock', color:0x4f4b44, radius:.98, speed:4.55 },
   { name:'Rainbow', color:0xffffff, radius:1.18, speed:5.35 },
-  { name:'Angel', color:0xfff2b2, radius:1.35, speed:5.9 }
+  { name:'Angel', color:0xfff0a8, radius:1.35, speed:5.9 }
 ];
 const ARENA = 34;
 const BOT_COUNT = 42;
@@ -63,6 +63,84 @@ function makeRainbowTexture() {
   return tex;
 }
 
+function makeLeafTexture() {
+  const canvas = document.createElement('canvas');
+  canvas.width = 256; canvas.height = 256;
+  const ctx = canvas.getContext('2d');
+  const g = ctx.createLinearGradient(0, 0, 256, 256);
+  g.addColorStop(0, '#1f8f4c');
+  g.addColorStop(.45, '#34c777');
+  g.addColorStop(1, '#187a3e');
+  ctx.fillStyle = g;
+  ctx.fillRect(0, 0, 256, 256);
+  for (let i = 0; i < 28; i++) {
+    ctx.strokeStyle = `rgba(12,70,35,${0.18 + Math.random() * 0.28})`;
+    ctx.lineWidth = 1.2 + Math.random() * 2.2;
+    const x = Math.random() * 256;
+    ctx.beginPath();
+    ctx.moveTo(x, 0);
+    ctx.quadraticCurveTo(x + (Math.random() - .5) * 40, 128, x + (Math.random() - .5) * 30, 256);
+    ctx.stroke();
+  }
+  for (let i = 0; i < 50; i++) {
+    ctx.fillStyle = `rgba(180,255,170,${0.04 + Math.random() * 0.1})`;
+    ctx.beginPath();
+    ctx.ellipse(Math.random() * 256, Math.random() * 256, 4 + Math.random() * 14, 2 + Math.random() * 6, Math.random() * Math.PI, 0, Math.PI * 2);
+    ctx.fill();
+  }
+  const tex = new THREE.CanvasTexture(canvas);
+  tex.colorSpace = THREE.SRGBColorSpace;
+  tex.wrapS = THREE.RepeatWrapping;
+  tex.wrapT = THREE.RepeatWrapping;
+  return tex;
+}
+
+function makeRockTexture() {
+  const canvas = document.createElement('canvas');
+  canvas.width = 256; canvas.height = 256;
+  const ctx = canvas.getContext('2d');
+  ctx.fillStyle = '#3a3732';
+  ctx.fillRect(0, 0, 256, 256);
+  for (let i = 0; i < 180; i++) {
+    const shade = 36 + Math.floor(Math.random() * 42);
+    ctx.fillStyle = `rgb(${shade},${shade - 3},${shade - 8})`;
+    const w = 6 + Math.random() * 28;
+    const h = 4 + Math.random() * 22;
+    ctx.beginPath();
+    ctx.ellipse(Math.random() * 256, Math.random() * 256, w, h, Math.random() * Math.PI, 0, Math.PI * 2);
+    ctx.fill();
+  }
+  for (let i = 0; i < 40; i++) {
+    ctx.strokeStyle = `rgba(20,18,14,${0.15 + Math.random() * 0.25})`;
+    ctx.lineWidth = 1 + Math.random() * 2;
+    ctx.beginPath();
+    ctx.moveTo(Math.random() * 256, Math.random() * 256);
+    ctx.lineTo(Math.random() * 256, Math.random() * 256);
+    ctx.stroke();
+  }
+  const tex = new THREE.CanvasTexture(canvas);
+  tex.colorSpace = THREE.SRGBColorSpace;
+  tex.wrapS = THREE.RepeatWrapping;
+  tex.wrapT = THREE.RepeatWrapping;
+  return tex;
+}
+
+function makeRockGeometry() {
+  // Flat facets + irregular vertices — chunky stone, not a smooth pebble.
+  const geo = new THREE.DodecahedronGeometry(1, 0);
+  const pos = geo.attributes.position;
+  for (let i = 0; i < pos.count; i++) {
+    const x = pos.getX(i);
+    const y = pos.getY(i);
+    const z = pos.getZ(i);
+    const n = 0.82 + ((Math.sin(x * 7.1 + y * 3.3) + Math.cos(z * 5.7 - x * 2.1)) * 0.5 + 0.5) * 0.28;
+    pos.setXYZ(i, x * n, y * n * 0.9, z * n);
+  }
+  pos.needsUpdate = true;
+  geo.computeVertexNormals();
+  return geo;
+}
+
 function makeBlob(stage, isPlayer=false) {
   const group = new THREE.Group();
   const data = STAGES[stage];
@@ -73,14 +151,28 @@ function makeBlob(stage, isPlayer=false) {
       map: rainbowMap, color:0xffffff, roughness:.28, metalness:.08,
       emissive:0xffffff, emissiveMap: rainbowMap, emissiveIntensity:.55
     });
+  } else if (stage === 2) {
+    material = new THREE.MeshStandardMaterial({
+      map: makeLeafTexture(), color:0x7dffb0, roughness:.42, metalness:0,
+      emissive:0x145c32, emissiveIntensity:.22
+    });
+  } else if (stage === 3) {
+    material = new THREE.MeshStandardMaterial({
+      map: makeRockTexture(), color:0x5c574f, roughness:.98, metalness:0,
+      flatShading: true, emissive:0x000000, emissiveIntensity:0
+    });
+  } else if (stage === 5) {
+    material = new THREE.MeshStandardMaterial({
+      color:0xfff6d0, roughness:.22, metalness:.12,
+      emissive:0xffe08a, emissiveIntensity:.55
+    });
   } else {
-    material = new THREE.MeshStandardMaterial({ color:data.color, roughness:.34, metalness:stage===3?.22:0, emissive:0x000000, emissiveIntensity:.45 });
+    material = new THREE.MeshStandardMaterial({ color:data.color, roughness:.34, metalness:0, emissive:0x000000, emissiveIntensity:.45 });
   }
   let body;
   if (stage === 3) {
-    // Faceted pebble: round silhouette with visible edges (not a cube).
-    body = new THREE.Mesh(new THREE.IcosahedronGeometry(1, 1), material);
-    body.scale.set(1.08, .92, 1.08);
+    body = new THREE.Mesh(makeRockGeometry(), material);
+    body.scale.set(1.12, .95, 1.05);
   } else {
     body = new THREE.Mesh(new THREE.SphereGeometry(1,32,24), material);
     body.scale.set(1, .82, 1);
@@ -96,6 +188,23 @@ function makeBlob(stage, isPlayer=false) {
     const shine = new THREE.Mesh(new THREE.SphereGeometry(.022,8,8), new THREE.MeshBasicMaterial({color:0xffffff}));
     shine.position.set(x-.018,.205,.93); group.add(shine);
   }
+  if (stage === 2) {
+    const leafMat = new THREE.MeshStandardMaterial({
+      color:0x2fbf6e, emissive:0x146b38, emissiveIntensity:.2, roughness:.45, metalness:0
+    });
+    const sprout = new THREE.Mesh(new THREE.SphereGeometry(.28, 14, 10), leafMat);
+    sprout.scale.set(.55, 1.15, .35);
+    sprout.position.set(0, .95, -.05);
+    group.add(sprout);
+    for (const side of [-1, 1]) {
+      const leaf = new THREE.Mesh(new THREE.SphereGeometry(.36, 14, 10), leafMat);
+      leaf.scale.set(.85, .28, .45);
+      leaf.position.set(side * .78, .2, .1);
+      leaf.rotation.z = side * -.55;
+      leaf.rotation.y = side * .25;
+      group.add(leaf);
+    }
+  }
   if (stage === 4) {
     const ringColors=[0xff1a1a,0xff8a1a,0xffe01a,0x2adf4a,0x1a8cff,0x7a3dff,0xff1ad6];
     ringColors.forEach((c,i)=>{
@@ -104,11 +213,33 @@ function makeBlob(stage, isPlayer=false) {
     });
   }
   if (stage === 5) {
-    const halo = new THREE.Mesh(new THREE.TorusGeometry(.65,.075,10,48), new THREE.MeshStandardMaterial({color:0xffd95c,emissive:0xffc629,emissiveIntensity:.65}));
-    halo.position.y=1.25; halo.rotation.x=Math.PI/2; group.add(halo);
-    for (const side of [-1,1]) {
-      const wing=new THREE.Mesh(new THREE.SphereGeometry(.48,20,14),new THREE.MeshStandardMaterial({color:0xffffff,roughness:.55}));
-      wing.scale.set(.42,.18,1.05); wing.position.set(side*.92,.25,-.05); wing.rotation.z=side*.35; group.add(wing);
+    const glow = new THREE.Mesh(
+      new THREE.SphereGeometry(1.15, 24, 18),
+      new THREE.MeshBasicMaterial({ color:0xfff1b0, transparent:true, opacity:.18, depthWrite:false })
+    );
+    glow.scale.set(1, .85, 1); group.add(glow);
+
+    const haloMat = new THREE.MeshStandardMaterial({ color:0xffe27a, emissive:0xffd24a, emissiveIntensity:.9, roughness:.25, metalness:.15 });
+    const halo = new THREE.Mesh(new THREE.TorusGeometry(.72, .06, 12, 56), haloMat);
+    halo.position.y = 1.32; halo.rotation.x = Math.PI / 2; group.add(halo);
+    const haloInner = new THREE.Mesh(new THREE.TorusGeometry(.52, .03, 10, 48), new THREE.MeshStandardMaterial({
+      color:0xfff6c8, emissive:0xffe9a0, emissiveIntensity:.75, roughness:.3
+    }));
+    haloInner.position.y = 1.32; haloInner.rotation.x = Math.PI / 2; group.add(haloInner);
+
+    const wingMat = new THREE.MeshStandardMaterial({ color:0xfffaf0, emissive:0xffe9b8, emissiveIntensity:.28, roughness:.4, metalness:.05 });
+    for (const side of [-1, 1]) {
+      const upper = new THREE.Mesh(new THREE.SphereGeometry(.55, 20, 14), wingMat);
+      upper.scale.set(.38, .14, 1.2);
+      upper.position.set(side * 1.05, .38, -.08);
+      upper.rotation.z = side * .42;
+      upper.rotation.y = side * -.18;
+      group.add(upper);
+      const lower = new THREE.Mesh(new THREE.SphereGeometry(.42, 18, 12), wingMat);
+      lower.scale.set(.32, .12, .95);
+      lower.position.set(side * .95, .08, -.02);
+      lower.rotation.z = side * .22;
+      group.add(lower);
     }
   }
   group.userData = { body, stage, isPlayer };
@@ -388,7 +519,7 @@ function updateHud(force=false){
   const now=performance.now(); if(!force&&now-lastHud<100)return;lastHud=now;
   const remaining=bots.filter(b=>b.alive).length;
   phaserScene.hud.setText(blobHudLine(player.stage, player.radius, player.speed, remaining));
-  phaserScene.hud.setColor(player.stage===4?'#ffdb72':player.stage===3?'#e1e8f0':player.stage===2?'#8df4bc':'#b8e3ff');
+  phaserScene.hud.setColor(player.stage===4?'#ffdb72':player.stage===3?'#9a948a':player.stage===2?'#8df4bc':'#b8e3ff');
 }
 
 class OverlayScene extends Phaser.Scene {

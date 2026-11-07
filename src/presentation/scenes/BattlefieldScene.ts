@@ -13,10 +13,12 @@ import {
   type BuildingTypeId,
 } from '../../data/buildings';
 import { type SpeciesId } from '../../data/speciesStub';
+import type { SkirmishMapId } from '../../data/skirmishMaps';
 import {
   getAiDifficulty,
   type AiDifficultyId,
 } from '../../gameplay/battlefield/aiDifficulty';
+import { nextMapAfterHardWin } from '../../gameplay/battlefield/mapStepUp';
 import { nextDifficultyAfterWin } from '../../gameplay/battlefield/practiceStepUp';
 import {
   createAiState,
@@ -750,6 +752,10 @@ export class BattlefieldScene extends Phaser.Scene {
         viewW,
         viewH,
       ),
+      fogAgeMs:
+        this.world.lastFogRevealAgeMs != null
+          ? this.world.lastFogRevealAgeMs
+          : undefined,
     };
   }
 
@@ -1453,6 +1459,14 @@ export class BattlefieldScene extends Phaser.Scene {
         );
         return next ? () => this.stepUpDifficulty(next) : undefined;
       })(),
+      onTryMap: (() => {
+        const next = nextMapAfterHardWin(
+          result === 'victory',
+          this.world.aiDifficulty,
+          this.world.mapId,
+        );
+        return next ? () => this.stepUpMap(next) : undefined;
+      })(),
       ignoreOnMain: (objs) => {
         this.cameras.main.ignore(this.add.container(0, 0, objs));
       },
@@ -1462,6 +1476,15 @@ export class BattlefieldScene extends Phaser.Scene {
   /** Win — same species and map, one step up the difficulty ladder. */
   private stepUpDifficulty(difficulty: AiDifficultyId): void {
     const { species, mapId } = rematchPrefsFromWorld(this.world);
+    rememberMatchPrefs(species, difficulty, mapId);
+    recordGameStarted(species);
+    void maybeRecordCloudGameStarted(species);
+    this.scene.start('Battlefield', { species, difficulty, mapId });
+  }
+
+  /** Hard win — same species and difficulty, the next map in the catalog. */
+  private stepUpMap(mapId: SkirmishMapId): void {
+    const { species, difficulty } = rematchPrefsFromWorld(this.world);
     rememberMatchPrefs(species, difficulty, mapId);
     recordGameStarted(species);
     void maybeRecordCloudGameStarted(species);

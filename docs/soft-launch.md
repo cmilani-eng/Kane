@@ -54,6 +54,7 @@ This doc is the honest gate before any public preview URL.
 | Supply slots left | **OK** — near-cap / full supply lines append remaining slots (or “full”) | `formatSupplyLine`, `pause.supplyNear` / `supplyFull` |
 | Pause supply ratio tip | **OK** — pause shows Supply · used/cap tip above the spaced-slash supply line (distinct from stock/HUD) | `pauseSupplyRatioTipLine`, `pause.supplyRatioTip` |
 | Pause camera sector tip | **OK** — pause shows Cam · sector from view-center 3×3 frozen at open (distinct from minimap Cam mark) | `pauseCameraSectorTipLine`, `pause.camSectorTip` |
+| Pause fog age tip | **OK** — pause shows Fog · ns from last fog scout reveal age frozen at open (distinct from minimap sector age) | `pauseFogAgeTipLine`, `pause.fogAgeTip`, `lastFogRevealAgeMs` |
 | CORE hold banner secs | **OK** — victory-hold banner shows remaining seconds clearly (Ns + “left”) | `coreVictoryBanner`, `banner.coreHold*` |
 | CORE hold progress tick | **OK** — hold banner progress bar + per-second clock tick | `coreHoldProgress`, `CoreVictoryBanner` |
 | Idle army count | **OK** — Idle army chip leads with idle combat unit count | `battlefieldHud`, `hud.idleArmy`, `countIdleMilitary` |
@@ -91,7 +92,7 @@ This doc is the honest gate before any public preview URL.
 | Unit heal rate tip | **OK** — selection stats show Heal · n/s from hero healHp / cooldownMs when applicable (same-type only) | `unitHealRate`, `sel.healRateTip` |
 | Unit damage tip | **OK** — selection stats show catalog attack damage tip (same-type only; distinct from ATK chip / DPS) | `unitDamage`, `sel.dmgTip` |
 | Unit attack type tip | **OK** — selection stats show Melee / Ranged tip from catalog reach (same-type or shared type) | `unitAttackType`, `sel.atkTypeTip` |
-| Unit range tip | **OK** — selection stats show attack reach in map tiles (rangePx / MAP.tile) | `unitAttackRange`, `sel.rangeTip` |
+| Unit range tip | **OK** — selection stats show Range · n from catalog attack reach in map tiles (same-type only) | `unitAttackRangeLabel`, `sel.rangeTip` |
 | Unit speed tip | **OK** — selection stats show catalog move speed in tiles/s (same-type only) | `unitMoveSpeed`, `sel.speedTip` |
 | Unit move cadence tip | **OK** — selection stats show Slow/Medium/Fast pace bucket (shared pace; distinct from numeric speed tip) | `unitMoveCadence`, `sel.moveCadenceTip` |
 | Unit vision tip | **OK** — selection stats show catalog vision radius in map tiles (same-type only) | `unitVision`, `sel.visionTip` |
@@ -176,7 +177,7 @@ This doc is the honest gate before any public preview URL.
 5. **Admin allowlist is soft** — default `open` for local-dev; no Custom Claims / server enforcement. Admin **`#/admin`** tools are separate from menu **Stats**.
 6. **Match writes are client-trusted** for SP MVP — Functions deferred; local `#/admin` summaries still device-local.
 7. **Legal copy is placeholder** — not counsel-reviewed.
-8. **Content depth** — three skirmish maps (Crossing / Ridge / Gap). The coach shows once, then stays quiet until Tips is turned back on. A win offers the next difficulty (same species and map); Rematch stays on the difficulty just played. Hard has no step up.
+8. **Content depth** — three skirmish maps (Crossing / Ridge / Gap). The coach shows once, then stays quiet until Tips is turned back on. A win offers the next difficulty (same species and map); Rematch stays on the difficulty just played. Hard has no step up. A Hard win offers the next map at Hard, same species; Rematch stays on the map just played.
 9. **CI is thin** — pull requests run lint, unit tests and the build (`.github/workflows/ci.yml`) and a push to `dev` runs the same checks before auto-deploying Hosting (see `docs/firebase-hosting.md`); there are no browser or gameplay tests yet.
 10. **Cosmetics shop** — explicitly out; free unlocks only.
 11. **No offline service worker** — installability stubs exist; full offline PWA is later (`docs/pwa.md`).
