@@ -169,7 +169,7 @@ This doc is the honest gate before any public preview URL.
 | Unit train crystal tip | **OK** — selection stats show Crystal · n (U+00B7) from catalog train crystals (same-type only; omitted when 0; middot; distinct from Gold · / Supply · / Max HP · / DPS · and inline Crystal chip) | `unitTrainCrystal`, `sel.trainCrystalTip` |
 | Unit train duration tip | **OK** — selection stats show catalog full train seconds (same-type only; omitted when 0) | `unitTrainDuration`, `sel.trainDurationTip` |
 | Unit role tip | **OK** — selection stats show Role · worker/combat/hero (U+00B7) from catalog duty flags; en/pt-BR/es middot; distinct from Armor · class / Species · / Name · | `unitRole`, `sel.roleTip` |
-| Unit species tip | **OK** — selection stats show species name tip when selection shares one species | `unitSpeciesTip`, `sel.speciesTip` |
+| Unit species tip | **OK** — selection stats show Species · name (U+00B7) when selection shares one species; en/pt-BR/es middot; distinct from Role · / Name · / Armor · class | `unitSpeciesTip`, `sel.speciesTip` |
 | Unit name tip | **OK** — selection stats show catalog unit name tip when selection shares one type | `unitNameTip`, `sel.nameTip` |
 | Build remain secs | **OK** — incomplete building selection shows construction seconds beside % | `buildRemainSec`, `sel.buildingPct` |
 | Building build progress tip | **OK** — incomplete building selection stats show Build · pct% · secs left (U+00B7) from live buildPct + remainSec; en/pt-BR/es middot; distinct from catalog Build · {n}s / Building pct · secs / Size · / Queue · | `buildingBuildProgress`, `sel.buildProgressTip` |
