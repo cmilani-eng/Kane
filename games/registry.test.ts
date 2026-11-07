@@ -1,4 +1,4 @@
-import { readFileSync } from 'node:fs';
+import { existsSync, readFileSync } from 'node:fs';
 import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { describe, expect, it } from 'vitest';
@@ -72,6 +72,15 @@ describe('games registry', () => {
   ])('%s gets a real 404, because no rewrite matches it', (path) => {
     expect(rewrites.filter((source) => globMatches(source, path))).toEqual([]);
   });
+
+  it.each(GAMES.filter((game) => game.cover).map((game) => [game.id, game.cover!]))(
+    '%s cover is a file that ships in public/',
+    (_id, cover) => {
+      expect(cover).toMatch(/^\/covers\/[a-z0-9-]+\.(jpg|png|webp)$/);
+      const file = resolve(gamesDir, '..', 'public', cover.slice(1));
+      expect(existsSync(file)).toBe(true);
+    },
+  );
 
   it('loads Kane from an entry inside the Vite root', () => {
     const page = readFileSync(resolve(gamesDir, 'kane/index.html'), 'utf8');

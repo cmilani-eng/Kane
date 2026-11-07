@@ -13,6 +13,7 @@
     "tagline": "Eat. Evolve. Ascend.",
     "description": "Start as a tiny blob and eat your way up the chain to become the Angel.",
     "build": "vite",
-    "status": "experimental"
+    "status": "experimental",
+    "cover": "/covers/blob-evolution.jpg"
   }
 ]
