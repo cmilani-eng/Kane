@@ -1,8 +1,10 @@
 import { describe, expect, it } from 'vitest';
 import {
+  coreBannerBottom,
   coreBannerCenterY,
   coreHoldProgress,
   coreHoldRemainSec,
+  hudChipStackTop,
 } from './coreVictoryBanner';
 
 describe('coreHoldRemainSec', () => {
@@ -12,6 +14,18 @@ describe('coreHoldRemainSec', () => {
     expect(coreHoldRemainSec(999)).toBe(1);
     expect(coreHoldRemainSec(0)).toBe(0);
     expect(coreHoldRemainSec(-50)).toBe(0);
+  });
+});
+
+describe('hudChipStackTop', () => {
+  it('stays under the resource band on a tall screen', () => {
+    expect(hudChipStackTop(1280, 800)).toBe(12 + 60 + 36 + 8);
+    expect(hudChipStackTop(874, 500)).toBe(12 + 60 + 36 + 8);
+  });
+
+  it('starts below the CORE banner on a short screen', () => {
+    expect(hudChipStackTop(874, 402)).toBe(coreBannerBottom(874, 402) + 8);
+    expect(hudChipStackTop(390, 400)).toBe(coreBannerBottom(390, 400) + 8);
   });
 });
 

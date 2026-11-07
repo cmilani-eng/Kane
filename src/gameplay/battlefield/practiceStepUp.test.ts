@@ -1,5 +1,9 @@
 import { describe, expect, it } from 'vitest';
-import { nextDifficultyAfterWin, offerPracticeStepUp } from './practiceStepUp';
+import {
+  nextDifficultyAfterWin,
+  offerPracticeStepUp,
+  previousDifficultyAfterLoss,
+} from './practiceStepUp';
 
 describe('difficulty step up', () => {
   it('walks one step up the ladder after a win', () => {
@@ -14,6 +18,14 @@ describe('difficulty step up', () => {
     expect(nextDifficultyAfterWin(false, 'easy')).toBeNull();
     expect(nextDifficultyAfterWin(false, 'normal')).toBeNull();
     expect(nextDifficultyAfterWin(false, 'hard')).toBeNull();
+  });
+
+  it('walks one step down the ladder after a loss', () => {
+    expect(previousDifficultyAfterLoss(false, 'hard')).toBe('normal');
+    expect(previousDifficultyAfterLoss(false, 'normal')).toBe('easy');
+    expect(previousDifficultyAfterLoss(false, 'easy')).toBe('practice');
+    expect(previousDifficultyAfterLoss(false, 'practice')).toBeNull();
+    expect(previousDifficultyAfterLoss(true, 'hard')).toBeNull();
   });
 
   it('still treats a Practice win as the offer of Easy', () => {

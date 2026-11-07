@@ -12,7 +12,7 @@ import { hubBlurb, hubBlobPathTip, hubChrome, hubKanePathTip } from './hubCopy';
 import { gamePlayHref, hubLegalHref } from './hubLinks';
 
 const PILL =
-  'inline-block rounded-full px-[11px] py-1.5 text-xs font-extrabold uppercase tracking-[0.08em]';
+  'hub-pill inline-block rounded-full px-[11px] py-1.5 text-xs font-extrabold uppercase tracking-[0.08em]';
 
 function pill(text: string, tone: string): HTMLSpanElement {
   const el = document.createElement('span');
@@ -36,6 +36,12 @@ function statusPill(
   return el;
 }
 
+const CARD_COLORS: Record<string, { accent: string; edge: string }> = {
+  kane: { accent: '#ffd23f', edge: '#a8791a' },
+  'blob-evolution': { accent: '#9dff6a', edge: '#4a9a2c' },
+};
+const DEFAULT_CARD_COLORS = { accent: '#7be0ff', edge: '#328da8' };
+
 function gameCard(
   game: GameEntry,
   playLabel: string,
@@ -45,9 +51,12 @@ function gameCard(
   const item = document.createElement('li');
   const link = document.createElement('a');
   link.className = [
-    'hub-card group flex h-full flex-col items-center rounded-3xl border border-white/16 p-[26px]',
+    'hub-card group flex h-full flex-col items-center rounded-3xl p-[26px]',
     'bg-linear-145 from-panel-from to-panel-to text-center text-ink no-underline shadow-panel',
   ].join(' ');
+  const colors = CARD_COLORS[game.id] ?? DEFAULT_CARD_COLORS;
+  link.style.setProperty('--card-accent', colors.accent);
+  link.style.setProperty('--card-edge', colors.edge);
   link.href = gamePlayHref(game.id);
   link.setAttribute(
     'aria-label',
@@ -87,10 +96,9 @@ function gameCard(
 
   const play = document.createElement('span');
   play.className = [
-    'mt-auto inline-flex min-h-12 items-center justify-center rounded-[14px] px-7 py-[13px]',
-    'bg-accent text-[15px] font-black uppercase text-ink-dark shadow-key',
-    'group-hover:-translate-y-px group-hover:brightness-108',
-    'group-active:translate-y-0.5 group-active:shadow-key-pressed',
+    'hub-play mt-auto inline-flex min-h-12 items-center justify-center rounded-[14px] px-7 py-[13px]',
+    'text-[15px] font-black uppercase text-ink-dark',
+    'group-hover:brightness-108 group-active:translate-y-0.5',
   ].join(' ');
   play.textContent = playLabel;
 

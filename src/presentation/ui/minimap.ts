@@ -21,7 +21,10 @@ import {
   selectionOrOrderFocus,
 } from '../../gameplay/battlefield/battlefieldMinimapFocus';
 import { buildingCanRally } from '../../gameplay/battlefield/battlefieldRally';
-import { isIdleWorker } from '../../gameplay/battlefield/idleWorkers';
+import {
+  countIdleWorkers,
+  isIdleWorker,
+} from '../../gameplay/battlefield/idleWorkers';
 import {
   TOUCH_LONG_PRESS_MS,
   TOUCH_LONG_PRESS_SLOP_PX,
@@ -53,6 +56,7 @@ import { minimapPingAgeTip } from './minimapPingAgeTip';
 import { minimapPingSectorTipAlpha } from './minimapPingSectorTip';
 import { minimapFogRevealAgeTip } from './minimapFogRevealAgeTip';
 import { minimapScoutPulseLabelAlpha } from './minimapScoutPulseLabel';
+import { minimapIdleWorkerTipText } from './minimapIdleWorkerTip';
 import { minimapSupplyTipText } from './minimapSupplyTip';
 
 export class Minimap {
@@ -72,6 +76,8 @@ export class Minimap {
   private readonly camSectorLabel: Phaser.GameObjects.Text;
   /** Live supply usage tip on the minimap chrome. */
   private readonly supplyLabel: Phaser.GameObjects.Text;
+  /** Live idle-worker count tip on the minimap chrome. */
+  private readonly idleLabel: Phaser.GameObjects.Text;
 
   private mapX = 0;
   private mapY = 0;
@@ -180,6 +186,20 @@ export class Minimap {
       .setOrigin(0.5, 0)
       .setAlpha(0.9);
 
+    this.idleLabel = scene.add
+      .text(0, 0, minimapIdleWorkerTipText(0), {
+        fontFamily: 'Segoe UI, system-ui, sans-serif',
+        fontSize: '10px',
+        color: '#f0c75e',
+        stroke: '#0a1018',
+        strokeThickness: 3,
+      })
+      .setScrollFactor(0)
+      .setDepth(113)
+      .setOrigin(0.5, 0)
+      .setAlpha(0.9)
+      .setVisible(false);
+
     this.hit = scene.add
       .rectangle(0, 0, this.mapW, this.mapH, 0x000000, 0.001)
       .setScrollFactor(0)
@@ -251,6 +271,7 @@ export class Minimap {
       this.camLabel,
       this.camSectorLabel,
       this.supplyLabel,
+      this.idleLabel,
     ];
   }
 
@@ -621,6 +642,17 @@ export class Minimap {
       .setText(minimapSupplyTipText(pop, flags.unitCap))
       .setPosition(this.mapX + this.mapW / 2, this.mapY + this.mapH + 4)
       .setVisible(true);
+
+    // Idle · n under supply when any gatherer is idle
+    const idleN = countIdleWorkers(this.world);
+    if (idleN > 0) {
+      this.idleLabel
+        .setText(minimapIdleWorkerTipText(idleN))
+        .setPosition(this.mapX + this.mapW / 2, this.mapY + this.mapH + 16)
+        .setVisible(true);
+    } else {
+      this.idleLabel.setVisible(false);
+    }
 
     // Selected unit blips — on top of camera/order so selection never hides
     for (const u of this.world.units) {

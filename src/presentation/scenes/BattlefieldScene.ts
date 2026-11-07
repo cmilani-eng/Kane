@@ -20,7 +20,10 @@ import {
 } from '../../gameplay/battlefield/aiDifficulty';
 import { nextMapAfterHardWin } from '../../gameplay/battlefield/mapStepUp';
 import { nextSpeciesAfterCatalog } from '../../gameplay/battlefield/speciesStepUp';
-import { nextDifficultyAfterWin } from '../../gameplay/battlefield/practiceStepUp';
+import {
+  nextDifficultyAfterWin,
+  previousDifficultyAfterLoss,
+} from '../../gameplay/battlefield/practiceStepUp';
 import {
   createAiState,
   tickBattlefieldAi,
@@ -466,7 +469,7 @@ export class BattlefieldScene extends Phaser.Scene {
       onRematch: () => this.rematchSameSkirmish(),
       onQuit: () => this.scene.start('Menu'),
       ignoreOnMain: (objs) => {
-        this.cameras.main.ignore(this.add.container(0, 0, objs));
+        this.cameras.main.ignore(objs);
       },
     });
     this.minimap = new Minimap(this, this.world, this.cameraCtl);
@@ -757,6 +760,9 @@ export class BattlefieldScene extends Phaser.Scene {
         this.world.lastFogRevealAgeMs != null
           ? this.world.lastFogRevealAgeMs
           : undefined,
+      selectionCount: this.world.units.filter(
+        (u) => u.selected && u.team === 'player' && u.hp > 0,
+      ).length,
     };
   }
 
@@ -1407,7 +1413,7 @@ export class BattlefieldScene extends Phaser.Scene {
       this.drawUnderAttackFeedback();
     }
     this.fogOverlay.refresh(this.world.fog, cam);
-    this.refreshHud(delta);
+    if (this.matchResult === 'ongoing') this.refreshHud(delta);
     this.coach.refresh();
     this.coreBanner.refresh(delta);
     this.minimap.refresh(delta, this.selectedBuilding);
@@ -1425,6 +1431,7 @@ export class BattlefieldScene extends Phaser.Scene {
     this.clearAttackMoveMode();
     this.ghostGfx.clear();
     unmountSelectionPanel();
+    unmountStockStrip();
     this.hud.setBottomInset(0);
     this.minimap.setBottomInset(0);
     this.cameraCtl.suppressPan = true;
@@ -1455,10 +1462,10 @@ export class BattlefieldScene extends Phaser.Scene {
       onRematch: () => this.rematchSameSkirmish(),
       difficulty: this.world.aiDifficulty,
       onStepUp: (() => {
-        const next = nextDifficultyAfterWin(
-          result === 'victory',
-          this.world.aiDifficulty,
-        );
+        const won = result === 'victory';
+        const next =
+          nextDifficultyAfterWin(won, this.world.aiDifficulty) ??
+          previousDifficultyAfterLoss(won, this.world.aiDifficulty);
         return next ? () => this.stepUpDifficulty(next) : undefined;
       })(),
       onTryMap: (() => {
@@ -1486,7 +1493,7 @@ export class BattlefieldScene extends Phaser.Scene {
         return next ? () => this.stepUpSpecies(next.species, next.mapId) : undefined;
       })(),
       ignoreOnMain: (objs) => {
-        this.cameras.main.ignore(this.add.container(0, 0, objs));
+        this.cameras.main.ignore(objs);
       },
     });
   }

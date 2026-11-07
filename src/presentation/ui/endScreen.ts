@@ -10,7 +10,10 @@ import type { SpeciesId } from '../../data/speciesStub';
 import type { AiDifficultyId } from '../../gameplay/battlefield/aiDifficulty';
 import { nextMapAfterHardWin } from '../../gameplay/battlefield/mapStepUp';
 import { nextSpeciesAfterCatalog } from '../../gameplay/battlefield/speciesStepUp';
-import { nextDifficultyAfterWin } from '../../gameplay/battlefield/practiceStepUp';
+import {
+  nextDifficultyAfterWin,
+  previousDifficultyAfterLoss,
+} from '../../gameplay/battlefield/practiceStepUp';
 import { difficultyCopy, mapCopy, speciesName, t } from '../../i18n';
 import { playEndFanfare, playSfx } from '../audio/sfx';
 import { endDifficultyPlayedTipLine } from './endDifficultyPlayedTip';
@@ -56,7 +59,7 @@ export interface EndScreenOpts {
   onRematch: () => void;
   /** Difficulty just played. A win can offer the next difficulty. */
   difficulty?: AiDifficultyId;
-  /** Start the next difficulty with the same species and map. Hidden on a loss and after Hard. */
+  /** Start the next difficulty after a win, or the previous one after a loss. */
   onStepUp?: () => void;
   /** Start the next map at Hard with the same species. Shown only after a Hard win. */
   onTryMap?: () => void;
@@ -93,7 +96,10 @@ export function showKaneEndScreen(opts: EndScreenOpts): void {
     onTryMap,
     onTrySpecies,
   } = opts;
-  const stepUpTo = nextDifficultyAfterWin(win, difficulty ?? 'normal');
+  const played = difficulty ?? 'normal';
+  const stepUpTo =
+    nextDifficultyAfterWin(win, played) ??
+    previousDifficultyAfterLoss(win, played);
   const speciesOffer =
     mapId != null
       ? nextSpeciesAfterCatalog(win, difficulty ?? 'normal', mapId, speciesId)
@@ -132,25 +138,31 @@ export function showKaneEndScreen(opts: EndScreenOpts): void {
   const yTag = short ? top + 90 : cy + panelH * 0.02;
   const ySub = short ? top + 108 : cy + panelH * 0.1;
   const yMeta = short ? top + 128 : cy + panelH * 0.17;
-  const yDuration = short ? top + 146 : cy + panelH * 0.22;
-  const ySpecies = short ? top + 160 : cy + panelH * 0.27;
-  const yMap = short ? top + 174 : cy + panelH * 0.32;
-  const yDifficulty = short ? top + 188 : cy + panelH * 0.37;
-  const yObjective = short ? top + 202 : cy + panelH * 0.42;
-  const yTrained = short ? top + 214 : cy + panelH * 0.46;
-  const yRaised = short ? top + 226 : cy + panelH * 0.5;
-  const yLost = short ? top + 238 : cy + panelH * 0.54;
-  const yBldLost = short ? top + 250 : cy + panelH * 0.58;
-  const yRecap = short ? top + 262 : cy + panelH * 0.62;
-  const yKill = short ? top + 274 : cy + panelH * 0.66;
-  const yGathered = short ? top + 286 : cy + panelH * 0.7;
-  const yShare = short ? top + (stepUp ? 274 : 292) : cy + panelH * 0.72;
-  const yStep = short ? top + panelH - 72 : cy + panelH * 0.68;
   const yActions = top + panelH - (short ? 28 : 36);
+  // Short screens: two columns of six stat lines so the actions stay on-panel.
+  const statRowY = (i: number) => top + 146 + (i % 6) * 17;
+  const statX = (i: number) =>
+    short ? width / 2 + (i < 6 ? -1 : 1) * (panelW / 4) : width / 2;
+  const yDuration = short ? statRowY(0) : cy + panelH * 0.22;
+  const ySpecies = short ? statRowY(1) : cy + panelH * 0.27;
+  const yMap = short ? statRowY(2) : cy + panelH * 0.32;
+  const yDifficulty = short ? statRowY(3) : cy + panelH * 0.37;
+  const yObjective = short ? statRowY(4) : cy + panelH * 0.42;
+  const yTrained = short ? statRowY(6) : cy + panelH * 0.46;
+  const yRaised = short ? statRowY(7) : cy + panelH * 0.5;
+  const yLost = short ? statRowY(8) : cy + panelH * 0.54;
+  const yBldLost = short ? statRowY(9) : cy + panelH * 0.58;
+  const yRecap = short ? statRowY(5) : cy + panelH * 0.62;
+  const yKill = short ? statRowY(10) : cy + panelH * 0.66;
+  const yGathered = short ? statRowY(11) : cy + panelH * 0.7;
+  const yShare = short ? yActions - 44 : cy + panelH * 0.72;
+  const yStep = short ? yActions - 44 : cy + panelH * 0.68;
   const yRematch = short ? yActions : cy + panelH * (stepUp ? 0.76 : 0.72);
   const yMenu = short ? yActions : cy + panelH * (stepUp ? 0.88 : 0.82);
   const xRematch = short ? width / 2 - 110 : width / 2;
   const xMenu = short ? width / 2 + 110 : width / 2;
+  const xShare = short && stepUp ? width / 2 - 100 : width / 2;
+  const xStep = short ? width / 2 + 100 : width / 2;
   const panel = scene.add
     .rectangle(width / 2, cy, panelW, panelH, wash, 0.92)
     .setStrokeStyle(2, accent, 0.85)
@@ -285,7 +297,7 @@ export function showKaneEndScreen(opts: EndScreenOpts): void {
   const durationTip =
     durationMs != null ? endDurationTipLine(durationMs) : '';
   const duration = scene.add
-    .text(width / 2, yDuration, durationTip, {
+    .text(statX(0), yDuration, durationTip, {
       fontFamily: 'system-ui, sans-serif',
       fontSize: '13px',
       color: '#c8d8e8',
@@ -300,7 +312,7 @@ export function showKaneEndScreen(opts: EndScreenOpts): void {
 
   const speciesTip = endSpeciesPlayedTipLine(speciesId);
   const species = scene.add
-    .text(width / 2, ySpecies, speciesTip, {
+    .text(statX(1), ySpecies, speciesTip, {
       fontFamily: 'system-ui, sans-serif',
       fontSize: '13px',
       color: '#c8d8e8',
@@ -315,7 +327,7 @@ export function showKaneEndScreen(opts: EndScreenOpts): void {
 
   const mapTip = mapId ? endMapPlayedTipLine(mapId) : '';
   const mapTipText = scene.add
-    .text(width / 2, yMap, mapTip, {
+    .text(statX(2), yMap, mapTip, {
       fontFamily: 'system-ui, sans-serif',
       fontSize: '13px',
       color: '#c8d8e8',
@@ -332,7 +344,7 @@ export function showKaneEndScreen(opts: EndScreenOpts): void {
     ? endDifficultyPlayedTipLine(difficulty)
     : '';
   const difficultyTipText = scene.add
-    .text(width / 2, yDifficulty, difficultyTip, {
+    .text(statX(3), yDifficulty, difficultyTip, {
       fontFamily: 'system-ui, sans-serif',
       fontSize: '13px',
       color: '#c8d8e8',
@@ -347,7 +359,7 @@ export function showKaneEndScreen(opts: EndScreenOpts): void {
 
   const objectiveTip = endObjectiveResultTipLine(win, reason) ?? '';
   const objectiveTipText = scene.add
-    .text(width / 2, yObjective, objectiveTip, {
+    .text(statX(4), yObjective, objectiveTip, {
       fontFamily: 'system-ui, sans-serif',
       fontSize: '13px',
       color: '#c8d8e8',
@@ -365,7 +377,7 @@ export function showKaneEndScreen(opts: EndScreenOpts): void {
       ? endUnitsTrainedTipLine(playerUnitsTrained)
       : '';
   const trainedTipText = scene.add
-    .text(width / 2, yTrained, trainedTip, {
+    .text(statX(6), yTrained, trainedTip, {
       fontFamily: 'system-ui, sans-serif',
       fontSize: '13px',
       color: '#c8d8e8',
@@ -383,7 +395,7 @@ export function showKaneEndScreen(opts: EndScreenOpts): void {
       ? endBuildingsRaisedTipLine(playerBuildingsRaised)
       : '';
   const raisedTipText = scene.add
-    .text(width / 2, yRaised, raisedTip, {
+    .text(statX(7), yRaised, raisedTip, {
       fontFamily: 'system-ui, sans-serif',
       fontSize: '13px',
       color: '#c8d8e8',
@@ -401,7 +413,7 @@ export function showKaneEndScreen(opts: EndScreenOpts): void {
       ? endUnitsLostTipLine(playerUnitLosses)
       : '';
   const lostTipText = scene.add
-    .text(width / 2, yLost, lostTip, {
+    .text(statX(8), yLost, lostTip, {
       fontFamily: 'system-ui, sans-serif',
       fontSize: '13px',
       color: '#c8d8e8',
@@ -419,7 +431,7 @@ export function showKaneEndScreen(opts: EndScreenOpts): void {
       ? endBuildingsLostTipLine(playerBuildingsLost)
       : '';
   const bldLostTipText = scene.add
-    .text(width / 2, yBldLost, bldLostTip, {
+    .text(statX(9), yBldLost, bldLostTip, {
       fontFamily: 'system-ui, sans-serif',
       fontSize: '13px',
       color: '#c8d8e8',
@@ -441,7 +453,7 @@ export function showKaneEndScreen(opts: EndScreenOpts): void {
       })
     : '';
   const recap = scene.add
-    .text(width / 2, yRecap, recapText, {
+    .text(statX(5), yRecap, recapText, {
       fontFamily: 'system-ui, sans-serif',
       fontSize: '13px',
       color: '#b8c9d9',
@@ -463,7 +475,7 @@ export function showKaneEndScreen(opts: EndScreenOpts): void {
       })
     : '';
   const killRatio = scene.add
-    .text(width / 2, yKill, killText, {
+    .text(statX(10), yKill, killText, {
       fontFamily: 'system-ui, sans-serif',
       fontSize: '13px',
       color: '#a8bdd0',
@@ -485,7 +497,7 @@ export function showKaneEndScreen(opts: EndScreenOpts): void {
       })
     : '';
   const gathered = scene.add
-    .text(width / 2, yGathered, gatheredText, {
+    .text(statX(11), yGathered, gatheredText, {
       fontFamily: 'system-ui, sans-serif',
       fontSize: '13px',
       color: '#a8bdd0',
@@ -508,7 +520,7 @@ export function showKaneEndScreen(opts: EndScreenOpts): void {
     buildings: playerBuildingsLeft,
   });
   const shareBtn = scene.add
-    .text(width / 2, yShare, t('end.shareCopy'), {
+    .text(xShare, yShare, t('end.shareCopy'), {
       fontFamily: 'system-ui, sans-serif',
       fontSize: '12px',
       color: '#c8d8e8',
@@ -567,7 +579,7 @@ export function showKaneEndScreen(opts: EndScreenOpts): void {
     const go = offer.go;
     const btn = scene.add
       .text(
-        width / 2,
+        xStep,
         yStep,
         offer.label,
         {

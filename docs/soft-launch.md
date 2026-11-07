@@ -26,6 +26,7 @@ This doc is the honest gate before any public preview URL.
 | Minimap camera viewport label | **OK** — gold camera frame on the minimap shows a short View mark | `minimapCameraViewportLabel`, `hud.minimapCamView` |
 | Minimap camera sector tip | **OK** — camera frame shows Cam · sector from view-center 3×3 (distinct from View mark) | `minimapCameraSectorTip`, `hud.minimapCamSector` |
 | Minimap supply usage tip | **OK** — minimap chrome shows Supply · used/cap from living player units vs unitCap (distinct from pause tip) | `minimapSupplyTipText`, `hud.minimapSupply` |
+| Minimap idle worker tip | **OK** — minimap chrome shows Idle · n when any gatherer is idle (distinct from HUD idle chip) | `minimapIdleWorkerTipText`, `hud.minimapIdle`, `countIdleWorkers` |
 | Attention ping | **OK** — hold minimap to drop a temporary look-here mark (world + minimap); short cooldown + ice deny flash; help notes double-tap recenter; no chat | `battlefieldAttentionPing`, `minimapPingCooldown`, help |
 | Minimap ping sector tip | **OK** — hold-to-ping arms a brief Mark · sector chip (HUD + minimap), distinct from scout sector | `attentionPingSectorHint`, `minimapPingSectorTip`, `hud.pingSector` |
 | Minimap ping age tip | **OK** — minimap ping chip shows Mark · sector · ns age tip (distinct from sector-only HUD mark) | `minimapPingAgeTip`, `hud.pingAge` |
@@ -56,6 +57,7 @@ This doc is the honest gate before any public preview URL.
 | Pause supply ratio tip | **OK** — pause shows Supply · used/cap tip above the spaced-slash supply line (distinct from stock/HUD) | `pauseSupplyRatioTipLine`, `pause.supplyRatioTip` |
 | Pause camera sector tip | **OK** — pause shows Cam · sector from view-center 3×3 frozen at open (distinct from minimap Cam mark) | `pauseCameraSectorTipLine`, `pause.camSectorTip` |
 | Pause fog age tip | **OK** — pause shows Fog · ns from last fog scout reveal age frozen at open (distinct from minimap sector age) | `pauseFogAgeTipLine`, `pause.fogAgeTip`, `lastFogRevealAgeMs` |
+| Pause selection count tip | **OK** — pause shows Selected · n from living player units selected at open (distinct from sel.selected flavor) | `pauseSelectionCountTipLine`, `pause.selectionCountTip` |
 | CORE hold banner secs | **OK** — victory-hold banner shows remaining seconds clearly (Ns + “left”) | `coreVictoryBanner`, `banner.coreHold*` |
 | CORE hold progress tick | **OK** — hold banner progress bar + per-second clock tick | `coreHoldProgress`, `CoreVictoryBanner` |
 | Idle army count | **OK** — Idle army chip leads with idle combat unit count | `battlefieldHud`, `hud.idleArmy`, `countIdleMilitary` |
@@ -101,7 +103,7 @@ This doc is the honest gate before any public preview URL.
 | Building HP max tip | **OK** — building selection stats show catalog Max HP tip | `buildingHpMax`, `sel.hpMaxTip` |
 | Building armor tip | **OK** — building selection stats show Armor · Structure tip | `buildingArmorClass`, `sel.armor.structure` |
 | Building build cost tip | **OK** — building selection stats show catalog Build gold/crystal cost (omitted for free halls) | `buildingBuildCost`, `sel.buildCost*` |
-| Building build time tip | **OK** — building selection stats show catalog full build seconds (distinct from live remain) | `buildingBuildTime`, `sel.buildTimeTip` |
+| Building build time tip | **OK** — building selection stats show catalog Build · {n}s (distinct from live remain / progress) | `buildingBuildTime`, `sel.buildTimeTip` |
 | Building footprint tip | **OK** — building selection stats show Size · w×h tiles (same as placement ghost) | `buildingFootprint`, `sel.footprintTip` |
 | Building prod queue tip | **OK** — building selection stats show Queue · empty / Training · name / Queue · n when the type can train (distinct from live queue ETA row) | `buildingProdQueue`, `sel.prodQueueEmpty`, `sel.prodQueueTraining`, `sel.prodQueueTip` |
 | Unit gather yield tip | **OK** — worker selection stats show Yield · n per trip from catalog haul (distinct from cargo / node tip) | `unitGatherYield`, `sel.yieldTip` |
@@ -179,7 +181,7 @@ This doc is the honest gate before any public preview URL.
 5. **Admin allowlist is soft** — default `open` for local-dev; no Custom Claims / server enforcement. Admin **`#/admin`** tools are separate from menu **Stats**.
 6. **Match writes are client-trusted** for SP MVP — Functions deferred; local `#/admin` summaries still device-local.
 7. **Legal copy is placeholder** — not counsel-reviewed.
-8. **Content depth** — three skirmish maps (Crossing / Ridge / Gap). The coach shows once, then stays quiet until Tips is turned back on. A win offers the next difficulty (same species and map); Rematch stays on the difficulty just played. Hard has no step up. A Hard win offers the next map at Hard, same species; Rematch stays on the map just played. A Hard win on the last map offers the next species at Hard on the first map.
+8. **Content depth** — three skirmish maps (Crossing / Ridge / Gap). The coach shows once, then stays quiet until Tips is turned back on. A win offers the next difficulty (same species and map); a loss offers the previous one. Rematch stays on the difficulty just played. Practice has no step down. Hard has no step up. A Hard win offers the next map at Hard, same species; Rematch stays on the map just played. A Hard win on the last map offers the next species at Hard on the first map.
 9. **CI is thin** — pull requests run lint, unit tests and the build (`.github/workflows/ci.yml`) and a push to `dev` runs the same checks before auto-deploying Hosting (see `docs/firebase-hosting.md`); there are no browser or gameplay tests yet.
 10. **Cosmetics shop** — explicitly out; free unlocks only.
 11. **No offline service worker** — installability stubs exist; full offline PWA is later (`docs/pwa.md`).
