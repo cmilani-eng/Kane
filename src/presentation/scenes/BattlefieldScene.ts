@@ -17,6 +17,7 @@ import {
   getAiDifficulty,
   type AiDifficultyId,
 } from '../../gameplay/battlefield/aiDifficulty';
+import { nextDifficultyAfterWin } from '../../gameplay/battlefield/practiceStepUp';
 import {
   createAiState,
   tickBattlefieldAi,
@@ -1445,23 +1446,26 @@ export class BattlefieldScene extends Phaser.Scene {
       onMenu: () => this.scene.start('Menu'),
       onRematch: () => this.rematchSameSkirmish(),
       difficulty: this.world.aiDifficulty,
-      onStepUp:
-        result === 'victory' && this.world.aiDifficulty === 'practice'
-          ? () => this.stepUpFromPractice()
-          : undefined,
+      onStepUp: (() => {
+        const next = nextDifficultyAfterWin(
+          result === 'victory',
+          this.world.aiDifficulty,
+        );
+        return next ? () => this.stepUpDifficulty(next) : undefined;
+      })(),
       ignoreOnMain: (objs) => {
         this.cameras.main.ignore(this.add.container(0, 0, objs));
       },
     });
   }
 
-  /** Practice win — same species and map, one step up to Easy. */
-  private stepUpFromPractice(): void {
+  /** Win — same species and map, one step up the difficulty ladder. */
+  private stepUpDifficulty(difficulty: AiDifficultyId): void {
     const { species, mapId } = rematchPrefsFromWorld(this.world);
-    rememberMatchPrefs(species, 'easy', mapId);
+    rememberMatchPrefs(species, difficulty, mapId);
     recordGameStarted(species);
     void maybeRecordCloudGameStarted(species);
-    this.scene.start('Battlefield', { species, difficulty: 'easy', mapId });
+    this.scene.start('Battlefield', { species, difficulty, mapId });
   }
 
   /** End-screen Rematch — same species + difficulty + map, no menu hop. */

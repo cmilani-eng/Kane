@@ -1,9 +1,24 @@
 import type { AiDifficultyId } from './aiDifficulty';
 
-/** A Practice win is the moment to offer Easy. Losses and other difficulties stay put. */
+const STEP_UP: Partial<Record<AiDifficultyId, AiDifficultyId>> = {
+  practice: 'easy',
+  easy: 'normal',
+  normal: 'hard',
+};
+
+/** Next difficulty after a win. A loss, or a Hard win, stays put. */
+export function nextDifficultyAfterWin(
+  win: boolean,
+  difficulty: AiDifficultyId,
+): AiDifficultyId | null {
+  if (!win) return null;
+  return STEP_UP[difficulty] ?? null;
+}
+
+/** A Practice win is the moment to offer Easy. */
 export function offerPracticeStepUp(
   win: boolean,
   difficulty: AiDifficultyId,
 ): boolean {
-  return win && difficulty === 'practice';
+  return nextDifficultyAfterWin(win, difficulty) === 'easy';
 }
