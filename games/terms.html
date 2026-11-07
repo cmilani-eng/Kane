@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="en">
+<html lang="en-GB">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
@@ -12,20 +12,29 @@
     <title>KANE · Terms</title>
     <link rel="stylesheet" href="./legal/legal.css" />
   </head>
-  <body class="min-h-screen bg-linear-to-b from-kane-night to-[#243a28] px-5 pt-8 pb-16 font-kane-serif text-kane-cream">
+  <body
+    class="min-h-screen bg-linear-to-b from-kane-night to-[#243a28] px-5 pt-8 pb-16 font-kane-serif text-kane-cream"
+    data-page="terms"
+  >
     <main class="mx-auto max-w-[40rem] font-sans text-[0.95rem]/normal text-kane-ink [&_a]:text-kane-ice [&_a]:underline [&_p]:my-[1em] [&_ul]:my-4 [&_ul]:list-disc [&_ul]:pl-10">
       <p class="text-[0.85rem] font-bold text-kane-gold">KANE · BUILD. COMMAND. CONQUER.</p>
-      <h1 class="mt-[0.67em] mb-1 font-kane-serif text-[1.75rem]/[normal] font-bold text-kane-cream">Terms of use (stub)</h1>
-      <p class="rounded-lg border border-kane-slate bg-[#152238] px-3.5 py-3 text-[0.85rem] text-kane-muted">
-        Phase 7 legal placeholder — not a binding agreement yet. Soft-launch
-        posture: kid-friendly <strong>13+</strong>, ads off, never pay-to-win.
+      <h1 id="legal-title" class="mt-[0.67em] mb-1 font-kane-serif text-[1.75rem]/[normal] font-bold text-kane-cream">Terms of use (stub)</h1>
+      <p id="legal-note" class="rounded-lg border border-kane-slate bg-[#152238] px-3.5 py-3 text-[0.85rem] text-kane-muted">
+        Phase 7 legal placeholder — not a binding agreement yet. Soft-launch posture: kid-friendly 13+, ads off, never pay-to-win.
       </p>
-      <ul>
+      <ul id="legal-points">
         <li>Play fair — no cheating / harassment when online features land.</li>
         <li>Cosmetics (later) never change power.</li>
         <li>Prototype software — expect resets while we ship the vertical slice.</li>
       </ul>
-      <p><a href="/privacy.html">Privacy stub</a> · <a id="hub-back" href="/">← Games</a> · <a href="/kane/">Play KANE</a></p>
+      <p>
+        <a id="legal-privacy" href="/privacy.html">Privacy</a>
+        ·
+        <a id="hub-back" href="/">← Games</a>
+        ·
+        <a id="legal-play" href="/kane/">Play KANE</a>
+      </p>
     </main>
+    <script type="module" src="./legal/legal.ts"></script>
   </body>
 </html>

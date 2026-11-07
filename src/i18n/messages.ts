@@ -156,6 +156,25 @@ export const enGB = {
   'soft.hubPathTip': 'Hub · {path}',
   'hub.blob.blurb':
     'Start as a tiny blob and eat your way up the chain to become the Angel.',
+  'legal.privacyTitle': 'Privacy (stub)',
+  'legal.privacyMeta':
+    'KANE · Privacy — stub policy for the soft-launch fantasy RTS. Ads stay off; local-first play.',
+  'legal.privacyNote':
+    'Phase 7 legal placeholder — not final counsel copy. Ads stay off (adsEnabled=false). Local Vite remains the primary playtest path.',
+  'legal.privacyBody':
+    'Kane is a free fantasy RTS played in the browser. In local-first mode we store gameplay counters and optional age-gate / admin stubs on this device (localStorage). No ad SDK is loaded while ads are flagged off.',
+  'legal.privacySale': 'No sale of personal data in this stub.',
+  'legal.privacyAuth': 'Online Auth / cloud profiles arrive later behind emulators.',
+  'legal.privacyContact': 'Contact: project owner (Cassio) via the repo.',
+  'legal.termsTitle': 'Terms of use (stub)',
+  'legal.termsMeta':
+    'KANE · Terms — stub terms of use for the soft-launch fantasy RTS. 13+ framing; ads off; never pay-to-win.',
+  'legal.termsNote':
+    'Phase 7 legal placeholder — not a binding agreement yet. Soft-launch posture: kid-friendly 13+, ads off, never pay-to-win.',
+  'legal.termsFair': 'Play fair — no cheating / harassment when online features land.',
+  'legal.termsCosmetics': 'Cosmetics (later) never change power.',
+  'legal.termsPrototype':
+    'Prototype software — expect resets while we ship the vertical slice.',
   'auth.age': '13+ framing · no in-game age gate',
   'auth.displayName': 'Display name',
   'auth.displayPlaceholder': 'Commander',
@@ -730,6 +749,26 @@ export const ptBR = {
   'soft.hubPathTip': 'Hub · {path}',
   'hub.blob.blurb':
     'Comece como uma bolha minúscula e coma até o topo para virar o Anjo.',
+  'legal.privacyTitle': 'Privacidade (rascunho)',
+  'legal.privacyMeta':
+    'KANE · Privacidade — política rascunho do RTS de fantasia no lançamento. Anúncios desligados; jogo local primeiro.',
+  'legal.privacyNote':
+    'Espaço reservado da fase 7 — ainda não é o texto final. Os anúncios ficam desligados (adsEnabled=false). O Vite local segue como o caminho principal de teste.',
+  'legal.privacyBody':
+    'Kane é um RTS de fantasia gratuito no navegador. No modo local, guardamos os contadores da partida e os rascunhos opcionais de idade e admin neste aparelho (localStorage). Nenhum SDK de anúncio é carregado enquanto os anúncios estão desligados.',
+  'legal.privacySale': 'Não há venda de dados pessoais neste rascunho.',
+  'legal.privacyAuth':
+    'A autenticação online e os perfis na nuvem chegam depois, nos emuladores.',
+  'legal.privacyContact': 'Contato: dono do projeto (Cassio), pelo repositório.',
+  'legal.termsTitle': 'Termos de uso (rascunho)',
+  'legal.termsMeta':
+    'KANE · Termos — rascunho dos termos de uso do RTS de fantasia no lançamento. Enquadramento 13+; anúncios desligados; nunca pague para vencer.',
+  'legal.termsNote':
+    'Espaço reservado da fase 7 — ainda não é um acordo vinculante. Postura do lançamento: adequado a 13+, anúncios desligados, nunca pague para vencer.',
+  'legal.termsFair': 'Jogue limpo — sem trapaça nem assédio quando o online chegar.',
+  'legal.termsCosmetics': 'Os visuais (mais tarde) nunca mudam o poder.',
+  'legal.termsPrototype':
+    'Software protótipo — espere reinícios enquanto publicamos a fatia vertical.',
   'auth.age': 'Enquadramento 13+ · sem verificação de idade no jogo',
   'auth.displayName': 'Nome de exibição',
   'auth.displayPlaceholder': 'Comandante',
@@ -1300,6 +1339,26 @@ export const es = {
   'soft.hubPathTip': 'Hub · {path}',
   'hub.blob.blurb':
     'Empieza como una masa diminuta y come hasta la cima para convertirte en el Ángel.',
+  'legal.privacyTitle': 'Privacidad (borrador)',
+  'legal.privacyMeta':
+    'KANE · Privacidad — política en borrador del RTS de fantasía en el lanzamiento. Anuncios apagados; juego local primero.',
+  'legal.privacyNote':
+    'Texto provisional de la fase 7 — todavía no es la redacción final. Los anuncios siguen apagados (adsEnabled=false). Vite en local sigue siendo la vía principal de prueba.',
+  'legal.privacyBody':
+    'Kane es un RTS de fantasía gratis en el navegador. En el modo local guardamos los contadores de la partida y los borradores opcionales de edad y admin en este aparato (localStorage). No se carga ningún SDK de anuncios mientras los anuncios están apagados.',
+  'legal.privacySale': 'No hay venta de datos personales en este borrador.',
+  'legal.privacyAuth':
+    'La autenticación en línea y los perfiles en la nube llegan después, en los emuladores.',
+  'legal.privacyContact': 'Contacto: dueño del proyecto (Cassio), por el repositorio.',
+  'legal.termsTitle': 'Términos de uso (borrador)',
+  'legal.termsMeta':
+    'KANE · Términos — borrador de los términos de uso del RTS de fantasía en el lanzamiento. Marco 13+; anuncios apagados; nunca pagues para ganar.',
+  'legal.termsNote':
+    'Texto provisional de la fase 7 — todavía no es un acuerdo vinculante. Postura del lanzamiento: apto para 13+, anuncios apagados, nunca pagues para ganar.',
+  'legal.termsFair': 'Juega limpio — sin trampas ni acoso cuando llegue el juego en línea.',
+  'legal.termsCosmetics': 'El aspecto (más adelante) nunca cambia el poder.',
+  'legal.termsPrototype':
+    'Software prototipo — espera reinicios mientras publicamos la porción vertical.',
   'auth.age': 'Marco 13+ · sin verificación de edad en el juego',
   'auth.displayName': 'Nombre visible',
   'auth.displayPlaceholder': 'Comandante',
