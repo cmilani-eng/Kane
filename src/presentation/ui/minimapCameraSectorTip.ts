@@ -1,6 +1,8 @@
 /**
  * Minimap camera-frame sector tip (presentation only).
- * Distinct from the static View mark — shows 3×3 sector of the view center.
+ * Format: Cam · {sector} — view-center 3×3.
+ * Distinct from View mark / Scout · / Focus ·; same copy as pause Cam tip
+ * but own minimap-scoped key (`hud.minimapCamSector`).
  */
 import {
   mapSectorAt,

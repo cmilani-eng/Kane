@@ -24,7 +24,7 @@ This doc is the honest gate before any public preview URL.
 | Minimap scout pulse label | **OK** — fog scout pulse shows short Scout · sector mark (distinct from age tip / Cam · / Fog tips) | `minimapScoutPulseLabel`, `hud.minimapScoutPulse` |
 | Minimap scout sector tip | **OK** — fog scout pulse minimap label shows Scout · sector · ns age tip (distinct from sector-only mark / Fog age · / Fog · % / pause Cam ·) | `minimapFogRevealAgeTip`, `hud.fogRevealAge` |
 | Minimap camera viewport label | **OK** — gold camera frame on the minimap shows a short View mark | `minimapCameraViewportLabel`, `hud.minimapCamView` |
-| Minimap camera sector tip | **OK** — camera frame shows Cam · sector from view-center 3×3 (distinct from View mark) | `minimapCameraSectorTip`, `hud.minimapCamSector` |
+| Minimap camera sector tip | **OK** — camera frame shows Cam · sector from view-center 3×3 (distinct from View mark / Scout · / Focus ·; same copy as pause Cam tip, own minimap key) | `minimapCameraSectorTip`, `hud.minimapCamSector` |
 | Minimap supply usage tip | **OK** — minimap chrome shows Supply · used/cap from living player units vs unitCap (distinct surface from pause Supply tip / Pop · n) | `minimapSupplyTipText`, `hud.minimapSupply` |
 | Minimap population tip | **OK** — minimap chrome shows Pop · n from living player units (distinct from Supply · used/cap; same count as pause Pop) | `minimapPopulationTipText`, `hud.minimapPop`, `livingByTeam` |
 | Minimap idle worker tip | **OK** — minimap chrome shows Idle · n from idle gatherers (distinct surface from pause Idle tip / Workers · tip / HUD idle chip) | `minimapIdleWorkerTipText`, `hud.minimapIdle`, `countIdleWorkers` |
