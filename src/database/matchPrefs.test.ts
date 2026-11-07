@@ -59,6 +59,17 @@ describe('match prefs rematch restore', () => {
     expect(loadMatchPrefs().lastWon).toBe(false);
   });
 
+  it('tallies win streak on wins and clears on loss', () => {
+    rememberMatchPrefs('nobles', 'normal', 'crossing', 90_000, true);
+    expect(loadMatchPrefs().winStreak).toBe(1);
+    rememberMatchPrefs('brutes', 'easy', 'ridge', 80_000, true);
+    expect(loadMatchPrefs().winStreak).toBe(2);
+    rememberMatchPrefs('weirdos', 'hard', 'gap', 70_000, false);
+    expect(loadMatchPrefs().winStreak).toBe(0);
+    rememberMatchPrefs('nobles', 'normal', 'crossing');
+    expect(loadMatchPrefs().winStreak).toBe(0);
+  });
+
   it('defaults map to crossing when older prefs omit mapId', () => {
     store.set(
       'kane.matchPrefs.v1',

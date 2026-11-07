@@ -26,6 +26,8 @@ export interface MatchPrefs {
   lastDurationMs?: number;
   /** Last finished match outcome. Optional for older prefs. */
   lastWon?: boolean;
+  /** Consecutive wins ending at the last finished match. Optional for older prefs. */
+  winStreak?: number;
 }
 
 function canStore(): boolean {
@@ -49,6 +51,11 @@ function normalizeWon(v: unknown): boolean | undefined {
   return typeof v === 'boolean' ? v : undefined;
 }
 
+function normalizeWinStreak(v: unknown): number | undefined {
+  if (typeof v !== 'number' || !Number.isFinite(v) || v < 0) return undefined;
+  return Math.floor(v);
+}
+
 export function defaultMatchPrefs(): MatchPrefs {
   return {
     version: 1,
@@ -67,6 +74,7 @@ export function loadMatchPrefs(): MatchPrefs {
     const parsed = JSON.parse(raw) as Partial<MatchPrefs>;
     const lastDurationMs = normalizeDurationMs(parsed.lastDurationMs);
     const lastWon = normalizeWon(parsed.lastWon);
+    const winStreak = normalizeWinStreak(parsed.winStreak);
     return {
       version: 1,
       species: isSpeciesId(parsed.species) ? parsed.species : base.species,
@@ -74,6 +82,7 @@ export function loadMatchPrefs(): MatchPrefs {
       mapId: isSkirmishMapId(parsed.mapId) ? parsed.mapId : base.mapId,
       ...(lastDurationMs != null ? { lastDurationMs } : {}),
       ...(lastWon != null ? { lastWon } : {}),
+      ...(winStreak != null ? { winStreak } : {}),
     };
   } catch {
     return base;
@@ -85,6 +94,7 @@ export function saveMatchPrefs(prefs: MatchPrefs): void {
   try {
     const lastDurationMs = normalizeDurationMs(prefs.lastDurationMs);
     const lastWon = normalizeWon(prefs.lastWon);
+    const winStreak = normalizeWinStreak(prefs.winStreak);
     const next: MatchPrefs = {
       version: 1,
       species: isSpeciesId(prefs.species) ? prefs.species : 'nobles',
@@ -92,6 +102,7 @@ export function saveMatchPrefs(prefs: MatchPrefs): void {
       mapId: isSkirmishMapId(prefs.mapId) ? prefs.mapId : DEFAULT_SKIRMISH_MAP,
       ...(lastDurationMs != null ? { lastDurationMs } : {}),
       ...(lastWon != null ? { lastWon } : {}),
+      ...(winStreak != null ? { winStreak } : {}),
     };
     localStorage.setItem(KEY, JSON.stringify(next));
   } catch {
@@ -116,6 +127,10 @@ export function rememberMatchPrefs(
       ? Math.floor(lastDurationMs)
       : prev.lastDurationMs;
   const won = lastWon != null ? lastWon : prev.lastWon;
+  let winStreak = prev.winStreak;
+  if (lastWon != null) {
+    winStreak = lastWon ? (prev.winStreak ?? 0) + 1 : 0;
+  }
   saveMatchPrefs({
     version: 1,
     species,
@@ -123,6 +138,7 @@ export function rememberMatchPrefs(
     mapId,
     ...(duration != null ? { lastDurationMs: duration } : {}),
     ...(won != null ? { lastWon: won } : {}),
+    ...(winStreak != null ? { winStreak } : {}),
   });
   // Cloud sync when signed in (best-effort; guest stays local).
   // Cloud profile still stores species + difficulty only.
