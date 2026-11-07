@@ -19,9 +19,9 @@ import {
 
 const STAGES = [
   { name:'Purple', color:0x9b63df, radius:.42, speed:2.35 },
-  { name:'Blue', color:0x269bff, radius:.58, speed:3.05 },
+  { name:'Blue', color:0x1e8ef0, radius:.58, speed:3.05 },
   { name:'Green', color:0x2fbf6e, radius:.77, speed:3.85 },
-  { name:'Rock', color:0x4f4b44, radius:.98, speed:4.55 },
+  { name:'Rock', color:0x7a7468, radius:.98, speed:4.55 },
   { name:'Rainbow', color:0xffffff, radius:1.18, speed:5.35 },
   { name:'Angel', color:0xfff0a8, radius:1.35, speed:5.9 }
 ];
@@ -31,6 +31,7 @@ let scene, camera, renderer, clock;
 let player, bots = [], running = false, duelBot = null, duelBusy = false;
 let playerGroup;
 let lastHud = 0;
+let angelXform = null;
 
 const overlay = document.getElementById('overlay');
 const startPanel = document.getElementById('start-panel');
@@ -60,6 +61,34 @@ function makeRainbowTexture() {
   tex.colorSpace = THREE.SRGBColorSpace;
   tex.wrapS = THREE.RepeatWrapping;
   tex.wrapT = THREE.ClampToEdgeWrapping;
+  return tex;
+}
+
+function makeWaterTexture() {
+  const canvas = document.createElement('canvas');
+  canvas.width = 256; canvas.height = 256;
+  const ctx = canvas.getContext('2d');
+  const g = ctx.createRadialGradient(110, 90, 20, 128, 128, 160);
+  g.addColorStop(0, '#8fd6ff');
+  g.addColorStop(.45, '#2a9dff');
+  g.addColorStop(1, '#0d5fb8');
+  ctx.fillStyle = g;
+  ctx.fillRect(0, 0, 256, 256);
+  for (let i = 0; i < 18; i++) {
+    const x = Math.random() * 256;
+    const y = Math.random() * 256;
+    const r = 4 + Math.random() * 16;
+    const bubble = ctx.createRadialGradient(x - r * .25, y - r * .25, 1, x, y, r);
+    bubble.addColorStop(0, 'rgba(255,255,255,.55)');
+    bubble.addColorStop(.55, 'rgba(180,230,255,.18)');
+    bubble.addColorStop(1, 'rgba(20,80,160,0)');
+    ctx.fillStyle = bubble;
+    ctx.beginPath();
+    ctx.arc(x, y, r, 0, Math.PI * 2);
+    ctx.fill();
+  }
+  const tex = new THREE.CanvasTexture(canvas);
+  tex.colorSpace = THREE.SRGBColorSpace;
   return tex;
 }
 
@@ -99,11 +128,11 @@ function makeRockTexture() {
   const canvas = document.createElement('canvas');
   canvas.width = 256; canvas.height = 256;
   const ctx = canvas.getContext('2d');
-  ctx.fillStyle = '#3a3732';
+  ctx.fillStyle = '#5e5950';
   ctx.fillRect(0, 0, 256, 256);
   for (let i = 0; i < 180; i++) {
-    const shade = 36 + Math.floor(Math.random() * 42);
-    ctx.fillStyle = `rgb(${shade},${shade - 3},${shade - 8})`;
+    const shade = 72 + Math.floor(Math.random() * 58);
+    ctx.fillStyle = `rgb(${shade},${shade - 4},${shade - 10})`;
     const w = 6 + Math.random() * 28;
     const h = 4 + Math.random() * 22;
     ctx.beginPath();
@@ -111,7 +140,7 @@ function makeRockTexture() {
     ctx.fill();
   }
   for (let i = 0; i < 40; i++) {
-    ctx.strokeStyle = `rgba(20,18,14,${0.15 + Math.random() * 0.25})`;
+    ctx.strokeStyle = `rgba(40,36,30,${0.12 + Math.random() * 0.22})`;
     ctx.lineWidth = 1 + Math.random() * 2;
     ctx.beginPath();
     ctx.moveTo(Math.random() * 256, Math.random() * 256);
@@ -151,6 +180,11 @@ function makeBlob(stage, isPlayer=false) {
       map: rainbowMap, color:0xffffff, roughness:.28, metalness:.08,
       emissive:0xffffff, emissiveMap: rainbowMap, emissiveIntensity:.55
     });
+  } else if (stage === 1) {
+    material = new THREE.MeshStandardMaterial({
+      map: makeWaterTexture(), color:0xb8e7ff, roughness:.28, metalness:.08,
+      emissive:0x0a4f9a, emissiveIntensity:.2
+    });
   } else if (stage === 2) {
     material = new THREE.MeshStandardMaterial({
       map: makeLeafTexture(), color:0x7dffb0, roughness:.42, metalness:0,
@@ -158,8 +192,8 @@ function makeBlob(stage, isPlayer=false) {
     });
   } else if (stage === 3) {
     material = new THREE.MeshStandardMaterial({
-      map: makeRockTexture(), color:0x5c574f, roughness:.98, metalness:0,
-      flatShading: true, emissive:0x000000, emissiveIntensity:0
+      map: makeRockTexture(), color:0x9a9386, roughness:.92, metalness:0,
+      flatShading: true, emissive:0x2a2620, emissiveIntensity:.08
     });
   } else if (stage === 5) {
     material = new THREE.MeshStandardMaterial({
@@ -188,6 +222,17 @@ function makeBlob(stage, isPlayer=false) {
     const shine = new THREE.Mesh(new THREE.SphereGeometry(.022,8,8), new THREE.MeshBasicMaterial({color:0xffffff}));
     shine.position.set(x-.018,.205,.93); group.add(shine);
   }
+  if (stage === 1) {
+    const bubbleMat = new THREE.MeshStandardMaterial({
+      color:0xd7f2ff, emissive:0x6ec8ff, emissiveIntensity:.35, roughness:.2, metalness:.05,
+      transparent:true, opacity:.7
+    });
+    [[-.45, .55, .55, .16], [.5, .35, .4, .12], [.15, .75, .2, .1]].forEach(([x, y, z, r]) => {
+      const bubble = new THREE.Mesh(new THREE.SphereGeometry(r, 12, 10), bubbleMat);
+      bubble.position.set(x, y, z);
+      group.add(bubble);
+    });
+  }
   if (stage === 2) {
     const leafMat = new THREE.MeshStandardMaterial({
       color:0x2fbf6e, emissive:0x146b38, emissiveIntensity:.2, roughness:.45, metalness:0
@@ -212,12 +257,14 @@ function makeBlob(stage, isPlayer=false) {
       ring.rotation.x=Math.PI/2 + i*.11; ring.rotation.y=i*.38; ring.position.y=.02; group.add(ring);
     });
   }
+  const angelParts = { glow:null, halos:[], wings:[], light:null };
   if (stage === 5) {
     const glow = new THREE.Mesh(
       new THREE.SphereGeometry(1.15, 24, 18),
       new THREE.MeshBasicMaterial({ color:0xfff1b0, transparent:true, opacity:.18, depthWrite:false })
     );
     glow.scale.set(1, .85, 1); group.add(glow);
+    angelParts.glow = glow;
 
     const haloMat = new THREE.MeshStandardMaterial({ color:0xffe27a, emissive:0xffd24a, emissiveIntensity:.9, roughness:.25, metalness:.15 });
     const halo = new THREE.Mesh(new THREE.TorusGeometry(.72, .06, 12, 56), haloMat);
@@ -226,6 +273,7 @@ function makeBlob(stage, isPlayer=false) {
       color:0xfff6c8, emissive:0xffe9a0, emissiveIntensity:.75, roughness:.3
     }));
     haloInner.position.y = 1.32; haloInner.rotation.x = Math.PI / 2; group.add(haloInner);
+    angelParts.halos.push(halo, haloInner);
 
     const wingMat = new THREE.MeshStandardMaterial({ color:0xfffaf0, emissive:0xffe9b8, emissiveIntensity:.28, roughness:.4, metalness:.05 });
     for (const side of [-1, 1]) {
@@ -234,15 +282,24 @@ function makeBlob(stage, isPlayer=false) {
       upper.position.set(side * 1.05, .38, -.08);
       upper.rotation.z = side * .42;
       upper.rotation.y = side * -.18;
+      upper.userData = { side, kind:'upper', baseZ: side * .42, baseY: side * -.18 };
       group.add(upper);
+      angelParts.wings.push(upper);
       const lower = new THREE.Mesh(new THREE.SphereGeometry(.42, 18, 12), wingMat);
       lower.scale.set(.32, .12, .95);
       lower.position.set(side * .95, .08, -.02);
       lower.rotation.z = side * .22;
+      lower.userData = { side, kind:'lower', baseZ: side * .22, baseY: 0 };
       group.add(lower);
+      angelParts.wings.push(lower);
     }
+
+    const light = new THREE.PointLight(0xffe7a0, 0, 28);
+    light.position.set(0, 1.2, 0);
+    group.add(light);
+    angelParts.light = light;
   }
-  group.userData = { body, stage, isPlayer };
+  group.userData = { body, stage, isPlayer, angelParts };
   return group;
 }
 
@@ -278,9 +335,120 @@ function initThree() {
   renderer.setAnimationLoop(renderThree);
 }
 function onResize(){ if(!camera||!renderer)return; camera.aspect=innerWidth/innerHeight; camera.updateProjectionMatrix(); renderer.setSize(innerWidth,innerHeight); }
+function easeOutCubic(x){ return 1 - Math.pow(1 - x, 3); }
+function clearAngelXform(){
+  if(!angelXform) return;
+  for(const p of angelXform.particles){
+    scene.remove(p); if(p.geometry)p.geometry.dispose(); if(p.material)p.material.dispose();
+  }
+  angelXform = null;
+}
+function startAngelTransform(){
+  clearAngelXform();
+  const particles = [];
+  for(let i=0;i<36;i++){
+    const p = new THREE.Mesh(
+      new THREE.SphereGeometry(.06 + Math.random()*.08, 8, 8),
+      new THREE.MeshBasicMaterial({ color: i%3===0 ? 0xfff6c8 : (i%3===1 ? 0xffd24a : 0xffffff), transparent:true, opacity:.95 })
+    );
+    const ang = (i / 36) * Math.PI * 2;
+    p.userData = {
+      ang,
+      spin: 1.5 + Math.random() * 2.5,
+      rise: 1.2 + Math.random() * 2.4,
+      radius: 0.4 + Math.random() * 1.6
+    };
+    scene.add(p);
+    particles.push(p);
+  }
+  angelXform = { start: performance.now(), duration: 2400, particles };
+  const parts = playerGroup?.userData?.angelParts;
+  if(parts?.wings){
+    for(const wing of parts.wings){
+      wing.scale.multiplyScalar(0.05);
+      wing.rotation.z = wing.userData.side * 0.05;
+    }
+  }
+  if(parts?.halos){
+    for(const h of parts.halos){ h.scale.set(0.1,0.1,0.1); h.material.emissiveIntensity = 0; }
+  }
+  if(parts?.glow){ parts.glow.material.opacity = 0; }
+  if(parts?.light){ parts.light.intensity = 0; }
+}
+function updateAngelTransform(t){
+  if(!angelXform || !player || !playerGroup) return false;
+  const elapsed = performance.now() - angelXform.start;
+  const u = Math.min(1, elapsed / angelXform.duration);
+  const e = easeOutCubic(u);
+  const pulse = 1 + Math.sin(u * Math.PI) * 0.55;
+  const lift = e * 1.35;
+  playerGroup.position.set(player.x, player.radius * .77 + lift + Math.sin(t * 8) * .04, player.z);
+  playerGroup.rotation.y = player.facing + e * Math.PI * 2.2;
+  const s = player.radius * pulse;
+  playerGroup.scale.set(s, s * (1.05 + e * .15), s);
+
+  const parts = playerGroup.userData.angelParts || {};
+  if(parts.wings){
+    for(const wing of parts.wings){
+      const open = easeOutCubic(Math.min(1, Math.max(0, (u - .15) / .55)));
+      const base = wing.userData.kind === 'upper'
+        ? { x:.38, y:.14, z:1.2 }
+        : { x:.32, y:.12, z:.95 };
+      wing.scale.set(base.x * open, base.y * open, base.z * open);
+      wing.rotation.z = wing.userData.side * (0.05 + (Math.abs(wing.userData.baseZ) - 0.05) * open);
+      if(wing.userData.kind === 'upper') wing.rotation.y = wing.userData.baseY * open;
+    }
+  }
+  if(parts.halos){
+    const hOpen = easeOutCubic(Math.min(1, Math.max(0, (u - .2) / .5)));
+    parts.halos.forEach((h, i)=>{
+      const sc = 0.1 + 0.9 * hOpen;
+      h.scale.set(sc, sc, sc);
+      h.rotation.z = t * (1.8 + i);
+      if(h.material) h.material.emissiveIntensity = (i === 0 ? .9 : .75) * hOpen;
+    });
+  }
+  if(parts.glow?.material){
+    parts.glow.material.opacity = 0.08 + 0.28 * Math.sin(u * Math.PI);
+    const g = 1 + e * .35;
+    parts.glow.scale.set(g, g * .85, g);
+  }
+  if(parts.light) parts.light.intensity = 18 * Math.sin(u * Math.PI) + 4 * e;
+
+  for(const p of angelXform.particles){
+    const { ang, spin, rise, radius } = p.userData;
+    const a = ang + t * spin;
+    const r = radius * (0.35 + e * 1.4);
+    p.position.set(
+      player.x + Math.cos(a) * r,
+      player.radius * .77 + lift + rise * e + Math.sin(t * 6 + ang) * .15,
+      player.z + Math.sin(a) * r
+    );
+    const fade = u < .7 ? 1 : 1 - (u - .7) / .3;
+    p.material.opacity = fade;
+    const ps = 0.6 + (1 - u) * 0.8;
+    p.scale.setScalar(ps);
+  }
+
+  const desired = new THREE.Vector3(player.x + 1.2, 14.2 - e * 1.5, player.z + 16.5 - e * 2.5);
+  camera.position.lerp(desired, .12);
+  camera.lookAt(player.x, lift, player.z);
+
+  if(u >= 1){
+    clearAngelXform();
+    const won = blobWin();
+    showEnd(true, won.title, won.body);
+    return true;
+  }
+  return true;
+}
 function renderThree(){
   if(!renderer)return;
   const t=clock.getElapsedTime();
+  if(updateAngelTransform(t)){
+    renderer.render(scene,camera);
+    return;
+  }
   if(player && playerGroup){
     playerGroup.position.set(player.x,player.radius*.77+Math.sin(t*5)*.055,player.z);
     playerGroup.rotation.y=player.facing;
@@ -299,6 +467,7 @@ function makeEntity(stage,x,z,isPlayer=false){
   return {stage,x,z,radius:STAGES[stage].radius,speed:STAGES[stage].speed,group,alive:true,facing:0,vx:0,vz:0,phase:Math.random()*Math.PI*2,think:0,tx:x,tz:z};
 }
 function clearEntities(){
+  clearAngelXform();
   if(playerGroup){scene.remove(playerGroup);disposeGroup(playerGroup);playerGroup=null;}
   bots.forEach(b=>{scene.remove(b.group);disposeGroup(b.group);}); bots=[];
 }
@@ -328,7 +497,9 @@ function evolvePlayer(stage){
 }
 function canEat(predatorStage,preyStage){
   if(predatorStage===4) return preyStage<4;
-  return predatorStage>0 && preyStage===predatorStage-1;
+  // Two Purples fuse: the eater evolves into Blue.
+  if(predatorStage===0) return preyStage===0;
+  return preyStage===predatorStage-1;
 }
 function removeBot(bot){
   if(!bot.alive)return;
@@ -345,10 +516,11 @@ function loseGame(reason, copy){
   running=false; showEnd(false, reason || eaten.title, copy || eaten.body);
 }
 function winGame(){
-  if(!running)return;
-  running=false; evolvePlayer(5);
-  const won = blobWin();
-  showEnd(true, won.title, won.body);
+  if(!running || angelXform)return;
+  running=false;
+  refreshStick();
+  evolvePlayer(5);
+  startAngelTransform();
 }
 function checkVictory(){ if(bots.every(b=>!b.alive)) winGame(); }
 function showEnd(won,title,copy){
@@ -472,7 +644,7 @@ function updateBots(dt){
       let target=null, best=Infinity;
       const consider=(obj,dist)=>{ if(dist<best){best=dist;target=obj;} };
       if(botCanEatPlayer(b)) consider(player,distance(b,player));
-      for(const other of bots){ if(other===b||!other.alive)continue; if(canEat(b.stage,other.stage) || (b.stage===4&&other.stage===4)) {const d=distance(b,other); if(d<best)consider(other,d);} }
+      for(const other of bots){ if(other===b||!other.alive)continue; if(canEat(b.stage,other.stage) || (b.stage===4&&other.stage===4) || (b.stage===0&&other.stage===0)) {const d=distance(b,other); if(d<best)consider(other,d);} }
       if(target && best<13){b.tx=target.x;b.tz=target.z;}
       else if(Math.random()<.72){b.tx=THREE.MathUtils.clamp(b.x+(Math.random()-.5)*15,-ARENA+2,ARENA-2);b.tz=THREE.MathUtils.clamp(b.z+(Math.random()-.5)*15,-ARENA+2,ARENA-2);}
     }
@@ -506,7 +678,7 @@ function resolveCollisions(){
     for(let j=i+1;j<bots.length;j++){
       const b=bots[j];if(!b.alive)continue;
       if(distance(a,b)<(a.radius+b.radius)*.78){
-        if(a.stage===4&&b.stage===4){ if(Math.random()<.5)botEat(a,b);else botEat(b,a); }
+        if((a.stage===4&&b.stage===4)||(a.stage===0&&b.stage===0)){ if(Math.random()<.5)botEat(a,b);else botEat(b,a); }
         else if(canEat(a.stage,b.stage))botEat(a,b);
         else if(canEat(b.stage,a.stage))botEat(b,a);
       }
@@ -519,7 +691,7 @@ function updateHud(force=false){
   const now=performance.now(); if(!force&&now-lastHud<100)return;lastHud=now;
   const remaining=bots.filter(b=>b.alive).length;
   phaserScene.hud.setText(blobHudLine(player.stage, player.radius, player.speed, remaining));
-  phaserScene.hud.setColor(player.stage===4?'#ffdb72':player.stage===3?'#9a948a':player.stage===2?'#8df4bc':'#b8e3ff');
+  phaserScene.hud.setColor(player.stage===4?'#ffdb72':player.stage===3?'#c4bbae':player.stage===2?'#8df4bc':'#b8e3ff');
 }
 
 class OverlayScene extends Phaser.Scene {

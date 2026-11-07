@@ -831,7 +831,7 @@ export const ptBR = {
   'blob.startBlurb':
     'Comece como uma bolha azul minúscula. Coma pela cadeia de evolução, fique maior e mais rápida, e torne-se o único Anjo.',
   'blob.note':
-    'No telefone: arraste a alavanca. No computador: WASD ou setas. Você só come o estágio abaixo — a menos que seja Arco-íris!',
+    'No telefone: arraste a alavanca. No computador: WASD ou setas. Coma o estágio abaixo — dois Roxos viram Azul. Arco-íris come qualquer um abaixo do Anjo!',
   'blob.start': 'COMEÇAR',
   'blob.rpsPill': 'Duelo arco-íris',
   'blob.rpsTitle': 'Pedra, papel e tesoura',
@@ -1472,7 +1472,7 @@ export const es = {
   'blob.startBlurb':
     'Empieza como una masa azul diminuta. Come por la cadena de evolución, crece y acelera, y conviértete en el único Ángel.',
   'blob.note':
-    'En el teléfono: arrastra la palanca. En el ordenador: WASD o las flechas. Solo puedes comer la etapa anterior — ¡salvo si eres Arcoíris!',
+    'En el teléfono: arrastra la palanca. En el ordenador: WASD o las flechas. Come la etapa anterior — dos Morados hacen un Azul. ¡Arcoíris puede comer a cualquiera bajo Ángel!',
   'blob.start': 'EMPEZAR',
   'blob.rpsPill': 'Duelo arcoíris',
   'blob.rpsTitle': 'Piedra, papel o tijera',
