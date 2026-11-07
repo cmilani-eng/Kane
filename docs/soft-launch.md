@@ -102,7 +102,7 @@ This doc is the honest gate before any public preview URL.
 | Building HP max tip | **OK** — building selection stats show catalog Max HP tip | `buildingHpMax`, `sel.hpMaxTip` |
 | Building armor tip | **OK** — building selection stats show Armor · Structure tip | `buildingArmorClass`, `sel.armor.structure` |
 | Building build cost tip | **OK** — building selection stats show catalog Build gold/crystal cost (omitted for free halls) | `buildingBuildCost`, `sel.buildCost*` |
-| Building build time tip | **OK** — building selection stats show catalog full build seconds (distinct from live remain) | `buildingBuildTime`, `sel.buildTimeTip` |
+| Building build time tip | **OK** — building selection stats show catalog Build · {n}s (distinct from live remain / progress) | `buildingBuildTime`, `sel.buildTimeTip` |
 | Building footprint tip | **OK** — building selection stats show Size · w×h tiles (same as placement ghost) | `buildingFootprint`, `sel.footprintTip` |
 | Building prod queue tip | **OK** — building selection stats show Queue · empty / Training · name / Queue · n when the type can train (distinct from live queue ETA row) | `buildingProdQueue`, `sel.prodQueueEmpty`, `sel.prodQueueTraining`, `sel.prodQueueTip` |
 | Unit gather yield tip | **OK** — worker selection stats show Yield · n per trip from catalog haul (distinct from cargo / node tip) | `unitGatherYield`, `sel.yieldTip` |
