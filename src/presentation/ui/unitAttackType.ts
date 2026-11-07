@@ -1,6 +1,7 @@
 /**
- * Catalog attack-type tip — Melee vs Ranged (HUD label only).
- * Distinct from ATK damage, DPS, range tiles, and armor class.
+ * Catalog weapon/attack-type tip — Melee vs Ranged (HUD label only).
+ * Format: Atk · {type} — middot (U+00B7).
+ * Distinct from Damage · / DPS · / Atk CD · tips (and range / armor).
  */
 import { MAP } from '../../config/balance';
 import { getUnitType, type UnitTypeId } from '../../data/units';
