@@ -185,7 +185,7 @@ export const enGB = {
   'blob.startBlurb':
     'Start as a tiny blue blob. Eat your way through the evolution chain, grow bigger and faster, and become the one-and-only Angel.',
   'blob.note':
-    "On phone: drag the stick. On desktop: WASD or arrows. You can only eat the stage below you — unless you're Rainbow!",
+    'On phone: drag the stick. On desktop: WASD or arrows. Eat the stage below you — two Purples make a Blue. Rainbow can eat anyone below Angel!',
   'blob.start': 'START GAME',
   'blob.rpsPill': 'Rainbow showdown',
   'blob.rpsTitle': 'Rock Paper Scissors',
