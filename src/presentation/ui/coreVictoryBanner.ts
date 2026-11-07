@@ -32,9 +32,8 @@ export function coreBannerCenterY(width: number, height: number): number {
   if (height >= 500) return 58;
   const narrow = width < 720;
   const pad = narrow ? 8 : 12;
-  const stripTop = pad + 50;
-  const stripH = narrow ? 76 : 36;
-  return stripTop + stripH + 8 + PANEL_H / 2;
+  const stripTop = pad + (narrow ? 50 : 60);
+  return stripTop + 36 + 8 + PANEL_H / 2;
 }
 
 /** Bottom edge of the hold banner panel. */
@@ -45,15 +44,19 @@ export function coreBannerBottom(width: number, height: number): number {
 /**
  * Top of the left chip stack (idle, attack, scout, status).
  * Tall screens keep it under the resource band.
- * Short screens start below the CORE hold banner.
+ * Short screens start below the CORE hold banner while it is showing.
  */
-export function hudChipStackTop(width: number, height: number): number {
+export function hudChipStackTop(
+  width: number,
+  height: number,
+  bannerVisible = true,
+): number {
   const narrow = width < 720;
   const pad = narrow ? 8 : 12;
   const resY = pad + (narrow ? 50 : 60);
-  const resH = narrow ? 80 : 36;
+  const resH = narrow && height >= 500 ? 80 : 36;
   const belowRes = resY + resH + 8;
-  if (height >= 500) return belowRes;
+  if (height >= 500 || !bannerVisible) return belowRes;
   return Math.max(belowRes, coreBannerBottom(width, height) + 8);
 }
 
