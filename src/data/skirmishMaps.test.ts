@@ -49,6 +49,14 @@ describe('skirmish maps', () => {
     }
   });
 
+  it('scatters rich magic crystal veins on every map', () => {
+    for (const id of SKIRMISH_MAP_ORDER) {
+      const crystals = SKIRMISH_MAPS[id].nodes.filter((n) => n.resourceId === 'magic_crystals');
+      expect(crystals.length).toBeGreaterThanOrEqual(8);
+      for (const vein of crystals) expect(vein.amount).toBeGreaterThanOrEqual(500);
+    }
+  });
+
   it('falls back to the default map for unknown ids', () => {
     expect(getSkirmishMap('nope').id).toBe(DEFAULT_SKIRMISH_MAP);
     expect(getSkirmishMap(null).id).toBe('crossing');
