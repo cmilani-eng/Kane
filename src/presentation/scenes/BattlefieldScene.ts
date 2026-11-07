@@ -791,6 +791,7 @@ export class BattlefieldScene extends Phaser.Scene {
       idleWorkerCount: countIdleWorkers(this.world),
       heroStatus: minimapHeroStatus(this.world),
       winStreak: matchPrefs.winStreak ?? 0,
+      lossStreak: matchPrefs.lossStreak ?? 0,
       gamesPlayed: matchPrefs.gamesPlayed ?? 0,
       gamesWon: matchPrefs.gamesWon ?? 0,
       avgDurationMs: matchPrefs.avgDurationMs,
