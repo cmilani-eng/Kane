@@ -7,7 +7,9 @@ import { GAMES } from './registry';
 
 const gamesDir = dirname(fileURLToPath(import.meta.url));
 const gamePages = Object.keys(import.meta.glob('./*/index.html'));
-const rewrites = firebaseJson.hosting[0].rewrites.map((rule) => rule.source);
+const rewrites = ((firebaseJson.hosting[0] as { rewrites?: { source: string }[] }).rewrites ?? []).map(
+  (rule) => rule.source,
+);
 const headerRules = firebaseJson.hosting[0].headers;
 
 /**
@@ -57,10 +59,18 @@ describe('games registry', () => {
     expect(gamePages).toContain(`./${id}/index.html`);
   });
 
-  it.each(GAMES.map((game) => game.id))('%s has a Hosting rewrite before the hub catch-all', (id) => {
-    const index = rewrites.indexOf(`/${id}/**`);
-    expect(index).toBeGreaterThanOrEqual(0);
-    expect(index).toBeLessThan(rewrites.indexOf('**'));
+  // A rewrite answers a missing file with 200 and the picker's HTML, and under /assets/ with
+  // a one-year immutable cache too, so a stale bundle URL becomes a script made of HTML.
+  // Hosting serves /<id> and /<id>/ from the built index.html (cleanUrls), so no rewrite is needed.
+  it.each([
+    '/assets/kane-AbCd1234.js',
+    '/assets/missing.css',
+    '/icons/missing.png',
+    '/kane/assets/missing.js',
+    '/kane/missing',
+    '/missing',
+  ])('%s gets a real 404, because no rewrite matches it', (path) => {
+    expect(rewrites.filter((source) => globMatches(source, path))).toEqual([]);
   });
 
   it('loads Kane from an entry inside the Vite root', () => {

@@ -13,6 +13,8 @@ const readJson = (file) => JSON.parse(readFileSync(new URL(file, root), 'utf8'))
 
 const NO_CACHE = 'no-cache';
 const IMMUTABLE = 'public,max-age=31536000,immutable';
+// Nothing ships under this name. A rewrite would answer it with 200 and the picker's HTML.
+const MISSING_FILE = '/assets/missing-file-check.js';
 
 /** The headers every response must carry: the `**` rule in firebase.json. */
 export function expectedSecurityHeaders(firebaseJson) {
@@ -35,7 +37,7 @@ function headerProblems(label, headers, expected, cacheControl) {
 /** One pass over the site. Returns a list of problems; empty means the headers are right. */
 export async function checkSite(base, { fetchImpl = fetch, firebaseJson, games } = {}) {
   const expected = expectedSecurityHeaders(firebaseJson);
-  const pages = ['/', ...games.map(({ id }) => `/${id}/`), '/privacy', '/terms', '/manifest.webmanifest'];
+  const pages = ['/', ...games.flatMap(({ id }) => [`/${id}`, `/${id}/`]), '/privacy', '/terms', '/manifest.webmanifest'];
   const problems = [];
   let asset = null;
 
@@ -55,6 +57,11 @@ export async function checkSite(base, { fetchImpl = fetch, firebaseJson, games }
     if (res.status !== 200) problems.push(`${asset}: status ${res.status}, expected 200`);
     problems.push(...headerProblems(asset, res.headers, expected, IMMUTABLE));
   }
+
+  // A stale bundle URL must fail loudly: 200 with HTML would reach the browser as a script.
+  const missing = await fetchImpl(new URL(MISSING_FILE, base));
+  await missing.arrayBuffer();
+  if (missing.status !== 404) problems.push(`${MISSING_FILE}: status ${missing.status}, expected 404`);
   return problems;
 }
 

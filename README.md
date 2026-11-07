@@ -49,7 +49,7 @@ To add a game:
 
 1. Create `games/<id>/index.html`.
 2. Add an entry to `games/games.json` (`id`, `title`, `tagline`, `description`, `build`, `status`).
-3. Add a `/<id>/**` rewrite to `firebase.json`, above the `**` catch-all. `npm test` fails if this is missing.
+3. Nothing to add to `firebase.json`: Hosting serves `/<id>` and `/<id>/` from the built page. There is deliberately no rewrite, so a missing file returns a real 404; `npm test` fails if a rewrite is added that would catch one.
 
 Old links to `/#…` (e.g. `/#admin`) are forwarded to `/kane/#…`.
 
