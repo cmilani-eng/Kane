@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { setLocale, t } from '../../i18n';
+import { endVisionTipLine } from './endVisionTip';
 import { unitVisionLabel, visionTiles } from './unitVision';
 import {
   maxPlayerVisionTiles,
@@ -7,12 +8,15 @@ import {
 } from './minimapVisionTip';
 
 describe('minimapVisionTipText', () => {
-  it('labels Vision · n, distinct from selection Sight · tip', () => {
+  it('labels Vision · n, distinct from selection Sight · / end tip key', () => {
     expect(minimapVisionTipText(5)).toBe(t('hud.minimapVision', { n: 5 }));
-    expect(minimapVisionTipText(5)).toMatch(/^Vision ·/);
+    expect(minimapVisionTipText(5)).toMatch(/^Vision \u00b7 /);
     expect(minimapVisionTipText(0)).toBe(t('hud.minimapVision', { n: 0 }));
     expect(minimapVisionTipText(5)).not.toBe(t('sel.visionTip', { n: 5 }));
     expect(minimapVisionTipText(5)).not.toBe(unitVisionLabel('scavenger'));
+    // Same en copy as end tip; distinct i18n key / surface.
+    expect(minimapVisionTipText(5)).toBe(endVisionTipLine(5));
+    expect(endVisionTipLine(5)).toBe(t('end.visionTip', { n: 5 }));
   });
 
   it('localizes Vision middot for pt-BR and es', () => {

@@ -37,6 +37,7 @@ import { endFavoriteFactionTipLine } from './endFavoriteFactionTip';
 import { endLossesTipLine } from './endLossesTip';
 import { endWinsTipLine } from './endWinsTip';
 import { endWinStreakTipLine } from './endWinStreakTip';
+import { endVisionTipLine } from './endVisionTip';
 import { formatMatchClock } from './matchClock';
 import { copyEndShareLine, formatEndShareLine } from './endShareLine';
 
@@ -68,6 +69,8 @@ export interface EndScreenOpts {
   playerCrystalsGathered?: number;
   /** Player-issued commands this match (for APM tip). */
   playerActions?: number;
+  /** Max living-player unit vision tiles at match end (Vision tip). */
+  playerVisionTiles?: number;
   onMenu: () => void;
   /** Restart skirmish with the same species + difficulty. */
   onRematch: () => void;
@@ -102,6 +105,7 @@ export function showKaneEndScreen(opts: EndScreenOpts): void {
     playerGoldGathered,
     playerCrystalsGathered,
     playerActions,
+    playerVisionTiles,
     onMenu,
     onRematch,
     ignoreOnMain,
@@ -181,6 +185,7 @@ export function showKaneEndScreen(opts: EndScreenOpts): void {
   const yLosses = short ? yActions - 46 : cy + panelH * 0.782;
   const yFavoriteFaction = short ? yActions - 44 : cy + panelH * 0.784;
   const yMapSize = short ? yActions - 42 : cy + panelH * 0.787;
+  const yVision = short ? yActions - 40 : cy + panelH * 0.79;
   const yShare = short ? yActions - 39 : cy + panelH * 0.793;
   const yStep = short ? yActions - 44 : cy + panelH * 0.72;
   const yRematch = short ? yActions : cy + panelH * (stepUp ? 0.8 : 0.76);
@@ -380,6 +385,22 @@ export function showKaneEndScreen(opts: EndScreenOpts): void {
     .setAlpha(0)
     .setVisible(!!mapSizeTip);
   root.push(mapSizeTipText);
+
+  const visionTip =
+    playerVisionTiles != null ? endVisionTipLine(playerVisionTiles) : '';
+  const visionTipText = scene.add
+    .text(width / 2, yVision, visionTip, {
+      fontFamily: 'system-ui, sans-serif',
+      fontSize: '13px',
+      color: '#c8d8e8',
+      align: 'center',
+    })
+    .setOrigin(0.5)
+    .setScrollFactor(0)
+    .setDepth(202)
+    .setAlpha(0)
+    .setVisible(!!visionTip);
+  root.push(visionTipText);
 
   const difficultyTip = difficulty
     ? endDifficultyPlayedTipLine(difficulty)
@@ -895,6 +916,7 @@ export function showKaneEndScreen(opts: EndScreenOpts): void {
       lossesTipText,
       favoriteFactionTipText,
       mapSizeTipText,
+      visionTipText,
       shareBtn,
       ...(stepBtn ? [stepBtn] : []),
       rematchBtn,
