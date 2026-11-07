@@ -87,6 +87,8 @@ describe('endMapPlayedTipLine', () => {
     expect(endDifficultyPlayedTipLine('hard')).toBe(
       t('end.difficultyTip', { label: 'Hard' }),
     );
+    expect(endDifficultyPlayedTipLine('hard')).toBe('Difficulty · Hard');
+    expect(endDifficultyPlayedTipLine('hard')).toMatch(/^Difficulty \u00b7 /);
 
     expect(tip).not.toMatch(/^Best map \u00b7 /);
     expect(tip).not.toMatch(/^Last map \u00b7 /);

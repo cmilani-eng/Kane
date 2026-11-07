@@ -77,12 +77,13 @@ describe('lobbyLastDifficultyTipLine', () => {
       }),
     );
 
-    // End Difficulty tip uses spaced middot copy; distinct key/surface.
+    // End Difficulty · tip (same label payload, different prefix); distinct key/surface.
     expect(tip).not.toBe(endDifficultyPlayedTipLine('hard'));
     expect(endDifficultyPlayedTipLine('hard')).toBe(
       t('end.difficultyTip', { label }),
     );
-    expect(endDifficultyPlayedTipLine('hard')).toBe('Difficulty  ·  Hard');
+    expect(endDifficultyPlayedTipLine('hard')).toBe('Difficulty · Hard');
+    expect(endDifficultyPlayedTipLine('hard')).toMatch(/^Difficulty \u00b7 /);
     expect(endDifficultyPlayedTipLine('hard')).toContain(label);
 
     // Distinct from Last · faction same-prefix peer.
@@ -130,6 +131,8 @@ describe('lobbyLastDifficultyTipLine', () => {
     expect(endDifficultyPlayedTipLine('hard')).toBe(
       t('end.difficultyTip', { label: ptLabel }),
     );
+    expect(endDifficultyPlayedTipLine('hard')).toBe('Dificuldade · Difícil');
+    expect(endDifficultyPlayedTipLine('hard')).toMatch(/^Dificuldade \u00b7 /);
     expect(pt).not.toBe(lobbyLastFactionTipLine());
     expect(lobbyLastFactionTipLine()).toMatch(/^Última \u00b7 /);
 
@@ -154,6 +157,8 @@ describe('lobbyLastDifficultyTipLine', () => {
     expect(endDifficultyPlayedTipLine('hard')).toBe(
       t('end.difficultyTip', { label: esLabel }),
     );
+    expect(endDifficultyPlayedTipLine('hard')).toBe('Dificultad · Difícil');
+    expect(endDifficultyPlayedTipLine('hard')).toMatch(/^Dificultad \u00b7 /);
     expect(es).not.toBe(lobbyLastFactionTipLine());
     expect(lobbyLastFactionTipLine()).toMatch(/^Última \u00b7 /);
     setLocale('en-GB');
