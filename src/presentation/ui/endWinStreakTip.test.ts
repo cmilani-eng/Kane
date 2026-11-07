@@ -1,8 +1,10 @@
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { rememberMatchPrefs } from '../../database/matchPrefs';
 import { t } from '../../i18n';
-import { lobbyWinStreakTipLine } from './lobbyWinStreakTip';
+import { endBestWinStreakTipLine } from './endBestWinStreakTip';
 import { endWinStreakTipLine } from './endWinStreakTip';
+import { lobbyWinStreakTipLine } from './lobbyWinStreakTip';
+import { pauseWinStreakTipLine } from './pauseWinStreakTip';
 
 const store = new Map<string, string>();
 
@@ -32,14 +34,18 @@ describe('endWinStreakTipLine', () => {
     expect(endWinStreakTipLine()).toBeNull();
   });
 
-  it('labels Streak · n from prefs after wins, clears on loss', () => {
+  it('labels Streak · n after wins, distinct from Best streak / pause tip', () => {
     rememberMatchPrefs('weirdos', 'hard', 'crossing', 90_000, true);
     expect(endWinStreakTipLine()).toBe(t('end.winStreakTip', { n: 1 }));
     expect(endWinStreakTipLine()).toMatch(/^Streak ·/);
     rememberMatchPrefs('brutes', 'easy', 'ridge', 80_000, true);
     expect(endWinStreakTipLine()).toBe(t('end.winStreakTip', { n: 2 }));
-    // Same en copy as lobby tip; distinct i18n key / surface.
+    expect(endWinStreakTipLine()).not.toBe(endBestWinStreakTipLine());
+    expect(endBestWinStreakTipLine()).toMatch(/^Best streak ·/);
+    // Same en copy as lobby/pause tips; distinct i18n key / surface.
     expect(endWinStreakTipLine()).toBe(lobbyWinStreakTipLine());
+    expect(endWinStreakTipLine()).toBe(pauseWinStreakTipLine(2));
+    expect(pauseWinStreakTipLine(2)).toBe(t('pause.winStreakTip', { n: 2 }));
     rememberMatchPrefs('nobles', 'normal', 'gap', 70_000, false);
     expect(endWinStreakTipLine()).toBeNull();
   });

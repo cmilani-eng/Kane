@@ -51,7 +51,7 @@ This doc is the honest gate before any public preview URL.
 | End gathered tip | **OK** — end screen shows Gathered · n total deposits (gold+crystals; distinct from g/c breakdown) | `endResourcesGatheredTipLine`, `end.gatheredTip` |
 | End APM tip | **OK** — end screen shows APM · n from player commands ÷ match minutes | `playerActions`, `endApmTipLine`, `end.apmTip` |
 | End efficiency tip | **OK** — end screen shows Efficiency · pct% from kills/(kills+losses) (distinct from Kills / Lost / kill-ratio) | `endEfficiencyTipLine`, `end.efficiencyTip` |
-| End win streak tip | **OK** — end screen shows Streak · n from matchPrefs after prefs write (distinct surface from lobby streak tip) | `endWinStreakTipLine`, `end.winStreakTip`, `matchPrefs.winStreak` |
+| End win streak tip | **OK** — end screen shows Streak · n from matchPrefs.winStreak after prefs write (distinct from Best streak · / pause Streak tip) | `endWinStreakTipLine`, `end.winStreakTip`, `matchPrefs.winStreak` |
 | End games played tip | **OK** — end screen shows Played · n from matchPrefs gamesPlayed after prefs write (distinct surface from lobby Played tip / end species Played tip) | `endGamesPlayedTipLine`, `end.gamesPlayedTip`, `matchPrefs.gamesPlayed` |
 | End win rate tip | **OK** — end screen shows Win rate · n% from matchPrefs gamesWon / gamesPlayed after prefs write (distinct surface from lobby Win rate / Efficiency tips) | `endWinRateTipLine`, `end.winRateTip`, `matchPrefs.gamesWon` |
 | End wins tip | **OK** — end screen shows Wins · n from matchPrefs.gamesWon (same lobbyWinsCount; distinct surface from lobby Wins tip) | `endWinsTipLine`, `end.winsTip`, `lobbyWinsCount` |
