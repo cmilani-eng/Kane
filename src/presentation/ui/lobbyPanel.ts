@@ -25,6 +25,7 @@ import { lobbyLastMapSizeTipLine } from './lobbyLastMapSizeTip';
 import { lobbyBestDurationTipLine } from './lobbyBestDurationTip';
 import { lobbyAvgDurationTipLine } from './lobbyAvgDurationTip';
 import { lobbyAvgApmTipLine } from './lobbyAvgApmTip';
+import { lobbyBestApmTipLine } from './lobbyBestApmTip';
 import { lobbyBestMapTipLine } from './lobbyBestMapTip';
 import { lobbyLastOutcomeTipLine } from './lobbyLastOutcomeTip';
 import { lobbyFavoriteFactionTipLine } from './lobbyFavoriteFactionTip';
@@ -164,6 +165,7 @@ export function showLobbyPanel(scene: Phaser.Scene, onClose: () => void): void {
     lobbyBestDurationTipLine(),
     lobbyAvgDurationTipLine(),
     lobbyAvgApmTipLine(),
+    lobbyBestApmTipLine(),
     lobbyLastOutcomeTipLine(),
     lobbyWinStreakTipLine(),
     lobbyBestWinStreakTipLine(),
