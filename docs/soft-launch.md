@@ -91,6 +91,7 @@ This doc is the honest gate before any public preview URL.
 | Pause difficulty tip | **OK** — pause overlay shows dedicated Difficulty · name tip (distinct from setup line) | `pauseDifficultyTipLine`, `pause.difficultyTip` |
 | Pause objective tip | **OK** — pause overlay shows Objective · text from mission state (Keep/CORE or Practice destroy) | `pauseObjectiveTipLine`, `pause.objectiveTip` |
 | Pause elapsed | **OK** — pause shows dedicated Elapsed mm:ss (neutral, not supply-tint) | `pause.elapsed`, `pauseMenu` |
+| Pause match clock tip | **OK** — pause shows Time · mm:ss tip from frozen elapsed (distinct from Elapsed line wording) | `pauseMatchClockTipLine`, `pause.clockTip` |
 | Train queue ETA | **OK** — selection train line shows remaining seconds beside % | `trainRemainSec`, `sel.training*` |
 | Train queue total | **OK** — multi-slot queue line appends summed ETA (head remain + waiting full trainSecs) | `trainQueueTotalSec`, `sel.trainingWait` |
 | Train button secs | **OK** — production train browse buttons show full train duration beside Gold/Crystal | `trainFullSec`, `sel.trainSec` |
