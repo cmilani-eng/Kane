@@ -118,6 +118,8 @@ curl -sfL https://unpkg.com/<pkg>@<version>/<file> | openssl dgst -sha384 -binar
 
 Prefix the result with `sha384-`, and hash every module the file imports (three.js's `three.module.js` imports `three.core.js`). Import-map integrity is only enforced by browsers that support it (current Chromium does); others skip the check and still run the game.
 
+Missing files: `firebase.json` has no rewrites, so a path with no file returns Hosting's 404 page. A catch-all rewrite used to answer a missing `/assets/…` file with 200, the picker's HTML and a one-year `immutable` cache, which reached the browser as a script made of HTML after a deploy removed an old bundle. `games/registry.test.ts` fails if a rewrite is added that would catch a missing file, and the post-deploy check probes a missing asset. Header rules match the request path, not the status, so a 404 under `/assets/` carries the same `immutable` header (seen in the Hosting emulator). A browser could keep that 404 for a year, which only matters if a rollback brings the same hashed file back. If that becomes a concern, narrow the `/assets/**` rule to hashed file names.
+
 Not covered yet:
 
 - A Content-Security-Policy. It needs a report-only trial first, because the Firebase SDK, the game bundles and any inline scripts or styles all have to be allowed.

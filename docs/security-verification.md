@@ -7,7 +7,7 @@ The repo cannot see the live Firebase project or the GitHub settings, so some se
 | What | How | When |
 |------|-----|------|
 | Browser security headers are configured | `games/security.test.ts` reads `firebase.json` | every `npm test` |
-| The live site sends those headers | `npm run check:headers -- <site url>` fetches the hub, each game, Privacy, Terms, the manifest and a hashed asset | after every deploy to `dev` (a failure marks the run red but cannot undo the release) |
+| The live site sends those headers | `npm run check:headers -- <site url>` fetches the hub, each game (with and without the trailing slash), Privacy, Terms, the manifest and a hashed asset, and checks that a missing file under `/assets/` answers 404 | after every deploy to `dev` (a failure marks the run red but cannot undo the release) |
 | The rule files cannot be opened by accident | `src/firebase/rulesGuard.test.ts`: no `if true`, no expiring test-mode rule, every grant needs sign-in, deny-by-default catch-all, root `.read` / `.write` false | every `npm test` |
 | The rules do what the docs say | `rules-tests/` runs against the Firestore and Database emulators: signed-out access is denied, users reach only their own data, server-owned paths are closed | `npm run test:rules`, and the `rules` job on every pull request |
 
@@ -70,7 +70,7 @@ Every push to `dev` deploys to production, so a bad commit goes straight to play
 
 ## Not in this baseline
 
-A Content-Security-Policy (needs a report-only trial), App Check, a separate Hosting site for experimental games, pinning GitHub Actions to commit SHAs, and real 404s for missing hashed assets. See [firebase-hosting.md](./firebase-hosting.md).
+A Content-Security-Policy (needs a report-only trial), App Check, a separate Hosting site for experimental games, and pinning GitHub Actions to commit SHAs. See [firebase-hosting.md](./firebase-hosting.md).
 
 ## Record
 
