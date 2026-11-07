@@ -1,6 +1,7 @@
 /**
  * Pause overlay army-size tip (HUD label only).
- * Living player combat units at pause — same isMilitaryUnit filter as minimap.
+ * Living player combat units at pause — same isMilitaryUnit filter as minimap;
+ * distinct surface from minimap Army · tip.
  */
 import { t } from '../../i18n';
 
