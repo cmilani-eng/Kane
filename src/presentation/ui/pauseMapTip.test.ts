@@ -1,13 +1,20 @@
 import { describe, expect, it } from 'vitest';
-import { mapCopy, translate } from '../../i18n';
+import { mapCopy, t } from '../../i18n';
+import { endMapPlayedTipLine } from './endMapPlayedTip';
 import { pauseMapTipLine } from './pauseMapTip';
+import { pauseSpeciesMottoTipLine } from './pauseSpeciesMottoTip';
 
 describe('pauseMapTipLine', () => {
-  it('names the current skirmish map for the pause tip', () => {
-    const ridge = mapCopy('ridge').label;
-    expect(pauseMapTipLine('ridge')).toBe(
-      translate('en-GB', 'pause.map', { name: ridge }),
+  it('labels Map · name, distinct from end tip key and motto tip', () => {
+    const name = mapCopy('ridge').label;
+    expect(pauseMapTipLine('ridge')).toBe(t('pause.map', { name }));
+    expect(pauseMapTipLine('ridge')).toMatch(/^Map ·/);
+    expect(pauseMapTipLine('ridge')).toContain(name);
+    expect(pauseMapTipLine('ridge')).not.toBe(
+      pauseSpeciesMottoTipLine('nobles'),
     );
-    expect(pauseMapTipLine('ridge')).toContain(ridge);
+    // Same en copy as end tip; distinct i18n key / surface.
+    expect(pauseMapTipLine('ridge')).toBe(endMapPlayedTipLine('ridge'));
+    expect(endMapPlayedTipLine('ridge')).toBe(t('end.mapTip', { name }));
   });
 });

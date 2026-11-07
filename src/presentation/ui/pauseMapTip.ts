@@ -1,5 +1,6 @@
 /**
  * Pause overlay current-map tip (HUD label only).
+ * Format: Map · {name} — distinct surface from end Map · name tip.
  */
 import type { SkirmishMapId } from '../../data/skirmishMaps';
 import { mapCopy, t } from '../../i18n';
