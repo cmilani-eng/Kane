@@ -5,7 +5,8 @@
     "tagline": "BUILD. COMMAND. CONQUER.",
     "description": "Fantasy real-time strategy. Pick a species, build a base and crush the enemy.",
     "build": "vite",
-    "status": "live"
+    "status": "live",
+    "cover": "/covers/kane.svg"
   },
   {
     "id": "blob-evolution",
