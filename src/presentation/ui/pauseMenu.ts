@@ -41,6 +41,7 @@ import { pauseIdleWorkersTipLine } from './pauseIdleWorkersTip';
 import { pauseHeroStatusTipLine } from './pauseHeroStatusTip';
 import { pausePopulationTipLine } from './pausePopulationTip';
 import { pauseSupplyRatioTipLine } from './pauseSupplyRatioTip';
+import { pauseWinStreakTipLine } from './pauseWinStreakTip';
 import type { MapSectorId } from '../../gameplay/battlefield/mapSector';
 import type { MinimapHeroStatus } from './minimapHeroStatusTip';
 import {
@@ -83,6 +84,8 @@ export interface PauseMenuSnapshot {
   idleWorkerCount?: number;
   /** Hero Ready / Down / sector when pause opens (same minimapHeroStatus). */
   heroStatus?: MinimapHeroStatus;
+  /** Career win streak from matchPrefs when pause opens. */
+  winStreak?: number;
 }
 
 export interface PauseMenuOpts {
@@ -263,6 +266,8 @@ export class PauseMenu {
       this.snapshot.playerActions ?? 0,
       this.snapshot.elapsedMs,
     );
+    const winStreakTip =
+      pauseWinStreakTipLine(this.snapshot.winStreak ?? 0) ?? '';
     const supplyRatioTip = pauseSupplyRatioTipLine(
       this.snapshot.supplyCurrent,
       this.snapshot.supplyCap,
@@ -294,8 +299,9 @@ export class PauseMenu {
     const yIdle = short ? top + 256 : cy + panelH * 0.205;
     const yHero = short ? top + 268 : cy + panelH * 0.23;
     const yApm = short ? top + 280 : cy + panelH * 0.26;
-    const ySupplyRatio = short ? top + 292 : cy + panelH * 0.29;
-    const ySupply = short ? top + 304 : cy + panelH * 0.32;
+    const yWinStreak = short ? top + 292 : cy + panelH * 0.29;
+    const ySupplyRatio = short ? top + 304 : cy + panelH * 0.32;
+    const ySupply = short ? top + 316 : cy + panelH * 0.35;
     const clockLine = this.scene.add
       .text(cx, yClock, clockTip, {
         fontFamily: 'system-ui, sans-serif',
@@ -492,6 +498,17 @@ export class PauseMenu {
       .setOrigin(0.5)
       .setScrollFactor(0)
       .setDepth(222);
+    const winStreakLine = this.scene.add
+      .text(cx, yWinStreak, winStreakTip, {
+        fontFamily: 'system-ui, sans-serif',
+        fontSize: short ? '11px' : '12px',
+        color: '#c8d8e8',
+        align: 'center',
+      })
+      .setOrigin(0.5)
+      .setScrollFactor(0)
+      .setDepth(222)
+      .setVisible(!!winStreakTip);
     const supplyRatioLine = this.scene.add
       .text(cx, ySupplyRatio, supplyRatioTip, {
         fontFamily: 'system-ui, sans-serif',
@@ -534,12 +551,13 @@ export class PauseMenu {
       idleLine,
       heroLine,
       apmLine,
+      winStreakLine,
       supplyRatioLine,
       supplyText,
     );
 
     // Short layout: tips + setup + supply need room above buttons.
-    const btnY0 = short ? top + 328 : cy + panelH * 0.35;
+    const btnY0 = short ? top + 340 : cy + panelH * 0.38;
     const gap = short ? 36 : Math.min(44, panelH * 0.11);
     this.root.push(
       this.makeBtn(cx, btnY0, t('pause.resume'), () => {
