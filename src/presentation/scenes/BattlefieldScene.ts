@@ -132,6 +132,7 @@ import {
   createBattlefieldWorld,
   findPlayerUnitAt,
   issueMoveSelected,
+  recordPlayerAction,
   selectAllVisibleSameType,
   selectAt,
   selectInRect,
@@ -398,6 +399,7 @@ export class BattlefieldScene extends Phaser.Scene {
         const b = this.selectedBuilding;
         if (!b || b.team !== 'player' || !buildingCanRally(b)) return;
         clearBuildingRally(b);
+        recordPlayerAction(this.world);
         this.clearRallyMode();
         playSfx('ui');
       },
@@ -406,6 +408,7 @@ export class BattlefieldScene extends Phaser.Scene {
         if (!b || b.team !== 'player') return;
         const refunded = cancelQueuedTrain(this.world, b, index);
         if (refunded) {
+          recordPlayerAction(this.world);
           playSfx('ui');
           flashQueueCancel({
             unitName: refunded.unitName,
@@ -936,6 +939,7 @@ export class BattlefieldScene extends Phaser.Scene {
       const b = this.selectedBuilding;
       if (b && b.team === 'player' && buildingCanRally(b)) {
         setBuildingRally(b, wp.x, wp.y);
+        recordPlayerAction(this.world);
         playSfx('ui');
       }
       this.clearRallyMode();
@@ -1459,6 +1463,7 @@ export class BattlefieldScene extends Phaser.Scene {
       playerBuildingsLost: this.world.playerBuildingsLost,
       playerGoldGathered: this.world.playerGoldGathered,
       playerCrystalsGathered: this.world.playerCrystalsGathered,
+      playerActions: this.world.playerActions,
       reason: matchEndReason(this.world, result),
       onMenu: () => this.scene.start('Menu'),
       onRematch: () => this.rematchSameSkirmish(),

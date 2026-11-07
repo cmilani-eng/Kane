@@ -17,6 +17,7 @@ import { walletOf } from './battlefieldEconomy';
 import { canAfford, pay } from './battlefieldBuildings';
 import { damageBuilding } from './battlefieldBuildings';
 import {
+  recordPlayerAction,
   spawnUnit,
   type BattlefieldTeam,
   type BattlefieldUnit,
@@ -252,6 +253,7 @@ export function castHeroAbility(
     abilityId: ab.id,
     kind: kindForAbility(ab.id),
   });
+  if (team === 'player') recordPlayerAction(world);
   return true;
 }
 
