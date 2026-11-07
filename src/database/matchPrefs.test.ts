@@ -85,12 +85,16 @@ describe('match prefs rematch restore', () => {
   it('tracks shortest winning match duration as best', () => {
     rememberMatchPrefs('nobles', 'normal', 'crossing', 120_000, true);
     expect(loadMatchPrefs().bestDurationMs).toBe(120_000);
+    expect(loadMatchPrefs().bestDurationMapId).toBe('crossing');
     rememberMatchPrefs('brutes', 'easy', 'ridge', 90_000, true);
     expect(loadMatchPrefs().bestDurationMs).toBe(90_000);
+    expect(loadMatchPrefs().bestDurationMapId).toBe('ridge');
     rememberMatchPrefs('weirdos', 'hard', 'gap', 150_000, true);
     expect(loadMatchPrefs().bestDurationMs).toBe(90_000);
+    expect(loadMatchPrefs().bestDurationMapId).toBe('ridge');
     rememberMatchPrefs('nobles', 'normal', 'crossing', 60_000, false);
     expect(loadMatchPrefs().bestDurationMs).toBe(90_000);
+    expect(loadMatchPrefs().bestDurationMapId).toBe('ridge');
   });
 
   it('counts finished matches as gamesPlayed when outcome is set', () => {
