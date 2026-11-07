@@ -141,7 +141,7 @@ This doc is the honest gate before any public preview URL.
 | Unit armor class | **OK** — selection stats show GDD role as Armor · class (HUD label only) | `unitArmorClass`, `sel.armorClass` |
 | Unit armor class tip | **OK** — unit selection shows Armor · type tip (middot; distinct from Armor · n value tip and building Structure tip) | `unitArmorClassTip`, `sel.armorTip` |
 | Unit armor value tip | **OK** — selection panel shows Armor · n from unit catalog stats (distinct from Armor · type tip and building Structure tip) | `unitArmorValueLabel`, `sel.armorValueTip`, `unitArmorValue` |
-| Unit DPS tip | **OK** — selection stats show DPS · n from catalog dmg / attackCooldownMs (same-type only; distinct from Damage · / Rate · tips) | `unitDps`, `sel.dps` |
+| Unit DPS tip | **OK** — selection stats show DPS · n from catalog dmg / attackCooldownMs (same-type only; middot; distinct from Atk CD · / Proj · / Splash · / Range · / Damage · / Rate ·) | `unitDps`, `sel.dps` |
 | Unit heal rate tip | **OK** — selection stats show Heal · n/s from hero healHp / cooldownMs when applicable (same-type only; buildings / non-heal units omit) | `unitHealRate`, `sel.healRateTip` |
 | Unit damage tip | **OK** — selection panel shows Damage · n from catalog attack damage (same-type only; distinct from ATK chip / DPS tip) | `unitDamageLabel`, `sel.dmgTip`, `unitDamage` |
 | Unit splash radius tip | **OK** — selection stats show Splash · n from catalog AoE/blast radius in map tiles (shared splash only; omitted when none; distinct from Range · / Damage · / Atk · type) | `unitSplashRadius`, `sel.splashTip` |
