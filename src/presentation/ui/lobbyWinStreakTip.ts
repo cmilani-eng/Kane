@@ -1,6 +1,6 @@
 /**
- * Lobby tip for consecutive wins from match prefs.
- * Distinct from last-outcome Won/Lost tip.
+ * Lobby tip for current consecutive wins from match prefs.
+ * Distinct from Best streak · and from end/pause Streak tip surfaces.
  */
 import { loadMatchPrefs } from '../../database/matchPrefs';
 import { t } from '../../i18n';
