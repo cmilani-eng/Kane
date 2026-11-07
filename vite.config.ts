@@ -111,6 +111,6 @@ export default defineConfig({
   },
   test: {
     root: repoRoot,
-    include: ['src/**/*.test.ts', 'games/**/*.test.ts'],
+    include: ['src/**/*.test.ts', 'games/**/*.test.ts', 'scripts/**/*.test.ts'],
   },
 });

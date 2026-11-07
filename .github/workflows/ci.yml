@@ -1,4 +1,5 @@
-# Checks every pull request: lint, unit tests and the production build.
+# Checks every pull request: lint, unit tests, the production build and the
+# Firestore / Realtime Database security rules (against the Firebase emulators).
 # No secrets are used here; deploys live in deploy-hosting-dev.yml.
 name: CI
 
@@ -37,3 +38,35 @@ jobs:
 
       - name: Build (tsc + Vite)
         run: npm run build
+
+  rules:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Setup Node
+        uses: actions/setup-node@v7
+        with:
+          node-version: '22'
+          cache: npm
+
+      # The emulators run on the JVM, and firebase-tools 15 needs Java 21.
+      - name: Setup Java
+        uses: actions/setup-java@v6
+        with:
+          distribution: temurin
+          java-version: '21'
+
+      - name: Cache Firebase emulators
+        uses: actions/cache@v6
+        with:
+          path: ~/.cache/firebase/emulators
+          key: firebase-emulators-${{ runner.os }}-${{ hashFiles('package-lock.json') }}
+
+      - name: Install
+        run: npm ci
+
+      - name: Test security rules (emulators)
+        run: npm run test:rules

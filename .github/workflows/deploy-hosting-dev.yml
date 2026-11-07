@@ -59,3 +59,8 @@ jobs:
           VITE_FIREBASE_APP_ID: ${{ secrets.VITE_FIREBASE_APP_ID }}
           VITE_FIREBASE_USE_EMULATORS: ${{ secrets.VITE_FIREBASE_USE_EMULATORS }}
         run: npm run hosting:deploy -- --non-interactive
+
+      - name: Check live security headers
+        # Detects a bad release, it cannot stop one: the release is already live here.
+        # Retries for a few seconds in case the new headers have not reached every edge.
+        run: npm run check:headers -- https://kane-rts-game.web.app
