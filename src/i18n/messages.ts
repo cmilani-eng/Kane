@@ -126,6 +126,7 @@ export const enGB = {
   'account.emptyHint':
     '(No cloud matches yet — play a skirmish while signed in.)',
   'account.guestAnon': 'Guest (anonymous)',
+  'account.guestShort': 'Guest',
   'account.signedIn': 'Signed in',
   'account.commander': 'Commander  ·  {name}',
   'account.prefs': 'Prefs  ·  {species} / {difficulty} / {map}',
@@ -770,6 +771,7 @@ export const ptBR = {
   'account.emptyHint':
     '(Ainda não há partidas na nuvem — jogue uma escaramuça conectado.)',
   'account.guestAnon': 'Convidado (anônimo)',
+  'account.guestShort': 'Convidado',
   'account.signedIn': 'Sessão iniciada',
   'account.commander': 'Comandante  ·  {name}',
   'account.prefs': 'Ajustes  ·  {species} / {difficulty} / {map}',
@@ -1410,6 +1412,7 @@ export const es = {
   'account.emptyHint':
     '(Aún no hay partidas en la nube — juega una escaramuza con la sesión iniciada.)',
   'account.guestAnon': 'Invitado (anónimo)',
+  'account.guestShort': 'Invitado',
   'account.signedIn': 'Sesión iniciada',
   'account.commander': 'Comandante  ·  {name}',
   'account.prefs': 'Ajustes  ·  {species} / {difficulty} / {map}',

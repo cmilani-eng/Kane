@@ -12,6 +12,7 @@ import {
 } from '../../database/matchPrefs';
 import {
   getCurrentAuthUser,
+  isAnonymousGuest,
   isCloudAccount,
   subscribeAuth,
 } from '../../firebase/auth';
@@ -41,7 +42,7 @@ import { playSfx } from '../audio/sfx';
 import { hideDomHud } from '../ui/domHud';
 import { showAuthPanel, hideAuthPanel } from '../ui/authPanel';
 import { showCosmeticsPanel } from '../ui/cosmeticsPanel';
-import { showDashboardPanel } from '../ui/dashboardPanel';
+import { accountChipName, showDashboardPanel } from '../ui/dashboardPanel';
 import { showLobbyPanel } from '../ui/lobbyPanel';
 import { hideMenuGamesLink, showMenuGamesLink } from '../ui/menuGamesLink';
 import { softLaunchStatusStrip } from '../ui/softLaunchStatus';
@@ -217,8 +218,9 @@ export class MenuScene extends Phaser.Scene {
     if (!this.accountLabel) return;
     const u = getCurrentAuthUser();
     if (isCloudAccount(u) && u) {
-      const short = (u.displayName || t('menu.account')).slice(0, 12);
-      this.accountLabel.setText(short);
+      this.accountLabel.setText(
+        accountChipName(u.displayName, isAnonymousGuest(u)),
+      );
     } else {
       this.accountLabel.setText(t('menu.account'));
     }
