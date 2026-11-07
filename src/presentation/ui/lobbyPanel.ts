@@ -64,7 +64,12 @@ export function lobbyMapTipLine(): string {
   return t('lobby.mapTip', { label: map.label, blurb: map.blurb });
 }
 
-/** Selected faction motto tip — name · blurb from match prefs. */
+/**
+ * Selected faction motto tip — {name} · {blurb} (U+00B7) from match prefs.
+ * Same en copy as pause species motto tip, distinct key/surface
+ * (`lobby.factionTip` vs `pause.speciesMotto`). Distinct from Last · /
+ * Favorite · / Map · / Objective · / Difficulty · / setup line.
+ */
 export function lobbyFactionTipLine(): string {
   const s = speciesCopy(loadMatchPrefs().species);
   return t('lobby.factionTip', { name: s.name, blurb: s.motto });

@@ -74,10 +74,11 @@ describe('lobby status copy', () => {
     rememberMatchPrefs('weirdos', 'normal', 'crossing');
     setLocale('en-GB');
     const tip = lobbyFactionTipLine();
-    expect(tip).toContain('The Weirdos');
-    expect(tip).toContain('WE KNOW WHAT WE ARE DOING');
+    expect(tip).toBe('The Weirdos · WE KNOW WHAT WE ARE DOING. PROBABLY.');
+    expect(tip).toMatch(/^The Weirdos \u00b7 /);
+    expect(tip).toContain(' \u00b7 ');
     setLocale('pt-BR');
-    expect(lobbyFactionTipLine()).toContain('Os Doidos');
+    expect(lobbyFactionTipLine()).toMatch(/^Os Doidos \u00b7 /);
   });
 
   it('surfaces the selected difficulty label · blurb tip', () => {
