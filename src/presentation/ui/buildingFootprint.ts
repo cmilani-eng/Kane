@@ -1,6 +1,8 @@
 /**
  * Catalog building footprint tip in tile w×h (HUD label only).
- * Same size as placement ghost; distinct from the place-strip chip.
+ * Format: Size · {w}×{h} — middot (U+00B7).
+ * Same size as placement ghost; distinct from place-strip chip (`hud.placeFoot`),
+ * Build · time / Build · progress / Queue · / Map · size peers.
  */
 import type { BuildingTypeId } from '../../data/buildings';
 import { t } from '../../i18n';
