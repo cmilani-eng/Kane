@@ -1,8 +1,10 @@
 /**
  * Pause overlay selection-count tip (HUD label only).
  * Format: Selected · {n} — middot (U+00B7).
- * Frozen when pause opens — distinct from selection-panel flavor copy
- * and from minimap `hud.minimapSelected` / `minimapSelectedCountTipText`.
+ * Frozen when pause opens — same en/pt-BR/es copy as minimap Selected · n
+ * tip (`hud.minimapSelected` / `minimapSelectedCountTipText`), distinct
+ * key/surface (`pause.selectionCountTip`). Distinct from Army · / Pop · /
+ * Buildings · pause chips and selection-panel flavor copy.
  */
 import { t } from '../../i18n';
 
