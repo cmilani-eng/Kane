@@ -27,6 +27,7 @@ import {
 import { pauseDifficultyTipLine } from './pauseDifficultyTip';
 import { pauseMapTipLine } from './pauseMapTip';
 import { pauseSpeciesMottoTipLine } from './pauseSpeciesMottoTip';
+import { pauseSupplyRatioTipLine } from './pauseSupplyRatioTip';
 import {
   SUPPLY_TONE_COLOR,
   formatSupplyLine,
@@ -182,6 +183,10 @@ export class PauseMenu {
       map: mapCopy(this.snapshot.mapId).label,
       difficulty: difficultyCopy(this.snapshot.difficulty).label,
     });
+    const supplyRatioTip = pauseSupplyRatioTipLine(
+      this.snapshot.supplyCurrent,
+      this.snapshot.supplyCap,
+    );
     const supply = formatSupplyLine(
       this.snapshot.supplyCurrent,
       this.snapshot.supplyCap,
@@ -196,7 +201,8 @@ export class PauseMenu {
     const yDifficulty = short ? top + 112 : cy - panelH * 0.18;
     const yObjective = short ? top + 128 : cy - panelH * 0.13;
     const ySetup = short ? top + 144 : cy - panelH * 0.08;
-    const ySupply = short ? top + 160 : cy - panelH * 0.02;
+    const ySupplyRatio = short ? top + 158 : cy - panelH * 0.035;
+    const ySupply = short ? top + 172 : cy + panelH * 0.01;
     const elapsed = this.scene.add
       .text(cx, yElapsed, elapsedLine, {
         fontFamily: 'system-ui, sans-serif',
@@ -260,6 +266,16 @@ export class PauseMenu {
       .setOrigin(0.5)
       .setScrollFactor(0)
       .setDepth(222);
+    const supplyRatioLine = this.scene.add
+      .text(cx, ySupplyRatio, supplyRatioTip, {
+        fontFamily: 'system-ui, sans-serif',
+        fontSize: short ? '11px' : '12px',
+        color: '#c8d8e8',
+        align: 'center',
+      })
+      .setOrigin(0.5)
+      .setScrollFactor(0)
+      .setDepth(222);
     const supplyText = this.scene.add
       .text(cx, ySupply, supply, {
         fontFamily: 'system-ui, sans-serif',
@@ -279,11 +295,12 @@ export class PauseMenu {
       difficultyLine,
       objectiveLine,
       setup,
+      supplyRatioLine,
       supplyText,
     );
 
     // Short layout: tips + setup + supply need room above buttons.
-    const btnY0 = short ? top + 188 : cy + panelH * 0.06;
+    const btnY0 = short ? top + 196 : cy + panelH * 0.08;
     const gap = short ? 36 : Math.min(44, panelH * 0.11);
     this.root.push(
       this.makeBtn(cx, btnY0, t('pause.resume'), () => {
