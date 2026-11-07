@@ -31,6 +31,7 @@ import { endApmTipLine } from './endApmTip';
 import { endEfficiencyTipLine } from './endEfficiencyTip';
 import { endBestWinStreakTipLine } from './endBestWinStreakTip';
 import { endGamesPlayedTipLine } from './endGamesPlayedTip';
+import { endWinRateTipLine } from './endWinRateTip';
 import { endWinStreakTipLine } from './endWinStreakTip';
 import { formatMatchClock } from './matchClock';
 import { copyEndShareLine, formatEndShareLine } from './endShareLine';
@@ -170,7 +171,8 @@ export function showKaneEndScreen(opts: EndScreenOpts): void {
   const yGathered = short ? statRowY(14) : cy + panelH * 0.73;
   const yStreak = short ? statRowY(15) : cy + panelH * 0.745;
   const yBestStreak = short ? yActions - 58 : cy + panelH * 0.76;
-  const yGamesPlayed = short ? yActions - 51 : cy + panelH * 0.772;
+  const yGamesPlayed = short ? yActions - 54 : cy + panelH * 0.772;
+  const yWinRate = short ? yActions - 49 : cy + panelH * 0.778;
   const yShare = short ? yActions - 44 : cy + panelH * 0.785;
   const yStep = short ? yActions - 44 : cy + panelH * 0.72;
   const yRematch = short ? yActions : cy + panelH * (stepUp ? 0.8 : 0.76);
@@ -623,6 +625,21 @@ export function showKaneEndScreen(opts: EndScreenOpts): void {
     .setVisible(!!gamesPlayedTip);
   root.push(gamesPlayedTipText);
 
+  const winRateTip = endWinRateTipLine() ?? '';
+  const winRateTipText = scene.add
+    .text(width / 2, yWinRate, winRateTip, {
+      fontFamily: 'system-ui, sans-serif',
+      fontSize: '13px',
+      color: '#c8d8e8',
+      align: 'center',
+    })
+    .setOrigin(0.5)
+    .setScrollFactor(0)
+    .setDepth(202)
+    .setAlpha(0)
+    .setVisible(!!winRateTip);
+  root.push(winRateTipText);
+
   const shareLine = formatEndShareLine({
     win,
     speciesName: name,
@@ -805,6 +822,7 @@ export function showKaneEndScreen(opts: EndScreenOpts): void {
       streakTipText,
       bestStreakTipText,
       gamesPlayedTipText,
+      winRateTipText,
       shareBtn,
       ...(stepBtn ? [stepBtn] : []),
       rematchBtn,

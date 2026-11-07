@@ -51,6 +51,7 @@ This doc is the honest gate before any public preview URL.
 | End efficiency tip | **OK** — end screen shows Efficiency · pct% from kills/(kills+losses) (distinct from Kills / Lost / kill-ratio) | `endEfficiencyTipLine`, `end.efficiencyTip` |
 | End win streak tip | **OK** — end screen shows Streak · n from matchPrefs after prefs write (distinct surface from lobby streak tip) | `endWinStreakTipLine`, `end.winStreakTip`, `matchPrefs.winStreak` |
 | End games played tip | **OK** — end screen shows Played · n from matchPrefs gamesPlayed after prefs write (distinct surface from lobby Played tip / end species Played tip) | `endGamesPlayedTipLine`, `end.gamesPlayedTip`, `matchPrefs.gamesPlayed` |
+| End win rate tip | **OK** — end screen shows Win rate · n% from matchPrefs gamesWon / gamesPlayed after prefs write (distinct surface from lobby Win rate / Efficiency tips) | `endWinRateTipLine`, `end.winRateTip`, `matchPrefs.gamesWon` |
 | End best streak tip | **OK** — end screen shows Best streak · n from matchPrefs.bestWinStreak (distinct from current Streak and lobby Best streak) | `endBestWinStreakTipLine`, `end.bestWinStreakTip`, `matchPrefs.bestWinStreak` |
 | Worker carry | **OK** — selection panel shows live carry `n/capacity` + resource label when workers haul | `selectionPanel`, `sel.cargo` |
 | Fog last-seen | **OK** — brief fade silhouette for enemy buildings after leaving vision (~2.5s) with whole-second age label | `buildingLastSeenGhost`, `BuildingGhostAgeLabels`, `hud.ghostAge` |
