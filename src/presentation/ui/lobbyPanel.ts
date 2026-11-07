@@ -17,6 +17,7 @@ import {
 import { getLobbyStub } from '../../networking/lobbySingleton';
 import type { LobbyStatus } from '../../networking/lobbyStub';
 import { playSfx } from '../audio/sfx';
+import { lobbyLastDifficultyTipLine } from './lobbyLastDifficultyTip';
 import { lobbyLastFactionTipLine } from './lobbyLastFactionTip';
 import { lobbyLastMapTipLine } from './lobbyLastMapTip';
 
@@ -136,6 +137,7 @@ export function showLobbyPanel(scene: Phaser.Scene, onClose: () => void): void {
     lobbyFactionTipLine(),
     lobbyLastFactionTipLine(),
     lobbyDifficultyTipLine(),
+    lobbyLastDifficultyTipLine(),
     lobbyMapTipLine(),
     lobbyLastMapTipLine(),
     lobbyMatchLengthTipLine(),

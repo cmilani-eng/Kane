@@ -120,6 +120,7 @@ This doc is the honest gate before any public preview URL.
 | Lobby faction tip | **OK** — lobby shows selected species name · motto blurb from match prefs | `lobbyFactionTipLine`, `lobby.factionTip` |
 | Lobby last faction tip | **OK** — lobby shows Last · faction from match prefs (distinct from selected motto tip) | `lobbyLastFactionTipLine`, `lobby.lastFactionTip` |
 | Lobby last map tip | **OK** — lobby shows Last map · name from match prefs (distinct from selected map blurb tip) | `lobbyLastMapTipLine`, `lobby.lastMapTip` |
+| Lobby last difficulty tip | **OK** — lobby shows Last difficulty · label from match prefs (distinct from selected difficulty blurb) | `lobbyLastDifficultyTipLine`, `lobby.lastDifficultyTip` |
 | Lobby difficulty tip | **OK** — lobby shows selected difficulty label · blurb from match prefs | `lobbyDifficultyTipLine`, `lobby.difficultyTip` |
 | Lobby match length | **OK** — lobby shows ~min estimate from recent local summaries (default ~10 min) | `lobbyMatchLengthTipLine`, `lobby.matchLength*` |
 | Hub → Kane path | **OK** — picker cards link `./kane/`; hash forward + manifest start_url match `games/PATHS.md` | `hub.gamePlayHref`, `games/registry.test.ts` |
