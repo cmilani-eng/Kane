@@ -17,6 +17,7 @@ import { endDurationTipLine } from './endDurationTip';
 import { endMapPlayedTipLine } from './endMapPlayedTip';
 import { endObjectiveResultTipLine } from './endObjectiveResultTip';
 import { endSpeciesPlayedTipLine } from './endSpeciesPlayedTip';
+import { endBuildingsLostTipLine } from './endBuildingsLostTip';
 import { endBuildingsRaisedTipLine } from './endBuildingsRaisedTip';
 import { endUnitsLostTipLine } from './endUnitsLostTip';
 import { endUnitsTrainedTipLine } from './endUnitsTrainedTip';
@@ -43,6 +44,8 @@ export interface EndScreenOpts {
   playerUnitsTrained?: number;
   /** Player buildings finished from construction this match. */
   playerBuildingsRaised?: number;
+  /** Player buildings destroyed this match. */
+  playerBuildingsLost?: number;
   /** Gold deposited at Keep this match. */
   playerGoldGathered?: number;
   /** Magic crystals deposited at Keep this match. */
@@ -75,6 +78,7 @@ export function showKaneEndScreen(opts: EndScreenOpts): void {
     playerUnitLosses,
     playerUnitsTrained,
     playerBuildingsRaised,
+    playerBuildingsLost,
     playerGoldGathered,
     playerCrystalsGathered,
     onMenu,
@@ -111,7 +115,7 @@ export function showKaneEndScreen(opts: EndScreenOpts): void {
   const panelW = short ? Math.min(720, width - 24) : Math.min(440, width - 32);
   const panelH = short
     ? height - 16
-    : Math.min(stepUp ? 660 : 600, height * (stepUp ? 0.93 : 0.86));
+    : Math.min(stepUp ? 680 : 620, height * (stepUp ? 0.94 : 0.88));
   const cy = short ? height / 2 : height * 0.48;
   const top = cy - panelH / 2;
   const yBrand = short ? top + 18 : cy - panelH * 0.4;
@@ -127,14 +131,15 @@ export function showKaneEndScreen(opts: EndScreenOpts): void {
   const yTrained = short ? top + 214 : cy + panelH * 0.46;
   const yRaised = short ? top + 226 : cy + panelH * 0.5;
   const yLost = short ? top + 238 : cy + panelH * 0.54;
-  const yRecap = short ? top + 250 : cy + panelH * 0.58;
-  const yKill = short ? top + 262 : cy + panelH * 0.62;
-  const yGathered = short ? top + 274 : cy + panelH * 0.66;
-  const yShare = short ? top + (stepUp ? 262 : 280) : cy + panelH * 0.68;
-  const yStep = short ? top + panelH - 72 : cy + panelH * 0.64;
+  const yBldLost = short ? top + 250 : cy + panelH * 0.58;
+  const yRecap = short ? top + 262 : cy + panelH * 0.62;
+  const yKill = short ? top + 274 : cy + panelH * 0.66;
+  const yGathered = short ? top + 286 : cy + panelH * 0.7;
+  const yShare = short ? top + (stepUp ? 274 : 292) : cy + panelH * 0.72;
+  const yStep = short ? top + panelH - 72 : cy + panelH * 0.68;
   const yActions = top + panelH - (short ? 28 : 36);
-  const yRematch = short ? yActions : cy + panelH * (stepUp ? 0.74 : 0.7);
-  const yMenu = short ? yActions : cy + panelH * (stepUp ? 0.86 : 0.8);
+  const yRematch = short ? yActions : cy + panelH * (stepUp ? 0.76 : 0.72);
+  const yMenu = short ? yActions : cy + panelH * (stepUp ? 0.88 : 0.82);
   const xRematch = short ? width / 2 - 110 : width / 2;
   const xMenu = short ? width / 2 + 110 : width / 2;
   const panel = scene.add
@@ -400,6 +405,24 @@ export function showKaneEndScreen(opts: EndScreenOpts): void {
     .setVisible(!!lostTip);
   root.push(lostTipText);
 
+  const bldLostTip =
+    playerBuildingsLost != null
+      ? endBuildingsLostTipLine(playerBuildingsLost)
+      : '';
+  const bldLostTipText = scene.add
+    .text(width / 2, yBldLost, bldLostTip, {
+      fontFamily: 'system-ui, sans-serif',
+      fontSize: '13px',
+      color: '#c8d8e8',
+      align: 'center',
+    })
+    .setOrigin(0.5)
+    .setScrollFactor(0)
+    .setDepth(202)
+    .setAlpha(0)
+    .setVisible(!!bldLostTip);
+  root.push(bldLostTipText);
+
   const hasRecap =
     playerUnitsLeft != null && playerBuildingsLeft != null;
   const recapText = hasRecap
@@ -631,6 +654,7 @@ export function showKaneEndScreen(opts: EndScreenOpts): void {
       trainedTipText,
       raisedTipText,
       lostTipText,
+      bldLostTipText,
       recap,
       killRatio,
       gathered,
