@@ -80,6 +80,7 @@ This doc is the honest gate before any public preview URL.
 | Pause APM tip | **OK** — pause shows APM · n from playerActions ÷ elapsed minutes at open (same math as end APM tip) | `pauseApmTipLine`, `matchApm`, `pause.apmTip` |
 | Pause camera sector tip | **OK** — pause shows Cam · sector from view-center 3×3 frozen at open (distinct from minimap Cam mark) | `pauseCameraSectorTipLine`, `pause.camSectorTip` |
 | Pause fog age tip | **OK** — pause shows Fog · ns from last fog scout reveal age frozen at open (distinct from minimap sector age) | `pauseFogAgeTipLine`, `pause.fogAgeTip`, `lastFogRevealAgeMs` |
+| Pause fog coverage tip | **OK** — pause shows Fog · pct% from explored fog cells frozen at open (same fogExploredCoveragePct as minimap; distinct from Fog · ns age tip) | `pauseFogCoverageTipLine`, `pause.fogCoverageTip`, `fogExploredCoveragePct` |
 | Pause selection count tip | **OK** — pause shows Selected · n from living player units selected at open (distinct from sel.selected flavor) | `pauseSelectionCountTipLine`, `pause.selectionCountTip` |
 | Pause resource stock tip | **OK** — pause shows Gold · n · Crystal · m from player wallet frozen at open (distinct from stock strip) | `pauseStockTipLine`, `pause.stockTip` |
 | CORE hold banner secs | **OK** — victory-hold banner shows remaining seconds clearly (Ns + “left”) | `coreVictoryBanner`, `banner.coreHold*` |
