@@ -1,5 +1,6 @@
 /**
  * Catalog train gold-cost tip (HUD label only).
+ * Format: Gold · {n} — distinct from inline sel.goldCost chip.
  */
 import { getUnitType, type UnitTypeId } from '../../data/units';
 import { t } from '../../i18n';
