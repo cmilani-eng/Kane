@@ -101,6 +101,18 @@ describe('match prefs rematch restore', () => {
     expect(loadMatchPrefs().gamesWon).toBe(2);
   });
 
+  it('tallies finished matches per species in speciesPlays', () => {
+    rememberMatchPrefs('nobles', 'normal', 'crossing', 90_000, true);
+    expect(loadMatchPrefs().speciesPlays?.nobles).toBe(1);
+    rememberMatchPrefs('brutes', 'easy', 'ridge', 60_000, false);
+    expect(loadMatchPrefs().speciesPlays?.brutes).toBe(1);
+    rememberMatchPrefs('brutes', 'hard', 'gap', 70_000, true);
+    expect(loadMatchPrefs().speciesPlays?.brutes).toBe(2);
+    rememberMatchPrefs('weirdos', 'easy', 'crossing');
+    expect(loadMatchPrefs().speciesPlays?.brutes).toBe(2);
+    expect(loadMatchPrefs().speciesPlays?.nobles).toBe(1);
+  });
+
   it('defaults map to crossing when older prefs omit mapId', () => {
     store.set(
       'kane.matchPrefs.v1',

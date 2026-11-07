@@ -34,6 +34,8 @@ export interface MatchPrefs {
   gamesPlayed?: number;
   /** Finished wins counted on this device. Optional for older prefs. */
   gamesWon?: number;
+  /** Finished matches per species on this device. Optional for older prefs. */
+  speciesPlays?: Partial<Record<SpeciesId, number>>;
 }
 
 function canStore(): boolean {
@@ -72,6 +74,23 @@ function normalizeGamesWon(v: unknown): number | undefined {
   return Math.floor(v);
 }
 
+function normalizeSpeciesPlays(
+  v: unknown,
+): Partial<Record<SpeciesId, number>> | undefined {
+  if (v == null || typeof v !== 'object') return undefined;
+  const raw = v as Record<string, unknown>;
+  const out: Partial<Record<SpeciesId, number>> = {};
+  let any = false;
+  for (const id of SPECIES_IDS) {
+    const n = normalizeGamesPlayed(raw[id]);
+    if (n != null) {
+      out[id] = n;
+      any = true;
+    }
+  }
+  return any ? out : undefined;
+}
+
 export function defaultMatchPrefs(): MatchPrefs {
   return {
     version: 1,
@@ -94,6 +113,7 @@ export function loadMatchPrefs(): MatchPrefs {
     const bestDurationMs = normalizeDurationMs(parsed.bestDurationMs);
     const gamesPlayed = normalizeGamesPlayed(parsed.gamesPlayed);
     const gamesWon = normalizeGamesWon(parsed.gamesWon);
+    const speciesPlays = normalizeSpeciesPlays(parsed.speciesPlays);
     return {
       version: 1,
       species: isSpeciesId(parsed.species) ? parsed.species : base.species,
@@ -105,6 +125,7 @@ export function loadMatchPrefs(): MatchPrefs {
       ...(bestDurationMs != null ? { bestDurationMs } : {}),
       ...(gamesPlayed != null ? { gamesPlayed } : {}),
       ...(gamesWon != null ? { gamesWon } : {}),
+      ...(speciesPlays != null ? { speciesPlays } : {}),
     };
   } catch {
     return base;
@@ -120,6 +141,7 @@ export function saveMatchPrefs(prefs: MatchPrefs): void {
     const bestDurationMs = normalizeDurationMs(prefs.bestDurationMs);
     const gamesPlayed = normalizeGamesPlayed(prefs.gamesPlayed);
     const gamesWon = normalizeGamesWon(prefs.gamesWon);
+    const speciesPlays = normalizeSpeciesPlays(prefs.speciesPlays);
     const next: MatchPrefs = {
       version: 1,
       species: isSpeciesId(prefs.species) ? prefs.species : 'nobles',
@@ -131,6 +153,7 @@ export function saveMatchPrefs(prefs: MatchPrefs): void {
       ...(bestDurationMs != null ? { bestDurationMs } : {}),
       ...(gamesPlayed != null ? { gamesPlayed } : {}),
       ...(gamesWon != null ? { gamesWon } : {}),
+      ...(speciesPlays != null ? { speciesPlays } : {}),
     };
     localStorage.setItem(KEY, JSON.stringify(next));
   } catch {
@@ -173,9 +196,12 @@ export function rememberMatchPrefs(
   }
   let gamesPlayed = prev.gamesPlayed;
   let gamesWon = prev.gamesWon;
+  let speciesPlays = prev.speciesPlays;
   if (lastWon != null) {
     gamesPlayed = (prev.gamesPlayed ?? 0) + 1;
     if (lastWon) gamesWon = (prev.gamesWon ?? 0) + 1;
+    speciesPlays = { ...(prev.speciesPlays ?? {}) };
+    speciesPlays[species] = (speciesPlays[species] ?? 0) + 1;
   }
   saveMatchPrefs({
     version: 1,
@@ -188,6 +214,7 @@ export function rememberMatchPrefs(
     ...(bestDurationMs != null ? { bestDurationMs } : {}),
     ...(gamesPlayed != null ? { gamesPlayed } : {}),
     ...(gamesWon != null ? { gamesWon } : {}),
+    ...(speciesPlays != null ? { speciesPlays } : {}),
   });
   // Cloud sync when signed in (best-effort; guest stays local).
   // Cloud profile still stores species + difficulty only.

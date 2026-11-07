@@ -140,6 +140,7 @@ This doc is the honest gate before any public preview URL.
 | Lobby map tip | **OK** — lobby shows selected map label · blurb tip from match prefs | `lobbyMapTipLine`, `lobby.mapTip` |
 | Lobby faction tip | **OK** — lobby shows selected species name · motto blurb from match prefs | `lobbyFactionTipLine`, `lobby.factionTip` |
 | Lobby last faction tip | **OK** — lobby shows Last · faction from match prefs (distinct from selected motto tip) | `lobbyLastFactionTipLine`, `lobby.lastFactionTip` |
+| Lobby favorite faction tip | **OK** — lobby shows Favorite · name from most-played species in match prefs speciesPlays (distinct from last-faction) | `lobbyFavoriteFactionTipLine`, `lobby.favoriteFactionTip`, `matchPrefs.speciesPlays` |
 | Lobby last map tip | **OK** — lobby shows Last map · name from match prefs (distinct from selected map blurb tip) | `lobbyLastMapTipLine`, `lobby.lastMapTip` |
 | Lobby last difficulty tip | **OK** — lobby shows Last difficulty · label from match prefs (distinct from selected difficulty blurb) | `lobbyLastDifficultyTipLine`, `lobby.lastDifficultyTip` |
 | Lobby last duration tip | **OK** — lobby shows Last · mm:ss from match prefs lastDurationMs (distinct from avg match-length tip) | `lobbyLastDurationTipLine`, `lobby.lastDurationTip`, `matchPrefs.lastDurationMs` |
