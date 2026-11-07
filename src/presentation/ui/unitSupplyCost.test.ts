@@ -8,11 +8,13 @@ import {
 } from './unitSupplyCost';
 
 describe('unitSupplyCost', () => {
-  it('labels one supply slot per unit', () => {
+  it('labels Supply · n (one slot per unit; same-type only)', () => {
     expect(unitSupplyCost('scavenger')).toBe(UNIT_SUPPLY_COST);
     expect(unitSupplyCostLabel('scavenger')).toBe(
       t('sel.supplyTip', { n: UNIT_SUPPLY_COST }),
     );
+    expect(unitSupplyCostLabel('scavenger')).toMatch(/^Supply ·/);
+    expect(unitSupplyCostLabel('scavenger')).toBe('Supply · 1');
     expect(sharedUnitSupplyCostLabel(['scavenger', 'scavenger'])).toBe(
       t('sel.supplyTip', { n: UNIT_SUPPLY_COST }),
     );
