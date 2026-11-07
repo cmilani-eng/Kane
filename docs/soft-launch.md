@@ -148,7 +148,7 @@ This doc is the honest gate before any public preview URL.
 | Unit range tip | **OK** — selection stats show Range · n from catalog attack reach in map tiles (same-type only; middot; distinct from Proj · / Atk CD · / Splash · / Speed · / Sight ·) | `unitAttackRangeLabel`, `sel.rangeTip` |
 | Unit speed tip | **OK** — selection stats show Speed · n from catalog move speed in tiles/s (same-type only; middot; distinct from Proj · / Atk CD · / Splash · / Pace · cadence / Rate · atk tips) | `unitMoveSpeed`, `sel.speedTip` |
 | Unit move cadence tip | **OK** — selection stats show Slow/Medium/Fast pace bucket (shared pace; distinct from numeric speed tip) | `unitMoveCadence`, `sel.moveCadenceTip` |
-| Unit vision tip | **OK** — selection stats show Sight · n from catalog vision radius in map tiles (same-type only; distinct from Range ·; buildings omit) | `unitVision`, `sel.visionTip` |
+| Unit vision tip | **OK** — selection stats show Sight · n from catalog vision radius in map tiles (same-type only; middot; distinct from Range · / Speed · / Proj · / Vision · minimap+end; buildings omit) | `unitVisionLabel`, `sel.visionTip` |
 | Unit HP max tip | **OK** — selection stats show Max HP · n from catalog max HP (same-type only; distinct from HP · pct% / HP chip) | `unitHpMax`, `sel.hpMaxTip` |
 | Selection HP ratio tip | **OK** — selection stats show live health as HP · pct% from current/max (distinct from Max HP · / HP chip) | `selectionHpRatioTipLine`, `sel.hpRatioTip` |
 | Building HP max tip | **OK** — building selection stats show Max HP · n from catalog (shared `sel.hpMaxTip`; distinct from HP · pct%) | `buildingHpMax`, `sel.hpMaxTip` |
