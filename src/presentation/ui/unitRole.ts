@@ -1,6 +1,8 @@
 /**
  * Coarse catalog duty role tip (HUD label only).
- * Distinct from armor class (infantry/ranged/…): worker · combat · hero.
+ * Format: Role · {worker|combat|hero} — middot (U+00B7).
+ * Distinct from Armor · class (`sel.armorTip`) / Species · / Name ·;
+ * selection-only tip (no lobby/pause twin).
  */
 import { getUnitType, type UnitTypeId } from '../../data/units';
 import { t } from '../../i18n';
