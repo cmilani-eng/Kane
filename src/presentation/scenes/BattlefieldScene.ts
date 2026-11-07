@@ -795,6 +795,7 @@ export class BattlefieldScene extends Phaser.Scene {
       gamesPlayed: matchPrefs.gamesPlayed ?? 0,
       gamesWon: matchPrefs.gamesWon ?? 0,
       avgDurationMs: matchPrefs.avgDurationMs,
+      avgApm: matchPrefs.avgApm,
       favoriteFactionId: favoriteFactionId(),
     };
   }
