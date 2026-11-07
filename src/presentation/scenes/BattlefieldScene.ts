@@ -1481,7 +1481,13 @@ export class BattlefieldScene extends Phaser.Scene {
     const won = result === 'victory';
     const species = this.world.speciesId;
     const difficulty = this.world.aiDifficulty;
-    rememberMatchPrefs(species, difficulty, this.world.mapId, durationMs);
+    rememberMatchPrefs(
+      species,
+      difficulty,
+      this.world.mapId,
+      durationMs,
+      won,
+    );
     void writeMatchSummaryFunctionStub({
       id,
       version: 1,

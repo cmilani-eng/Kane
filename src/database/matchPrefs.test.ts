@@ -50,6 +50,15 @@ describe('match prefs rematch restore', () => {
     expect(loadMatchPrefs().species).toBe('brutes');
   });
 
+  it('persists last match outcome and keeps it when omitted on later remember', () => {
+    rememberMatchPrefs('nobles', 'normal', 'crossing', 90_000, true);
+    expect(loadMatchPrefs().lastWon).toBe(true);
+    rememberMatchPrefs('brutes', 'hard', 'ridge', 60_000, false);
+    expect(loadMatchPrefs().lastWon).toBe(false);
+    rememberMatchPrefs('weirdos', 'easy', 'gap');
+    expect(loadMatchPrefs().lastWon).toBe(false);
+  });
+
   it('defaults map to crossing when older prefs omit mapId', () => {
     store.set(
       'kane.matchPrefs.v1',
