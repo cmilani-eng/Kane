@@ -4,14 +4,15 @@ import { mapCopy, translate } from '../../i18n';
 describe('pause map line', () => {
   it('names the selected skirmish map in each locale', () => {
     const ridge = mapCopy('ridge').label;
+    // U+00B7 middot with single spaces — same as other HUD tips.
     expect(translate('en-GB', 'pause.map', { name: ridge })).toBe(
-      'Map  ·  Ridge',
+      'Map \u00b7 Ridge',
     );
     expect(translate('pt-BR', 'pause.map', { name: 'Cume' })).toBe(
-      'Mapa  ·  Cume',
+      'Mapa \u00b7 Cume',
     );
     expect(translate('es', 'pause.map', { name: 'Cresta' })).toBe(
-      'Mapa  ·  Cresta',
+      'Mapa \u00b7 Cresta',
     );
   });
 
