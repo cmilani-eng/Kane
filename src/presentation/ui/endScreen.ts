@@ -25,6 +25,7 @@ import { endBuildingsLostTipLine } from './endBuildingsLostTip';
 import { endBuildingsRaisedTipLine } from './endBuildingsRaisedTip';
 import { endUnitsLostTipLine } from './endUnitsLostTip';
 import { endUnitsTrainedTipLine } from './endUnitsTrainedTip';
+import { endResourcesGatheredTipLine } from './endResourcesGatheredTip';
 import { formatMatchClock } from './matchClock';
 import { copyEndShareLine, formatEndShareLine } from './endShareLine';
 
@@ -490,24 +491,24 @@ export function showKaneEndScreen(opts: EndScreenOpts): void {
 
   const hasGathered =
     playerGoldGathered != null && playerCrystalsGathered != null;
-  const gatheredText = hasGathered
-    ? t('end.gathered', {
-        gold: playerGoldGathered,
-        crystals: playerCrystalsGathered,
-      })
+  const gatheredTip = hasGathered
+    ? endResourcesGatheredTipLine(
+        playerGoldGathered,
+        playerCrystalsGathered,
+      )
     : '';
   const gathered = scene.add
-    .text(statX(11), yGathered, gatheredText, {
+    .text(statX(11), yGathered, gatheredTip, {
       fontFamily: 'system-ui, sans-serif',
       fontSize: '13px',
-      color: '#a8bdd0',
+      color: '#c8d8e8',
       align: 'center',
     })
     .setOrigin(0.5)
     .setScrollFactor(0)
     .setDepth(202)
     .setAlpha(0)
-    .setVisible(hasGathered);
+    .setVisible(!!gatheredTip);
   root.push(gathered);
 
   const shareLine = formatEndShareLine({
