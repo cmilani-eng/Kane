@@ -47,10 +47,8 @@ import {
   minimapCameraSectorAt,
   minimapCameraSectorTipText,
 } from './minimapCameraSectorTip';
-import {
-  minimapPingSectorTipAlpha,
-  minimapPingSectorTipText,
-} from './minimapPingSectorTip';
+import { minimapPingAgeTip } from './minimapPingAgeTip';
+import { minimapPingSectorTipAlpha } from './minimapPingSectorTip';
 import { minimapFogRevealAgeTip } from './minimapFogRevealAgeTip';
 import { minimapScoutPulseLabelAlpha } from './minimapScoutPulseLabel';
 
@@ -544,7 +542,7 @@ export class Minimap {
         this.mapY + this.mapH - 2,
       );
       this.pingSectorLabel
-        .setText(minimapPingSectorTipText(pingHint.sector))
+        .setText(minimapPingAgeTip(pingHint.sector, pingHint.lifeMs))
         .setPosition(x, y - 6)
         .setAlpha(minimapPingSectorTipAlpha(pingHint.lifeMs))
         .setVisible(true);
