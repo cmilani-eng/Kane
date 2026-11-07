@@ -143,7 +143,7 @@ This doc is the honest gate before any public preview URL.
 | Unit projectile speed tip | **OK** — selection stats show Proj · n from COMBAT.projectileSpeed in tiles/s for ranged units (shared when match; melee omit; distinct from Atk CD · / Splash · / Atk · type) | `unitProjectileSpeed`, `sel.projTip` |
 | Unit attack type tip | **OK** — selection stats show Atk · Melee/Ranged tip from catalog reach (middot; same-type or shared type; distinct from Damage · / DPS · / Atk CD ·) | `unitAttackType`, `sel.atkTypeTip` |
 | Unit range tip | **OK** — selection stats show Range · n from catalog attack reach in map tiles (same-type only; distinct from Sight tip) | `unitAttackRangeLabel`, `sel.rangeTip` |
-| Unit speed tip | **OK** — selection stats show Speed · n from catalog move speed in tiles/s (same-type only; distinct from Pace · cadence / Rate · atk tips) | `unitMoveSpeed`, `sel.speedTip` |
+| Unit speed tip | **OK** — selection stats show Speed · n from catalog move speed in tiles/s (same-type only; middot; distinct from Proj · / Atk CD · / Splash · / Pace · cadence / Rate · atk tips) | `unitMoveSpeed`, `sel.speedTip` |
 | Unit move cadence tip | **OK** — selection stats show Slow/Medium/Fast pace bucket (shared pace; distinct from numeric speed tip) | `unitMoveCadence`, `sel.moveCadenceTip` |
 | Unit vision tip | **OK** — selection stats show Sight · n from catalog vision radius in map tiles (same-type only; distinct from Range ·; buildings omit) | `unitVision`, `sel.visionTip` |
 | Unit HP max tip | **OK** — selection stats show Max HP · n from catalog max HP (same-type only; distinct from HP · pct% / HP chip) | `unitHpMax`, `sel.hpMaxTip` |
