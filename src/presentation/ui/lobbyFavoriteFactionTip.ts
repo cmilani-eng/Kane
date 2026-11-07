@@ -1,6 +1,6 @@
 /**
  * Lobby tip for the most-played faction from match prefs speciesPlays.
- * Distinct from last-faction / selected motto tips.
+ * Distinct from last-faction / selected motto and from end Favorite tip surface.
  */
 import { loadMatchPrefs } from '../../database/matchPrefs';
 import type { SpeciesId } from '../../data/speciesStub';
