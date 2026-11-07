@@ -24,6 +24,11 @@ export const flags = {
   /** Prefer email Auth for Account / cloud progression when SDK ready. */
   firebaseAuthUi: true as const,
   /**
+   * Friend lobby. Host and join only make local codes until live sync exists, so the
+   * Friends entry stays hidden while this is false.
+   */
+  multiplayerLobby: false as const,
+  /**
    * Point stubs at local emulator ports (see `firebase.json`).
    * Also overridable via `VITE_FIREBASE_USE_EMULATORS=true`.
    * Local SP Vite path works with this false.

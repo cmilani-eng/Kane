@@ -43,6 +43,7 @@ import { hideDomHud } from '../ui/domHud';
 import { showAuthPanel, hideAuthPanel } from '../ui/authPanel';
 import { showCosmeticsPanel } from '../ui/cosmeticsPanel';
 import { accountChipName, showDashboardPanel } from '../ui/dashboardPanel';
+import { flags } from '../../config/flags';
 import { showLobbyPanel } from '../ui/lobbyPanel';
 import { isPhoneSizedScreen } from '../ui/screenSize';
 import { hideMenuGamesLink, showMenuGamesLink } from '../ui/menuGamesLink';
@@ -482,17 +483,19 @@ export class MenuScene extends Phaser.Scene {
     const chipsY = narrow ? strip.y + strip.height + 22 : height * 0.855;
 
     const gap = Math.min(88, width * 0.22);
-    this.add
-      .text(width / 2 - gap * 1.5, chipsY, t('menu.friends'), {
-        fontFamily: 'system-ui, sans-serif',
-        fontSize: '12px',
-        color: '#fff8e8',
-        backgroundColor: '#2a3a50',
-        padding: { x: 10, y: 7 },
-      })
-      .setOrigin(0.5)
-      .setInteractive({ useHandCursor: true })
-      .on('pointerup', () => this.openLobby());
+    if (flags.multiplayerLobby) {
+      this.add
+        .text(width / 2 - gap * 1.5, chipsY, t('menu.friends'), {
+          fontFamily: 'system-ui, sans-serif',
+          fontSize: '12px',
+          color: '#fff8e8',
+          backgroundColor: '#2a3a50',
+          padding: { x: 10, y: 7 },
+        })
+        .setOrigin(0.5)
+        .setInteractive({ useHandCursor: true })
+        .on('pointerup', () => this.openLobby());
+    }
     this.add
       .text(width / 2 - gap * 0.5, chipsY, t('menu.cosmetics'), {
         fontFamily: 'system-ui, sans-serif',
@@ -714,7 +717,9 @@ export class MenuScene extends Phaser.Scene {
         .setInteractive({ useHandCursor: true })
         .on('pointerup', onClick);
 
-    link(width / 2 - gap * 1.5, t('menu.friends'), '#2a3a50', () => this.openLobby());
+    if (flags.multiplayerLobby) {
+      link(width / 2 - gap * 1.5, t('menu.friends'), '#2a3a50', () => this.openLobby());
+    }
     link(width / 2 - gap * 0.5, t('menu.cosmetics'), '#3a4a2a', () => this.openCosmetics());
     this.accountLabel = link(width / 2 + gap * 0.5, t('menu.account'), '#3a2a4a', () =>
       this.openAccount(),
