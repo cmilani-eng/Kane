@@ -172,7 +172,7 @@ This doc is the honest gate before any public preview URL.
 | Unit species tip | **OK** — selection stats show species name tip when selection shares one species | `unitSpeciesTip`, `sel.speciesTip` |
 | Unit name tip | **OK** — selection stats show catalog unit name tip when selection shares one type | `unitNameTip`, `sel.nameTip` |
 | Build remain secs | **OK** — incomplete building selection shows construction seconds beside % | `buildRemainSec`, `sel.buildingPct` |
-| Building build progress tip | **OK** — incomplete building selection stats show Build · pct% · secs left (distinct from catalog Build ns / Building pct line) | `buildingBuildProgress`, `sel.buildProgressTip` |
+| Building build progress tip | **OK** — incomplete building selection stats show Build · pct% · secs left (U+00B7) from live buildPct + remainSec; en/pt-BR/es middot; distinct from catalog Build · {n}s / Building pct · secs / Size · / Queue · | `buildingBuildProgress`, `sel.buildProgressTip` |
 | Place build secs | **OK** — place-mode cost strip shows full construction seconds when buildMs > 0 | `hud.placeBuild`, `setPlacementCost` |
 | Stock supply tone | **OK** — DOM stock strip uses the same near-cap/full supply tones as HUD/pause | `stockStrip`, `supplyTone` |
 | Stock income rate | **OK** — stock strip shows rolling gold/crystal +n/m from deposits (60s window) | `stockIncome`, `hud.incomeRate`, `matchUiStore` |
