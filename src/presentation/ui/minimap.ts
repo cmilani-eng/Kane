@@ -51,10 +51,8 @@ import {
   minimapPingSectorTipAlpha,
   minimapPingSectorTipText,
 } from './minimapPingSectorTip';
-import {
-  minimapScoutPulseLabelAlpha,
-  minimapScoutPulseLabelText,
-} from './minimapScoutPulseLabel';
+import { minimapFogRevealAgeTip } from './minimapFogRevealAgeTip';
+import { minimapScoutPulseLabelAlpha } from './minimapScoutPulseLabel';
 
 export class Minimap {
   private readonly scene: Phaser.Scene;
@@ -525,7 +523,7 @@ export class Minimap {
         this.mapY + this.mapH - 2,
       );
       this.scoutLabel
-        .setText(minimapScoutPulseLabelText(hint.sector))
+        .setText(minimapFogRevealAgeTip(hint.sector, hint.lifeMs))
         .setPosition(x, y - 6)
         .setAlpha(minimapScoutPulseLabelAlpha(hint.lifeMs))
         .setVisible(true);
