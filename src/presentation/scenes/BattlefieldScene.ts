@@ -19,6 +19,7 @@ import {
   type AiDifficultyId,
 } from '../../gameplay/battlefield/aiDifficulty';
 import { nextMapAfterHardWin } from '../../gameplay/battlefield/mapStepUp';
+import { nextSpeciesAfterCatalog } from '../../gameplay/battlefield/speciesStepUp';
 import { nextDifficultyAfterWin } from '../../gameplay/battlefield/practiceStepUp';
 import {
   createAiState,
@@ -1456,12 +1457,28 @@ export class BattlefieldScene extends Phaser.Scene {
         return next ? () => this.stepUpDifficulty(next) : undefined;
       })(),
       onTryMap: (() => {
+        const speciesNext = nextSpeciesAfterCatalog(
+          result === 'victory',
+          this.world.aiDifficulty,
+          this.world.mapId,
+          this.world.speciesId,
+        );
+        if (speciesNext) return undefined;
         const next = nextMapAfterHardWin(
           result === 'victory',
           this.world.aiDifficulty,
           this.world.mapId,
         );
         return next ? () => this.stepUpMap(next) : undefined;
+      })(),
+      onTrySpecies: (() => {
+        const next = nextSpeciesAfterCatalog(
+          result === 'victory',
+          this.world.aiDifficulty,
+          this.world.mapId,
+          this.world.speciesId,
+        );
+        return next ? () => this.stepUpSpecies(next.species, next.mapId) : undefined;
       })(),
       ignoreOnMain: (objs) => {
         this.cameras.main.ignore(this.add.container(0, 0, objs));
@@ -1476,6 +1493,18 @@ export class BattlefieldScene extends Phaser.Scene {
     recordGameStarted(species);
     void maybeRecordCloudGameStarted(species);
     this.scene.start('Battlefield', { species, difficulty, mapId });
+  }
+
+  /** Hard win on the last map — next species at Hard on the first map. */
+  private stepUpSpecies(species: SpeciesId, mapId: SkirmishMapId): void {
+    rememberMatchPrefs(species, 'hard', mapId);
+    recordGameStarted(species);
+    void maybeRecordCloudGameStarted(species);
+    this.scene.start('Battlefield', {
+      species,
+      difficulty: 'hard',
+      mapId,
+    });
   }
 
   /** Hard win — same species and difficulty, the next map in the catalog. */
