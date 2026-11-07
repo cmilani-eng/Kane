@@ -49,6 +49,7 @@ import { pauseWinRateTipLine } from './pauseWinRateTip';
 import { pauseAvgApmTipLine } from './pauseAvgApmTip';
 import { pauseBestApmTipLine } from './pauseBestApmTip';
 import { pauseAvgDurationTipLine } from './pauseAvgDurationTip';
+import { pauseBestMapTipLine } from './pauseBestMapTip';
 import { pauseBestWinStreakTipLine } from './pauseBestWinStreakTip';
 import { pauseLossStreakTipLine } from './pauseLossStreakTip';
 import { pauseWinStreakTipLine } from './pauseWinStreakTip';
@@ -106,6 +107,8 @@ export interface PauseMenuSnapshot {
   gamesWon?: number;
   /** Career average match duration from matchPrefs when pause opens. */
   avgDurationMs?: number;
+  /** Map of shortest winning match from matchPrefs when pause opens. */
+  bestDurationMapId?: SkirmishMapId;
   /** Career average APM from matchPrefs when pause opens. */
   avgApm?: number;
   /** Career peak APM from matchPrefs when pause opens. */
@@ -314,6 +317,8 @@ export class PauseMenu {
       ) ?? '';
     const avgDurationTip =
       pauseAvgDurationTipLine(this.snapshot.avgDurationMs) ?? '';
+    const bestMapTip =
+      pauseBestMapTipLine(this.snapshot.bestDurationMapId) ?? '';
     const avgApmTip = pauseAvgApmTipLine(this.snapshot.avgApm) ?? '';
     const bestApmTip = pauseBestApmTipLine(this.snapshot.bestApm) ?? '';
     const favoriteFactionTip =
@@ -358,12 +363,13 @@ export class PauseMenu {
     const yWins = short ? top + 340 : cy + panelH * 0.39;
     const yWinRate = short ? top + 352 : cy + panelH * 0.415;
     const yAvgDuration = short ? top + 364 : cy + panelH * 0.44;
-    const yAvgApm = short ? top + 376 : cy + panelH * 0.465;
-    const yBestApm = short ? top + 388 : cy + panelH * 0.49;
-    const yFavoriteFaction = short ? top + 400 : cy + panelH * 0.515;
-    const ySpeciesPlays = short ? top + 412 : cy + panelH * 0.54;
-    const ySupplyRatio = short ? top + 424 : cy + panelH * 0.565;
-    const ySupply = short ? top + 436 : cy + panelH * 0.59;
+    const yBestMap = short ? top + 376 : cy + panelH * 0.465;
+    const yAvgApm = short ? top + 388 : cy + panelH * 0.49;
+    const yBestApm = short ? top + 400 : cy + panelH * 0.515;
+    const yFavoriteFaction = short ? top + 412 : cy + panelH * 0.54;
+    const ySpeciesPlays = short ? top + 424 : cy + panelH * 0.565;
+    const ySupplyRatio = short ? top + 436 : cy + panelH * 0.59;
+    const ySupply = short ? top + 448 : cy + panelH * 0.615;
     const clockLine = this.scene.add
       .text(cx, yClock, clockTip, {
         fontFamily: 'system-ui, sans-serif',
@@ -637,6 +643,17 @@ export class PauseMenu {
       .setScrollFactor(0)
       .setDepth(222)
       .setVisible(!!avgDurationTip);
+    const bestMapLine = this.scene.add
+      .text(cx, yBestMap, bestMapTip, {
+        fontFamily: 'system-ui, sans-serif',
+        fontSize: short ? '11px' : '12px',
+        color: '#c8d8e8',
+        align: 'center',
+      })
+      .setOrigin(0.5)
+      .setScrollFactor(0)
+      .setDepth(222)
+      .setVisible(!!bestMapTip);
     const avgApmLine = this.scene.add
       .text(cx, yAvgApm, avgApmTip, {
         fontFamily: 'system-ui, sans-serif',
@@ -730,6 +747,7 @@ export class PauseMenu {
       winsLine,
       winRateLine,
       avgDurationLine,
+      bestMapLine,
       avgApmLine,
       bestApmLine,
       favoriteFactionLine,
@@ -739,7 +757,7 @@ export class PauseMenu {
     );
 
     // Short layout: tips + setup + supply need room above buttons.
-    const btnY0 = short ? top + 460 : cy + panelH * 0.62;
+    const btnY0 = short ? top + 472 : cy + panelH * 0.64;
     const gap = short ? 36 : Math.min(44, panelH * 0.11);
     this.root.push(
       this.makeBtn(cx, btnY0, t('pause.resume'), () => {
