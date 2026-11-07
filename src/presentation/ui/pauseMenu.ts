@@ -29,6 +29,7 @@ import { pauseDifficultyTipLine } from './pauseDifficultyTip';
 import { pauseFogAgeTipLine } from './pauseFogAgeTip';
 import { pauseMapTipLine } from './pauseMapTip';
 import { pauseSpeciesMottoTipLine } from './pauseSpeciesMottoTip';
+import { pauseMatchClockTipLine } from './pauseMatchClockTip';
 import { pauseSelectionCountTipLine } from './pauseSelectionCountTip';
 import { pauseStockTipLine } from './pauseStockTip';
 import { pauseSupplyRatioTipLine } from './pauseSupplyRatioTip';
@@ -183,8 +184,10 @@ export class PauseMenu {
       .setScrollFactor(0)
       .setDepth(222);
 
-    const clock = formatMatchClock(this.snapshot.elapsedMs);
-    const elapsedLine = t('pause.elapsed', { clock });
+    const clockTip = pauseMatchClockTipLine(this.snapshot.elapsedMs);
+    const elapsedLine = t('pause.elapsed', {
+      clock: formatMatchClock(this.snapshot.elapsedMs),
+    });
     const mapTip = pauseMapTipLine(this.snapshot.mapId);
     const mottoTip = pauseSpeciesMottoTipLine(this.snapshot.speciesId);
     const difficultyTip = pauseDifficultyTipLine(this.snapshot.difficulty);
@@ -225,18 +228,29 @@ export class PauseMenu {
       this.snapshot.supplyCurrent,
       this.snapshot.supplyCap,
     );
-    const yElapsed = short ? top + 58 : cy - panelH * 0.34;
-    const yMap = short ? top + 76 : cy - panelH * 0.28;
-    const yMotto = short ? top + 94 : cy - panelH * 0.23;
-    const yDifficulty = short ? top + 112 : cy - panelH * 0.18;
-    const yObjective = short ? top + 128 : cy - panelH * 0.13;
-    const yCamSector = short ? top + 142 : cy - panelH * 0.085;
-    const yFogAge = short ? top + 154 : cy - panelH * 0.055;
-    const ySelection = short ? top + 166 : cy - panelH * 0.025;
-    const yStock = short ? top + 178 : cy + panelH * 0.01;
-    const ySetup = short ? top + 190 : cy + panelH * 0.045;
-    const ySupplyRatio = short ? top + 204 : cy + panelH * 0.085;
-    const ySupply = short ? top + 218 : cy + panelH * 0.125;
+    const yClock = short ? top + 58 : cy - panelH * 0.34;
+    const yElapsed = short ? top + 74 : cy - panelH * 0.3;
+    const yMap = short ? top + 90 : cy - panelH * 0.255;
+    const yMotto = short ? top + 106 : cy - panelH * 0.21;
+    const yDifficulty = short ? top + 122 : cy - panelH * 0.165;
+    const yObjective = short ? top + 136 : cy - panelH * 0.12;
+    const yCamSector = short ? top + 148 : cy - panelH * 0.08;
+    const yFogAge = short ? top + 160 : cy - panelH * 0.05;
+    const ySelection = short ? top + 172 : cy - panelH * 0.02;
+    const yStock = short ? top + 184 : cy + panelH * 0.015;
+    const ySetup = short ? top + 196 : cy + panelH * 0.05;
+    const ySupplyRatio = short ? top + 210 : cy + panelH * 0.09;
+    const ySupply = short ? top + 224 : cy + panelH * 0.13;
+    const clockLine = this.scene.add
+      .text(cx, yClock, clockTip, {
+        fontFamily: 'system-ui, sans-serif',
+        fontSize: short ? '12px' : '13px',
+        color: '#c8d8e8',
+        align: 'center',
+      })
+      .setOrigin(0.5)
+      .setScrollFactor(0)
+      .setDepth(222);
     const elapsed = this.scene.add
       .text(cx, yElapsed, elapsedLine, {
         fontFamily: 'system-ui, sans-serif',
@@ -365,6 +379,7 @@ export class PauseMenu {
     this.root.push(
       title,
       brand,
+      clockLine,
       elapsed,
       mapLine,
       motto,
@@ -380,7 +395,7 @@ export class PauseMenu {
     );
 
     // Short layout: tips + setup + supply need room above buttons.
-    const btnY0 = short ? top + 240 : cy + panelH * 0.18;
+    const btnY0 = short ? top + 248 : cy + panelH * 0.19;
     const gap = short ? 36 : Math.min(44, panelH * 0.11);
     this.root.push(
       this.makeBtn(cx, btnY0, t('pause.resume'), () => {
