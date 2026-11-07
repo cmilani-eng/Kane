@@ -167,6 +167,8 @@ export interface BattlefieldWorld {
   playerUnitKills: number;
   /** Player units removed this match (losses). */
   playerUnitLosses: number;
+  /** Player units finished from production queues this match. */
+  playerUnitsTrained: number;
   /** Gold deposited at Keep this match (player gathers). */
   playerGoldGathered: number;
   /** Magic crystals deposited at Keep this match (player gathers). */
@@ -452,6 +454,7 @@ export function createBattlefieldWorld(
     enemyCoreHoldMs: 0,
     playerUnitKills: 0,
     playerUnitLosses: 0,
+    playerUnitsTrained: 0,
     playerGoldGathered: 0,
     playerCrystalsGathered: 0,
     underAttackAlert: {

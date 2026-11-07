@@ -16,6 +16,7 @@ import { endDurationTipLine } from './endDurationTip';
 import { endMapPlayedTipLine } from './endMapPlayedTip';
 import { endObjectiveResultTipLine } from './endObjectiveResultTip';
 import { endSpeciesPlayedTipLine } from './endSpeciesPlayedTip';
+import { endUnitsTrainedTipLine } from './endUnitsTrainedTip';
 import { formatMatchClock } from './matchClock';
 import { copyEndShareLine, formatEndShareLine } from './endShareLine';
 
@@ -35,6 +36,8 @@ export interface EndScreenOpts {
   playerUnitKills?: number;
   /** Player units lost this match (tallied on remove). */
   playerUnitLosses?: number;
+  /** Player units finished from production this match. */
+  playerUnitsTrained?: number;
   /** Gold deposited at Keep this match. */
   playerGoldGathered?: number;
   /** Magic crystals deposited at Keep this match. */
@@ -63,6 +66,7 @@ export function showKaneEndScreen(opts: EndScreenOpts): void {
     playerBuildingsLeft,
     playerUnitKills,
     playerUnitLosses,
+    playerUnitsTrained,
     playerGoldGathered,
     playerCrystalsGathered,
     onMenu,
@@ -105,9 +109,10 @@ export function showKaneEndScreen(opts: EndScreenOpts): void {
   const yMap = short ? top + 174 : cy + panelH * 0.32;
   const yDifficulty = short ? top + 188 : cy + panelH * 0.37;
   const yObjective = short ? top + 202 : cy + panelH * 0.42;
-  const yRecap = short ? top + 216 : cy + panelH * 0.47;
-  const yKill = short ? top + 230 : cy + panelH * 0.52;
-  const yGathered = short ? top + 244 : cy + panelH * 0.57;
+  const yTrained = short ? top + 214 : cy + panelH * 0.46;
+  const yRecap = short ? top + 226 : cy + panelH * 0.5;
+  const yKill = short ? top + 238 : cy + panelH * 0.54;
+  const yGathered = short ? top + 250 : cy + panelH * 0.58;
   const yShare = short ? top + (stepUp ? 238 : 256) : cy + panelH * 0.6;
   const yStep = short ? top + panelH - 72 : cy + panelH * 0.58;
   const yActions = top + panelH - (short ? 28 : 36);
@@ -324,6 +329,24 @@ export function showKaneEndScreen(opts: EndScreenOpts): void {
     .setVisible(!!objectiveTip);
   root.push(objectiveTipText);
 
+  const trainedTip =
+    playerUnitsTrained != null
+      ? endUnitsTrainedTipLine(playerUnitsTrained)
+      : '';
+  const trainedTipText = scene.add
+    .text(width / 2, yTrained, trainedTip, {
+      fontFamily: 'system-ui, sans-serif',
+      fontSize: '13px',
+      color: '#c8d8e8',
+      align: 'center',
+    })
+    .setOrigin(0.5)
+    .setScrollFactor(0)
+    .setDepth(202)
+    .setAlpha(0)
+    .setVisible(!!trainedTip);
+  root.push(trainedTipText);
+
   const hasRecap =
     playerUnitsLeft != null && playerBuildingsLeft != null;
   const recapText = hasRecap
@@ -537,6 +560,7 @@ export function showKaneEndScreen(opts: EndScreenOpts): void {
       mapTipText,
       difficultyTipText,
       objectiveTipText,
+      trainedTipText,
       recap,
       killRatio,
       gathered,

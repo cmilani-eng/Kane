@@ -124,6 +124,7 @@ function spawnNear(
     color: def.canGather ? palette.accent : palette.primary,
     speciesId: def.speciesId,
   });
+  if (b.team === 'player') world.playerUnitsTrained += 1;
   // March newly trained units to the building rally point.
   const dx = b.rallyX - u.x;
   const dy = b.rallyY - u.y;
