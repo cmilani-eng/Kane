@@ -114,7 +114,7 @@ This doc is the honest gate before any public preview URL.
 | Account match clock | **OK** — dashboard (and Stats) recent matches show duration as mm:ss | `dashboardPanel`, `formatMatchClock`, `stats.matchLine` |
 | Account prefs map tip | **OK** — account prefs block echoes last/selected map flavor (`menu.mapTip`) | `accountProfileText`, `menu.mapTip` |
 | Account prefs faction tip | **OK** — account prefs block echoes last/selected faction name · motto (`lobby.factionTip`) | `accountProfileText`, `lobby.factionTip` |
-| Pause map name | **OK** — pause overlay shows dedicated `Map · {name}` tip plus setup line with clock + supply | `pauseMapTipLine`, `pause.map`, `pause.setup` |
+| Pause map name | **OK** — pause overlay shows Map · name from match mapId (distinct surface from end Map tip; setup line still has clock + supply) | `pauseMapTipLine`, `pause.map`, `pause.setup` |
 | Pause species motto | **OK** — pause overlay shows species name · motto tip under the map tip | `pauseSpeciesMottoTipLine`, `pause.speciesMotto` |
 | Pause difficulty tip | **OK** — pause overlay shows dedicated Difficulty · name tip (distinct from setup line) | `pauseDifficultyTipLine`, `pause.difficultyTip` |
 | Pause objective tip | **OK** — pause overlay shows Objective · text from mission state (Keep/CORE or Practice destroy) | `pauseObjectiveTipLine`, `pause.objectiveTip` |
