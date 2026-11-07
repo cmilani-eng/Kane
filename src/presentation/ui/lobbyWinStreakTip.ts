@@ -1,6 +1,9 @@
 /**
  * Lobby tip for current consecutive wins from match prefs.
- * Distinct from Best streak · and from end/pause Streak tip surfaces.
+ * Format: Streak · {n} — middot (U+00B7).
+ * Same en/pt-BR/es copy as pause/end Streak · tips; distinct i18n key /
+ * surface. Distinct from Loss streak · / Record · / Wins · /
+ * Best streak · peers.
  */
 import { loadMatchPrefs } from '../../database/matchPrefs';
 import { t } from '../../i18n';

@@ -1,7 +1,10 @@
 /**
  * End-screen current win-streak tip (HUD label only).
- * Career consecutive wins from match prefs after result write — distinct from
- * Best streak · and pause/lobby Streak tip surfaces.
+ * Format: Streak · {n} — middot (U+00B7).
+ * Career consecutive wins from match prefs after result write — same
+ * en/pt-BR/es copy as pause/lobby Streak · tips; distinct i18n key /
+ * surface. Distinct from Loss streak · / Win rate · / Best APM · /
+ * Best streak · / Record · peers.
  */
 import { loadMatchPrefs } from '../../database/matchPrefs';
 import { t } from '../../i18n';
