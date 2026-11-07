@@ -8,6 +8,7 @@ import { BRAND } from '../../config/brand';
 import type { SkirmishMapId } from '../../data/skirmishMaps';
 import type { SpeciesId } from '../../data/speciesStub';
 import type { AiDifficultyId } from '../../gameplay/battlefield/aiDifficulty';
+import { nextMapAfterHardWin } from '../../gameplay/battlefield/mapStepUp';
 import { nextDifficultyAfterWin } from '../../gameplay/battlefield/practiceStepUp';
 import { difficultyCopy, mapCopy, speciesName, t } from '../../i18n';
 import { playEndFanfare, playSfx } from '../audio/sfx';
@@ -53,6 +54,8 @@ export interface EndScreenOpts {
   difficulty?: AiDifficultyId;
   /** Start the next difficulty with the same species and map. Hidden on a loss and after Hard. */
   onStepUp?: () => void;
+  /** Start the next map at Hard with the same species. Shown only after a Hard win. */
+  onTryMap?: () => void;
   /** Ignore these objects on the zoomed main camera. */
   ignoreOnMain: (objs: Phaser.GameObjects.GameObject[]) => void;
   /** Optional end reason for subtitle copy. */
@@ -80,9 +83,16 @@ export function showKaneEndScreen(opts: EndScreenOpts): void {
     reason,
     difficulty,
     onStepUp,
+    onTryMap,
   } = opts;
   const stepUpTo = nextDifficultyAfterWin(win, difficulty ?? 'normal');
-  const stepUp = stepUpTo != null && onStepUp != null;
+  const mapOffer =
+    mapId != null
+      ? nextMapAfterHardWin(win, difficulty ?? 'normal', mapId)
+      : null;
+  const stepUp =
+    (stepUpTo != null && onStepUp != null) ||
+    (mapOffer != null && onTryMap != null);
   const { width, height } = scene.scale;
   const accent = win ? 0xf0c75e : 0xe85a5a;
   const accentHex = win ? '#f0c75e' : '#e87a7a';
@@ -498,14 +508,29 @@ export function showKaneEndScreen(opts: EndScreenOpts): void {
     });
   root.push(shareBtn);
 
+  const offer =
+    stepUpTo && onStepUp
+      ? {
+          label: t('end.tryEasy', {
+            difficulty: difficultyCopy(stepUpTo).label,
+          }),
+          go: onStepUp,
+        }
+      : mapOffer && onTryMap
+        ? {
+            label: t('end.tryMap', { map: mapCopy(mapOffer).label }),
+            go: onTryMap,
+          }
+        : null;
+
   let stepBtn: Phaser.GameObjects.Text | null = null;
-  if (stepUpTo && onStepUp) {
-    const startNext = onStepUp;
+  if (offer) {
+    const go = offer.go;
     const btn = scene.add
       .text(
         width / 2,
         yStep,
-        t('end.tryEasy', { difficulty: difficultyCopy(stepUpTo).label }),
+        offer.label,
         {
           fontFamily: 'Georgia, "Times New Roman", serif',
           fontSize: short ? '16px' : '18px',
@@ -523,7 +548,7 @@ export function showKaneEndScreen(opts: EndScreenOpts): void {
       .on('pointerout', () => btn.setStyle({ color: '#fff8e8' }))
       .on('pointerup', () => {
         playSfx('ui');
-        startNext();
+        go();
       });
     stepBtn = btn;
     root.push(btn);
