@@ -129,8 +129,8 @@ This doc is the honest gate before any public preview URL.
 | Train queue total | **OK** — multi-slot queue line appends summed ETA (head remain + waiting full trainSecs) | `trainQueueTotalSec`, `sel.trainingWait` |
 | Train button secs | **OK** — production train browse buttons show full train duration beside Gold/Crystal | `trainFullSec`, `sel.trainSec` |
 | Unit armor class | **OK** — selection stats show GDD role as Armor · class (HUD label only) | `unitArmorClass`, `sel.armorClass` |
-| Unit armor class tip | **OK** — unit selection shows Armor · class tip (distinct from building Structure tip) | `unitArmorClassTip`, `sel.armorTip` |
-| Unit armor value tip | **OK** — selection panel shows Armor · n from unit catalog stats (distinct from Armor · class role tip and building Structure tip) | `unitArmorValueLabel`, `sel.armorValueTip`, `unitArmorValue` |
+| Unit armor class tip | **OK** — unit selection shows Armor · type tip (middot; distinct from Armor · n value tip and building Structure tip) | `unitArmorClassTip`, `sel.armorTip` |
+| Unit armor value tip | **OK** — selection panel shows Armor · n from unit catalog stats (distinct from Armor · type tip and building Structure tip) | `unitArmorValueLabel`, `sel.armorValueTip`, `unitArmorValue` |
 | Unit DPS tip | **OK** — selection stats show DPS · n from catalog dmg / attackCooldownMs (same-type only; distinct from Damage · / Rate · tips) | `unitDps`, `sel.dps` |
 | Unit heal rate tip | **OK** — selection stats show Heal · n/s from hero healHp / cooldownMs when applicable (same-type only; buildings / non-heal units omit) | `unitHealRate`, `sel.healRateTip` |
 | Unit damage tip | **OK** — selection panel shows Damage · n from catalog attack damage (same-type only; distinct from ATK chip / DPS tip) | `unitDamageLabel`, `sel.dmgTip`, `unitDamage` |
@@ -142,7 +142,7 @@ This doc is the honest gate before any public preview URL.
 | Unit HP max tip | **OK** — selection stats show Max HP · n from catalog max HP (same-type only; distinct from HP · pct% / HP chip) | `unitHpMax`, `sel.hpMaxTip` |
 | Selection HP ratio tip | **OK** — selection stats show live health as HP · pct% from current/max (distinct from Max HP · / HP chip) | `selectionHpRatioTipLine`, `sel.hpRatioTip` |
 | Building HP max tip | **OK** — building selection stats show Max HP · n from catalog (shared `sel.hpMaxTip`; distinct from HP · pct%) | `buildingHpMax`, `sel.hpMaxTip` |
-| Building armor tip | **OK** — building selection stats show Armor · Structure tip | `buildingArmorClass`, `sel.armor.structure` |
+| Building armor tip | **OK** — building selection stats show Armor · Structure tip (middot via `sel.armorTip`; distinct from Armor · n / unit type tips) | `buildingArmorClass`, `sel.armorTip`, `sel.armor.structure` |
 | Building build cost tip | **OK** — building selection stats show catalog Build gold/crystal cost (omitted for free halls) | `buildingBuildCost`, `sel.buildCost*` |
 | Building build time tip | **OK** — building selection stats show catalog Build · {n}s (distinct from live remain / progress) | `buildingBuildTime`, `sel.buildTimeTip` |
 | Building footprint tip | **OK** — building selection stats show Size · w×h tiles (same as placement ghost) | `buildingFootprint`, `sel.footprintTip` |
