@@ -156,7 +156,7 @@ This doc is the honest gate before any public preview URL.
 | Building HP max tip | **OK** — building selection stats show Max HP · n from catalog (shared `sel.hpMaxTip`; distinct from HP · pct%) | `buildingHpMax`, `sel.hpMaxTip` |
 | Building armor tip | **OK** — building selection stats show Armor · Structure tip (middot via `sel.armorTip`; distinct from Armor · n / unit type tips) | `buildingArmorClass`, `sel.armorTip`, `sel.armor.structure` |
 | Building build cost tip | **OK** — building selection stats show catalog Build gold/crystal cost (omitted for free halls) | `buildingBuildCost`, `sel.buildCost*` |
-| Building build time tip | **OK** — building selection stats show catalog Build · {n}s (distinct from live remain / progress) | `buildingBuildTime`, `sel.buildTimeTip` |
+| Building build time tip | **OK** — building selection stats show catalog Build · {n}s (U+00B7) from ceil(buildMs); en/pt-BR/es middot; distinct from Build · pct% · secs left / Building pct · secs / place · Ns / Size · / Queue · | `buildingBuildTime`, `sel.buildTimeTip` |
 | Building footprint tip | **OK** — building selection stats show Size · w×h tiles (same as placement ghost) | `buildingFootprint`, `sel.footprintTip` |
 | Building prod queue tip | **OK** — building selection stats show Queue · empty / Training · name / Queue · n when the type can train (distinct from live queue ETA row) | `buildingProdQueue`, `sel.prodQueueEmpty`, `sel.prodQueueTraining`, `sel.prodQueueTip` |
 | Unit gather yield tip | **OK** — worker selection stats show Yield · n per trip (U+00B7) from catalog haul; en/pt-BR/es middot; distinct from Cargo · n max / Cargo · empty / Cargo · n/cap / carry line | `unitGatherYield`, `sel.yieldTip` |
