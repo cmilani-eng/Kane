@@ -1,6 +1,7 @@
 /**
- * Minimap army count tip (presentation only).
- * Living player combat units — distinct from HUD Army button / idle army chip.
+ * Minimap army size tip (presentation only).
+ * Living player combat units — distinct surface from pause Army · tip,
+ * HUD Army button, and idle army chip.
  */
 import { t } from '../../i18n';
 
