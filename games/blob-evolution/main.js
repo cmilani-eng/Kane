@@ -534,9 +534,7 @@ function evolvePlayer(stage){
 }
 function canEat(predatorStage,preyStage){
   if(predatorStage===4) return preyStage<4;
-  // Two Purples fuse: the eater evolves into Blue.
-  if(predatorStage===0) return preyStage===0;
-  return preyStage===predatorStage-1;
+  return predatorStage>0 && preyStage===predatorStage-1;
 }
 function removeBot(bot){
   if(!bot.alive)return;
@@ -681,7 +679,7 @@ function updateBots(dt){
       let target=null, best=Infinity;
       const consider=(obj,dist)=>{ if(dist<best){best=dist;target=obj;} };
       if(botCanEatPlayer(b)) consider(player,distance(b,player));
-      for(const other of bots){ if(other===b||!other.alive)continue; if(canEat(b.stage,other.stage) || (b.stage===4&&other.stage===4) || (b.stage===0&&other.stage===0)) {const d=distance(b,other); if(d<best)consider(other,d);} }
+      for(const other of bots){ if(other===b||!other.alive)continue; if(canEat(b.stage,other.stage) || (b.stage===4&&other.stage===4)) {const d=distance(b,other); if(d<best)consider(other,d);} }
       if(target && best<13){b.tx=target.x;b.tz=target.z;}
       else if(Math.random()<.72){b.tx=THREE.MathUtils.clamp(b.x+(Math.random()-.5)*15,-ARENA+2,ARENA-2);b.tz=THREE.MathUtils.clamp(b.z+(Math.random()-.5)*15,-ARENA+2,ARENA-2);}
     }
@@ -715,7 +713,7 @@ function resolveCollisions(){
     for(let j=i+1;j<bots.length;j++){
       const b=bots[j];if(!b.alive)continue;
       if(distance(a,b)<(a.radius+b.radius)*.78){
-        if((a.stage===4&&b.stage===4)||(a.stage===0&&b.stage===0)){ if(Math.random()<.5)botEat(a,b);else botEat(b,a); }
+        if(a.stage===4&&b.stage===4){ if(Math.random()<.5)botEat(a,b);else botEat(b,a); }
         else if(canEat(a.stage,b.stage))botEat(a,b);
         else if(canEat(b.stage,a.stage))botEat(b,a);
       }
