@@ -64,7 +64,13 @@ export function lobbyFactionTipLine(): string {
   return t('lobby.factionTip', { name: s.name, blurb: s.motto });
 }
 
-/** Selected difficulty tip — label · blurb from match prefs. */
+/**
+ * Selected difficulty tip — {label} · {blurb} (U+00B7) from match prefs.
+ * Blurb may itself contain middots. Same en copy as pause difficulty tip,
+ * distinct key/surface (`lobby.difficultyTip` vs `pause.difficultyTip`).
+ * Distinct from Last difficulty · / end Difficulty · (double-spaced) /
+ * setup line / Objective · / Map · / species motto.
+ */
 export function lobbyDifficultyTipLine(): string {
   const d = difficultyCopy(loadMatchPrefs().difficulty);
   return t('lobby.difficultyTip', { label: d.label, blurb: d.blurb });

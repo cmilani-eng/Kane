@@ -83,10 +83,11 @@ describe('lobby status copy', () => {
     rememberMatchPrefs('nobles', 'easy', 'ridge');
     setLocale('en-GB');
     const tip = lobbyDifficultyTipLine();
-    expect(tip).toContain('Easy');
-    expect(tip).toContain('Newcomer cushion');
+    expect(tip).toBe('Easy · Newcomer cushion · slow AI eco');
+    expect(tip).toMatch(/^Easy \u00b7 /);
+    expect(tip).toContain(' \u00b7 ');
     setLocale('es');
-    expect(lobbyDifficultyTipLine()).toMatch(/Fácil|Margen/);
+    expect(lobbyDifficultyTipLine()).toMatch(/^Fácil \u00b7 /);
   });
 
   it('estimates match length from recent summaries, else a default tip', () => {
