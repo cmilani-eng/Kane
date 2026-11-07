@@ -93,6 +93,7 @@ This doc is the honest gate before any public preview URL.
 | Building build time tip | **OK** — building selection stats show catalog full build seconds (distinct from live remain) | `buildingBuildTime`, `sel.buildTimeTip` |
 | Building footprint tip | **OK** — building selection stats show Size · w×h tiles (same as placement ghost) | `buildingFootprint`, `sel.footprintTip` |
 | Unit gather yield tip | **OK** — worker selection stats show Yield · n per trip from catalog haul (distinct from cargo / node tip) | `unitGatherYield`, `sel.yieldTip` |
+| Unit cargo capacity tip | **OK** — worker selection stats show Cargo · n max (distinct from Yield per trip / live cargo line) | `unitCargoCapacity`, `sel.cargoCapTip` |
 | Unit atk CD tip | **OK** — selection stats show catalog attack cooldown in seconds (same-type only) | `unitAttackCooldown`, `sel.atkCdTip` |
 | Unit supply tip | **OK** — selection stats show catalog supply cost (1 slot per unit, same-type only) | `unitSupplyCost`, `sel.supplyTip` |
 | Unit train gold tip | **OK** — selection stats show catalog train gold cost (same-type only) | `unitTrainGold`, `sel.trainGoldTip` |
