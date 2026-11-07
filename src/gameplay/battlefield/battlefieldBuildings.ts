@@ -204,6 +204,7 @@ export function damageBuilding(
   b.hp -= amount;
   if (b.hp <= 0) {
     spawnDeathFx(world, b.x, b.y, b.radius, b.color);
+    if (b.team === 'player') world.playerBuildingsLost += 1;
     const i = world.buildings.findIndex((x) => x.id === b.id);
     if (i >= 0) world.buildings.splice(i, 1);
     syncStockpilesFromBuildings(world);
