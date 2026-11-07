@@ -37,6 +37,10 @@ import {
 import { sharedUnitDamageLabel, unitDamageLabel } from './unitDamage';
 import { sharedUnitDpsLabel, unitDpsLabel } from './unitDps';
 import {
+  sharedUnitCargoCapacityLabel,
+  unitCargoCapacityLabel,
+} from './unitCargoCapacity';
+import {
   sharedUnitGatherYieldLabel,
   unitGatherYieldLabel,
 } from './unitGatherYield';
@@ -237,6 +241,8 @@ export type SelectionPanelView =
       nameTip: string | null;
       /** Catalog gather-yield tip when selection shares worker haul capacity. */
       yieldTip: string | null;
+      /** Catalog cargo-capacity tip when selection shares worker max haul. */
+      cargoCapTip: string | null;
       tags: string[];
       attackMoveArmed: boolean;
       /** Present when a single player hero is selected. */
@@ -679,6 +685,7 @@ export function buildSelectionView(
       speciesTip: unitSpeciesTipLabel(u.speciesId),
       nameTip: unitNameTipLabel(u.typeId),
       yieldTip: unitGatherYieldLabel(u.typeId),
+      cargoCapTip: unitCargoCapacityLabel(u.typeId),
       tags,
       attackMoveArmed,
       abilities: heroAbilityViews(world, u),
@@ -749,6 +756,7 @@ export function buildSelectionView(
     speciesTip: sharedUnitSpeciesTipLabel(alive.map((u) => u.speciesId)),
     nameTip: sharedUnitNameTipLabel(alive.map((u) => u.typeId)),
     yieldTip: sharedUnitGatherYieldLabel(alive.map((u) => u.typeId)),
+    cargoCapTip: sharedUnitCargoCapacityLabel(alive.map((u) => u.typeId)),
     tags,
     attackMoveArmed,
     abilities: null,
@@ -1031,6 +1039,7 @@ function structureSignature(view: SelectionPanelView): string {
       view.speciesTip ?? '',
       view.nameTip ?? '',
       view.yieldTip ?? '',
+      view.cargoCapTip ?? '',
       view.tags.join(','),
       view.attackMoveArmed ? 1 : 0,
       abs,
@@ -1591,6 +1600,9 @@ export function renderSelectionPanel(view: SelectionPanelView): boolean {
         }
         if (view.yieldTip) {
           bits.push(`<span>${escapeHtml(view.yieldTip)}</span>`);
+        }
+        if (view.cargoCapTip) {
+          bits.push(`<span>${escapeHtml(view.cargoCapTip)}</span>`);
         }
         if (view.armorClass) {
           bits.push(`<span>${escapeHtml(view.armorClass)}</span>`);
