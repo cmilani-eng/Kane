@@ -9,6 +9,7 @@ import type { SkirmishMapId } from '../../data/skirmishMaps';
 import type { SpeciesId } from '../../data/speciesStub';
 import type { AiDifficultyId } from '../../gameplay/battlefield/aiDifficulty';
 import { nextMapAfterHardWin } from '../../gameplay/battlefield/mapStepUp';
+import { nextSpeciesAfterCatalog } from '../../gameplay/battlefield/speciesStepUp';
 import { nextDifficultyAfterWin } from '../../gameplay/battlefield/practiceStepUp';
 import { difficultyCopy, mapCopy, speciesName, t } from '../../i18n';
 import { playEndFanfare, playSfx } from '../audio/sfx';
@@ -59,6 +60,8 @@ export interface EndScreenOpts {
   onStepUp?: () => void;
   /** Start the next map at Hard with the same species. Shown only after a Hard win. */
   onTryMap?: () => void;
+  /** Start the next species at Hard on the first map. Shown after a Hard win on the last map. */
+  onTrySpecies?: () => void;
   /** Ignore these objects on the zoomed main camera. */
   ignoreOnMain: (objs: Phaser.GameObjects.GameObject[]) => void;
   /** Optional end reason for subtitle copy. */
@@ -88,14 +91,20 @@ export function showKaneEndScreen(opts: EndScreenOpts): void {
     difficulty,
     onStepUp,
     onTryMap,
+    onTrySpecies,
   } = opts;
   const stepUpTo = nextDifficultyAfterWin(win, difficulty ?? 'normal');
-  const mapOffer =
+  const speciesOffer =
     mapId != null
+      ? nextSpeciesAfterCatalog(win, difficulty ?? 'normal', mapId, speciesId)
+      : null;
+  const mapOffer =
+    speciesOffer == null && mapId != null
       ? nextMapAfterHardWin(win, difficulty ?? 'normal', mapId)
       : null;
   const stepUp =
     (stepUpTo != null && onStepUp != null) ||
+    (speciesOffer != null && onTrySpecies != null) ||
     (mapOffer != null && onTryMap != null);
   const { width, height } = scene.scale;
   const accent = win ? 0xf0c75e : 0xe85a5a;
@@ -539,12 +548,19 @@ export function showKaneEndScreen(opts: EndScreenOpts): void {
           }),
           go: onStepUp,
         }
-      : mapOffer && onTryMap
+      : speciesOffer && onTrySpecies
         ? {
-            label: t('end.tryMap', { map: mapCopy(mapOffer).label }),
-            go: onTryMap,
+            label: t('end.trySpecies', {
+              species: speciesName(speciesOffer.species),
+            }),
+            go: onTrySpecies,
           }
-        : null;
+        : mapOffer && onTryMap
+          ? {
+              label: t('end.tryMap', { map: mapCopy(mapOffer).label }),
+              go: onTryMap,
+            }
+          : null;
 
   let stepBtn: Phaser.GameObjects.Text | null = null;
   if (offer) {
