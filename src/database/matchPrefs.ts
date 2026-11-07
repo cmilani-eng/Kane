@@ -34,6 +34,10 @@ export interface MatchPrefs {
   bestDurationMs?: number;
   /** Map of the shortest winning match. Optional for older prefs. */
   bestDurationMapId?: SkirmishMapId;
+  /** Career average finished-match duration (ms). Optional for older prefs. */
+  avgDurationMs?: number;
+  /** Finished matches counted into avgDurationMs. Optional for older prefs. */
+  avgDurationSamples?: number;
   /** Finished matches counted on this device. Optional for older prefs. */
   gamesPlayed?: number;
   /** Finished wins counted on this device. Optional for older prefs. */
@@ -70,6 +74,11 @@ function normalizeWinStreak(v: unknown): number | undefined {
 
 function normalizeGamesPlayed(v: unknown): number | undefined {
   if (typeof v !== 'number' || !Number.isFinite(v) || v < 0) return undefined;
+  return Math.floor(v);
+}
+
+function normalizeAvgDurationSamples(v: unknown): number | undefined {
+  if (typeof v !== 'number' || !Number.isFinite(v) || v <= 0) return undefined;
   return Math.floor(v);
 }
 
@@ -119,6 +128,10 @@ export function loadMatchPrefs(): MatchPrefs {
     const bestDurationMapId = isSkirmishMapId(parsed.bestDurationMapId)
       ? parsed.bestDurationMapId
       : undefined;
+    const avgDurationMs = normalizeDurationMs(parsed.avgDurationMs);
+    const avgDurationSamples = normalizeAvgDurationSamples(
+      parsed.avgDurationSamples,
+    );
     const gamesPlayed = normalizeGamesPlayed(parsed.gamesPlayed);
     const gamesWon = normalizeGamesWon(parsed.gamesWon);
     const speciesPlays = normalizeSpeciesPlays(parsed.speciesPlays);
@@ -133,6 +146,8 @@ export function loadMatchPrefs(): MatchPrefs {
       ...(bestWinStreak != null ? { bestWinStreak } : {}),
       ...(bestDurationMs != null ? { bestDurationMs } : {}),
       ...(bestDurationMapId != null ? { bestDurationMapId } : {}),
+      ...(avgDurationMs != null ? { avgDurationMs } : {}),
+      ...(avgDurationSamples != null ? { avgDurationSamples } : {}),
       ...(gamesPlayed != null ? { gamesPlayed } : {}),
       ...(gamesWon != null ? { gamesWon } : {}),
       ...(speciesPlays != null ? { speciesPlays } : {}),
@@ -153,6 +168,10 @@ export function saveMatchPrefs(prefs: MatchPrefs): void {
     const bestDurationMapId = isSkirmishMapId(prefs.bestDurationMapId)
       ? prefs.bestDurationMapId
       : undefined;
+    const avgDurationMs = normalizeDurationMs(prefs.avgDurationMs);
+    const avgDurationSamples = normalizeAvgDurationSamples(
+      prefs.avgDurationSamples,
+    );
     const gamesPlayed = normalizeGamesPlayed(prefs.gamesPlayed);
     const gamesWon = normalizeGamesWon(prefs.gamesWon);
     const speciesPlays = normalizeSpeciesPlays(prefs.speciesPlays);
@@ -167,6 +186,8 @@ export function saveMatchPrefs(prefs: MatchPrefs): void {
       ...(bestWinStreak != null ? { bestWinStreak } : {}),
       ...(bestDurationMs != null ? { bestDurationMs } : {}),
       ...(bestDurationMapId != null ? { bestDurationMapId } : {}),
+      ...(avgDurationMs != null ? { avgDurationMs } : {}),
+      ...(avgDurationSamples != null ? { avgDurationSamples } : {}),
       ...(gamesPlayed != null ? { gamesPlayed } : {}),
       ...(gamesWon != null ? { gamesWon } : {}),
       ...(speciesPlays != null ? { speciesPlays } : {}),
@@ -215,6 +236,15 @@ export function rememberMatchPrefs(
       bestDurationMapId = mapId;
     }
   }
+  let avgDurationMs = prev.avgDurationMs;
+  let avgDurationSamples = prev.avgDurationSamples;
+  if (lastWon != null && lastDurationMs != null && lastDurationMs > 0) {
+    const sample = Math.floor(lastDurationMs);
+    const n = (prev.avgDurationSamples ?? 0) + 1;
+    const prevAvg = prev.avgDurationMs ?? 0;
+    avgDurationMs = Math.floor((prevAvg * (n - 1) + sample) / n);
+    avgDurationSamples = n;
+  }
   let gamesPlayed = prev.gamesPlayed;
   let gamesWon = prev.gamesWon;
   let speciesPlays = prev.speciesPlays;
@@ -235,6 +265,8 @@ export function rememberMatchPrefs(
     ...(bestWinStreak != null ? { bestWinStreak } : {}),
     ...(bestDurationMs != null ? { bestDurationMs } : {}),
     ...(bestDurationMapId != null ? { bestDurationMapId } : {}),
+    ...(avgDurationMs != null ? { avgDurationMs } : {}),
+    ...(avgDurationSamples != null ? { avgDurationSamples } : {}),
     ...(gamesPlayed != null ? { gamesPlayed } : {}),
     ...(gamesWon != null ? { gamesWon } : {}),
     ...(speciesPlays != null ? { speciesPlays } : {}),

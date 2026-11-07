@@ -2,6 +2,7 @@ import { beforeEach, describe, expect, it } from 'vitest';
 import { rememberMatchPrefs } from '../../database/matchPrefs';
 import { setLocale, t } from '../../i18n';
 import { formatMatchClock } from './matchClock';
+import { lobbyAvgDurationTipLine } from './lobbyAvgDurationTip';
 import { lobbyBestDurationTipLine } from './lobbyBestDurationTip';
 import { lobbyLastDurationTipLine } from './lobbyLastDurationTip';
 import { lobbyMatchLengthTipLine } from './lobbyPanel';
@@ -52,6 +53,7 @@ describe('lobbyLastDurationTipLine', () => {
     );
     expect(lobbyBestDurationTipLine()).toMatch(/^Best ·/);
     expect(lobbyLastDurationTipLine()).not.toBe(lobbyBestDurationTipLine());
+    expect(lobbyLastDurationTipLine()).not.toBe(lobbyAvgDurationTipLine());
     expect(lobbyLastDurationTipLine()).not.toBe(lobbyMatchLengthTipLine());
   });
 

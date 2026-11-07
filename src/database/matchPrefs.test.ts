@@ -97,6 +97,21 @@ describe('match prefs rematch restore', () => {
     expect(loadMatchPrefs().bestDurationMapId).toBe('ridge');
   });
 
+  it('tracks career average duration across wins and losses', () => {
+    rememberMatchPrefs('nobles', 'normal', 'crossing', 90_000, true);
+    expect(loadMatchPrefs().avgDurationMs).toBe(90_000);
+    expect(loadMatchPrefs().avgDurationSamples).toBe(1);
+    rememberMatchPrefs('brutes', 'easy', 'ridge', 150_000, false);
+    expect(loadMatchPrefs().avgDurationMs).toBe(120_000);
+    expect(loadMatchPrefs().avgDurationSamples).toBe(2);
+    rememberMatchPrefs('weirdos', 'hard', 'gap', 60_000);
+    expect(loadMatchPrefs().avgDurationMs).toBe(120_000);
+    expect(loadMatchPrefs().avgDurationSamples).toBe(2);
+    rememberMatchPrefs('nobles', 'normal', 'crossing');
+    expect(loadMatchPrefs().avgDurationMs).toBe(120_000);
+    expect(loadMatchPrefs().avgDurationSamples).toBe(2);
+  });
+
   it('counts finished matches as gamesPlayed when outcome is set', () => {
     rememberMatchPrefs('nobles', 'normal', 'crossing', 90_000, true);
     expect(loadMatchPrefs().gamesPlayed).toBe(1);
