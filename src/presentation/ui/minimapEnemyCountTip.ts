@@ -1,8 +1,11 @@
 /**
  * Minimap enemy count tip (presentation only).
- * Format: Enemies · {n} — middot (U+00B7).
- * Living enemy units currently fog-revealed — distinct from Army · /
- * Selected · / Vision · minimap peers (player-side / sight reach).
+ * Format: Enemies · {n} — middot (U+00B7) with single spaces.
+ * Living enemy units currently fog-revealed. en/pt-BR/es: Enemies · /
+ * Inimigos · / Enemigos ·. Distinct from Army · (`hud.minimapArmy`),
+ * Selected · (`hud.minimapSelected`), Vision · (`hud.minimapVision`),
+ * and Buildings · (`hud.minimapBuildings`) minimap peers (player-side /
+ * sight reach / structure count).
  */
 import { enemyRevealed } from '../../gameplay/battlefield/battlefieldFog';
 import type { BattlefieldWorld } from '../../gameplay/battlefield/battlefieldWorld';
