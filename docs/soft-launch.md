@@ -159,7 +159,7 @@ This doc is the honest gate before any public preview URL.
 | Building build time tip | **OK** — building selection stats show catalog Build · {n}s (distinct from live remain / progress) | `buildingBuildTime`, `sel.buildTimeTip` |
 | Building footprint tip | **OK** — building selection stats show Size · w×h tiles (same as placement ghost) | `buildingFootprint`, `sel.footprintTip` |
 | Building prod queue tip | **OK** — building selection stats show Queue · empty / Training · name / Queue · n when the type can train (distinct from live queue ETA row) | `buildingProdQueue`, `sel.prodQueueEmpty`, `sel.prodQueueTraining`, `sel.prodQueueTip` |
-| Unit gather yield tip | **OK** — worker selection stats show Yield · n per trip from catalog haul (distinct from cargo / node tip) | `unitGatherYield`, `sel.yieldTip` |
+| Unit gather yield tip | **OK** — worker selection stats show Yield · n per trip (U+00B7) from catalog haul; en/pt-BR/es middot; distinct from Cargo · n max / Cargo · empty / Cargo · n/cap / carry line | `unitGatherYield`, `sel.yieldTip` |
 | Unit cargo capacity tip | **OK** — worker selection stats show Cargo · n max (distinct from Yield per trip / live cargo line) | `unitCargoCapacity`, `sel.cargoCapTip` |
 | Unit current cargo tip | **OK** — worker selection stats show Cargo · empty / Cargo · n/cap (distinct from Cargo · n max / Yield / carry line) | `unitCurrentCargo`, `sel.cargoNowEmpty`, `sel.cargoNowTip` |
 | Unit atk CD tip | **OK** — selection stats show Atk CD · ns from catalog attackCooldownMs (same-type only; distinct from Rate · / DPS · / hero Cooldown Ns) | `unitAttackCooldown`, `sel.atkCdTip` |
