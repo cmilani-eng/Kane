@@ -2,6 +2,7 @@ import './styles.css';
 import { brandDocumentTitle, brandMetaDescription } from './config/brand';
 import { createKaneGame } from './game/init';
 import { applyDocumentLanguage } from './i18n';
+import { mountHubBackLink } from './presentation/ui/hubBackLink';
 
 const parent = document.getElementById('app');
 if (!parent) {
@@ -13,4 +14,5 @@ document
   .getElementById('kane-meta')
   ?.setAttribute('content', brandMetaDescription());
 applyDocumentLanguage();
+mountHubBackLink(document.body);
 createKaneGame(parent);

@@ -469,7 +469,7 @@ export class MenuScene extends Phaser.Scene {
       y: Math.max(40, height * 0.055),
       depth: 40,
     });
-    this.addTipsToggle(88, Math.max(40, height * 0.055));
+    this.addTipsToggle(128, Math.max(40, height * 0.055));
 
     const strip = this.add
       .text(width / 2, narrow ? volumeY + 24 : height * 0.81, softLaunchStatusStrip(), {
@@ -611,7 +611,7 @@ export class MenuScene extends Phaser.Scene {
       y: 42,
       depth: 40,
     });
-    this.addTipsToggle(78, 42);
+    this.addTipsToggle(124, 42);
 
     this.drawDifficultyRow(width, 78, true);
 
