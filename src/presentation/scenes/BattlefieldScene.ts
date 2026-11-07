@@ -1612,7 +1612,12 @@ export class BattlefieldScene extends Phaser.Scene {
       node,
       this.mode === 'place' ? this.placeType : null,
     );
-    const panelOpen = renderSelectionPanel(selView);
+    // Short landscape has no room for the empty-state card over the field.
+    const panelOpen = renderSelectionPanel(
+      selView.kind === 'empty' && this.scale.height < 500
+        ? { kind: 'hidden' }
+        : selView,
+    );
     const inset = selectionPanelInsetPx(
       panelOpen,
       selView.kind === 'empty',

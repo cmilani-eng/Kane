@@ -31,7 +31,10 @@ import {
   selectOrCycleIdleMilitary,
   type IdleMilitaryChipResult,
 } from '../../gameplay/battlefield/idleMilitary';
-import { coreHudModel } from '../../gameplay/battlefield/battlefieldCoreFragments';
+import {
+  coreHoldBannerState,
+  coreHudModel,
+} from '../../gameplay/battlefield/battlefieldCoreFragments';
 import { CORE_TONE_COLOR, formatCoreLine, formatHeroLine } from './matchStatusCopy';
 import {
   SUPPLY_TONE_COLOR,
@@ -130,6 +133,7 @@ export class BattlefieldHud {
   private resourcePanel!: Phaser.GameObjects.Rectangle;
   private abilityBtns: AbilityBtn[] = [];
   private narrow = false;
+  private coreBannerUp = false;
   private attackMoveArmed = false;
   private groupFlashText: string | null = null;
   private groupFlashColor = '#f0c75e';
@@ -697,13 +701,14 @@ export class BattlefieldHud {
       .setFontSize(this.narrow ? '12px' : '14px');
 
     const resY = pad + (this.narrow ? 50 : 60);
+    const stackedRes = this.narrow && h >= 500;
     this.resourcePanel.setPosition(pad, resY);
-    this.resourcePanel.width = this.narrow
+    this.resourcePanel.width = stackedRes
       ? Math.min(w - pad * 2, 340)
-      : 560;
-    this.resourcePanel.height = this.narrow ? 80 : 36;
+      : Math.min(w - pad * 2, 560);
+    this.resourcePanel.height = stackedRes ? 80 : 36;
 
-    if (this.narrow) {
+    if (stackedRes) {
       this.goldDot.setPosition(pad + 14, resY + 14);
       this.goldText.setPosition(pad + 28, resY + 6).setFontSize('14px');
       this.crystalDot.setPosition(pad + 14, resY + 38);
@@ -719,7 +724,8 @@ export class BattlefieldHud {
       this.supplyText.setPosition(pad + 294, resY + 8).setFontSize('15px');
     }
 
-    const belowRes = hudChipStackTop(w, h);
+    this.coreBannerUp = coreHoldBannerState(this.world).visible;
+    const belowRes = hudChipStackTop(w, h, this.coreBannerUp);
     this.idlePingBtn
       .setPosition(pad, belowRes)
       .setFontSize(this.narrow ? '11px' : '12px');
@@ -755,7 +761,9 @@ export class BattlefieldHud {
       belowRes +
       alertOffset +
       (this.narrow ? 44 : 36) +
-      (this.heroLine.visible && this.heroLine.text ? (this.narrow ? 28 : 30) : 0);
+      (this.heroLine.visible && this.heroLine.text
+        ? this.heroLine.height + (this.narrow ? 4 : 6)
+        : 0);
     this.coreLine
       .setPosition(pad, coreY)
       .setStyle({ wordWrap: { width: Math.min(560, w - pad * 2) } })
@@ -966,12 +974,21 @@ export class BattlefieldHud {
     this.supplyText.setColor(SUPPLY_TONE_COLOR[tone]);
     this.supplyDot.setFillStyle(SUPPLY_TONE_DOT[tone]);
     this.status.setText(statusText);
-    this.heroLine.setText(formatHeroLine(heroHudState(this.world)));
+    const heroH = this.heroLine.visible ? this.heroLine.height : 0;
+    this.heroLine
+      .setText(formatHeroLine(heroHudState(this.world)))
+      .setVisible(this.scene.scale.height >= 500);
     const core = coreHudModel(this.world);
     const wasCore = this.coreLine.visible;
     this.coreLine.setText(core ? formatCoreLine(core) : '').setVisible(!!core);
     this.coreLine.setColor(core ? CORE_TONE_COLOR[core.tone] : '#c8e4ff');
-    if (wasCore !== this.coreLine.visible) this.layout();
+    if (
+      wasCore !== this.coreLine.visible ||
+      heroH !== (this.heroLine.visible ? this.heroLine.height : 0) ||
+      coreHoldBannerState(this.world).visible !== this.coreBannerUp
+    ) {
+      this.layout();
+    }
     const armyN = countVisibleMilitary(this.world);
     this.armyBtn.setText(this.armyLabel(armyN));
     if (this.groupFlashText && this.scene.time.now < this.groupFlashUntil) {
