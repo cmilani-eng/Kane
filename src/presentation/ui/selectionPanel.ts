@@ -40,6 +40,10 @@ import {
   unitAttackRangeLabel,
 } from './unitAttackRange';
 import {
+  sharedUnitAttackSpeedLabel,
+  unitAttackSpeedLabel,
+} from './unitAttackSpeed';
+import {
   sharedUnitAttackTypeLabel,
   unitAttackTypeLabel,
 } from './unitAttackType';
@@ -248,6 +252,8 @@ export type SelectionPanelView =
       hpRatioTip: string | null;
       /** Catalog attack-cooldown tip when selection shares one unit type. */
       atkCdTip: string | null;
+      /** Catalog attack-speed tip (attacks/sec) when selection shares one unit type. */
+      atkSpeedTip: string | null;
       /** Catalog supply-cost tip when selection shares one unit type. */
       supplyTip: string | null;
       /** Catalog train gold-cost tip when selection shares one unit type. */
@@ -724,6 +730,7 @@ export function buildSelectionView(
       hpMaxTip: unitHpMaxLabel(u.typeId),
       hpRatioTip: selectionHpRatioTipLine(u.hp, u.maxHp),
       atkCdTip: unitAttackCooldownLabel(u.typeId),
+      atkSpeedTip: unitAttackSpeedLabel(u.typeId),
       supplyTip: unitSupplyCostLabel(u.typeId),
       trainGoldTip: unitTrainGoldLabel(u.typeId),
       trainCrystalTip: unitTrainCrystalLabel(u.typeId),
@@ -800,6 +807,7 @@ export function buildSelectionView(
     hpMaxTip: sharedUnitHpMaxLabel(alive.map((u) => u.typeId)),
     hpRatioTip: selectionHpRatioTipLine(hp, maxHp),
     atkCdTip: sharedUnitAttackCooldownLabel(alive.map((u) => u.typeId)),
+    atkSpeedTip: sharedUnitAttackSpeedLabel(alive.map((u) => u.typeId)),
     supplyTip: sharedUnitSupplyCostLabel(alive.map((u) => u.typeId)),
     trainGoldTip: sharedUnitTrainGoldLabel(alive.map((u) => u.typeId)),
     trainCrystalTip: sharedUnitTrainCrystalLabel(alive.map((u) => u.typeId)),
@@ -1088,6 +1096,7 @@ function structureSignature(view: SelectionPanelView): string {
       view.hpMaxTip ?? '',
       view.hpRatioTip ?? '',
       view.atkCdTip ?? '',
+      view.atkSpeedTip ?? '',
       view.supplyTip ?? '',
       view.trainGoldTip ?? '',
       view.trainCrystalTip ?? '',
@@ -1640,6 +1649,9 @@ export function renderSelectionPanel(view: SelectionPanelView): boolean {
         }
         if (view.atkCdTip) {
           bits.push(`<span>${escapeHtml(view.atkCdTip)}</span>`);
+        }
+        if (view.atkSpeedTip) {
+          bits.push(`<span>${escapeHtml(view.atkSpeedTip)}</span>`);
         }
         if (view.supplyTip) {
           bits.push(`<span>${escapeHtml(view.supplyTip)}</span>`);
