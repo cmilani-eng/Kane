@@ -68,6 +68,7 @@ import {
   fogExploredCoveragePct,
   minimapFogCoverageTipText,
 } from './minimapFogCoverageTip';
+import { minimapSelectedCountTipText } from './minimapSelectedCountTip';
 import { minimapSupplyTipText } from './minimapSupplyTip';
 
 export class Minimap {
@@ -97,6 +98,8 @@ export class Minimap {
   private readonly heroLabel: Phaser.GameObjects.Text;
   /** Live fog explored-coverage tip on the minimap chrome. */
   private readonly fogLabel: Phaser.GameObjects.Text;
+  /** Live selected-unit count tip on the minimap chrome. */
+  private readonly selectedLabel: Phaser.GameObjects.Text;
 
   private mapX = 0;
   private mapY = 0;
@@ -271,6 +274,19 @@ export class Minimap {
       .setOrigin(0.5, 0)
       .setAlpha(0.9);
 
+    this.selectedLabel = scene.add
+      .text(0, 0, minimapSelectedCountTipText(0), {
+        fontFamily: 'Segoe UI, system-ui, sans-serif',
+        fontSize: '10px',
+        color: '#c8d8e8',
+        stroke: '#0a1018',
+        strokeThickness: 3,
+      })
+      .setScrollFactor(0)
+      .setDepth(113)
+      .setOrigin(0.5, 0)
+      .setAlpha(0.9);
+
     this.hit = scene.add
       .rectangle(0, 0, this.mapW, this.mapH, 0x000000, 0.001)
       .setScrollFactor(0)
@@ -347,6 +363,7 @@ export class Minimap {
       this.buildingsLabel,
       this.heroLabel,
       this.fogLabel,
+      this.selectedLabel,
     ];
   }
 
@@ -753,12 +770,22 @@ export class Minimap {
       .setPosition(this.mapX + this.mapW / 2, this.mapY + this.mapH + 52)
       .setVisible(true);
 
-    // Idle · n under fog when any gatherer is idle
+    // Selected · n under fog (living player units currently selected)
+    let selN = 0;
+    for (const u of this.world.units) {
+      if (u.selected && u.team === 'player' && u.hp > 0) selN++;
+    }
+    this.selectedLabel
+      .setText(minimapSelectedCountTipText(selN))
+      .setPosition(this.mapX + this.mapW / 2, this.mapY + this.mapH + 64)
+      .setVisible(true);
+
+    // Idle · n under selected when any gatherer is idle
     const idleN = countIdleWorkers(this.world);
     if (idleN > 0) {
       this.idleLabel
         .setText(minimapIdleWorkerTipText(idleN))
-        .setPosition(this.mapX + this.mapW / 2, this.mapY + this.mapH + 64)
+        .setPosition(this.mapX + this.mapW / 2, this.mapY + this.mapH + 76)
         .setVisible(true);
     } else {
       this.idleLabel.setVisible(false);
