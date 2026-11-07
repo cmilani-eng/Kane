@@ -1,6 +1,8 @@
 /**
  * Lobby tip for the last finished match duration from match prefs.
- * Format: Last · mm:ss — distinct from Best · / Avg time · and ~min match-length.
+ * Format: Last · mm:ss — middot (U+00B7).
+ * Distinct from Best · / Avg time · / Time · / Last · Won-Lost /
+ * Last · faction / ~min match-length peers.
  */
 import { loadMatchPrefs } from '../../database/matchPrefs';
 import { t } from '../../i18n';
