@@ -23,6 +23,7 @@ import { lobbyLastFactionTipLine } from './lobbyLastFactionTip';
 import { lobbyLastMapTipLine } from './lobbyLastMapTip';
 import { lobbyBestDurationTipLine } from './lobbyBestDurationTip';
 import { lobbyLastOutcomeTipLine } from './lobbyLastOutcomeTip';
+import { lobbyGamesPlayedTipLine } from './lobbyGamesPlayedTip';
 import { lobbyWinStreakTipLine } from './lobbyWinStreakTip';
 
 export function lobbyStatusLine(status: LobbyStatus, code: string | null): string {
@@ -148,6 +149,7 @@ export function showLobbyPanel(scene: Phaser.Scene, onClose: () => void): void {
     lobbyBestDurationTipLine(),
     lobbyLastOutcomeTipLine(),
     lobbyWinStreakTipLine(),
+    lobbyGamesPlayedTipLine(),
     lobbyMatchLengthTipLine(),
   ]
     .filter(Boolean)
