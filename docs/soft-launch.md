@@ -21,8 +21,8 @@ This doc is the honest gate before any public preview URL.
 | Master volume | **OK** — mute-aware slider on menu + pause; persists `kane.masterVolume.v1` | `audioContext`, `volumeSlider`, pause/menu |
 | Reduce motion | **OK** — pause toggle disables under-attack camera nudge + quiets fog scout pulses; persists `kane.reduceMotion.v1` | `motionPrefs`, `pauseMenu`, `scoutPulseDraw`, `BattlefieldScene` |
 | Scout sector label | **OK** — fog scout pulse sets a brief HUD chip with 3×3 sector (NW…SE) | `mapSectorAt`, `scoutSectorHint`, `hud.scoutSector` |
-| Minimap scout pulse label | **OK** — fog scout pulse shows short sector mark on the minimap at the reveal | `minimapScoutPulseLabel`, `hud.minimapScoutPulse` |
-| Minimap fog reveal age tip | **OK** — fog scout pulse minimap label shows Scout sector · ns age tip (distinct from sector-only mark) | `minimapFogRevealAgeTip`, `hud.fogRevealAge` |
+| Minimap scout pulse label | **OK** — fog scout pulse shows short Scout · sector mark (distinct from age tip / Cam · / Fog tips) | `minimapScoutPulseLabel`, `hud.minimapScoutPulse` |
+| Minimap scout sector tip | **OK** — fog scout pulse minimap label shows Scout · sector · ns age tip (distinct from sector-only mark / Fog age · / Fog · % / pause Cam ·) | `minimapFogRevealAgeTip`, `hud.fogRevealAge` |
 | Minimap camera viewport label | **OK** — gold camera frame on the minimap shows a short View mark | `minimapCameraViewportLabel`, `hud.minimapCamView` |
 | Minimap camera sector tip | **OK** — camera frame shows Cam · sector from view-center 3×3 (distinct from View mark) | `minimapCameraSectorTip`, `hud.minimapCamSector` |
 | Minimap supply usage tip | **OK** — minimap chrome shows Supply · used/cap from living player units vs unitCap (distinct surface from pause Supply tip / Pop · n) | `minimapSupplyTipText`, `hud.minimapSupply` |
@@ -33,7 +33,7 @@ This doc is the honest gate before any public preview URL.
 | Minimap building count tip | **OK** — minimap chrome shows Buildings · n from living player buildings (distinct surface from pause Buildings tip / army / supply) | `minimapBuildingCountTipText`, `hud.minimapBuildings` |
 | Minimap hero status tip | **OK** — minimap chrome shows Hero · Ready / Down / sector from recruit state + living location (distinct surface from pause Hero tip) | `minimapHeroStatusTipText`, `hud.minimapHeroReady`, `playerHeroDown` |
 | Minimap fog coverage tip | **OK** — minimap chrome shows Fog · pct% from explored fog cells (distinct from fog age / scout tips) | `minimapFogCoverageTipText`, `hud.minimapFog`, `fogExploredCoveragePct` |
-| Minimap fog age tip | **OK** — minimap chrome shows Fog age · ns from lastFogRevealAgeMs (distinct from pause Fog · ns / Fog · pct% / Scout sector · ns) | `minimapFogAgeTipText`, `hud.minimapFogAge`, `lastFogRevealAgeMs` |
+| Minimap fog age tip | **OK** — minimap chrome shows Fog age · ns from lastFogRevealAgeMs (distinct from pause Fog · ns / Fog · pct% / Scout · sector · ns) | `minimapFogAgeTipText`, `hud.minimapFogAge`, `lastFogRevealAgeMs` |
 | Minimap selected count tip | **OK** — minimap chrome shows Selected · n from living player selection (distinct from pause Selected tip) | `minimapSelectedCountTipText`, `hud.minimapSelected` |
 | Minimap gold stock tip | **OK** — minimap chrome shows Gold · n from player gold wallet (pairs with Crystal; distinct from pause Gold·Crystal tip) | `minimapGoldStockTipText`, `hud.minimapGold`, `walletOf` |
 | Minimap crystal stock tip | **OK** — minimap chrome shows Crystal · n from player magic_crystals wallet (distinct from pause Gold·Crystal tip) | `minimapCrystalStockTipText`, `hud.minimapCrystal`, `walletOf` |
