@@ -1,6 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { rememberMatchPrefs } from '../../database/matchPrefs';
 import { t } from '../../i18n';
+import { endBestWinStreakTipLine } from './endBestWinStreakTip';
 import { lobbyBestWinStreakTipLine } from './lobbyBestWinStreakTip';
 import { lobbyWinStreakTipLine } from './lobbyWinStreakTip';
 
@@ -34,7 +35,7 @@ describe('lobbyBestWinStreakTipLine', () => {
     expect(lobbyBestWinStreakTipLine()).toBeNull();
   });
 
-  it('tracks peak streak and keeps it after a loss clears current', () => {
+  it('tracks peak streak and keeps it after a loss; distinct from end tip key', () => {
     rememberMatchPrefs('weirdos', 'hard', 'crossing', 90_000, true);
     rememberMatchPrefs('brutes', 'easy', 'ridge', 80_000, true);
     expect(lobbyBestWinStreakTipLine()).toBe(
@@ -42,6 +43,14 @@ describe('lobbyBestWinStreakTipLine', () => {
     );
     expect(lobbyBestWinStreakTipLine()).toMatch(/^Best streak ·/);
     expect(lobbyBestWinStreakTipLine()).not.toBe(lobbyWinStreakTipLine());
+    // Same en copy as end tip; distinct i18n key / surface.
+    expect(lobbyBestWinStreakTipLine()).toBe(endBestWinStreakTipLine());
+    expect(lobbyBestWinStreakTipLine()).toBe(
+      t('lobby.bestWinStreakTip', { n: 2 }),
+    );
+    expect(endBestWinStreakTipLine()).toBe(
+      t('end.bestWinStreakTip', { n: 2 }),
+    );
 
     rememberMatchPrefs('nobles', 'normal', 'gap', 70_000, false);
     expect(lobbyWinStreakTipLine()).toBeNull();
