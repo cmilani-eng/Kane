@@ -134,6 +134,8 @@ export interface BattlefieldWorld {
   /** Hero runtime + ability VFX (see battlefieldHeroes). */
   heroRuntime: import('./battlefieldHeroes').HeroRuntime | null;
   enemyHeroRuntime: import('./battlefieldHeroes').HeroRuntime | null;
+  /** True after the player hero dies until re-recruited (minimap Down tip). */
+  playerHeroDown: boolean;
   vfx: import('./battlefieldHeroes').HeroVfx[];
   /** Short combat hit / death pops (presentation). */
   combatFx: import('./battlefieldCombatFx').CombatFx[];
@@ -446,6 +448,7 @@ export function createBattlefieldWorld(
     enemySpeciesId: enemySpecies,
     heroRuntime: null,
     enemyHeroRuntime: null,
+    playerHeroDown: false,
     vfx: [],
     combatFx: [],
     economyFx: [],
