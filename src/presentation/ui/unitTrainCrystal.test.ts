@@ -8,12 +8,16 @@ import {
 } from './unitTrainCrystal';
 
 describe('unitTrainCrystal', () => {
-  it('labels catalog train crystals when the unit costs some', () => {
+  it('labels Crystal · n when the unit costs crystals', () => {
     const n = unitTrainCrystal('rock_thrower');
     expect(n).toBe(getUnitType('rock_thrower').costCrystals);
     expect(n).toBeGreaterThan(0);
     expect(unitTrainCrystalLabel('rock_thrower')).toBe(
       t('sel.trainCrystalTip', { n: n! }),
+    );
+    expect(unitTrainCrystalLabel('rock_thrower')).toMatch(/^Crystal ·/);
+    expect(unitTrainCrystalLabel('rock_thrower')).not.toBe(
+      t('sel.crystalCost', { n: n! }),
     );
     expect(sharedUnitTrainCrystalLabel(['rock_thrower', 'rock_thrower'])).toBe(
       t('sel.trainCrystalTip', { n: n! }),

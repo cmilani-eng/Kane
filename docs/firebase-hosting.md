@@ -72,9 +72,9 @@ Emulator UI: `http://127.0.0.1:4000` · Auth `9099` · RTDB `9000` · Firestore 
 
 Workflow: `.github/workflows/deploy-hosting-dev.yml`  
 Trigger: **push to `dev`** (covers merging a PR into `dev`).  
-Steps: `npm ci` → `npm run lint` → `npm test` → `npm run hosting:deploy` (`npm run build` + `firebase deploy --only hosting:kane-web`; project **`kane-rts-game`** and target `kane-web` come from `.firebaserc`, CLI from the pinned `firebase-tools` devDependency).
+Steps: `npm ci` → `npm run lint` → `npm test` → `npm run hosting:deploy` (`npm run build` + `firebase deploy --only hosting:kane-web`; project **`kane-rts-game`** and target `kane-web` come from `.firebaserc`, CLI from the pinned `firebase-tools` devDependency) → `npm run check:headers -- https://kane-rts-game.web.app` (fetches the live site and checks the headers below; it flags a bad release but cannot undo it).
 
-Pull requests run `.github/workflows/ci.yml` (lint, test, build) with no secrets.
+Pull requests run `.github/workflows/ci.yml` (lint, test, build, and the Firestore / Realtime Database rules against the Firebase emulators) with no secrets.
 
 Local Vite (`npm run dev`) stays the day-to-day playtest path. This pipeline only publishes the Vite `dist/` bundle to Hosting.
 
@@ -121,8 +121,7 @@ Prefix the result with `sha384-`, and hash every module the file imports (three.
 Not covered yet:
 
 - A Content-Security-Policy. It needs a report-only trial first, because the Firebase SDK, the game bundles and any inline scripts or styles all have to be allowed.
-- The live Firestore and Realtime Database rules. `firestore.rules` is marked a draft in the file, so confirm what is actually deployed to the project.
-- Whether the Firebase web API key is restricted to this site's domains in the Google Cloud console.
+- Checks that need console access: the deployed Firestore and Realtime Database rules (`firestore.rules` is marked a draft), branch protection on `dev`, the deploy account's roles, and the Firebase web API key's referrer restriction. [security-verification.md](./security-verification.md) lists each one with what good looks like and a place to record the result.
 
 ## Soft-launch guards
 

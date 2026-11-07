@@ -28,8 +28,30 @@ export interface MatchPrefs {
   lastWon?: boolean;
   /** Consecutive wins ending at the last finished match. Optional for older prefs. */
   winStreak?: number;
+  /** Consecutive losses ending at the last finished match. Optional for older prefs. */
+  lossStreak?: number;
+  /** Longest consecutive win streak on this device. Optional for older prefs. */
+  bestWinStreak?: number;
   /** Shortest winning match duration (ms). Optional for older prefs. */
   bestDurationMs?: number;
+  /** Map of the shortest winning match. Optional for older prefs. */
+  bestDurationMapId?: SkirmishMapId;
+  /** Career average finished-match duration (ms). Optional for older prefs. */
+  avgDurationMs?: number;
+  /** Finished matches counted into avgDurationMs. Optional for older prefs. */
+  avgDurationSamples?: number;
+  /** Career average APM across finished matches. Optional for older prefs. */
+  avgApm?: number;
+  /** Finished matches counted into avgApm. Optional for older prefs. */
+  avgApmSamples?: number;
+  /** Peak match APM across finished matches. Optional for older prefs. */
+  bestApm?: number;
+  /** Finished matches counted on this device. Optional for older prefs. */
+  gamesPlayed?: number;
+  /** Finished wins counted on this device. Optional for older prefs. */
+  gamesWon?: number;
+  /** Finished matches per species on this device. Optional for older prefs. */
+  speciesPlays?: Partial<Record<SpeciesId, number>>;
 }
 
 function canStore(): boolean {
@@ -58,6 +80,52 @@ function normalizeWinStreak(v: unknown): number | undefined {
   return Math.floor(v);
 }
 
+function normalizeGamesPlayed(v: unknown): number | undefined {
+  if (typeof v !== 'number' || !Number.isFinite(v) || v < 0) return undefined;
+  return Math.floor(v);
+}
+
+function normalizeAvgDurationSamples(v: unknown): number | undefined {
+  if (typeof v !== 'number' || !Number.isFinite(v) || v <= 0) return undefined;
+  return Math.floor(v);
+}
+
+/** APM may be 0; reject only negative / non-finite. */
+function normalizeAvgApm(v: unknown): number | undefined {
+  if (typeof v !== 'number' || !Number.isFinite(v) || v < 0) return undefined;
+  return Math.floor(v);
+}
+
+/** Same rate math as presentation matchApm (avoid UI import). */
+function sampleMatchApm(actions: number, durationMs: number): number {
+  const a = Math.max(0, Math.floor(actions));
+  const ms = Math.max(0, Math.floor(durationMs));
+  if (ms <= 0) return 0;
+  return Math.round(a / (ms / 60_000));
+}
+
+function normalizeGamesWon(v: unknown): number | undefined {
+  if (typeof v !== 'number' || !Number.isFinite(v) || v < 0) return undefined;
+  return Math.floor(v);
+}
+
+function normalizeSpeciesPlays(
+  v: unknown,
+): Partial<Record<SpeciesId, number>> | undefined {
+  if (v == null || typeof v !== 'object') return undefined;
+  const raw = v as Record<string, unknown>;
+  const out: Partial<Record<SpeciesId, number>> = {};
+  let any = false;
+  for (const id of SPECIES_IDS) {
+    const n = normalizeGamesPlayed(raw[id]);
+    if (n != null) {
+      out[id] = n;
+      any = true;
+    }
+  }
+  return any ? out : undefined;
+}
+
 export function defaultMatchPrefs(): MatchPrefs {
   return {
     version: 1,
@@ -77,7 +145,22 @@ export function loadMatchPrefs(): MatchPrefs {
     const lastDurationMs = normalizeDurationMs(parsed.lastDurationMs);
     const lastWon = normalizeWon(parsed.lastWon);
     const winStreak = normalizeWinStreak(parsed.winStreak);
+    const lossStreak = normalizeWinStreak(parsed.lossStreak);
+    const bestWinStreak = normalizeWinStreak(parsed.bestWinStreak);
     const bestDurationMs = normalizeDurationMs(parsed.bestDurationMs);
+    const bestDurationMapId = isSkirmishMapId(parsed.bestDurationMapId)
+      ? parsed.bestDurationMapId
+      : undefined;
+    const avgDurationMs = normalizeDurationMs(parsed.avgDurationMs);
+    const avgDurationSamples = normalizeAvgDurationSamples(
+      parsed.avgDurationSamples,
+    );
+    const avgApm = normalizeAvgApm(parsed.avgApm);
+    const avgApmSamples = normalizeAvgDurationSamples(parsed.avgApmSamples);
+    const bestApm = normalizeAvgApm(parsed.bestApm);
+    const gamesPlayed = normalizeGamesPlayed(parsed.gamesPlayed);
+    const gamesWon = normalizeGamesWon(parsed.gamesWon);
+    const speciesPlays = normalizeSpeciesPlays(parsed.speciesPlays);
     return {
       version: 1,
       species: isSpeciesId(parsed.species) ? parsed.species : base.species,
@@ -86,7 +169,18 @@ export function loadMatchPrefs(): MatchPrefs {
       ...(lastDurationMs != null ? { lastDurationMs } : {}),
       ...(lastWon != null ? { lastWon } : {}),
       ...(winStreak != null ? { winStreak } : {}),
+      ...(lossStreak != null ? { lossStreak } : {}),
+      ...(bestWinStreak != null ? { bestWinStreak } : {}),
       ...(bestDurationMs != null ? { bestDurationMs } : {}),
+      ...(bestDurationMapId != null ? { bestDurationMapId } : {}),
+      ...(avgDurationMs != null ? { avgDurationMs } : {}),
+      ...(avgDurationSamples != null ? { avgDurationSamples } : {}),
+      ...(avgApm != null ? { avgApm } : {}),
+      ...(avgApmSamples != null ? { avgApmSamples } : {}),
+      ...(bestApm != null ? { bestApm } : {}),
+      ...(gamesPlayed != null ? { gamesPlayed } : {}),
+      ...(gamesWon != null ? { gamesWon } : {}),
+      ...(speciesPlays != null ? { speciesPlays } : {}),
     };
   } catch {
     return base;
@@ -99,7 +193,22 @@ export function saveMatchPrefs(prefs: MatchPrefs): void {
     const lastDurationMs = normalizeDurationMs(prefs.lastDurationMs);
     const lastWon = normalizeWon(prefs.lastWon);
     const winStreak = normalizeWinStreak(prefs.winStreak);
+    const lossStreak = normalizeWinStreak(prefs.lossStreak);
+    const bestWinStreak = normalizeWinStreak(prefs.bestWinStreak);
     const bestDurationMs = normalizeDurationMs(prefs.bestDurationMs);
+    const bestDurationMapId = isSkirmishMapId(prefs.bestDurationMapId)
+      ? prefs.bestDurationMapId
+      : undefined;
+    const avgDurationMs = normalizeDurationMs(prefs.avgDurationMs);
+    const avgDurationSamples = normalizeAvgDurationSamples(
+      prefs.avgDurationSamples,
+    );
+    const avgApm = normalizeAvgApm(prefs.avgApm);
+    const avgApmSamples = normalizeAvgDurationSamples(prefs.avgApmSamples);
+    const bestApm = normalizeAvgApm(prefs.bestApm);
+    const gamesPlayed = normalizeGamesPlayed(prefs.gamesPlayed);
+    const gamesWon = normalizeGamesWon(prefs.gamesWon);
+    const speciesPlays = normalizeSpeciesPlays(prefs.speciesPlays);
     const next: MatchPrefs = {
       version: 1,
       species: isSpeciesId(prefs.species) ? prefs.species : 'nobles',
@@ -108,7 +217,18 @@ export function saveMatchPrefs(prefs: MatchPrefs): void {
       ...(lastDurationMs != null ? { lastDurationMs } : {}),
       ...(lastWon != null ? { lastWon } : {}),
       ...(winStreak != null ? { winStreak } : {}),
+      ...(lossStreak != null ? { lossStreak } : {}),
+      ...(bestWinStreak != null ? { bestWinStreak } : {}),
       ...(bestDurationMs != null ? { bestDurationMs } : {}),
+      ...(bestDurationMapId != null ? { bestDurationMapId } : {}),
+      ...(avgDurationMs != null ? { avgDurationMs } : {}),
+      ...(avgDurationSamples != null ? { avgDurationSamples } : {}),
+      ...(avgApm != null ? { avgApm } : {}),
+      ...(avgApmSamples != null ? { avgApmSamples } : {}),
+      ...(bestApm != null ? { bestApm } : {}),
+      ...(gamesPlayed != null ? { gamesPlayed } : {}),
+      ...(gamesWon != null ? { gamesWon } : {}),
+      ...(speciesPlays != null ? { speciesPlays } : {}),
     };
     localStorage.setItem(KEY, JSON.stringify(next));
   } catch {
@@ -118,7 +238,7 @@ export function saveMatchPrefs(prefs: MatchPrefs): void {
 
 /**
  * Persist prefs (start match or menu change).
- * Optional duration / outcome keep prior values when omitted.
+ * Optional duration / outcome / actions keep prior values when omitted.
  */
 export function rememberMatchPrefs(
   species: SpeciesId,
@@ -126,6 +246,7 @@ export function rememberMatchPrefs(
   mapId: SkirmishMapId = DEFAULT_SKIRMISH_MAP,
   lastDurationMs?: number,
   lastWon?: boolean,
+  playerActions?: number,
 ): void {
   const prev = loadMatchPrefs();
   const duration =
@@ -134,20 +255,65 @@ export function rememberMatchPrefs(
       : prev.lastDurationMs;
   const won = lastWon != null ? lastWon : prev.lastWon;
   let winStreak = prev.winStreak;
+  let lossStreak = prev.lossStreak;
+  let bestWinStreak = prev.bestWinStreak;
   if (lastWon != null) {
     winStreak = lastWon ? (prev.winStreak ?? 0) + 1 : 0;
+    lossStreak = lastWon ? 0 : (prev.lossStreak ?? 0) + 1;
+    if (winStreak > 0) {
+      bestWinStreak = Math.max(prev.bestWinStreak ?? 0, winStreak);
+    }
   }
   let bestDurationMs = prev.bestDurationMs;
+  let bestDurationMapId = prev.bestDurationMapId;
   if (
     lastWon === true &&
     lastDurationMs != null &&
     lastDurationMs > 0
   ) {
     const nextBest = Math.floor(lastDurationMs);
-    bestDurationMs =
-      prev.bestDurationMs == null || nextBest < prev.bestDurationMs
-        ? nextBest
-        : prev.bestDurationMs;
+    if (prev.bestDurationMs == null || nextBest < prev.bestDurationMs) {
+      bestDurationMs = nextBest;
+      bestDurationMapId = mapId;
+    }
+  }
+  let avgDurationMs = prev.avgDurationMs;
+  let avgDurationSamples = prev.avgDurationSamples;
+  if (lastWon != null && lastDurationMs != null && lastDurationMs > 0) {
+    const sample = Math.floor(lastDurationMs);
+    const n = (prev.avgDurationSamples ?? 0) + 1;
+    const prevAvg = prev.avgDurationMs ?? 0;
+    avgDurationMs = Math.floor((prevAvg * (n - 1) + sample) / n);
+    avgDurationSamples = n;
+  }
+  let avgApm = prev.avgApm;
+  let avgApmSamples = prev.avgApmSamples;
+  let bestApm = prev.bestApm;
+  if (
+    lastWon != null &&
+    lastDurationMs != null &&
+    lastDurationMs > 0 &&
+    playerActions != null &&
+    Number.isFinite(playerActions) &&
+    playerActions >= 0
+  ) {
+    const sample = sampleMatchApm(playerActions, lastDurationMs);
+    const n = (prev.avgApmSamples ?? 0) + 1;
+    const prevAvg = prev.avgApm ?? 0;
+    avgApm = Math.floor((prevAvg * (n - 1) + sample) / n);
+    avgApmSamples = n;
+    if (prev.bestApm == null || sample > prev.bestApm) {
+      bestApm = sample;
+    }
+  }
+  let gamesPlayed = prev.gamesPlayed;
+  let gamesWon = prev.gamesWon;
+  let speciesPlays = prev.speciesPlays;
+  if (lastWon != null) {
+    gamesPlayed = (prev.gamesPlayed ?? 0) + 1;
+    if (lastWon) gamesWon = (prev.gamesWon ?? 0) + 1;
+    speciesPlays = { ...(prev.speciesPlays ?? {}) };
+    speciesPlays[species] = (speciesPlays[species] ?? 0) + 1;
   }
   saveMatchPrefs({
     version: 1,
@@ -157,7 +323,18 @@ export function rememberMatchPrefs(
     ...(duration != null ? { lastDurationMs: duration } : {}),
     ...(won != null ? { lastWon: won } : {}),
     ...(winStreak != null ? { winStreak } : {}),
+    ...(lossStreak != null ? { lossStreak } : {}),
+    ...(bestWinStreak != null ? { bestWinStreak } : {}),
     ...(bestDurationMs != null ? { bestDurationMs } : {}),
+    ...(bestDurationMapId != null ? { bestDurationMapId } : {}),
+    ...(avgDurationMs != null ? { avgDurationMs } : {}),
+    ...(avgDurationSamples != null ? { avgDurationSamples } : {}),
+    ...(avgApm != null ? { avgApm } : {}),
+    ...(avgApmSamples != null ? { avgApmSamples } : {}),
+    ...(bestApm != null ? { bestApm } : {}),
+    ...(gamesPlayed != null ? { gamesPlayed } : {}),
+    ...(gamesWon != null ? { gamesWon } : {}),
+    ...(speciesPlays != null ? { speciesPlays } : {}),
   });
   // Cloud sync when signed in (best-effort; guest stays local).
   // Cloud profile still stores species + difficulty only.

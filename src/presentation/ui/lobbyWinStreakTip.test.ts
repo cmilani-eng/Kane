@@ -1,8 +1,11 @@
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { rememberMatchPrefs } from '../../database/matchPrefs';
 import { t } from '../../i18n';
-import { lobbyWinStreakTipLine } from './lobbyWinStreakTip';
+import { endWinStreakTipLine } from './endWinStreakTip';
+import { lobbyBestWinStreakTipLine } from './lobbyBestWinStreakTip';
 import { lobbyLastOutcomeTipLine } from './lobbyLastOutcomeTip';
+import { lobbyWinStreakTipLine } from './lobbyWinStreakTip';
+import { pauseWinStreakTipLine } from './pauseWinStreakTip';
 
 const store = new Map<string, string>();
 
@@ -32,12 +35,20 @@ describe('lobbyWinStreakTipLine', () => {
     expect(lobbyWinStreakTipLine()).toBeNull();
   });
 
-  it('counts consecutive wins and clears on a loss', () => {
+  it('labels Streak · n, distinct from Best streak / end / pause tip keys', () => {
     rememberMatchPrefs('weirdos', 'hard', 'crossing', 90_000, true);
     expect(lobbyWinStreakTipLine()).toBe(t('lobby.winStreakTip', { n: 1 }));
     rememberMatchPrefs('brutes', 'easy', 'ridge', 80_000, true);
     expect(lobbyWinStreakTipLine()).toBe(t('lobby.winStreakTip', { n: 2 }));
+    expect(lobbyWinStreakTipLine()).toMatch(/^Streak ·/);
     expect(lobbyWinStreakTipLine()).not.toBe(lobbyLastOutcomeTipLine());
+    expect(lobbyWinStreakTipLine()).not.toBe(lobbyBestWinStreakTipLine());
+    expect(lobbyBestWinStreakTipLine()).toMatch(/^Best streak ·/);
+    // Same en copy as end/pause tips; distinct i18n key / surface.
+    expect(lobbyWinStreakTipLine()).toBe(endWinStreakTipLine());
+    expect(lobbyWinStreakTipLine()).toBe(pauseWinStreakTipLine(2));
+    expect(endWinStreakTipLine()).toBe(t('end.winStreakTip', { n: 2 }));
+    expect(pauseWinStreakTipLine(2)).toBe(t('pause.winStreakTip', { n: 2 }));
     rememberMatchPrefs('nobles', 'normal', 'gap', 70_000, false);
     expect(lobbyWinStreakTipLine()).toBeNull();
   });

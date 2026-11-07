@@ -10,10 +10,11 @@ import type { ResourceWallet } from '../../data/resources';
 import { dist } from '../math';
 import { spawnDeathFx } from './battlefieldCombatFx';
 import { defaultRallyFor } from './battlefieldRally';
-import type {
-  BattlefieldBuilding,
-  BattlefieldTeam,
-  BattlefieldWorld,
+import {
+  recordPlayerAction,
+  type BattlefieldBuilding,
+  type BattlefieldTeam,
+  type BattlefieldWorld,
 } from './battlefieldWorld';
 import { walletOf } from './battlefieldEconomy';
 
@@ -129,6 +130,7 @@ export function placeBuilding(
   };
   world.buildings.push(b);
   if (complete && team === 'player') world.playerBuildingsRaised += 1;
+  if (team === 'player') recordPlayerAction(world);
   syncStockpilesFromBuildings(world);
   return b;
 }
@@ -204,6 +206,7 @@ export function damageBuilding(
   b.hp -= amount;
   if (b.hp <= 0) {
     spawnDeathFx(world, b.x, b.y, b.radius, b.color);
+    if (b.team === 'player') world.playerBuildingsLost += 1;
     const i = world.buildings.findIndex((x) => x.id === b.id);
     if (i >= 0) world.buildings.splice(i, 1);
     syncStockpilesFromBuildings(world);

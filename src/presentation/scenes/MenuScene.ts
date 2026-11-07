@@ -12,6 +12,7 @@ import {
 } from '../../database/matchPrefs';
 import {
   getCurrentAuthUser,
+  isAnonymousGuest,
   isCloudAccount,
   subscribeAuth,
 } from '../../firebase/auth';
@@ -41,7 +42,7 @@ import { playSfx } from '../audio/sfx';
 import { hideDomHud } from '../ui/domHud';
 import { showAuthPanel, hideAuthPanel } from '../ui/authPanel';
 import { showCosmeticsPanel } from '../ui/cosmeticsPanel';
-import { showDashboardPanel } from '../ui/dashboardPanel';
+import { accountChipName, showDashboardPanel } from '../ui/dashboardPanel';
 import { showLobbyPanel } from '../ui/lobbyPanel';
 import { hideMenuGamesLink, showMenuGamesLink } from '../ui/menuGamesLink';
 import { softLaunchStatusStrip } from '../ui/softLaunchStatus';
@@ -64,6 +65,8 @@ export class MenuScene extends Phaser.Scene {
   private previewGfx: Phaser.GameObjects.Graphics | null = null;
   private previewSlots: { id: SpeciesId; x: number; y: number; scale: number }[] = [];
   private localeUnsub: (() => void) | null = null;
+  /** Camera zoom that fits a tall portrait menu; popups draw at zoom 1. */
+  private menuZoom = 1;
 
   constructor() {
     super('Menu');
@@ -166,10 +169,12 @@ export class MenuScene extends Phaser.Scene {
     if (this.anyOverlayOpen()) return;
     this.statsOpen = true;
     playSfx('ui');
+    this.resetMenuCamera();
     showStatsPanel(
       this,
       () => {
         this.statsOpen = false;
+        this.fitMenuCamera();
       },
       { adminTools },
     );
@@ -179,8 +184,10 @@ export class MenuScene extends Phaser.Scene {
     if (this.anyOverlayOpen()) return;
     this.lobbyOpen = true;
     playSfx('ui');
+    this.resetMenuCamera();
     showLobbyPanel(this, () => {
       this.lobbyOpen = false;
+      this.fitMenuCamera();
     });
   }
 
@@ -188,8 +195,10 @@ export class MenuScene extends Phaser.Scene {
     if (this.anyOverlayOpen()) return;
     this.cosmeticsOpen = true;
     playSfx('ui');
+    this.resetMenuCamera();
     showCosmeticsPanel(this, () => {
       this.cosmeticsOpen = false;
+      this.fitMenuCamera();
     });
   }
 
@@ -197,8 +206,10 @@ export class MenuScene extends Phaser.Scene {
     if (this.anyOverlayOpen()) return;
     this.accountOpen = true;
     playSfx('ui');
+    this.resetMenuCamera();
     showDashboardPanel(this, () => {
       this.accountOpen = false;
+      this.fitMenuCamera();
       this.refreshAccountChip();
     });
   }
@@ -207,8 +218,9 @@ export class MenuScene extends Phaser.Scene {
     if (!this.accountLabel) return;
     const u = getCurrentAuthUser();
     if (isCloudAccount(u) && u) {
-      const short = (u.displayName || t('menu.account')).slice(0, 12);
-      this.accountLabel.setText(short);
+      this.accountLabel.setText(
+        accountChipName(u.displayName, isAnonymousGuest(u)),
+      );
     } else {
       this.accountLabel.setText(t('menu.account'));
     }
@@ -216,6 +228,8 @@ export class MenuScene extends Phaser.Scene {
 
   private buildLayout(intro: boolean): void {
     const { width, height } = this.scale;
+    this.menuZoom = 1;
+    this.resetMenuCamera();
     // iPhone 17 landscape is wide (~874) and short (~402). Percentage rows overlap.
     if (height < 500) {
       this.buildShortLayout(intro, width, height);
@@ -255,7 +269,7 @@ export class MenuScene extends Phaser.Scene {
     });
 
     const title = this.add
-      .text(width / 2, height * 0.12, BRAND.name, {
+      .text(width / 2, width < 700 ? Math.max(height * 0.12, 96) : height * 0.12, BRAND.name, {
         fontFamily: 'Georgia, "Times New Roman", serif',
         fontSize: Math.min(72, width * 0.16) + 'px',
         color: '#f5e6c8',
@@ -279,15 +293,19 @@ export class MenuScene extends Phaser.Scene {
       })
       .setOrigin(0.5);
 
+    // Phone portrait: rows flow top to bottom so they cannot collide.
+    const narrow = width < 700;
+    const diffLabelY = narrow ? height * 0.22 + 32 : height * 0.26;
     this.add
-      .text(width / 2, height * 0.26, t('menu.difficulty'), {
+      .text(width / 2, diffLabelY, t('menu.difficulty'), {
         fontFamily: 'system-ui, sans-serif',
         fontSize: '13px',
         color: '#b8c9d9',
       })
       .setOrigin(0.5);
 
-    this.drawDifficultyRow(width, height * 0.29);
+    const diffRowY = narrow ? diffLabelY + 30 : height * 0.29;
+    this.drawDifficultyRow(width, diffRowY, narrow);
 
     // One quiet line while Practice, Easy, or Hard is selected — no tip on Normal.
     const diffTip =
@@ -300,7 +318,7 @@ export class MenuScene extends Phaser.Scene {
             : null;
     if (diffTip) {
       this.add
-        .text(width / 2, height * 0.325, diffTip, {
+        .text(width / 2, narrow ? diffRowY + 30 : height * 0.325, diffTip, {
           fontFamily: 'system-ui, sans-serif',
           fontSize: '11px',
           color: '#c8d8a8',
@@ -310,8 +328,12 @@ export class MenuScene extends Phaser.Scene {
         .setOrigin(0.5);
     }
 
-    const mapLabelY = diffTip ? height * 0.355 : height * 0.335;
-    const mapRowY = diffTip ? height * 0.4 : height * 0.38;
+    const mapLabelY = narrow
+      ? diffRowY + (diffTip ? 56 : 36)
+      : diffTip
+        ? height * 0.355
+        : height * 0.335;
+    const mapRowY = narrow ? mapLabelY + 30 : diffTip ? height * 0.4 : height * 0.38;
 
     this.add
       .text(width / 2, mapLabelY, t('menu.map'), {
@@ -321,7 +343,7 @@ export class MenuScene extends Phaser.Scene {
       })
       .setOrigin(0.5);
 
-    this.drawMapRow(width, mapRowY);
+    this.drawMapRow(width, mapRowY, narrow);
 
     // Quiet flavor line for the selected skirmish map (same pattern as difficulty tips).
     const selectedMap = mapCopy(this.mapId);
@@ -329,8 +351,8 @@ export class MenuScene extends Phaser.Scene {
       label: selectedMap.label,
       blurb: selectedMap.blurb,
     });
-    const mapTipY = mapRowY + height * 0.035;
-    this.add
+    const mapTipY = mapRowY + (narrow ? 30 : height * 0.035);
+    const mapTipText = this.add
       .text(width / 2, mapTipY, mapTip, {
         fontFamily: 'system-ui, sans-serif',
         fontSize: '11px',
@@ -340,8 +362,10 @@ export class MenuScene extends Phaser.Scene {
       })
       .setOrigin(0.5);
 
-    const pickSpeciesY = Math.max(height * 0.445, mapTipY + height * 0.03);
-    this.add
+    const pickSpeciesY = narrow
+      ? mapTipY + mapTipText.height / 2 + 20
+      : Math.max(height * 0.445, mapTipY + height * 0.03);
+    const pickSpeciesText = this.add
       .text(width / 2, pickSpeciesY, t('menu.pickSpecies'), {
         fontFamily: 'system-ui, sans-serif',
         fontSize: '14px',
@@ -351,7 +375,7 @@ export class MenuScene extends Phaser.Scene {
       })
       .setOrigin(0.5);
 
-    const narrow = width < 700;
+    let cardsBottom = 0;
     const cards: {
       id: SpeciesId;
       fill: number;
@@ -362,13 +386,15 @@ export class MenuScene extends Phaser.Scene {
       { id: 'weirdos', fill: 0x7a4aa8, stroke: 0x6ecfbf },
     ];
     if (narrow) {
-      const startY = Math.max(height * 0.505, pickSpeciesY + height * 0.05);
+      const cardH = 92;
+      const startY = pickSpeciesY + pickSpeciesText.height / 2 + 10 + cardH / 2;
+      cardsBottom = startY + 2 * (cardH + 8) + cardH / 2;
       cards.forEach((c, i) => {
         const s = speciesCopy(c.id);
         this.makeSpeciesCard(
           c.id,
           width / 2,
-          startY + i * 108,
+          startY + i * (cardH + 8),
           s.name,
           s.motto,
           s.mechanic,
@@ -376,7 +402,7 @@ export class MenuScene extends Phaser.Scene {
           c.stroke,
           () => this.startMatch(c.id),
           Math.min(300, width * 0.88),
-          92,
+          cardH,
           c.id === this.lastSpecies,
         );
       });
@@ -402,10 +428,11 @@ export class MenuScene extends Phaser.Scene {
       });
     }
 
+    const volumeY = narrow ? cardsBottom + 34 : height * 0.76;
     createVolumeSlider({
       scene: this,
       x: width / 2,
-      y: height * 0.76,
+      y: volumeY,
       width: Math.min(280, width * 0.7),
       depth: 30,
     });
@@ -418,17 +445,20 @@ export class MenuScene extends Phaser.Scene {
     });
     this.addTipsToggle(88, Math.max(40, height * 0.055));
 
-    this.add
-      .text(width / 2, height * 0.81, softLaunchStatusStrip(), {
+    const strip = this.add
+      .text(width / 2, narrow ? volumeY + 24 : height * 0.81, softLaunchStatusStrip(), {
         fontFamily: 'system-ui, sans-serif',
         fontSize: '11px',
         color: '#7a8fa3',
+        align: 'center',
+        wordWrap: { width: width * 0.92 },
       })
-      .setOrigin(0.5);
+      .setOrigin(0.5, narrow ? 0 : 0.5);
+    const chipsY = narrow ? strip.y + strip.height + 22 : height * 0.855;
 
     const gap = Math.min(88, width * 0.22);
     this.add
-      .text(width / 2 - gap * 1.5, height * 0.855, t('menu.friends'), {
+      .text(width / 2 - gap * 1.5, chipsY, t('menu.friends'), {
         fontFamily: 'system-ui, sans-serif',
         fontSize: '12px',
         color: '#fff8e8',
@@ -439,7 +469,7 @@ export class MenuScene extends Phaser.Scene {
       .setInteractive({ useHandCursor: true })
       .on('pointerup', () => this.openLobby());
     this.add
-      .text(width / 2 - gap * 0.5, height * 0.855, t('menu.cosmetics'), {
+      .text(width / 2 - gap * 0.5, chipsY, t('menu.cosmetics'), {
         fontFamily: 'system-ui, sans-serif',
         fontSize: '12px',
         color: '#fff8e8',
@@ -450,7 +480,7 @@ export class MenuScene extends Phaser.Scene {
       .setInteractive({ useHandCursor: true })
       .on('pointerup', () => this.openCosmetics());
     this.accountLabel = this.add
-      .text(width / 2 + gap * 0.5, height * 0.855, t('menu.account'), {
+      .text(width / 2 + gap * 0.5, chipsY, t('menu.account'), {
         fontFamily: 'system-ui, sans-serif',
         fontSize: '12px',
         color: '#fff8e8',
@@ -462,7 +492,7 @@ export class MenuScene extends Phaser.Scene {
       .on('pointerup', () => this.openAccount());
     this.refreshAccountChip();
     this.add
-      .text(width / 2 + gap * 1.5, height * 0.855, t('menu.stats'), {
+      .text(width / 2 + gap * 1.5, chipsY, t('menu.stats'), {
         fontFamily: 'system-ui, sans-serif',
         fontSize: '12px',
         color: '#fff8e8',
@@ -473,20 +503,44 @@ export class MenuScene extends Phaser.Scene {
       .setInteractive({ useHandCursor: true })
       .on('pointerup', () => this.openStats());
 
-    this.add
-      .text(
-        width / 2,
-        height * 0.915,
-        t('menu.hotkeys'),
-        {
-          fontFamily: 'system-ui, sans-serif',
-          fontSize: '12px',
-          color: '#6a7f94',
-        },
-      )
-      .setOrigin(0.5);
+    if (!narrow) {
+      this.add
+        .text(
+          width / 2,
+          height * 0.915,
+          t('menu.hotkeys'),
+          {
+            fontFamily: 'system-ui, sans-serif',
+            fontSize: '12px',
+            color: '#6a7f94',
+          },
+        )
+        .setOrigin(0.5);
+    }
 
-    this.addLegalFooter(width, height * 0.97);
+    const legalY = narrow ? chipsY + 34 : height * 0.97;
+    this.addLegalFooter(width, legalY);
+
+    if (narrow) {
+      const contentBottom = legalY + 16;
+      if (contentBottom > height) {
+        this.menuZoom = height / contentBottom;
+        bg.clear();
+        bg.fillGradientStyle(0x0f1a2e, 0x0f1a2e, 0x1a3a4a, 0x243a28, 1);
+        const viewW = width / this.menuZoom;
+        bg.fillRect(width / 2 - viewW / 2, 0, viewW, contentBottom);
+      }
+      this.fitMenuCamera();
+    }
+  }
+
+  /** Zooms around the top centre without scrolling, so fixed (scroll-factor 0) widgets scale too. */
+  private fitMenuCamera(): void {
+    this.cameras.main.setOrigin(0.5, 0).setScroll(0, 0).setZoom(this.menuZoom);
+  }
+
+  private resetMenuCamera(): void {
+    this.cameras.main.setOrigin(0.5, 0.5).setScroll(0, 0).setZoom(1);
   }
 
   /**

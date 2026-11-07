@@ -1,0 +1,21 @@
+/**
+ * Lobby tip for career wins from match prefs.
+ * Distinct from Win rate / Losses / Played tips.
+ */
+import { loadMatchPrefs } from '../../database/matchPrefs';
+import { t } from '../../i18n';
+
+/** Non-negative wins count. Null when no finished matches yet. */
+export function lobbyWinsCount(): number | null {
+  const prefs = loadMatchPrefs();
+  const played = prefs.gamesPlayed;
+  if (played == null || played <= 0) return null;
+  return Math.max(0, Math.floor(prefs.gamesWon ?? 0));
+}
+
+/** Null when prefs have no finished games counted yet. */
+export function lobbyWinsTipLine(): string | null {
+  const n = lobbyWinsCount();
+  if (n == null) return null;
+  return t('lobby.winsTip', { n });
+}

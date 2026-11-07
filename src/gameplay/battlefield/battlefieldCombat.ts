@@ -22,10 +22,11 @@ import {
 } from './battlefieldCombatFx';
 import { notifyUnderAttack, tickUnderAttackAlert } from './battlefieldUnderAttack';
 import { setUnitPath } from './battlefieldPathfinding';
-import type {
-  BattlefieldBuilding,
-  BattlefieldUnit,
-  BattlefieldWorld,
+import {
+  recordPlayerAction,
+  type BattlefieldBuilding,
+  type BattlefieldUnit,
+  type BattlefieldWorld,
 } from './battlefieldWorld';
 
 type CombatTarget = BattlefieldUnit | BattlefieldBuilding;
@@ -82,6 +83,7 @@ export function issueAttackSelected(
   target: CombatTarget,
 ): void {
   if (target.team === 'player' || target.hp <= 0) return;
+  let ordered = 0;
   for (const u of world.units) {
     if (u.team !== 'player' || !u.selected) continue;
     u.path = [];
@@ -89,7 +91,9 @@ export function issueAttackSelected(
     u.gatherNodeId = null;
     u.attackMove = false;
     u.attackTargetId = target.id;
+    ordered += 1;
   }
+  if (ordered > 0) recordPlayerAction(world);
 }
 
 function acquireNearestEnemy(

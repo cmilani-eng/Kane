@@ -11,12 +11,13 @@ import {
   spawnGatherFx,
 } from './battlefieldEconomyFx';
 import { setUnitPath } from './battlefieldPathfinding';
-import type {
-  BattlefieldTeam,
-  BattlefieldUnit,
-  BattlefieldWorld,
-  ResourceNode,
-  Stockpile,
+import {
+  recordPlayerAction,
+  type BattlefieldTeam,
+  type BattlefieldUnit,
+  type BattlefieldWorld,
+  type ResourceNode,
+  type Stockpile,
 } from './battlefieldWorld';
 
 export const GATHER = {
@@ -59,13 +60,16 @@ export function issueGatherSelected(
   world: BattlefieldWorld,
   node: ResourceNode,
 ): void {
+  let ordered = 0;
   for (const u of world.units) {
     if (u.team !== 'player' || !u.selected || !u.canGather) continue;
     u.attackTargetId = null;
     u.attackMove = false;
     u.gatherNodeId = node.id;
     setUnitPath(world, u, { x: node.x, y: node.y });
+    ordered += 1;
   }
+  if (ordered > 0) recordPlayerAction(world);
 }
 
 function setGoal(

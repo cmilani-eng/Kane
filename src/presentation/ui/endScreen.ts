@@ -8,17 +8,40 @@ import { BRAND } from '../../config/brand';
 import type { SkirmishMapId } from '../../data/skirmishMaps';
 import type { SpeciesId } from '../../data/speciesStub';
 import type { AiDifficultyId } from '../../gameplay/battlefield/aiDifficulty';
-import { nextDifficultyAfterWin } from '../../gameplay/battlefield/practiceStepUp';
+import { nextMapAfterHardWin } from '../../gameplay/battlefield/mapStepUp';
+import { nextSpeciesAfterCatalog } from '../../gameplay/battlefield/speciesStepUp';
+import {
+  nextDifficultyAfterWin,
+  previousDifficultyAfterLoss,
+} from '../../gameplay/battlefield/practiceStepUp';
 import { difficultyCopy, mapCopy, speciesName, t } from '../../i18n';
 import { playEndFanfare, playSfx } from '../audio/sfx';
 import { endDifficultyPlayedTipLine } from './endDifficultyPlayedTip';
+import { endAvgApmTipLine } from './endAvgApmTip';
+import { endBestApmTipLine } from './endBestApmTip';
+import { endAvgDurationTipLine } from './endAvgDurationTip';
 import { endDurationTipLine } from './endDurationTip';
 import { endMapPlayedTipLine } from './endMapPlayedTip';
+import { endMapSizeTipLine } from './endMapSizeTip';
 import { endObjectiveResultTipLine } from './endObjectiveResultTip';
 import { endSpeciesPlayedTipLine } from './endSpeciesPlayedTip';
+import { endBuildingsLostTipLine } from './endBuildingsLostTip';
 import { endBuildingsRaisedTipLine } from './endBuildingsRaisedTip';
+import { endKillsTipLine } from './endKillsTip';
 import { endUnitsLostTipLine } from './endUnitsLostTip';
 import { endUnitsTrainedTipLine } from './endUnitsTrainedTip';
+import { endResourcesGatheredTipLine } from './endResourcesGatheredTip';
+import { endApmTipLine } from './endApmTip';
+import { endEfficiencyTipLine } from './endEfficiencyTip';
+import { endBestWinStreakTipLine } from './endBestWinStreakTip';
+import { endGamesPlayedTipLine } from './endGamesPlayedTip';
+import { endWinRateTipLine } from './endWinRateTip';
+import { endFavoriteFactionTipLine } from './endFavoriteFactionTip';
+import { endLossesTipLine } from './endLossesTip';
+import { endWinsTipLine } from './endWinsTip';
+import { endWinStreakTipLine } from './endWinStreakTip';
+import { endLossStreakTipLine } from './endLossStreakTip';
+import { endVisionTipLine } from './endVisionTip';
 import { formatMatchClock } from './matchClock';
 import { copyEndShareLine, formatEndShareLine } from './endShareLine';
 
@@ -42,17 +65,27 @@ export interface EndScreenOpts {
   playerUnitsTrained?: number;
   /** Player buildings finished from construction this match. */
   playerBuildingsRaised?: number;
+  /** Player buildings destroyed this match. */
+  playerBuildingsLost?: number;
   /** Gold deposited at Keep this match. */
   playerGoldGathered?: number;
   /** Magic crystals deposited at Keep this match. */
   playerCrystalsGathered?: number;
+  /** Player-issued commands this match (for APM tip). */
+  playerActions?: number;
+  /** Max living-player unit vision tiles at match end (Vision tip). */
+  playerVisionTiles?: number;
   onMenu: () => void;
   /** Restart skirmish with the same species + difficulty. */
   onRematch: () => void;
   /** Difficulty just played. A win can offer the next difficulty. */
   difficulty?: AiDifficultyId;
-  /** Start the next difficulty with the same species and map. Hidden on a loss and after Hard. */
+  /** Start the next difficulty after a win, or the previous one after a loss. */
   onStepUp?: () => void;
+  /** Start the next map at Hard with the same species. Shown only after a Hard win. */
+  onTryMap?: () => void;
+  /** Start the next species at Hard on the first map. Shown after a Hard win on the last map. */
+  onTrySpecies?: () => void;
   /** Ignore these objects on the zoomed main camera. */
   ignoreOnMain: (objs: Phaser.GameObjects.GameObject[]) => void;
   /** Optional end reason for subtitle copy. */
@@ -72,17 +105,36 @@ export function showKaneEndScreen(opts: EndScreenOpts): void {
     playerUnitLosses,
     playerUnitsTrained,
     playerBuildingsRaised,
+    playerBuildingsLost,
     playerGoldGathered,
     playerCrystalsGathered,
+    playerActions,
+    playerVisionTiles,
     onMenu,
     onRematch,
     ignoreOnMain,
     reason,
     difficulty,
     onStepUp,
+    onTryMap,
+    onTrySpecies,
   } = opts;
-  const stepUpTo = nextDifficultyAfterWin(win, difficulty ?? 'normal');
-  const stepUp = stepUpTo != null && onStepUp != null;
+  const played = difficulty ?? 'normal';
+  const stepUpTo =
+    nextDifficultyAfterWin(win, played) ??
+    previousDifficultyAfterLoss(win, played);
+  const speciesOffer =
+    mapId != null
+      ? nextSpeciesAfterCatalog(win, difficulty ?? 'normal', mapId, speciesId)
+      : null;
+  const mapOffer =
+    speciesOffer == null && mapId != null
+      ? nextMapAfterHardWin(win, difficulty ?? 'normal', mapId)
+      : null;
+  const stepUp =
+    (stepUpTo != null && onStepUp != null) ||
+    (speciesOffer != null && onTrySpecies != null) ||
+    (mapOffer != null && onTryMap != null);
   const { width, height } = scene.scale;
   const accent = win ? 0xf0c75e : 0xe85a5a;
   const accentHex = win ? '#f0c75e' : '#e87a7a';
@@ -101,7 +153,7 @@ export function showKaneEndScreen(opts: EndScreenOpts): void {
   const panelW = short ? Math.min(720, width - 24) : Math.min(440, width - 32);
   const panelH = short
     ? height - 16
-    : Math.min(stepUp ? 660 : 600, height * (stepUp ? 0.93 : 0.86));
+    : Math.min(stepUp ? 720 : 660, height * (stepUp ? 0.96 : 0.92));
   const cy = short ? height / 2 : height * 0.48;
   const top = cy - panelH / 2;
   const yBrand = short ? top + 18 : cy - panelH * 0.4;
@@ -109,24 +161,47 @@ export function showKaneEndScreen(opts: EndScreenOpts): void {
   const yTag = short ? top + 90 : cy + panelH * 0.02;
   const ySub = short ? top + 108 : cy + panelH * 0.1;
   const yMeta = short ? top + 128 : cy + panelH * 0.17;
-  const yDuration = short ? top + 146 : cy + panelH * 0.22;
-  const ySpecies = short ? top + 160 : cy + panelH * 0.27;
-  const yMap = short ? top + 174 : cy + panelH * 0.32;
-  const yDifficulty = short ? top + 188 : cy + panelH * 0.37;
-  const yObjective = short ? top + 202 : cy + panelH * 0.42;
-  const yTrained = short ? top + 214 : cy + panelH * 0.46;
-  const yRaised = short ? top + 226 : cy + panelH * 0.5;
-  const yLost = short ? top + 238 : cy + panelH * 0.54;
-  const yRecap = short ? top + 250 : cy + panelH * 0.58;
-  const yKill = short ? top + 262 : cy + panelH * 0.62;
-  const yGathered = short ? top + 274 : cy + panelH * 0.66;
-  const yShare = short ? top + (stepUp ? 262 : 280) : cy + panelH * 0.68;
-  const yStep = short ? top + panelH - 72 : cy + panelH * 0.64;
   const yActions = top + panelH - (short ? 28 : 36);
-  const yRematch = short ? yActions : cy + panelH * (stepUp ? 0.74 : 0.7);
-  const yMenu = short ? yActions : cy + panelH * (stepUp ? 0.86 : 0.8);
+  // Short screens: two columns of eight stat lines so the actions stay on-panel.
+  const statRowY = (i: number) => top + 140 + (i % 8) * 13;
+  const statX = (i: number) =>
+    short ? width / 2 + (i < 8 ? -1 : 1) * (panelW / 4) : width / 2;
+  const yDuration = short ? statRowY(0) : cy + panelH * 0.2;
+  const ySpecies = short ? statRowY(1) : cy + panelH * 0.24;
+  const yMap = short ? statRowY(2) : cy + panelH * 0.28;
+  const yDifficulty = short ? statRowY(3) : cy + panelH * 0.32;
+  const yObjective = short ? statRowY(4) : cy + panelH * 0.36;
+  const yRecap = short ? statRowY(5) : cy + panelH * 0.4;
+  const yApm = short ? statRowY(6) : cy + panelH * 0.44;
+  const yEfficiency = short ? statRowY(7) : cy + panelH * 0.48;
+  const yTrained = short ? statRowY(8) : cy + panelH * 0.52;
+  const yRaised = short ? statRowY(9) : cy + panelH * 0.555;
+  const yKills = short ? statRowY(10) : cy + panelH * 0.59;
+  const yLost = short ? statRowY(11) : cy + panelH * 0.625;
+  const yBldLost = short ? statRowY(12) : cy + panelH * 0.66;
+  const yKill = short ? statRowY(13) : cy + panelH * 0.695;
+  const yGathered = short ? statRowY(14) : cy + panelH * 0.73;
+  const yStreak = short ? statRowY(15) : cy + panelH * 0.745;
+  const yLossStreak = short ? yActions - 60 : cy + panelH * 0.752;
+  const yBestStreak = short ? yActions - 58 : cy + panelH * 0.76;
+  const yGamesPlayed = short ? yActions - 54 : cy + panelH * 0.772;
+  const yWinRate = short ? yActions - 49 : cy + panelH * 0.778;
+  const yWins = short ? yActions - 48 : cy + panelH * 0.78;
+  const yLosses = short ? yActions - 46 : cy + panelH * 0.782;
+  const yFavoriteFaction = short ? yActions - 44 : cy + panelH * 0.784;
+  const yAvgDuration = short ? yActions - 43 : cy + panelH * 0.7855;
+  const yAvgApm = short ? yActions - 42.5 : cy + panelH * 0.7862;
+  const yBestApm = short ? yActions - 42.25 : cy + panelH * 0.7866;
+  const yMapSize = short ? yActions - 42 : cy + panelH * 0.787;
+  const yVision = short ? yActions - 40 : cy + panelH * 0.79;
+  const yShare = short ? yActions - 39 : cy + panelH * 0.793;
+  const yStep = short ? yActions - 44 : cy + panelH * 0.72;
+  const yRematch = short ? yActions : cy + panelH * (stepUp ? 0.8 : 0.76);
+  const yMenu = short ? yActions : cy + panelH * (stepUp ? 0.91 : 0.85);
   const xRematch = short ? width / 2 - 110 : width / 2;
   const xMenu = short ? width / 2 + 110 : width / 2;
+  const xShare = short && stepUp ? width / 2 - 100 : width / 2;
+  const xStep = short ? width / 2 + 100 : width / 2;
   const panel = scene.add
     .rectangle(width / 2, cy, panelW, panelH, wash, 0.92)
     .setStrokeStyle(2, accent, 0.85)
@@ -261,7 +336,7 @@ export function showKaneEndScreen(opts: EndScreenOpts): void {
   const durationTip =
     durationMs != null ? endDurationTipLine(durationMs) : '';
   const duration = scene.add
-    .text(width / 2, yDuration, durationTip, {
+    .text(statX(0), yDuration, durationTip, {
       fontFamily: 'system-ui, sans-serif',
       fontSize: '13px',
       color: '#c8d8e8',
@@ -276,7 +351,7 @@ export function showKaneEndScreen(opts: EndScreenOpts): void {
 
   const speciesTip = endSpeciesPlayedTipLine(speciesId);
   const species = scene.add
-    .text(width / 2, ySpecies, speciesTip, {
+    .text(statX(1), ySpecies, speciesTip, {
       fontFamily: 'system-ui, sans-serif',
       fontSize: '13px',
       color: '#c8d8e8',
@@ -291,7 +366,7 @@ export function showKaneEndScreen(opts: EndScreenOpts): void {
 
   const mapTip = mapId ? endMapPlayedTipLine(mapId) : '';
   const mapTipText = scene.add
-    .text(width / 2, yMap, mapTip, {
+    .text(statX(2), yMap, mapTip, {
       fontFamily: 'system-ui, sans-serif',
       fontSize: '13px',
       color: '#c8d8e8',
@@ -304,11 +379,42 @@ export function showKaneEndScreen(opts: EndScreenOpts): void {
     .setVisible(!!mapTip);
   root.push(mapTipText);
 
+  const mapSizeTip = mapId ? endMapSizeTipLine(mapId) : '';
+  const mapSizeTipText = scene.add
+    .text(width / 2, yMapSize, mapSizeTip, {
+      fontFamily: 'system-ui, sans-serif',
+      fontSize: '13px',
+      color: '#c8d8e8',
+      align: 'center',
+    })
+    .setOrigin(0.5)
+    .setScrollFactor(0)
+    .setDepth(202)
+    .setAlpha(0)
+    .setVisible(!!mapSizeTip);
+  root.push(mapSizeTipText);
+
+  const visionTip =
+    playerVisionTiles != null ? endVisionTipLine(playerVisionTiles) : '';
+  const visionTipText = scene.add
+    .text(width / 2, yVision, visionTip, {
+      fontFamily: 'system-ui, sans-serif',
+      fontSize: '13px',
+      color: '#c8d8e8',
+      align: 'center',
+    })
+    .setOrigin(0.5)
+    .setScrollFactor(0)
+    .setDepth(202)
+    .setAlpha(0)
+    .setVisible(!!visionTip);
+  root.push(visionTipText);
+
   const difficultyTip = difficulty
     ? endDifficultyPlayedTipLine(difficulty)
     : '';
   const difficultyTipText = scene.add
-    .text(width / 2, yDifficulty, difficultyTip, {
+    .text(statX(3), yDifficulty, difficultyTip, {
       fontFamily: 'system-ui, sans-serif',
       fontSize: '13px',
       color: '#c8d8e8',
@@ -323,7 +429,7 @@ export function showKaneEndScreen(opts: EndScreenOpts): void {
 
   const objectiveTip = endObjectiveResultTipLine(win, reason) ?? '';
   const objectiveTipText = scene.add
-    .text(width / 2, yObjective, objectiveTip, {
+    .text(statX(4), yObjective, objectiveTip, {
       fontFamily: 'system-ui, sans-serif',
       fontSize: '13px',
       color: '#c8d8e8',
@@ -341,7 +447,7 @@ export function showKaneEndScreen(opts: EndScreenOpts): void {
       ? endUnitsTrainedTipLine(playerUnitsTrained)
       : '';
   const trainedTipText = scene.add
-    .text(width / 2, yTrained, trainedTip, {
+    .text(statX(8), yTrained, trainedTip, {
       fontFamily: 'system-ui, sans-serif',
       fontSize: '13px',
       color: '#c8d8e8',
@@ -359,7 +465,7 @@ export function showKaneEndScreen(opts: EndScreenOpts): void {
       ? endBuildingsRaisedTipLine(playerBuildingsRaised)
       : '';
   const raisedTipText = scene.add
-    .text(width / 2, yRaised, raisedTip, {
+    .text(statX(9), yRaised, raisedTip, {
       fontFamily: 'system-ui, sans-serif',
       fontSize: '13px',
       color: '#c8d8e8',
@@ -372,12 +478,28 @@ export function showKaneEndScreen(opts: EndScreenOpts): void {
     .setVisible(!!raisedTip);
   root.push(raisedTipText);
 
+  const killsTip =
+    playerUnitKills != null ? endKillsTipLine(playerUnitKills) : '';
+  const killsTipText = scene.add
+    .text(statX(10), yKills, killsTip, {
+      fontFamily: 'system-ui, sans-serif',
+      fontSize: '13px',
+      color: '#c8d8e8',
+      align: 'center',
+    })
+    .setOrigin(0.5)
+    .setScrollFactor(0)
+    .setDepth(202)
+    .setAlpha(0)
+    .setVisible(!!killsTip);
+  root.push(killsTipText);
+
   const lostTip =
     playerUnitLosses != null
       ? endUnitsLostTipLine(playerUnitLosses)
       : '';
   const lostTipText = scene.add
-    .text(width / 2, yLost, lostTip, {
+    .text(statX(11), yLost, lostTip, {
       fontFamily: 'system-ui, sans-serif',
       fontSize: '13px',
       color: '#c8d8e8',
@@ -390,6 +512,24 @@ export function showKaneEndScreen(opts: EndScreenOpts): void {
     .setVisible(!!lostTip);
   root.push(lostTipText);
 
+  const bldLostTip =
+    playerBuildingsLost != null
+      ? endBuildingsLostTipLine(playerBuildingsLost)
+      : '';
+  const bldLostTipText = scene.add
+    .text(statX(12), yBldLost, bldLostTip, {
+      fontFamily: 'system-ui, sans-serif',
+      fontSize: '13px',
+      color: '#c8d8e8',
+      align: 'center',
+    })
+    .setOrigin(0.5)
+    .setScrollFactor(0)
+    .setDepth(202)
+    .setAlpha(0)
+    .setVisible(!!bldLostTip);
+  root.push(bldLostTipText);
+
   const hasRecap =
     playerUnitsLeft != null && playerBuildingsLeft != null;
   const recapText = hasRecap
@@ -399,7 +539,7 @@ export function showKaneEndScreen(opts: EndScreenOpts): void {
       })
     : '';
   const recap = scene.add
-    .text(width / 2, yRecap, recapText, {
+    .text(statX(5), yRecap, recapText, {
       fontFamily: 'system-ui, sans-serif',
       fontSize: '13px',
       color: '#b8c9d9',
@@ -421,7 +561,7 @@ export function showKaneEndScreen(opts: EndScreenOpts): void {
       })
     : '';
   const killRatio = scene.add
-    .text(width / 2, yKill, killText, {
+    .text(statX(13), yKill, killText, {
       fontFamily: 'system-ui, sans-serif',
       fontSize: '13px',
       color: '#a8bdd0',
@@ -436,25 +576,226 @@ export function showKaneEndScreen(opts: EndScreenOpts): void {
 
   const hasGathered =
     playerGoldGathered != null && playerCrystalsGathered != null;
-  const gatheredText = hasGathered
-    ? t('end.gathered', {
-        gold: playerGoldGathered,
-        crystals: playerCrystalsGathered,
-      })
+  const gatheredTip = hasGathered
+    ? endResourcesGatheredTipLine(
+        playerGoldGathered,
+        playerCrystalsGathered,
+      )
     : '';
   const gathered = scene.add
-    .text(width / 2, yGathered, gatheredText, {
+    .text(statX(14), yGathered, gatheredTip, {
       fontFamily: 'system-ui, sans-serif',
       fontSize: '13px',
-      color: '#a8bdd0',
+      color: '#c8d8e8',
       align: 'center',
     })
     .setOrigin(0.5)
     .setScrollFactor(0)
     .setDepth(202)
     .setAlpha(0)
-    .setVisible(hasGathered);
+    .setVisible(!!gatheredTip);
   root.push(gathered);
+
+  const hasApm = playerActions != null && durationMs != null;
+  const apmTip = hasApm
+    ? endApmTipLine(playerActions, durationMs)
+    : '';
+  const apmTipText = scene.add
+    .text(statX(6), yApm, apmTip, {
+      fontFamily: 'system-ui, sans-serif',
+      fontSize: '13px',
+      color: '#c8d8e8',
+      align: 'center',
+    })
+    .setOrigin(0.5)
+    .setScrollFactor(0)
+    .setDepth(202)
+    .setAlpha(0)
+    .setVisible(!!apmTip);
+  root.push(apmTipText);
+
+  const efficiencyTip =
+    playerUnitKills != null && playerUnitLosses != null
+      ? endEfficiencyTipLine(playerUnitKills, playerUnitLosses) ?? ''
+      : '';
+  const efficiencyTipText = scene.add
+    .text(statX(7), yEfficiency, efficiencyTip, {
+      fontFamily: 'system-ui, sans-serif',
+      fontSize: '13px',
+      color: '#c8d8e8',
+      align: 'center',
+    })
+    .setOrigin(0.5)
+    .setScrollFactor(0)
+    .setDepth(202)
+    .setAlpha(0)
+    .setVisible(!!efficiencyTip);
+  root.push(efficiencyTipText);
+
+  const streakTip = endWinStreakTipLine() ?? '';
+  const streakTipText = scene.add
+    .text(statX(15), yStreak, streakTip, {
+      fontFamily: 'system-ui, sans-serif',
+      fontSize: '13px',
+      color: '#c8d8e8',
+      align: 'center',
+    })
+    .setOrigin(0.5)
+    .setScrollFactor(0)
+    .setDepth(202)
+    .setAlpha(0)
+    .setVisible(!!streakTip);
+  root.push(streakTipText);
+
+  const lossStreakTip = endLossStreakTipLine() ?? '';
+  const lossStreakTipText = scene.add
+    .text(width / 2, yLossStreak, lossStreakTip, {
+      fontFamily: 'system-ui, sans-serif',
+      fontSize: '13px',
+      color: '#c8d8e8',
+      align: 'center',
+    })
+    .setOrigin(0.5)
+    .setScrollFactor(0)
+    .setDepth(202)
+    .setAlpha(0)
+    .setVisible(!!lossStreakTip);
+  root.push(lossStreakTipText);
+
+  const bestStreakTip = endBestWinStreakTipLine() ?? '';
+  const bestStreakTipText = scene.add
+    .text(width / 2, yBestStreak, bestStreakTip, {
+      fontFamily: 'system-ui, sans-serif',
+      fontSize: '13px',
+      color: '#c8d8e8',
+      align: 'center',
+    })
+    .setOrigin(0.5)
+    .setScrollFactor(0)
+    .setDepth(202)
+    .setAlpha(0)
+    .setVisible(!!bestStreakTip);
+  root.push(bestStreakTipText);
+
+  const gamesPlayedTip = endGamesPlayedTipLine() ?? '';
+  const gamesPlayedTipText = scene.add
+    .text(width / 2, yGamesPlayed, gamesPlayedTip, {
+      fontFamily: 'system-ui, sans-serif',
+      fontSize: '13px',
+      color: '#c8d8e8',
+      align: 'center',
+    })
+    .setOrigin(0.5)
+    .setScrollFactor(0)
+    .setDepth(202)
+    .setAlpha(0)
+    .setVisible(!!gamesPlayedTip);
+  root.push(gamesPlayedTipText);
+
+  const winRateTip = endWinRateTipLine() ?? '';
+  const winRateTipText = scene.add
+    .text(width / 2, yWinRate, winRateTip, {
+      fontFamily: 'system-ui, sans-serif',
+      fontSize: '13px',
+      color: '#c8d8e8',
+      align: 'center',
+    })
+    .setOrigin(0.5)
+    .setScrollFactor(0)
+    .setDepth(202)
+    .setAlpha(0)
+    .setVisible(!!winRateTip);
+  root.push(winRateTipText);
+
+  const winsTip = endWinsTipLine() ?? '';
+  const winsTipText = scene.add
+    .text(width / 2, yWins, winsTip, {
+      fontFamily: 'system-ui, sans-serif',
+      fontSize: '13px',
+      color: '#c8d8e8',
+      align: 'center',
+    })
+    .setOrigin(0.5)
+    .setScrollFactor(0)
+    .setDepth(202)
+    .setAlpha(0)
+    .setVisible(!!winsTip);
+  root.push(winsTipText);
+
+  const lossesTip = endLossesTipLine() ?? '';
+  const lossesTipText = scene.add
+    .text(width / 2, yLosses, lossesTip, {
+      fontFamily: 'system-ui, sans-serif',
+      fontSize: '13px',
+      color: '#c8d8e8',
+      align: 'center',
+    })
+    .setOrigin(0.5)
+    .setScrollFactor(0)
+    .setDepth(202)
+    .setAlpha(0)
+    .setVisible(!!lossesTip);
+  root.push(lossesTipText);
+
+  const favoriteFactionTip = endFavoriteFactionTipLine() ?? '';
+  const favoriteFactionTipText = scene.add
+    .text(width / 2, yFavoriteFaction, favoriteFactionTip, {
+      fontFamily: 'system-ui, sans-serif',
+      fontSize: '13px',
+      color: '#c8d8e8',
+      align: 'center',
+    })
+    .setOrigin(0.5)
+    .setScrollFactor(0)
+    .setDepth(202)
+    .setAlpha(0)
+    .setVisible(!!favoriteFactionTip);
+  root.push(favoriteFactionTipText);
+
+  const avgDurationTip = endAvgDurationTipLine() ?? '';
+  const avgDurationTipText = scene.add
+    .text(width / 2, yAvgDuration, avgDurationTip, {
+      fontFamily: 'system-ui, sans-serif',
+      fontSize: '13px',
+      color: '#c8d8e8',
+      align: 'center',
+    })
+    .setOrigin(0.5)
+    .setScrollFactor(0)
+    .setDepth(202)
+    .setAlpha(0)
+    .setVisible(!!avgDurationTip);
+  root.push(avgDurationTipText);
+
+  const avgApmTip = endAvgApmTipLine() ?? '';
+  const avgApmTipText = scene.add
+    .text(width / 2, yAvgApm, avgApmTip, {
+      fontFamily: 'system-ui, sans-serif',
+      fontSize: '13px',
+      color: '#c8d8e8',
+      align: 'center',
+    })
+    .setOrigin(0.5)
+    .setScrollFactor(0)
+    .setDepth(202)
+    .setAlpha(0)
+    .setVisible(!!avgApmTip);
+  root.push(avgApmTipText);
+
+  const bestApmTip = endBestApmTipLine() ?? '';
+  const bestApmTipText = scene.add
+    .text(width / 2, yBestApm, bestApmTip, {
+      fontFamily: 'system-ui, sans-serif',
+      fontSize: '13px',
+      color: '#c8d8e8',
+      align: 'center',
+    })
+    .setOrigin(0.5)
+    .setScrollFactor(0)
+    .setDepth(202)
+    .setAlpha(0)
+    .setVisible(!!bestApmTip);
+  root.push(bestApmTipText);
 
   const shareLine = formatEndShareLine({
     win,
@@ -466,7 +807,7 @@ export function showKaneEndScreen(opts: EndScreenOpts): void {
     buildings: playerBuildingsLeft,
   });
   const shareBtn = scene.add
-    .text(width / 2, yShare, t('end.shareCopy'), {
+    .text(xShare, yShare, t('end.shareCopy'), {
       fontFamily: 'system-ui, sans-serif',
       fontSize: '12px',
       color: '#c8d8e8',
@@ -498,14 +839,36 @@ export function showKaneEndScreen(opts: EndScreenOpts): void {
     });
   root.push(shareBtn);
 
+  const offer =
+    stepUpTo && onStepUp
+      ? {
+          label: t('end.tryEasy', {
+            difficulty: difficultyCopy(stepUpTo).label,
+          }),
+          go: onStepUp,
+        }
+      : speciesOffer && onTrySpecies
+        ? {
+            label: t('end.trySpecies', {
+              species: speciesName(speciesOffer.species),
+            }),
+            go: onTrySpecies,
+          }
+        : mapOffer && onTryMap
+          ? {
+              label: t('end.tryMap', { map: mapCopy(mapOffer).label }),
+              go: onTryMap,
+            }
+          : null;
+
   let stepBtn: Phaser.GameObjects.Text | null = null;
-  if (stepUpTo && onStepUp) {
-    const startNext = onStepUp;
+  if (offer) {
+    const go = offer.go;
     const btn = scene.add
       .text(
-        width / 2,
+        xStep,
         yStep,
-        t('end.tryEasy', { difficulty: difficultyCopy(stepUpTo).label }),
+        offer.label,
         {
           fontFamily: 'Georgia, "Times New Roman", serif',
           fontSize: short ? '16px' : '18px',
@@ -523,7 +886,7 @@ export function showKaneEndScreen(opts: EndScreenOpts): void {
       .on('pointerout', () => btn.setStyle({ color: '#fff8e8' }))
       .on('pointerup', () => {
         playSfx('ui');
-        startNext();
+        go();
       });
     stepBtn = btn;
     root.push(btn);
@@ -605,10 +968,27 @@ export function showKaneEndScreen(opts: EndScreenOpts): void {
       objectiveTipText,
       trainedTipText,
       raisedTipText,
+      killsTipText,
       lostTipText,
+      bldLostTipText,
       recap,
       killRatio,
       gathered,
+      apmTipText,
+      efficiencyTipText,
+      streakTipText,
+      lossStreakTipText,
+      bestStreakTipText,
+      gamesPlayedTipText,
+      winRateTipText,
+      winsTipText,
+      lossesTipText,
+      favoriteFactionTipText,
+      avgDurationTipText,
+      avgApmTipText,
+      bestApmTipText,
+      mapSizeTipText,
+      visionTipText,
       shareBtn,
       ...(stepBtn ? [stepBtn] : []),
       rematchBtn,

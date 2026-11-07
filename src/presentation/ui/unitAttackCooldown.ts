@@ -1,5 +1,6 @@
 /**
  * Catalog attack-cooldown tip in seconds (HUD label only).
+ * Format: Atk CD · {n}s — distinct from Rate · /s, DPS ·, and hero Cooldown Ns.
  */
 import { getUnitType, type UnitTypeId } from '../../data/units';
 import { t } from '../../i18n';

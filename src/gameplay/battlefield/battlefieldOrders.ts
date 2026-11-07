@@ -9,6 +9,7 @@ import type { BattlefieldWorld } from './battlefieldWorld';
 import {
   clearSelection,
   isLivingPlayerUnit,
+  recordPlayerAction,
   selectedUnits,
 } from './battlefieldWorld';
 
@@ -87,6 +88,7 @@ export function stopSelected(world: BattlefieldWorld): number {
     u.attackMove = false;
     n++;
   }
+  if (n > 0) recordPlayerAction(world);
   return n;
 }
 
@@ -101,6 +103,7 @@ export function issueAttackMoveSelected(
 ): number {
   const selected = selectedUnits(world);
   if (selected.length === 0) return 0;
+  recordPlayerAction(world);
   const gx = clamp(x, 20, MAP.width - 20);
   const gy = clamp(y, 20, MAP.height - 20);
   selected.forEach((u, i) => {

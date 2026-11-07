@@ -1,6 +1,7 @@
 /**
- * Minimap fog-reveal pulse age tip (presentation only).
- * Distinct from the sector-only scout label (`hud.minimapScoutPulse`).
+ * Minimap fog-reveal / scout sector age tip (presentation only).
+ * Format: Scout · {sector} · {n}s — distinct from sector-only Scout · {sector},
+ * Fog age · ns, Fog · pct%, and pause Cam · sector.
  */
 import { SCOUT_SECTOR_HINT_MS } from '../../gameplay/battlefield/battlefieldScoutPulse';
 import type { MapSectorId } from '../../gameplay/battlefield/mapSector';
@@ -16,7 +17,7 @@ export function fogRevealAgeSec(
   return Math.floor(age / 1000);
 }
 
-/** Scout {sector} · {n}s — age tip for the minimap fog reveal pulse. */
+/** Scout · {sector} · {n}s — age tip for the minimap fog reveal pulse. */
 export function minimapFogRevealAgeTip(
   sector: MapSectorId,
   lifeMs: number,

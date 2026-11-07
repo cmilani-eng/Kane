@@ -1,6 +1,6 @@
 /**
  * Lobby tip for the last finished match duration from match prefs.
- * Distinct from the average match-length tip (`lobby.matchLengthAvg`).
+ * Format: Last · mm:ss — distinct from Best · / Avg time · and ~min match-length.
  */
 import { loadMatchPrefs } from '../../database/matchPrefs';
 import { t } from '../../i18n';

@@ -21,7 +21,12 @@ import {
   selectionOrOrderFocus,
 } from '../../gameplay/battlefield/battlefieldMinimapFocus';
 import { buildingCanRally } from '../../gameplay/battlefield/battlefieldRally';
-import { isIdleWorker } from '../../gameplay/battlefield/idleWorkers';
+import {
+  countIdleWorkers,
+  countLivingWorkers,
+  isIdleWorker,
+} from '../../gameplay/battlefield/idleWorkers';
+import { isMilitaryUnit } from '../../gameplay/battlefield/selectMilitary';
 import {
   TOUCH_LONG_PRESS_MS,
   TOUCH_LONG_PRESS_SLOP_PX,
@@ -53,7 +58,30 @@ import { minimapPingAgeTip } from './minimapPingAgeTip';
 import { minimapPingSectorTipAlpha } from './minimapPingSectorTip';
 import { minimapFogRevealAgeTip } from './minimapFogRevealAgeTip';
 import { minimapScoutPulseLabelAlpha } from './minimapScoutPulseLabel';
+import { minimapArmyCountTipText } from './minimapArmyCountTip';
+import { minimapBuildingCountTipText } from './minimapBuildingCountTip';
+import { minimapIdleWorkerTipText } from './minimapIdleWorkerTip';
+import { minimapWorkerCountTipText } from './minimapWorkerCountTip';
+import {
+  minimapHeroStatus,
+  minimapHeroStatusTipText,
+} from './minimapHeroStatusTip';
+import {
+  fogExploredCoveragePct,
+  minimapFogCoverageTipText,
+} from './minimapFogCoverageTip';
+import { minimapFogAgeTipText } from './minimapFogAgeTip';
+import { minimapCrystalStockTipText } from './minimapCrystalStockTip';
+import { minimapGoldStockTipText } from './minimapGoldStockTip';
+import { minimapMatchClockTipText } from './minimapMatchClockTip';
+import { minimapSelectedCountTipText } from './minimapSelectedCountTip';
+import { minimapPopulationTipText } from './minimapPopulationTip';
 import { minimapSupplyTipText } from './minimapSupplyTip';
+import {
+  maxPlayerVisionTiles,
+  minimapVisionTipText,
+} from './minimapVisionTip';
+import { walletOf } from '../../gameplay/battlefield/battlefieldEconomy';
 
 export class Minimap {
   private readonly scene: Phaser.Scene;
@@ -72,6 +100,34 @@ export class Minimap {
   private readonly camSectorLabel: Phaser.GameObjects.Text;
   /** Live supply usage tip on the minimap chrome. */
   private readonly supplyLabel: Phaser.GameObjects.Text;
+  /** Live population tip on the minimap chrome. */
+  private readonly popLabel: Phaser.GameObjects.Text;
+  /** Live idle-worker count tip on the minimap chrome. */
+  private readonly idleLabel: Phaser.GameObjects.Text;
+  /** Live army (combat) count tip on the minimap chrome. */
+  private readonly armyLabel: Phaser.GameObjects.Text;
+  /** Live living-worker count tip on the minimap chrome. */
+  private readonly workersLabel: Phaser.GameObjects.Text;
+  /** Live building count tip on the minimap chrome. */
+  private readonly buildingsLabel: Phaser.GameObjects.Text;
+  /** Live hero status tip on the minimap chrome. */
+  private readonly heroLabel: Phaser.GameObjects.Text;
+  /** Live fog explored-coverage tip on the minimap chrome. */
+  private readonly fogLabel: Phaser.GameObjects.Text;
+  /** Live selected-unit count tip on the minimap chrome. */
+  private readonly selectedLabel: Phaser.GameObjects.Text;
+  /** Live gold-stock tip on the minimap chrome. */
+  private readonly goldLabel: Phaser.GameObjects.Text;
+  /** Live crystal-stock tip on the minimap chrome. */
+  private readonly crystalLabel: Phaser.GameObjects.Text;
+  /** Live match-clock tip on the minimap chrome. */
+  private readonly clockLabel: Phaser.GameObjects.Text;
+  /** Live max vision reach tip on the minimap chrome. */
+  private readonly visionLabel: Phaser.GameObjects.Text;
+  /** Live fog age tip on the minimap chrome (staleness since last reveal). */
+  private readonly fogAgeLabel: Phaser.GameObjects.Text;
+  /** Match elapsed ms for the Time · tip (set from scene each refresh). */
+  private matchElapsedMs = 0;
 
   private mapX = 0;
   private mapY = 0;
@@ -180,6 +236,176 @@ export class Minimap {
       .setOrigin(0.5, 0)
       .setAlpha(0.9);
 
+    this.popLabel = scene.add
+      .text(0, 0, minimapPopulationTipText(0), {
+        fontFamily: 'Segoe UI, system-ui, sans-serif',
+        fontSize: '10px',
+        color: '#c8d8e8',
+        stroke: '#0a1018',
+        strokeThickness: 3,
+      })
+      .setScrollFactor(0)
+      .setDepth(113)
+      .setOrigin(0.5, 0)
+      .setAlpha(0.9);
+
+    this.idleLabel = scene.add
+      .text(0, 0, minimapIdleWorkerTipText(0), {
+        fontFamily: 'Segoe UI, system-ui, sans-serif',
+        fontSize: '10px',
+        color: '#f0c75e',
+        stroke: '#0a1018',
+        strokeThickness: 3,
+      })
+      .setScrollFactor(0)
+      .setDepth(113)
+      .setOrigin(0.5, 0)
+      .setAlpha(0.9)
+      .setVisible(false);
+
+    this.armyLabel = scene.add
+      .text(0, 0, minimapArmyCountTipText(0), {
+        fontFamily: 'Segoe UI, system-ui, sans-serif',
+        fontSize: '10px',
+        color: '#c8d8e8',
+        stroke: '#0a1018',
+        strokeThickness: 3,
+      })
+      .setScrollFactor(0)
+      .setDepth(113)
+      .setOrigin(0.5, 0)
+      .setAlpha(0.9);
+
+    this.workersLabel = scene.add
+      .text(0, 0, minimapWorkerCountTipText(0), {
+        fontFamily: 'Segoe UI, system-ui, sans-serif',
+        fontSize: '10px',
+        color: '#c8d8e8',
+        stroke: '#0a1018',
+        strokeThickness: 3,
+      })
+      .setScrollFactor(0)
+      .setDepth(113)
+      .setOrigin(0.5, 0)
+      .setAlpha(0.9);
+
+    this.buildingsLabel = scene.add
+      .text(0, 0, minimapBuildingCountTipText(0), {
+        fontFamily: 'Segoe UI, system-ui, sans-serif',
+        fontSize: '10px',
+        color: '#c8d8e8',
+        stroke: '#0a1018',
+        strokeThickness: 3,
+      })
+      .setScrollFactor(0)
+      .setDepth(113)
+      .setOrigin(0.5, 0)
+      .setAlpha(0.9);
+
+    this.heroLabel = scene.add
+      .text(0, 0, minimapHeroStatusTipText({ kind: 'ready' }), {
+        fontFamily: 'Segoe UI, system-ui, sans-serif',
+        fontSize: '10px',
+        color: '#c8d8e8',
+        stroke: '#0a1018',
+        strokeThickness: 3,
+      })
+      .setScrollFactor(0)
+      .setDepth(113)
+      .setOrigin(0.5, 0)
+      .setAlpha(0.9);
+
+    this.fogLabel = scene.add
+      .text(0, 0, minimapFogCoverageTipText(0), {
+        fontFamily: 'Segoe UI, system-ui, sans-serif',
+        fontSize: '10px',
+        color: '#c8d8e8',
+        stroke: '#0a1018',
+        strokeThickness: 3,
+      })
+      .setScrollFactor(0)
+      .setDepth(113)
+      .setOrigin(0.5, 0)
+      .setAlpha(0.9);
+
+    this.selectedLabel = scene.add
+      .text(0, 0, minimapSelectedCountTipText(0), {
+        fontFamily: 'Segoe UI, system-ui, sans-serif',
+        fontSize: '10px',
+        color: '#c8d8e8',
+        stroke: '#0a1018',
+        strokeThickness: 3,
+      })
+      .setScrollFactor(0)
+      .setDepth(113)
+      .setOrigin(0.5, 0)
+      .setAlpha(0.9);
+
+    this.goldLabel = scene.add
+      .text(0, 0, minimapGoldStockTipText(0), {
+        fontFamily: 'Segoe UI, system-ui, sans-serif',
+        fontSize: '10px',
+        color: '#c8d8e8',
+        stroke: '#0a1018',
+        strokeThickness: 3,
+      })
+      .setScrollFactor(0)
+      .setDepth(113)
+      .setOrigin(0.5, 0)
+      .setAlpha(0.9);
+
+    this.crystalLabel = scene.add
+      .text(0, 0, minimapCrystalStockTipText(0), {
+        fontFamily: 'Segoe UI, system-ui, sans-serif',
+        fontSize: '10px',
+        color: '#c8d8e8',
+        stroke: '#0a1018',
+        strokeThickness: 3,
+      })
+      .setScrollFactor(0)
+      .setDepth(113)
+      .setOrigin(0.5, 0)
+      .setAlpha(0.9);
+
+    this.clockLabel = scene.add
+      .text(0, 0, minimapMatchClockTipText(0), {
+        fontFamily: 'Segoe UI, system-ui, sans-serif',
+        fontSize: '10px',
+        color: '#c8d8e8',
+        stroke: '#0a1018',
+        strokeThickness: 3,
+      })
+      .setScrollFactor(0)
+      .setDepth(113)
+      .setOrigin(0.5, 0)
+      .setAlpha(0.9);
+
+    this.visionLabel = scene.add
+      .text(0, 0, minimapVisionTipText(0), {
+        fontFamily: 'Segoe UI, system-ui, sans-serif',
+        fontSize: '10px',
+        color: '#c8d8e8',
+        stroke: '#0a1018',
+        strokeThickness: 3,
+      })
+      .setScrollFactor(0)
+      .setDepth(113)
+      .setOrigin(0.5, 0)
+      .setAlpha(0.9);
+
+    this.fogAgeLabel = scene.add
+      .text(0, 0, minimapFogAgeTipText(null), {
+        fontFamily: 'Segoe UI, system-ui, sans-serif',
+        fontSize: '10px',
+        color: '#c8d8e8',
+        stroke: '#0a1018',
+        strokeThickness: 3,
+      })
+      .setScrollFactor(0)
+      .setDepth(113)
+      .setOrigin(0.5, 0)
+      .setAlpha(0.9);
+
     this.hit = scene.add
       .rectangle(0, 0, this.mapW, this.mapH, 0x000000, 0.001)
       .setScrollFactor(0)
@@ -251,6 +477,19 @@ export class Minimap {
       this.camLabel,
       this.camSectorLabel,
       this.supplyLabel,
+      this.popLabel,
+      this.idleLabel,
+      this.armyLabel,
+      this.workersLabel,
+      this.buildingsLabel,
+      this.heroLabel,
+      this.fogLabel,
+      this.selectedLabel,
+      this.goldLabel,
+      this.crystalLabel,
+      this.clockLabel,
+      this.visionLabel,
+      this.fogAgeLabel,
     ];
   }
 
@@ -339,8 +578,10 @@ export class Minimap {
   refresh(
     dtMs = 16,
     selectedBuilding: BattlefieldBuilding | null = null,
+    matchElapsedMs = 0,
   ): void {
     this.selectedBuilding = selectedBuilding;
+    this.matchElapsedMs = Math.max(0, matchElapsedMs);
     this.pulseMs += dtMs;
     if (this.pingCooldownMs > 0) {
       this.pingCooldownMs = Math.max(0, this.pingCooldownMs - dtMs);
@@ -615,12 +856,111 @@ export class Minimap {
       .setPosition(camLabelX, camSectorY)
       .setVisible(true);
 
-    // Supply · used/cap on the minimap chrome (below the map frame)
+    // Time · mm:ss on the minimap chrome (below the map frame)
+    this.clockLabel
+      .setText(minimapMatchClockTipText(this.matchElapsedMs))
+      .setPosition(this.mapX + this.mapW / 2, this.mapY + this.mapH + 4)
+      .setVisible(true);
+
+    // Supply · used/cap under clock
     const pop = livingByTeam(this.world, 'player');
     this.supplyLabel
       .setText(minimapSupplyTipText(pop, flags.unitCap))
-      .setPosition(this.mapX + this.mapW / 2, this.mapY + this.mapH + 4)
+      .setPosition(this.mapX + this.mapW / 2, this.mapY + this.mapH + 16)
       .setVisible(true);
+
+    // Pop · n under supply (living player units; distinct from Supply used/cap)
+    this.popLabel
+      .setText(minimapPopulationTipText(pop))
+      .setPosition(this.mapX + this.mapW / 2, this.mapY + this.mapH + 28)
+      .setVisible(true);
+
+    // Army · n under pop (living player combat units)
+    let armyN = 0;
+    for (const u of this.world.units) {
+      if (isMilitaryUnit(u)) armyN++;
+    }
+    this.armyLabel
+      .setText(minimapArmyCountTipText(armyN))
+      .setPosition(this.mapX + this.mapW / 2, this.mapY + this.mapH + 40)
+      .setVisible(true);
+
+    // Workers · n under army (living player gatherers; distinct from Idle)
+    this.workersLabel
+      .setText(minimapWorkerCountTipText(countLivingWorkers(this.world)))
+      .setPosition(this.mapX + this.mapW / 2, this.mapY + this.mapH + 52)
+      .setVisible(true);
+
+    // Buildings · n under workers (living player buildings)
+    let bldN = 0;
+    for (const b of this.world.buildings) {
+      if (b.team === 'player' && b.hp > 0) bldN++;
+    }
+    this.buildingsLabel
+      .setText(minimapBuildingCountTipText(bldN))
+      .setPosition(this.mapX + this.mapW / 2, this.mapY + this.mapH + 64)
+      .setVisible(true);
+
+    // Hero · Ready / Down / sector under buildings
+    const heroStatus = minimapHeroStatus(this.world);
+    this.heroLabel
+      .setText(minimapHeroStatusTipText(heroStatus))
+      .setPosition(this.mapX + this.mapW / 2, this.mapY + this.mapH + 76)
+      .setVisible(true);
+
+    // Fog · pct% under hero (explored coverage of the fog grid)
+    this.fogLabel
+      .setText(
+        minimapFogCoverageTipText(fogExploredCoveragePct(this.world.fog)),
+      )
+      .setPosition(this.mapX + this.mapW / 2, this.mapY + this.mapH + 88)
+      .setVisible(true);
+
+    // Selected · n under fog (living player units currently selected)
+    let selN = 0;
+    for (const u of this.world.units) {
+      if (u.selected && u.team === 'player' && u.hp > 0) selN++;
+    }
+    this.selectedLabel
+      .setText(minimapSelectedCountTipText(selN))
+      .setPosition(this.mapX + this.mapW / 2, this.mapY + this.mapH + 100)
+      .setVisible(true);
+
+    // Gold · n under selected (player gold wallet; pairs with Crystal)
+    const wallet = walletOf(this.world, 'player');
+    this.goldLabel
+      .setText(minimapGoldStockTipText(wallet.gold))
+      .setPosition(this.mapX + this.mapW / 2, this.mapY + this.mapH + 112)
+      .setVisible(true);
+
+    // Crystal · n under gold (player magic_crystals wallet)
+    this.crystalLabel
+      .setText(minimapCrystalStockTipText(wallet.magic_crystals))
+      .setPosition(this.mapX + this.mapW / 2, this.mapY + this.mapH + 124)
+      .setVisible(true);
+
+    // Vision · n under crystal (max living-player unit vision tiles)
+    this.visionLabel
+      .setText(minimapVisionTipText(maxPlayerVisionTiles(this.world)))
+      .setPosition(this.mapX + this.mapW / 2, this.mapY + this.mapH + 136)
+      .setVisible(true);
+
+    // Fog age · ns under vision (staleness since last fog scout reveal)
+    this.fogAgeLabel
+      .setText(minimapFogAgeTipText(this.world.lastFogRevealAgeMs))
+      .setPosition(this.mapX + this.mapW / 2, this.mapY + this.mapH + 148)
+      .setVisible(true);
+
+    // Idle · n under fog age when any gatherer is idle
+    const idleN = countIdleWorkers(this.world);
+    if (idleN > 0) {
+      this.idleLabel
+        .setText(minimapIdleWorkerTipText(idleN))
+        .setPosition(this.mapX + this.mapW / 2, this.mapY + this.mapH + 160)
+        .setVisible(true);
+    } else {
+      this.idleLabel.setVisible(false);
+    }
 
     // Selected unit blips — on top of camera/order so selection never hides
     for (const u of this.world.units) {

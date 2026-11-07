@@ -70,15 +70,119 @@ describe('match prefs rematch restore', () => {
     expect(loadMatchPrefs().winStreak).toBe(0);
   });
 
+  it('tallies loss streak on losses and clears on win', () => {
+    rememberMatchPrefs('nobles', 'normal', 'crossing', 90_000, false);
+    expect(loadMatchPrefs().lossStreak).toBe(1);
+    expect(loadMatchPrefs().winStreak).toBe(0);
+    rememberMatchPrefs('brutes', 'easy', 'ridge', 80_000, false);
+    expect(loadMatchPrefs().lossStreak).toBe(2);
+    rememberMatchPrefs('weirdos', 'hard', 'gap', 70_000, true);
+    expect(loadMatchPrefs().lossStreak).toBe(0);
+    expect(loadMatchPrefs().winStreak).toBe(1);
+    rememberMatchPrefs('nobles', 'normal', 'crossing');
+    expect(loadMatchPrefs().lossStreak).toBe(0);
+  });
+
+  it('tracks peak win streak as bestWinStreak across losses', () => {
+    rememberMatchPrefs('nobles', 'normal', 'crossing', 90_000, true);
+    expect(loadMatchPrefs().bestWinStreak).toBe(1);
+    rememberMatchPrefs('brutes', 'easy', 'ridge', 80_000, true);
+    expect(loadMatchPrefs().bestWinStreak).toBe(2);
+    rememberMatchPrefs('weirdos', 'hard', 'gap', 70_000, false);
+    expect(loadMatchPrefs().bestWinStreak).toBe(2);
+    rememberMatchPrefs('nobles', 'normal', 'crossing', 60_000, true);
+    expect(loadMatchPrefs().winStreak).toBe(1);
+    expect(loadMatchPrefs().bestWinStreak).toBe(2);
+  });
+
   it('tracks shortest winning match duration as best', () => {
     rememberMatchPrefs('nobles', 'normal', 'crossing', 120_000, true);
     expect(loadMatchPrefs().bestDurationMs).toBe(120_000);
+    expect(loadMatchPrefs().bestDurationMapId).toBe('crossing');
     rememberMatchPrefs('brutes', 'easy', 'ridge', 90_000, true);
     expect(loadMatchPrefs().bestDurationMs).toBe(90_000);
+    expect(loadMatchPrefs().bestDurationMapId).toBe('ridge');
     rememberMatchPrefs('weirdos', 'hard', 'gap', 150_000, true);
     expect(loadMatchPrefs().bestDurationMs).toBe(90_000);
+    expect(loadMatchPrefs().bestDurationMapId).toBe('ridge');
     rememberMatchPrefs('nobles', 'normal', 'crossing', 60_000, false);
     expect(loadMatchPrefs().bestDurationMs).toBe(90_000);
+    expect(loadMatchPrefs().bestDurationMapId).toBe('ridge');
+  });
+
+  it('tracks career average duration across wins and losses', () => {
+    rememberMatchPrefs('nobles', 'normal', 'crossing', 90_000, true);
+    expect(loadMatchPrefs().avgDurationMs).toBe(90_000);
+    expect(loadMatchPrefs().avgDurationSamples).toBe(1);
+    rememberMatchPrefs('brutes', 'easy', 'ridge', 150_000, false);
+    expect(loadMatchPrefs().avgDurationMs).toBe(120_000);
+    expect(loadMatchPrefs().avgDurationSamples).toBe(2);
+    rememberMatchPrefs('weirdos', 'hard', 'gap', 60_000);
+    expect(loadMatchPrefs().avgDurationMs).toBe(120_000);
+    expect(loadMatchPrefs().avgDurationSamples).toBe(2);
+    rememberMatchPrefs('nobles', 'normal', 'crossing');
+    expect(loadMatchPrefs().avgDurationMs).toBe(120_000);
+    expect(loadMatchPrefs().avgDurationSamples).toBe(2);
+  });
+
+  it('tracks career average APM across wins and losses when actions given', () => {
+    rememberMatchPrefs('nobles', 'normal', 'crossing', 60_000, true, 120);
+    expect(loadMatchPrefs().avgApm).toBe(120);
+    expect(loadMatchPrefs().avgApmSamples).toBe(1);
+    rememberMatchPrefs('brutes', 'easy', 'ridge', 120_000, false, 60);
+    expect(loadMatchPrefs().avgApm).toBe(75);
+    expect(loadMatchPrefs().avgApmSamples).toBe(2);
+    rememberMatchPrefs('weirdos', 'hard', 'gap', 60_000, true);
+    expect(loadMatchPrefs().avgApm).toBe(75);
+    expect(loadMatchPrefs().avgApmSamples).toBe(2);
+    rememberMatchPrefs('nobles', 'normal', 'crossing');
+    expect(loadMatchPrefs().avgApm).toBe(75);
+    expect(loadMatchPrefs().avgApmSamples).toBe(2);
+  });
+
+  it('tracks peak bestApm across finished matches when actions given', () => {
+    rememberMatchPrefs('nobles', 'normal', 'crossing', 60_000, true, 90);
+    expect(loadMatchPrefs().bestApm).toBe(90);
+    rememberMatchPrefs('brutes', 'easy', 'ridge', 120_000, false, 60);
+    expect(loadMatchPrefs().bestApm).toBe(90);
+    rememberMatchPrefs('weirdos', 'hard', 'gap', 60_000, true, 120);
+    expect(loadMatchPrefs().bestApm).toBe(120);
+    rememberMatchPrefs('nobles', 'normal', 'crossing', 60_000, false);
+    expect(loadMatchPrefs().bestApm).toBe(120);
+    rememberMatchPrefs('brutes', 'easy', 'ridge');
+    expect(loadMatchPrefs().bestApm).toBe(120);
+  });
+
+  it('counts finished matches as gamesPlayed when outcome is set', () => {
+    rememberMatchPrefs('nobles', 'normal', 'crossing', 90_000, true);
+    expect(loadMatchPrefs().gamesPlayed).toBe(1);
+    rememberMatchPrefs('brutes', 'easy', 'ridge', 60_000, false);
+    expect(loadMatchPrefs().gamesPlayed).toBe(2);
+    rememberMatchPrefs('weirdos', 'hard', 'gap');
+    expect(loadMatchPrefs().gamesPlayed).toBe(2);
+  });
+
+  it('tallies gamesWon on wins only', () => {
+    rememberMatchPrefs('nobles', 'normal', 'crossing', 90_000, true);
+    expect(loadMatchPrefs().gamesWon).toBe(1);
+    rememberMatchPrefs('brutes', 'easy', 'ridge', 60_000, false);
+    expect(loadMatchPrefs().gamesWon).toBe(1);
+    rememberMatchPrefs('weirdos', 'hard', 'gap', 70_000, true);
+    expect(loadMatchPrefs().gamesWon).toBe(2);
+    rememberMatchPrefs('nobles', 'normal', 'crossing');
+    expect(loadMatchPrefs().gamesWon).toBe(2);
+  });
+
+  it('tallies finished matches per species in speciesPlays', () => {
+    rememberMatchPrefs('nobles', 'normal', 'crossing', 90_000, true);
+    expect(loadMatchPrefs().speciesPlays?.nobles).toBe(1);
+    rememberMatchPrefs('brutes', 'easy', 'ridge', 60_000, false);
+    expect(loadMatchPrefs().speciesPlays?.brutes).toBe(1);
+    rememberMatchPrefs('brutes', 'hard', 'gap', 70_000, true);
+    expect(loadMatchPrefs().speciesPlays?.brutes).toBe(2);
+    rememberMatchPrefs('weirdos', 'easy', 'crossing');
+    expect(loadMatchPrefs().speciesPlays?.brutes).toBe(2);
+    expect(loadMatchPrefs().speciesPlays?.nobles).toBe(1);
   });
 
   it('defaults map to crossing when older prefs omit mapId', () => {

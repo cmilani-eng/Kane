@@ -21,8 +21,22 @@ import { lobbyLastDifficultyTipLine } from './lobbyLastDifficultyTip';
 import { lobbyLastDurationTipLine } from './lobbyLastDurationTip';
 import { lobbyLastFactionTipLine } from './lobbyLastFactionTip';
 import { lobbyLastMapTipLine } from './lobbyLastMapTip';
+import { lobbyLastMapSizeTipLine } from './lobbyLastMapSizeTip';
 import { lobbyBestDurationTipLine } from './lobbyBestDurationTip';
+import { lobbyAvgDurationTipLine } from './lobbyAvgDurationTip';
+import { lobbyAvgApmTipLine } from './lobbyAvgApmTip';
+import { lobbyBestApmTipLine } from './lobbyBestApmTip';
+import { lobbyBestMapTipLine } from './lobbyBestMapTip';
 import { lobbyLastOutcomeTipLine } from './lobbyLastOutcomeTip';
+import { lobbyFavoriteFactionTipLine } from './lobbyFavoriteFactionTip';
+import { lobbyGamesPlayedTipLine } from './lobbyGamesPlayedTip';
+import { lobbyLossesTipLine } from './lobbyLossesTip';
+import { lobbyRecordTipLine } from './lobbyRecordTip';
+import { lobbyWinsTipLine } from './lobbyWinsTip';
+import { lobbySpeciesPlaysTipLine } from './lobbySpeciesPlaysTip';
+import { lobbyWinRateTipLine } from './lobbyWinRateTip';
+import { lobbyBestWinStreakTipLine } from './lobbyBestWinStreakTip';
+import { lobbyLossStreakTipLine } from './lobbyLossStreakTip';
 import { lobbyWinStreakTipLine } from './lobbyWinStreakTip';
 
 export function lobbyStatusLine(status: LobbyStatus, code: string | null): string {
@@ -140,14 +154,28 @@ export function showLobbyPanel(scene: Phaser.Scene, onClose: () => void): void {
     lobbySetupLine(),
     lobbyFactionTipLine(),
     lobbyLastFactionTipLine(),
+    lobbyFavoriteFactionTipLine(),
+    lobbySpeciesPlaysTipLine(),
     lobbyDifficultyTipLine(),
     lobbyLastDifficultyTipLine(),
     lobbyMapTipLine(),
     lobbyLastMapTipLine(),
+    lobbyBestMapTipLine(),
+    lobbyLastMapSizeTipLine(),
     lobbyLastDurationTipLine(),
     lobbyBestDurationTipLine(),
+    lobbyAvgDurationTipLine(),
+    lobbyAvgApmTipLine(),
+    lobbyBestApmTipLine(),
     lobbyLastOutcomeTipLine(),
     lobbyWinStreakTipLine(),
+    lobbyBestWinStreakTipLine(),
+    lobbyLossStreakTipLine(),
+    lobbyGamesPlayedTipLine(),
+    lobbyWinsTipLine(),
+    lobbyLossesTipLine(),
+    lobbyRecordTipLine(),
+    lobbyWinRateTipLine(),
     lobbyMatchLengthTipLine(),
   ]
     .filter(Boolean)

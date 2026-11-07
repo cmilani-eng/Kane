@@ -1,6 +1,6 @@
 /**
- * Minimap fog-reveal scout pulse label (presentation only).
- * HUD already shows a sector chip; this is the short mark on the minimap.
+ * Minimap fog-reveal scout sector mark (presentation only).
+ * Format: Scout · {sector} — distinct from Scout · {sector} · {n}s age tip.
  */
 import { SCOUT_SECTOR_HINT_MS } from '../../gameplay/battlefield/battlefieldScoutPulse';
 import type { MapSectorId } from '../../gameplay/battlefield/mapSector';

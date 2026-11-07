@@ -1,6 +1,7 @@
 /**
- * Pause overlay supply ratio tip (HUD label only).
- * Distinct from stock/HUD `formatSupplyLine` (spaced slash).
+ * Pause overlay supply tip (HUD label only).
+ * Format: Supply · used/cap — distinct from Pop · n, minimap Supply tip,
+ * and stock/HUD formatSupplyLine (spaced slash).
  */
 import { t } from '../../i18n';
 

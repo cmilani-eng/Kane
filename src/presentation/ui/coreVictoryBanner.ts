@@ -32,9 +32,52 @@ export function coreBannerCenterY(width: number, height: number): number {
   if (height >= 500) return 58;
   const narrow = width < 720;
   const pad = narrow ? 8 : 12;
-  const stripTop = pad + 50;
-  const stripH = narrow ? 76 : 36;
-  return stripTop + stripH + 8 + PANEL_H / 2;
+  const stripTop = pad + (narrow ? 50 : 60);
+  return stripTop + 36 + 8 + PANEL_H / 2;
+}
+
+/** Bottom edge of the hold banner panel. */
+export function coreBannerBottom(width: number, height: number): number {
+  return coreBannerCenterY(width, height) + PANEL_H / 2;
+}
+
+/**
+ * Top of the left chip stack (idle, attack, scout, status).
+ * Tall screens keep it under the resource band.
+ * Short screens start below the CORE hold banner while it is showing.
+ */
+export function hudChipStackTop(
+  width: number,
+  height: number,
+  bannerVisible = true,
+): number {
+  const narrow = width < 720;
+  const pad = narrow ? 8 : 12;
+  const resY = pad + (narrow ? 50 : 60);
+  const resH = narrow && height >= 500 ? 80 : 36;
+  const belowRes = resY + resH + 8;
+  if (height >= 500 || !bannerVisible) return belowRes;
+  return Math.max(belowRes, coreBannerBottom(width, height) + 8);
+}
+
+/** How far the left chips drop while the place-cost strip is on screen. */
+export const PLACE_COST_BLOCK_H = 40;
+
+/**
+ * Top of the building place-cost strip.
+ * Tall screens keep it under the match clock.
+ * Short screens park it at the top of the chip stack, which drops under
+ * the CORE banner while that banner is showing.
+ */
+export function placeCostStripTop(
+  width: number,
+  height: number,
+  bannerVisible = true,
+): number {
+  const narrow = width < 720;
+  const pad = narrow ? 8 : 12;
+  if (height >= 500) return pad + (narrow ? 34 : 40);
+  return hudChipStackTop(width, height, bannerVisible);
 }
 
 export class CoreVictoryBanner {

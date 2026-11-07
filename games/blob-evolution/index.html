@@ -18,16 +18,16 @@
   <div class="absolute inset-0 rounded-full border-2 border-accent/35 bg-[rgb(18_37_60/0.55)] shadow-[inset_0_0_24px_rgb(0_0_0/0.28)]">
     <div id="stick-knob" class="absolute top-1/2 left-1/2 -mt-[29px] -ml-[29px] size-[58px] rounded-full border-2 border-white/55 bg-accent/88 shadow-[0_6px_18px_rgb(0_0_0/0.35)] will-change-transform max-[600px]:-mt-8 max-[600px]:-ml-8 max-[600px]:size-16"></div>
   </div>
-  <div class="absolute right-0 -bottom-[18px] left-0 text-center text-[10px] font-extrabold tracking-[0.08em] text-pill/72 uppercase">Drag to move</div>
+    <div id="stick-hint" class="absolute right-0 -bottom-[18px] left-0 text-center text-[10px] font-extrabold tracking-[0.08em] text-pill/72 uppercase">Drag to move</div>
 </div>
-<div id="touch-help" class="pointer-events-none fixed right-4 bottom-3.5 z-4 text-right text-[11px] text-[rgb(230_241_255/0.48)] max-[600px]:right-[9px] max-[600px]:bottom-2 max-[600px]:max-w-[46vw]">MOVE: STICK OR WASD &nbsp; • &nbsp; EAT: BUMP INTO PREY</div>
+<div id="touch-help" class="pointer-events-none fixed right-4 bottom-3.5 z-4 max-w-[46vw] text-right text-[11px] text-[rgb(230_241_255/0.48)] max-[600px]:right-[9px] max-[600px]:bottom-2">MOVE: STICK OR WASD &nbsp; • &nbsp; EAT: BUMP INTO PREY</div>
 <div id="overlay" class="fixed inset-0 z-5 flex items-center justify-center bg-[rgb(3_10_20/0.48)] p-5 backdrop-blur-[7px]">
   <div class="panel" id="start-panel">
-    <span class="pill">3D blob survival</span>
+    <span id="start-pill" class="pill">3D blob survival</span>
     <h1 class="panel-title">Blob Evolution</h1>
-    <p class="panel-copy">Start as a tiny blue blob. Eat your way through the evolution chain, grow bigger and faster, and become the one-and-only Angel.</p>
-    <p class="panel-copy"><b>Blue → Green → Rock → Rainbow → Angel</b></p>
-    <p class="panel-note">On phone: drag the stick. On desktop: WASD or arrows. You can only eat the stage below you — unless you're Rainbow!</p>
+    <p id="start-blurb" class="panel-copy">Start as a tiny blue blob. Eat your way through the evolution chain, grow bigger and faster, and become the one-and-only Angel.</p>
+    <p id="start-chain" class="panel-copy"><b>Blue → Green → Rock → Rainbow → Angel</b></p>
+    <p id="start-note" class="panel-note">On phone: drag the stick. On desktop: WASD or arrows. You can only eat the stage below you — unless you're Rainbow!</p>
     <div class="btn-row"><button id="start-btn" class="btn">START GAME</button></div>
   </div>
   <div class="panel" id="rps-panel" hidden>

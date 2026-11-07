@@ -1,8 +1,11 @@
 import { describe, expect, it } from 'vitest';
 import {
+  coreBannerBottom,
   coreBannerCenterY,
   coreHoldProgress,
   coreHoldRemainSec,
+  hudChipStackTop,
+  placeCostStripTop,
 } from './coreVictoryBanner';
 
 describe('coreHoldRemainSec', () => {
@@ -15,6 +18,38 @@ describe('coreHoldRemainSec', () => {
   });
 });
 
+describe('hudChipStackTop', () => {
+  it('stays under the resource band on a tall screen', () => {
+    expect(hudChipStackTop(1280, 800)).toBe(12 + 60 + 36 + 8);
+    expect(hudChipStackTop(874, 500)).toBe(12 + 60 + 36 + 8);
+  });
+
+  it('starts below the CORE banner on a short screen', () => {
+    expect(hudChipStackTop(874, 402)).toBe(coreBannerBottom(874, 402) + 8);
+    expect(hudChipStackTop(390, 400)).toBe(coreBannerBottom(390, 400) + 8);
+  });
+
+  it('short screens sit under the resource strip while the banner is hidden', () => {
+    expect(hudChipStackTop(640, 360, false)).toBe(8 + 50 + 36 + 8);
+    expect(hudChipStackTop(874, 402, false)).toBe(12 + 60 + 36 + 8);
+  });
+});
+
+describe('placeCostStripTop', () => {
+  it('stays under the match clock on a tall screen', () => {
+    expect(placeCostStripTop(1280, 800)).toBe(52);
+    expect(placeCostStripTop(390, 800)).toBe(42);
+  });
+
+  it('sits under the CORE banner on a short screen', () => {
+    expect(placeCostStripTop(874, 402)).toBe(coreBannerBottom(874, 402) + 8);
+  });
+
+  it('sits under the resource strip on a short screen while the banner is hidden', () => {
+    expect(placeCostStripTop(640, 360, false)).toBe(hudChipStackTop(640, 360, false));
+  });
+});
+
 describe('coreBannerCenterY', () => {
   it('stays under the match timer on a tall screen', () => {
     expect(coreBannerCenterY(1280, 800)).toBe(58);
@@ -22,10 +57,10 @@ describe('coreBannerCenterY', () => {
   });
 
   it('clears the stock strip on a short screen', () => {
-    // Wide short strip: top 62, height 36, bottom 98. Panel is 76 tall.
-    expect(coreBannerCenterY(874, 402)).toBe(98 + 8 + 38);
+    // Wide short strip: top 72, height 36, bottom 108. Panel is 76 tall.
+    expect(coreBannerCenterY(874, 402)).toBe(108 + 8 + 38);
     // Narrow short strip is 76 tall, so the banner drops further.
-    expect(coreBannerCenterY(390, 400)).toBe(8 + 50 + 76 + 8 + 38);
+    expect(coreBannerCenterY(390, 400)).toBe(8 + 50 + 36 + 8 + 38);
   });
 });
 

@@ -21,6 +21,10 @@ import {
   sharedUnitArmorClassTipLabel,
   unitArmorClassTipLabel,
 } from './unitArmorClassTip';
+import {
+  sharedUnitArmorValueLabel,
+  unitArmorValueLabel,
+} from './unitArmorValueTip';
 import { buildingBuildCostLabel } from './buildingBuildCost';
 import { buildingBuildProgressLabel } from './buildingBuildProgress';
 import { buildingBuildTimeLabel } from './buildingBuildTime';
@@ -36,11 +40,23 @@ import {
   unitAttackRangeLabel,
 } from './unitAttackRange';
 import {
+  sharedUnitAttackSpeedLabel,
+  unitAttackSpeedLabel,
+} from './unitAttackSpeed';
+import {
   sharedUnitAttackTypeLabel,
   unitAttackTypeLabel,
 } from './unitAttackType';
 import { sharedUnitDamageLabel, unitDamageLabel } from './unitDamage';
 import { sharedUnitDpsLabel, unitDpsLabel } from './unitDps';
+import {
+  sharedUnitSplashRadiusLabel,
+  unitSplashRadiusLabel,
+} from './unitSplashRadius';
+import {
+  sharedUnitProjectileSpeedLabel,
+  unitProjectileSpeedLabel,
+} from './unitProjectileSpeed';
 import {
   sharedUnitHealRateLabel,
   unitHealRateLabel,
@@ -63,6 +79,7 @@ import {
   unitMoveSpeedLabel,
 } from './unitMoveSpeed';
 import { sharedUnitHpMaxLabel, unitHpMaxLabel } from './unitHpMax';
+import { selectionHpRatioTipLine } from './selectionHpRatioTip';
 import {
   sharedUnitSupplyCostLabel,
   unitSupplyCostLabel,
@@ -219,12 +236,18 @@ export type SelectionPanelView =
       range: number | null;
       /** GDD role / armor class label when selection shares one class. */
       armorClass: string | null;
+      /** Catalog numeric armor tip when selection shares one armor value. */
+      armorValueTip: string | null;
       /** Catalog DPS tip when selection shares one unit type. */
       dpsTip: string | null;
       /** Catalog heal-rate tip when selection shares a heal-capable hero. */
       healRateTip: string | null;
       /** Catalog attack-damage tip when selection shares one unit type (distinct from ATK chip / DPS). */
       dmgTip: string | null;
+      /** Catalog splash / AoE radius tip when selection shares one splash value. */
+      splashTip: string | null;
+      /** Catalog projectile-speed tip when selection shares ranged Proj · tiles/s. */
+      projTip: string | null;
       /** Melee / Ranged tip when selection shares one attack type. */
       atkTypeTip: string | null;
       /** Catalog move-speed tip when selection shares one unit type. */
@@ -237,8 +260,12 @@ export type SelectionPanelView =
       rangeTip: string | null;
       /** Catalog max-HP tip when selection shares one unit type. */
       hpMaxTip: string | null;
+      /** Live HP · pct% from current/max for the selection. */
+      hpRatioTip: string | null;
       /** Catalog attack-cooldown tip when selection shares one unit type. */
       atkCdTip: string | null;
+      /** Catalog attack-speed tip (attacks/sec) when selection shares one unit type. */
+      atkSpeedTip: string | null;
       /** Catalog supply-cost tip when selection shares one unit type. */
       supplyTip: string | null;
       /** Catalog train gold-cost tip when selection shares one unit type. */
@@ -286,6 +313,8 @@ export type SelectionPanelView =
       maxHp: number;
       /** Catalog max-HP tip for the selected building type. */
       hpMaxTip: string | null;
+      /** Live HP · pct% from current/max for the building. */
+      hpRatioTip: string | null;
       /** Armor · Structure tip for the selected building type. */
       armorClass: string | null;
       /** Catalog build gold/crystal cost tip (omitted when free). */
@@ -528,7 +557,8 @@ export function selectionPanelInsetPx(
     if (short) return 72;
     return narrow ? 96 : 88;
   }
-  // iPhone 17 landscape is only ~402px tall, so the panel stays shorter.
+  // iPhone 17 landscape is only ~402px tall. selectionPanel.css caps the
+  // sheet at 164px, so this lift keeps the ability pads in the gap above it.
   if (short) return 120;
   return narrow ? 188 : 172;
 }
@@ -610,6 +640,7 @@ export function buildSelectionView(
       hp: b.hp,
       maxHp: b.maxHp,
       hpMaxTip: buildingHpMaxLabel(b.typeId),
+      hpRatioTip: selectionHpRatioTipLine(b.hp, b.maxHp),
       armorClass: buildingArmorClassLabel(b.typeId),
       buildCostTip: buildingBuildCostLabel(b.typeId),
       buildTimeTip: buildingBuildTimeLabel(b.typeId),
@@ -699,16 +730,21 @@ export function buildSelectionView(
       dmg: u.dmg,
       range: u.range,
       armorClass: armorClassLabel(u.typeId),
+      armorValueTip: unitArmorValueLabel(u.typeId),
       dpsTip: unitDpsLabel(u.typeId),
       healRateTip: unitHealRateLabel(u.typeId),
       dmgTip: unitDamageLabel(u.typeId),
+      splashTip: unitSplashRadiusLabel(u.typeId),
+      projTip: unitProjectileSpeedLabel(u.typeId),
       atkTypeTip: unitAttackTypeLabel(u.typeId),
       speedTip: unitMoveSpeedLabel(u.typeId),
       moveCadenceTip: unitMoveCadenceLabel(u.typeId),
       visionTip: unitVisionLabel(u.typeId),
       rangeTip: unitAttackRangeLabel(u.typeId),
       hpMaxTip: unitHpMaxLabel(u.typeId),
+      hpRatioTip: selectionHpRatioTipLine(u.hp, u.maxHp),
       atkCdTip: unitAttackCooldownLabel(u.typeId),
+      atkSpeedTip: unitAttackSpeedLabel(u.typeId),
       supplyTip: unitSupplyCostLabel(u.typeId),
       trainGoldTip: unitTrainGoldLabel(u.typeId),
       trainCrystalTip: unitTrainCrystalLabel(u.typeId),
@@ -773,16 +809,21 @@ export function buildSelectionView(
     dmg,
     range,
     armorClass: sharedUnitArmorClassTipLabel(alive.map((u) => u.typeId)),
+    armorValueTip: sharedUnitArmorValueLabel(alive.map((u) => u.typeId)),
     dpsTip: sharedUnitDpsLabel(alive.map((u) => u.typeId)),
     healRateTip: sharedUnitHealRateLabel(alive.map((u) => u.typeId)),
     dmgTip: sharedUnitDamageLabel(alive.map((u) => u.typeId)),
+    splashTip: sharedUnitSplashRadiusLabel(alive.map((u) => u.typeId)),
+    projTip: sharedUnitProjectileSpeedLabel(alive.map((u) => u.typeId)),
     atkTypeTip: sharedUnitAttackTypeLabel(alive.map((u) => u.typeId)),
     speedTip: sharedUnitMoveSpeedLabel(alive.map((u) => u.typeId)),
     moveCadenceTip: sharedUnitMoveCadenceLabel(alive.map((u) => u.typeId)),
     visionTip: sharedUnitVisionLabel(alive.map((u) => u.typeId)),
     rangeTip: sharedUnitAttackRangeLabel(alive.map((u) => u.typeId)),
     hpMaxTip: sharedUnitHpMaxLabel(alive.map((u) => u.typeId)),
+    hpRatioTip: selectionHpRatioTipLine(hp, maxHp),
     atkCdTip: sharedUnitAttackCooldownLabel(alive.map((u) => u.typeId)),
+    atkSpeedTip: sharedUnitAttackSpeedLabel(alive.map((u) => u.typeId)),
     supplyTip: sharedUnitSupplyCostLabel(alive.map((u) => u.typeId)),
     trainGoldTip: sharedUnitTrainGoldLabel(alive.map((u) => u.typeId)),
     trainCrystalTip: sharedUnitTrainCrystalLabel(alive.map((u) => u.typeId)),
@@ -1059,16 +1100,21 @@ function structureSignature(view: SelectionPanelView): string {
       view.dmg ?? '-',
       view.range ?? '-',
       view.armorClass ?? '',
+      view.armorValueTip ?? '',
       view.dpsTip ?? '',
       view.healRateTip ?? '',
       view.dmgTip ?? '',
+      view.splashTip ?? '',
+      view.projTip ?? '',
       view.atkTypeTip ?? '',
       view.speedTip ?? '',
       view.moveCadenceTip ?? '',
       view.visionTip ?? '',
       view.rangeTip ?? '',
       view.hpMaxTip ?? '',
+      view.hpRatioTip ?? '',
       view.atkCdTip ?? '',
+      view.atkSpeedTip ?? '',
       view.supplyTip ?? '',
       view.trainGoldTip ?? '',
       view.trainCrystalTip ?? '',
@@ -1109,6 +1155,7 @@ function structureSignature(view: SelectionPanelView): string {
     view.rallyArmed ? 1 : 0,
     view.rallyDistTiles,
     view.hpMaxTip ?? '',
+    view.hpRatioTip ?? '',
     view.armorClass ?? '',
     view.buildCostTip ?? '',
     view.buildTimeTip ?? '',
@@ -1600,6 +1647,12 @@ export function renderSelectionPanel(view: SelectionPanelView): boolean {
         if (view.dmgTip) {
           bits.push(`<span>${escapeHtml(view.dmgTip)}</span>`);
         }
+        if (view.splashTip) {
+          bits.push(`<span>${escapeHtml(view.splashTip)}</span>`);
+        }
+        if (view.projTip) {
+          bits.push(`<span>${escapeHtml(view.projTip)}</span>`);
+        }
         if (view.atkTypeTip) {
           bits.push(`<span>${escapeHtml(view.atkTypeTip)}</span>`);
         }
@@ -1615,8 +1668,14 @@ export function renderSelectionPanel(view: SelectionPanelView): boolean {
         if (view.hpMaxTip) {
           bits.push(`<span>${escapeHtml(view.hpMaxTip)}</span>`);
         }
+        if (view.hpRatioTip) {
+          bits.push(`<span>${escapeHtml(view.hpRatioTip)}</span>`);
+        }
         if (view.atkCdTip) {
           bits.push(`<span>${escapeHtml(view.atkCdTip)}</span>`);
+        }
+        if (view.atkSpeedTip) {
+          bits.push(`<span>${escapeHtml(view.atkSpeedTip)}</span>`);
         }
         if (view.supplyTip) {
           bits.push(`<span>${escapeHtml(view.supplyTip)}</span>`);
@@ -1647,6 +1706,9 @@ export function renderSelectionPanel(view: SelectionPanelView): boolean {
         }
         if (view.cargoCapTip) {
           bits.push(`<span>${escapeHtml(view.cargoCapTip)}</span>`);
+        }
+        if (view.armorValueTip) {
+          bits.push(`<span>${escapeHtml(view.armorValueTip)}</span>`);
         }
         if (view.armorClass) {
           bits.push(`<span>${escapeHtml(view.armorClass)}</span>`);
@@ -1729,6 +1791,9 @@ export function renderSelectionPanel(view: SelectionPanelView): boolean {
         const bits: string[] = [];
         if (view.hpMaxTip) {
           bits.push(`<span>${escapeHtml(view.hpMaxTip)}</span>`);
+        }
+        if (view.hpRatioTip) {
+          bits.push(`<span>${escapeHtml(view.hpRatioTip)}</span>`);
         }
         if (view.armorClass) {
           bits.push(`<span>${escapeHtml(view.armorClass)}</span>`);
@@ -1824,6 +1889,9 @@ export function renderSelectionPanel(view: SelectionPanelView): boolean {
             view.hpMaxTip
               ? `<span>${escapeHtml(view.hpMaxTip)}</span>`
               : '',
+            view.hpRatioTip
+              ? `<span>${escapeHtml(view.hpRatioTip)}</span>`
+              : '',
             view.armorClass
               ? `<span>${escapeHtml(view.armorClass)}</span>`
               : '',
@@ -1861,6 +1929,10 @@ export function renderSelectionPanel(view: SelectionPanelView): boolean {
           let tipIdx = 2;
           if (spans[tipIdx] && view.hpMaxTip) {
             spans[tipIdx].textContent = view.hpMaxTip;
+            tipIdx += 1;
+          }
+          if (spans[tipIdx] && view.hpRatioTip) {
+            spans[tipIdx].textContent = view.hpRatioTip;
             tipIdx += 1;
           }
           if (spans[tipIdx] && view.armorClass) {

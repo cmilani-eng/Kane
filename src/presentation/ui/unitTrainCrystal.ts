@@ -1,5 +1,6 @@
 /**
  * Catalog train crystal-cost tip (HUD label only).
+ * Format: Crystal · {n} — distinct from inline sel.crystalCost chip.
  */
 import { getUnitType, type UnitTypeId } from '../../data/units';
 import { t } from '../../i18n';

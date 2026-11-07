@@ -134,6 +134,8 @@ export interface BattlefieldWorld {
   /** Hero runtime + ability VFX (see battlefieldHeroes). */
   heroRuntime: import('./battlefieldHeroes').HeroRuntime | null;
   enemyHeroRuntime: import('./battlefieldHeroes').HeroRuntime | null;
+  /** True after the player hero dies until re-recruited (minimap Down tip). */
+  playerHeroDown: boolean;
   vfx: import('./battlefieldHeroes').HeroVfx[];
   /** Short combat hit / death pops (presentation). */
   combatFx: import('./battlefieldCombatFx').CombatFx[];
@@ -147,6 +149,8 @@ export interface BattlefieldWorld {
   scoutPulses: import('./battlefieldScoutPulse').ScoutPulse[];
   /** Brief HUD sector label after a scout pulse. */
   scoutSectorHint: import('./battlefieldScoutPulse').ScoutSectorHint | null;
+  /** Ms since the last fog scout pulse armed (null until first reveal). */
+  lastFogRevealAgeMs: number | null;
   /** Move / attack-move ground waypoints. */
   waypointMarkers: import('./battlefieldWaypointMarkers').WaypointMarker[];
   /** Chat-free attention pings (look-here marks). */
@@ -171,10 +175,14 @@ export interface BattlefieldWorld {
   playerUnitsTrained: number;
   /** Player buildings finished from construction this match (not starting halls). */
   playerBuildingsRaised: number;
+  /** Player buildings destroyed this match. */
+  playerBuildingsLost: number;
   /** Gold deposited at Keep this match (player gathers). */
   playerGoldGathered: number;
   /** Magic crystals deposited at Keep this match (player gathers). */
   playerCrystalsGathered: number;
+  /** Player-issued commands this match (orders, train, place, abilities). */
+  playerActions: number;
   /** Player fog of war (explored / visible). */
   fog: import('./battlefieldFog').FogState;
   /** Skirmish AI difficulty for this match. */
@@ -440,6 +448,7 @@ export function createBattlefieldWorld(
     enemySpeciesId: enemySpecies,
     heroRuntime: null,
     enemyHeroRuntime: null,
+    playerHeroDown: false,
     vfx: [],
     combatFx: [],
     economyFx: [],
@@ -447,6 +456,7 @@ export function createBattlefieldWorld(
     controlGroupFx: [],
     scoutPulses: [],
     scoutSectorHint: null,
+    lastFogRevealAgeMs: null,
     waypointMarkers: [],
     attentionPings: [],
     attentionPingSectorHint: null,
@@ -458,8 +468,10 @@ export function createBattlefieldWorld(
     playerUnitLosses: 0,
     playerUnitsTrained: 0,
     playerBuildingsRaised: 0,
+    playerBuildingsLost: 0,
     playerGoldGathered: 0,
     playerCrystalsGathered: 0,
+    playerActions: 0,
     underAttackAlert: {
       lifeMs: 0,
       maxLifeMs: 520,
@@ -588,6 +600,11 @@ export function selectInRect(
   }
 }
 
+/** Count one player command toward end-screen APM. */
+export function recordPlayerAction(world: BattlefieldWorld): void {
+  world.playerActions += 1;
+}
+
 export function issueMoveSelected(
   world: BattlefieldWorld,
   x: number,
@@ -595,6 +612,7 @@ export function issueMoveSelected(
 ): void {
   const selected = world.units.filter((u) => u.selected && u.team === 'player');
   if (selected.length === 0) return;
+  recordPlayerAction(world);
   selected.forEach((u, i) => {
     u.attackTargetId = null;
     u.gatherNodeId = null;

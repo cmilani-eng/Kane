@@ -30,7 +30,11 @@ Production project target: **`kane-rts-game`** (repo retargeted from `kane-rts-s
 6. Daily rollup + top-level match summary **writes** remain trusted (Admin SDK / Cloud Functions) when those paths are used.
 7. Validate with Firestore emulator before any prod rules deploy.
 
-## How to validate later
+## How to validate
+
+`npm run test:rules` runs [`rules-tests/firestore.rules.test.ts`](../rules-tests/firestore.rules.test.ts) against the Firestore emulator (needs Java 21; CI runs it on every pull request). What is actually deployed to the project is checked by hand: see [security-verification.md](./security-verification.md).
+
+To exercise the rules from the app instead:
 
 ```bash
 firebase emulators:start --only auth,firestore

@@ -13,11 +13,17 @@ import {
   type BuildingTypeId,
 } from '../../data/buildings';
 import { type SpeciesId } from '../../data/speciesStub';
+import type { SkirmishMapId } from '../../data/skirmishMaps';
 import {
   getAiDifficulty,
   type AiDifficultyId,
 } from '../../gameplay/battlefield/aiDifficulty';
-import { nextDifficultyAfterWin } from '../../gameplay/battlefield/practiceStepUp';
+import { nextMapAfterHardWin } from '../../gameplay/battlefield/mapStepUp';
+import { nextSpeciesAfterCatalog } from '../../gameplay/battlefield/speciesStepUp';
+import {
+  nextDifficultyAfterWin,
+  previousDifficultyAfterLoss,
+} from '../../gameplay/battlefield/practiceStepUp';
 import {
   createAiState,
   tickBattlefieldAi,
@@ -109,6 +115,9 @@ import {
   shouldCountGroupHotkey,
 } from '../../gameplay/battlefield/battlefieldGroupFocus';
 import { selectsWholeType } from '../../gameplay/battlefield/battlefieldSelectClick';
+import { countIdleWorkers } from '../../gameplay/battlefield/idleWorkers';
+import { isMilitaryUnit } from '../../gameplay/battlefield/selectMilitary';
+import { minimapHeroStatus } from '../ui/minimapHeroStatusTip';
 import { touchLongPressAction } from '../../gameplay/battlefield/touchLongPress';
 import {
   spawnControlGroupAssignFx,
@@ -126,6 +135,7 @@ import {
   createBattlefieldWorld,
   findPlayerUnitAt,
   issueMoveSelected,
+  recordPlayerAction,
   selectAllVisibleSameType,
   selectAt,
   selectInRect,
@@ -150,7 +160,8 @@ import {
   makeMatchSummaryId,
 } from '../../database/matchSummary';
 import { getEquippedSkin } from '../../database/cosmeticsLoadout';
-import { rememberMatchPrefs } from '../../database/matchPrefs';
+import { loadMatchPrefs, rememberMatchPrefs } from '../../database/matchPrefs';
+import { favoriteFactionId } from '../ui/lobbyFavoriteFactionTip';
 import { isCoachSeen } from '../../database/coachPrefs';
 import { isReduceMotion } from '../../database/motionPrefs';
 import { rematchPrefsFromWorld } from '../../gameplay/battlefield/rematchPrefs';
@@ -168,6 +179,9 @@ import { FogOverlay } from '../ui/fogOverlay';
 import { showKaneEndScreen } from '../ui/endScreen';
 import { resolveMissionObjective } from '../ui/missionObjective';
 import { minimapCameraSectorAt } from '../ui/minimapCameraSectorTip';
+import { fogExploredCoveragePct } from '../ui/minimapFogCoverageTip';
+import { maxPlayerVisionTiles } from '../ui/minimapVisionTip';
+import { pauseSelectedSectorAt } from '../ui/pauseSelectedSectorTip';
 import { PauseMenu } from '../ui/pauseMenu';
 import { publishMatchStock, resetMatchStock } from '../ui/matchUiStore';
 import {
@@ -392,6 +406,7 @@ export class BattlefieldScene extends Phaser.Scene {
         const b = this.selectedBuilding;
         if (!b || b.team !== 'player' || !buildingCanRally(b)) return;
         clearBuildingRally(b);
+        recordPlayerAction(this.world);
         this.clearRallyMode();
         playSfx('ui');
       },
@@ -400,6 +415,7 @@ export class BattlefieldScene extends Phaser.Scene {
         if (!b || b.team !== 'player') return;
         const refunded = cancelQueuedTrain(this.world, b, index);
         if (refunded) {
+          recordPlayerAction(this.world);
           playSfx('ui');
           flashQueueCancel({
             unitName: refunded.unitName,
@@ -463,7 +479,7 @@ export class BattlefieldScene extends Phaser.Scene {
       onRematch: () => this.rematchSameSkirmish(),
       onQuit: () => this.scene.start('Menu'),
       ignoreOnMain: (objs) => {
-        this.cameras.main.ignore(this.add.container(0, 0, objs));
+        this.cameras.main.ignore(objs);
       },
     });
     this.minimap = new Minimap(this, this.world, this.cameraCtl);
@@ -736,6 +752,7 @@ export class BattlefieldScene extends Phaser.Scene {
     const cam = this.cameras.main;
     const viewW = cam.width / cam.zoom;
     const viewH = cam.height / cam.zoom;
+    const matchPrefs = loadMatchPrefs();
     return {
       elapsedMs: this.matchElapsedMs,
       supplyCurrent: livingByTeam(this.world, 'player'),
@@ -750,6 +767,37 @@ export class BattlefieldScene extends Phaser.Scene {
         viewW,
         viewH,
       ),
+      fogAgeMs:
+        this.world.lastFogRevealAgeMs != null
+          ? this.world.lastFogRevealAgeMs
+          : undefined,
+      fogCoveragePct: fogExploredCoveragePct(this.world.fog),
+      selectionCount: this.world.units.filter(
+        (u) => u.selected && u.team === 'player' && u.hp > 0,
+      ).length,
+      selectedSector:
+        pauseSelectedSectorAt(
+          this.world.units.filter(
+            (u) => u.selected && u.team === 'player' && u.hp > 0,
+          ),
+        ) ?? undefined,
+      stockGold: walletOf(this.world, 'player').gold,
+      stockCrystals: walletOf(this.world, 'player').magic_crystals,
+      playerActions: this.world.playerActions,
+      armyCount: this.world.units.filter((u) => isMilitaryUnit(u)).length,
+      buildingCount: this.world.buildings.filter(
+        (b) => b.team === 'player' && b.hp > 0,
+      ).length,
+      idleWorkerCount: countIdleWorkers(this.world),
+      heroStatus: minimapHeroStatus(this.world),
+      winStreak: matchPrefs.winStreak ?? 0,
+      lossStreak: matchPrefs.lossStreak ?? 0,
+      gamesPlayed: matchPrefs.gamesPlayed ?? 0,
+      gamesWon: matchPrefs.gamesWon ?? 0,
+      avgDurationMs: matchPrefs.avgDurationMs,
+      avgApm: matchPrefs.avgApm,
+      bestApm: matchPrefs.bestApm,
+      favoriteFactionId: favoriteFactionId(),
     };
   }
 
@@ -921,6 +969,7 @@ export class BattlefieldScene extends Phaser.Scene {
       const b = this.selectedBuilding;
       if (b && b.team === 'player' && buildingCanRally(b)) {
         setBuildingRally(b, wp.x, wp.y);
+        recordPlayerAction(this.world);
         playSfx('ui');
       }
       this.clearRallyMode();
@@ -1400,10 +1449,10 @@ export class BattlefieldScene extends Phaser.Scene {
       this.drawUnderAttackFeedback();
     }
     this.fogOverlay.refresh(this.world.fog, cam);
-    this.refreshHud(delta);
+    if (this.matchResult === 'ongoing') this.refreshHud(delta);
     this.coach.refresh();
     this.coreBanner.refresh(delta);
-    this.minimap.refresh(delta, this.selectedBuilding);
+    this.minimap.refresh(delta, this.selectedBuilding, this.matchElapsedMs);
   }
 
   private showEndScreen(result: MatchResult): void {
@@ -1418,6 +1467,7 @@ export class BattlefieldScene extends Phaser.Scene {
     this.clearAttackMoveMode();
     this.ghostGfx.clear();
     unmountSelectionPanel();
+    unmountStockStrip();
     this.hud.setBottomInset(0);
     this.minimap.setBottomInset(0);
     this.cameraCtl.suppressPan = true;
@@ -1440,21 +1490,48 @@ export class BattlefieldScene extends Phaser.Scene {
       playerUnitLosses: this.world.playerUnitLosses,
       playerUnitsTrained: this.world.playerUnitsTrained,
       playerBuildingsRaised: this.world.playerBuildingsRaised,
+      playerBuildingsLost: this.world.playerBuildingsLost,
       playerGoldGathered: this.world.playerGoldGathered,
       playerCrystalsGathered: this.world.playerCrystalsGathered,
+      playerActions: this.world.playerActions,
+      playerVisionTiles: maxPlayerVisionTiles(this.world),
       reason: matchEndReason(this.world, result),
       onMenu: () => this.scene.start('Menu'),
       onRematch: () => this.rematchSameSkirmish(),
       difficulty: this.world.aiDifficulty,
       onStepUp: (() => {
-        const next = nextDifficultyAfterWin(
-          result === 'victory',
-          this.world.aiDifficulty,
-        );
+        const won = result === 'victory';
+        const next =
+          nextDifficultyAfterWin(won, this.world.aiDifficulty) ??
+          previousDifficultyAfterLoss(won, this.world.aiDifficulty);
         return next ? () => this.stepUpDifficulty(next) : undefined;
       })(),
+      onTryMap: (() => {
+        const speciesNext = nextSpeciesAfterCatalog(
+          result === 'victory',
+          this.world.aiDifficulty,
+          this.world.mapId,
+          this.world.speciesId,
+        );
+        if (speciesNext) return undefined;
+        const next = nextMapAfterHardWin(
+          result === 'victory',
+          this.world.aiDifficulty,
+          this.world.mapId,
+        );
+        return next ? () => this.stepUpMap(next) : undefined;
+      })(),
+      onTrySpecies: (() => {
+        const next = nextSpeciesAfterCatalog(
+          result === 'victory',
+          this.world.aiDifficulty,
+          this.world.mapId,
+          this.world.speciesId,
+        );
+        return next ? () => this.stepUpSpecies(next.species, next.mapId) : undefined;
+      })(),
       ignoreOnMain: (objs) => {
-        this.cameras.main.ignore(this.add.container(0, 0, objs));
+        this.cameras.main.ignore(objs);
       },
     });
   }
@@ -1462,6 +1539,27 @@ export class BattlefieldScene extends Phaser.Scene {
   /** Win — same species and map, one step up the difficulty ladder. */
   private stepUpDifficulty(difficulty: AiDifficultyId): void {
     const { species, mapId } = rematchPrefsFromWorld(this.world);
+    rememberMatchPrefs(species, difficulty, mapId);
+    recordGameStarted(species);
+    void maybeRecordCloudGameStarted(species);
+    this.scene.start('Battlefield', { species, difficulty, mapId });
+  }
+
+  /** Hard win on the last map — next species at Hard on the first map. */
+  private stepUpSpecies(species: SpeciesId, mapId: SkirmishMapId): void {
+    rememberMatchPrefs(species, 'hard', mapId);
+    recordGameStarted(species);
+    void maybeRecordCloudGameStarted(species);
+    this.scene.start('Battlefield', {
+      species,
+      difficulty: 'hard',
+      mapId,
+    });
+  }
+
+  /** Hard win — same species and difficulty, the next map in the catalog. */
+  private stepUpMap(mapId: SkirmishMapId): void {
+    const { species, difficulty } = rematchPrefsFromWorld(this.world);
     rememberMatchPrefs(species, difficulty, mapId);
     recordGameStarted(species);
     void maybeRecordCloudGameStarted(species);
@@ -1502,6 +1600,7 @@ export class BattlefieldScene extends Phaser.Scene {
       this.world.mapId,
       durationMs,
       won,
+      this.world.playerActions,
     );
     void writeMatchSummaryFunctionStub({
       id,
@@ -1552,7 +1651,12 @@ export class BattlefieldScene extends Phaser.Scene {
       node,
       this.mode === 'place' ? this.placeType : null,
     );
-    const panelOpen = renderSelectionPanel(selView);
+    // Short landscape has no room for the empty-state card over the field.
+    const panelOpen = renderSelectionPanel(
+      selView.kind === 'empty' && this.scale.height < 500
+        ? { kind: 'hidden' }
+        : selView,
+    );
     const inset = selectionPanelInsetPx(
       panelOpen,
       selView.kind === 'empty',

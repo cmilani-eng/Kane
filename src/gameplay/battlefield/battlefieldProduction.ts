@@ -9,6 +9,7 @@ import { canAfford, pay, refund } from './battlefieldBuildings';
 import { walletOf } from './battlefieldEconomy';
 import { setUnitPath } from './battlefieldPathfinding';
 import {
+  recordPlayerAction,
   spawnUnit,
   type BattlefieldBuilding,
   type BattlefieldTeam,
@@ -31,6 +32,7 @@ export function queueTrain(
   if (!canAfford(wallet, cost)) return false;
   if (!pay(wallet, cost)) return false;
   building.trainQueue.push(typeId);
+  if (building.team === 'player') recordPlayerAction(world);
   return true;
 }
 

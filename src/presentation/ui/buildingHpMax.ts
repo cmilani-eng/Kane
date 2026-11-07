@@ -1,5 +1,6 @@
 /**
  * Catalog building max-HP tip (HUD label only).
+ * Format: Max HP · {n} — same key as unit tip; distinct from HP · pct%.
  */
 import { getBuildingType, type BuildingTypeId } from '../../data/buildings';
 import { t } from '../../i18n';
