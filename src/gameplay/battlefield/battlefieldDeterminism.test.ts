@@ -1,24 +1,8 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { createAiState } from './battlefieldAi';
+import { battlefieldHash } from './battlefieldHash';
 import { stepBattlefieldSim } from './battlefieldSimStep';
 import { createBattlefieldWorld, issueMoveSelected } from './battlefieldWorld';
-import type { BattlefieldWorld } from './battlefieldWorld';
-
-/** FNV-1a over the state that two clients must agree on. */
-function stateHash(world: BattlefieldWorld): string {
-  const text = [
-    ...world.units.map((u) => `u${u.id}|${u.team}|${u.x.toFixed(3)}|${u.y.toFixed(3)}|${u.hp}`),
-    ...world.buildings.map((b) => `b${b.id}|${b.team}|${b.hp}`),
-    JSON.stringify(world.wallet),
-    JSON.stringify(world.enemyWallet),
-  ].join('\n');
-  let hash = 0x811c9dc5;
-  for (let i = 0; i < text.length; i++) {
-    hash ^= text.charCodeAt(i);
-    hash = Math.imul(hash, 0x01000193);
-  }
-  return (hash >>> 0).toString(16).padStart(8, '0');
-}
 
 /**
  * Runs a match headlessly. Every `every` steps it records a hash. On step 40 the
@@ -36,7 +20,7 @@ function runMatch(seed: number, steps: number, every = 20): string[] {
       if (lead) issueMoveSelected(world, lead.x + 120, lead.y);
     }
     stepBattlefieldSim(world, ai);
-    if ((step + 1) % every === 0) hashes.push(stateHash(world));
+    if ((step + 1) % every === 0) hashes.push(battlefieldHash(world));
   }
   return hashes;
 }
