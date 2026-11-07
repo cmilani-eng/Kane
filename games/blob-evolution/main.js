@@ -697,6 +697,33 @@ function botEat(bot,prey){
   removeBot(prey);
   if(bot.stage<4){bot.stage++;bot.radius=STAGES[bot.stage].radius;bot.speed=STAGES[bot.stage].speed;scene.remove(bot.group);disposeGroup(bot.group);bot.group=makeBlob(bot.stage);scene.add(bot.group);}
 }
+/** Smaller blobs bounce harder; bigger ones barely move. */
+function bounceApart(a,b){
+  let dx=a.x-b.x, dz=a.z-b.z;
+  let dist=Math.hypot(dx,dz);
+  if(dist<1e-4){ dx=Math.random()-.5; dz=Math.random()-.5; dist=Math.hypot(dx,dz)||1; }
+  dx/=dist; dz/=dist;
+  const overlap=(a.radius+b.radius)*.78 - dist;
+  if(overlap<=0) return;
+  const massA=Math.max(0.2, a.radius*a.radius);
+  const massB=Math.max(0.2, b.radius*b.radius);
+  const total=massA+massB;
+  // Inverse-mass split: small moves a lot, big moves a little.
+  const pushA=(massB/total)*overlap;
+  const pushB=(massA/total)*overlap;
+  a.x+=dx*pushA; a.z+=dz*pushA;
+  b.x-=dx*pushB; b.z-=dz*pushB;
+  const bounce=4.8;
+  const kickA=bounce*(massB/total);
+  const kickB=bounce*(massA/total);
+  a.vx+=dx*kickA; a.vz+=dz*kickA;
+  b.vx-=dx*kickB; b.vz-=dz*kickB;
+  if('tx' in a){ a.tx=a.x+dx*2.5; a.tz=a.z+dz*2.5; }
+  if('tx' in b){ b.tx=b.x-dx*2.5; b.tz=b.z-dz*2.5; }
+  const limA=ARENA-a.radius*.8, limB=ARENA-b.radius*.8;
+  a.x=THREE.MathUtils.clamp(a.x,-limA,limA); a.z=THREE.MathUtils.clamp(a.z,-limA,limA);
+  b.x=THREE.MathUtils.clamp(b.x,-limB,limB); b.z=THREE.MathUtils.clamp(b.z,-limB,limB);
+}
 function resolveCollisions(){
   if(!running)return;
   for(const b of bots){
@@ -706,6 +733,7 @@ function resolveCollisions(){
       if(player.stage===4 && b.stage===4){showRPS(b);return;}
       if(canEat(player.stage,b.stage)){playerEat(b);if(!running)return;}
       else if(canEat(b.stage,player.stage)){loseGame();return;}
+      else { bounceApart(player,b); }
     }
   }
   for(let i=0;i<bots.length;i++){
@@ -716,6 +744,7 @@ function resolveCollisions(){
         if(a.stage===4&&b.stage===4){ if(Math.random()<.5)botEat(a,b);else botEat(b,a); }
         else if(canEat(a.stage,b.stage))botEat(a,b);
         else if(canEat(b.stage,a.stage))botEat(b,a);
+        else bounceApart(a,b);
       }
     }
   }
