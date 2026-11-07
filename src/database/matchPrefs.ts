@@ -28,6 +28,8 @@ export interface MatchPrefs {
   lastWon?: boolean;
   /** Consecutive wins ending at the last finished match. Optional for older prefs. */
   winStreak?: number;
+  /** Consecutive losses ending at the last finished match. Optional for older prefs. */
+  lossStreak?: number;
   /** Longest consecutive win streak on this device. Optional for older prefs. */
   bestWinStreak?: number;
   /** Shortest winning match duration (ms). Optional for older prefs. */
@@ -123,6 +125,7 @@ export function loadMatchPrefs(): MatchPrefs {
     const lastDurationMs = normalizeDurationMs(parsed.lastDurationMs);
     const lastWon = normalizeWon(parsed.lastWon);
     const winStreak = normalizeWinStreak(parsed.winStreak);
+    const lossStreak = normalizeWinStreak(parsed.lossStreak);
     const bestWinStreak = normalizeWinStreak(parsed.bestWinStreak);
     const bestDurationMs = normalizeDurationMs(parsed.bestDurationMs);
     const bestDurationMapId = isSkirmishMapId(parsed.bestDurationMapId)
@@ -143,6 +146,7 @@ export function loadMatchPrefs(): MatchPrefs {
       ...(lastDurationMs != null ? { lastDurationMs } : {}),
       ...(lastWon != null ? { lastWon } : {}),
       ...(winStreak != null ? { winStreak } : {}),
+      ...(lossStreak != null ? { lossStreak } : {}),
       ...(bestWinStreak != null ? { bestWinStreak } : {}),
       ...(bestDurationMs != null ? { bestDurationMs } : {}),
       ...(bestDurationMapId != null ? { bestDurationMapId } : {}),
@@ -163,6 +167,7 @@ export function saveMatchPrefs(prefs: MatchPrefs): void {
     const lastDurationMs = normalizeDurationMs(prefs.lastDurationMs);
     const lastWon = normalizeWon(prefs.lastWon);
     const winStreak = normalizeWinStreak(prefs.winStreak);
+    const lossStreak = normalizeWinStreak(prefs.lossStreak);
     const bestWinStreak = normalizeWinStreak(prefs.bestWinStreak);
     const bestDurationMs = normalizeDurationMs(prefs.bestDurationMs);
     const bestDurationMapId = isSkirmishMapId(prefs.bestDurationMapId)
@@ -183,6 +188,7 @@ export function saveMatchPrefs(prefs: MatchPrefs): void {
       ...(lastDurationMs != null ? { lastDurationMs } : {}),
       ...(lastWon != null ? { lastWon } : {}),
       ...(winStreak != null ? { winStreak } : {}),
+      ...(lossStreak != null ? { lossStreak } : {}),
       ...(bestWinStreak != null ? { bestWinStreak } : {}),
       ...(bestDurationMs != null ? { bestDurationMs } : {}),
       ...(bestDurationMapId != null ? { bestDurationMapId } : {}),
@@ -216,9 +222,11 @@ export function rememberMatchPrefs(
       : prev.lastDurationMs;
   const won = lastWon != null ? lastWon : prev.lastWon;
   let winStreak = prev.winStreak;
+  let lossStreak = prev.lossStreak;
   let bestWinStreak = prev.bestWinStreak;
   if (lastWon != null) {
     winStreak = lastWon ? (prev.winStreak ?? 0) + 1 : 0;
+    lossStreak = lastWon ? 0 : (prev.lossStreak ?? 0) + 1;
     if (winStreak > 0) {
       bestWinStreak = Math.max(prev.bestWinStreak ?? 0, winStreak);
     }
@@ -262,6 +270,7 @@ export function rememberMatchPrefs(
     ...(duration != null ? { lastDurationMs: duration } : {}),
     ...(won != null ? { lastWon: won } : {}),
     ...(winStreak != null ? { winStreak } : {}),
+    ...(lossStreak != null ? { lossStreak } : {}),
     ...(bestWinStreak != null ? { bestWinStreak } : {}),
     ...(bestDurationMs != null ? { bestDurationMs } : {}),
     ...(bestDurationMapId != null ? { bestDurationMapId } : {}),
