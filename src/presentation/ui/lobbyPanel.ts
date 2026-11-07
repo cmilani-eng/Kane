@@ -14,8 +14,9 @@ import {
   speciesName,
   t,
 } from '../../i18n';
-import { getLobbyStub } from '../../networking/lobbySingleton';
-import type { LobbyStatus } from '../../networking/lobbyStub';
+import type { MessageKey } from '../../i18n/messages';
+import { getLobbySession } from '../../networking/lobbySingleton';
+import type { SessionStatus } from '../../networking/lobbySession';
 import { playSfx } from '../audio/sfx';
 import { lobbyLastDifficultyTipLine } from './lobbyLastDifficultyTip';
 import { lobbyLastDurationTipLine } from './lobbyLastDurationTip';
@@ -39,14 +40,20 @@ import { lobbyBestWinStreakTipLine } from './lobbyBestWinStreakTip';
 import { lobbyLossStreakTipLine } from './lobbyLossStreakTip';
 import { lobbyWinStreakTipLine } from './lobbyWinStreakTip';
 
-export function lobbyStatusLine(status: LobbyStatus, code: string | null): string {
+/** `reason` is a translation key from the session, shown instead of the status when set. */
+export function lobbyStatusLine(status: SessionStatus, code: string | null, reason?: string): string {
+  if (reason) return t(reason as MessageKey);
   switch (status) {
     case 'idle':
       return t('lobby.idle');
     case 'hosting':
       return t('lobby.hosting');
+    case 'hosted':
+      return t('lobby.hostedGuest');
     case 'joining':
       return t('lobby.joining', { code: code ?? '' });
+    case 'joined':
+      return t('lobby.joinedHost');
     case 'blocked':
       return t('lobby.codeShort');
   }
@@ -113,7 +120,7 @@ export function lobbyMatchLengthTipLine(limit = 8): string {
 
 export function showLobbyPanel(scene: Phaser.Scene, onClose: () => void): void {
   const { width, height } = scene.scale;
-  const lobby = getLobbyStub();
+  const lobby = getLobbySession();
 
   const overlay = scene.add
     .rectangle(width / 2, height / 2, width, height, 0x0a1220, 0.84)
@@ -246,15 +253,16 @@ export function showLobbyPanel(scene: Phaser.Scene, onClose: () => void): void {
     const st = lobby.peek();
     codeText.setText(st.code ?? '————');
     codeText.setColor(
-      st.status === 'hosting'
+      st.status === 'hosting' || st.status === 'hosted'
         ? '#f0c75e'
-        : st.status === 'joining'
+        : st.status === 'joining' || st.status === 'joined'
           ? '#7ec8ff'
           : '#6a7f94',
     );
-    statusText.setText(lobbyStatusLine(st.status, st.code));
+    statusText.setText(lobbyStatusLine(st.status, st.code, st.reason));
   };
   refresh();
+  const unsubscribe = lobby.subscribe(refresh);
 
   const nodes: Phaser.GameObjects.GameObject[] = [
     overlay,
@@ -297,7 +305,7 @@ export function showLobbyPanel(scene: Phaser.Scene, onClose: () => void): void {
   const rowY = short ? bottom - 32 : bottom - 78;
   quietNote.setPosition(cx, rowY - 36);
   const createBtn = mkBtn(t('lobby.create'), '#2a4a38', () => {
-    lobby.hostLocal();
+    void lobby.host();
   });
   const joinBtn = mkBtn(t('lobby.join'), '#2a3a50', () => {
     const raw =
@@ -305,10 +313,10 @@ export function showLobbyPanel(scene: Phaser.Scene, onClose: () => void): void {
         ? window.prompt(t('lobby.prompt'), 'KANE01')
         : null;
     if (raw == null) return;
-    lobby.joinLocal(raw);
+    void lobby.join(raw);
   });
   const leaveBtn = mkBtn(t('lobby.leave'), '#3a4555', () => {
-    lobby.leave();
+    void lobby.leave();
   });
   const gap = 12;
   const place = (buttons: Phaser.GameObjects.Text[], y: number): void => {
@@ -359,6 +367,7 @@ export function showLobbyPanel(scene: Phaser.Scene, onClose: () => void): void {
   nodes.push(closeBtn);
 
   const destroy = (): void => {
+    unsubscribe();
     for (const n of nodes) n.destroy();
   };
 }

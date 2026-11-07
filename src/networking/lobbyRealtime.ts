@@ -4,7 +4,7 @@
  * Nothing here runs in single-player; the menu reaches it only behind the
  * `multiplayerLobby` flag.
  */
-import { get, getDatabase, ref, runTransaction, type Database } from 'firebase/database';
+import { get, getDatabase, onValue, ref, runTransaction, type Database } from 'firebase/database';
 import { getFirebaseApp } from '../firebase/app';
 import {
   LOBBY_PROTOCOL,
@@ -65,6 +65,11 @@ export function createRealtimeLobbies(db: Database) {
     async read(code: string): Promise<LobbyRecord | null> {
       const snap = await get(at(code));
       return (snap.val() as LobbyRecord | null) ?? null;
+    },
+
+    /** Calls `onChange` with the lobby now and after each change. Returns the stop function. */
+    watch(code: string, onChange: (lobby: LobbyRecord | null) => void): () => void {
+      return onValue(at(code), (snap) => onChange((snap.val() as LobbyRecord | null) ?? null));
     },
   };
 }
