@@ -465,7 +465,7 @@ export class BattlefieldScene extends Phaser.Scene {
       onRematch: () => this.rematchSameSkirmish(),
       onQuit: () => this.scene.start('Menu'),
       ignoreOnMain: (objs) => {
-        this.cameras.main.ignore(this.add.container(0, 0, objs));
+        this.cameras.main.ignore(objs);
       },
     });
     this.minimap = new Minimap(this, this.world, this.cameraCtl);
@@ -1406,7 +1406,7 @@ export class BattlefieldScene extends Phaser.Scene {
       this.drawUnderAttackFeedback();
     }
     this.fogOverlay.refresh(this.world.fog, cam);
-    this.refreshHud(delta);
+    if (this.matchResult === 'ongoing') this.refreshHud(delta);
     this.coach.refresh();
     this.coreBanner.refresh(delta);
     this.minimap.refresh(delta, this.selectedBuilding);
@@ -1424,6 +1424,7 @@ export class BattlefieldScene extends Phaser.Scene {
     this.clearAttackMoveMode();
     this.ghostGfx.clear();
     unmountSelectionPanel();
+    unmountStockStrip();
     this.hud.setBottomInset(0);
     this.minimap.setBottomInset(0);
     this.cameraCtl.suppressPan = true;
@@ -1469,7 +1470,7 @@ export class BattlefieldScene extends Phaser.Scene {
         return next ? () => this.stepUpMap(next) : undefined;
       })(),
       ignoreOnMain: (objs) => {
-        this.cameras.main.ignore(this.add.container(0, 0, objs));
+        this.cameras.main.ignore(objs);
       },
     });
   }
