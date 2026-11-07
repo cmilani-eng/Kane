@@ -3,7 +3,6 @@
  * KANE and "BUILD. COMMAND. CONQUER." stay in `BRAND` and are not translated.
  */
 export const enGB = {
-  'boot.tap': 'Tap to continue',
   'menu.difficulty': 'Difficulty',
   'menu.practiceTip':
     'Practice · the enemy builds and gathers, but never attacks. Rematch keeps this.',
@@ -15,6 +14,8 @@ export const enGB = {
   'menu.lastPlayed': 'Last played',
   'menu.play': 'Play',
   'menu.bigScreen': 'Kane needs a bigger screen. Open it on a tablet or a computer.',
+  'hub.back': '← Games',
+  'hub.backAria': 'Back to Games hub',
   'menu.playLast': 'Play · last',
   'menu.friends': 'Friends',
   'menu.cosmetics': 'Cosmetics',
@@ -768,7 +769,6 @@ export type MessageKey = keyof typeof enGB;
 type Catalog = Record<MessageKey, string>;
 
 export const ptBR = {
-  'boot.tap': 'Toque para continuar',
   'menu.difficulty': 'Dificuldade',
   'menu.practiceTip':
     'Treino · o inimigo constrói e coleta, mas nunca ataca. A revanche mantém isto.',
@@ -780,6 +780,8 @@ export const ptBR = {
   'menu.lastPlayed': 'Última',
   'menu.play': 'Jogar',
   'menu.bigScreen': 'O Kane precisa de uma tela maior. Abra em um tablet ou computador.',
+  'hub.back': '← Jogos',
+  'hub.backAria': 'Voltar aos jogos',
   'menu.playLast': 'Jogar · última',
   'menu.friends': 'Amigos',
   'menu.cosmetics': 'Visuais',
@@ -1529,7 +1531,6 @@ export const ptBR = {
 } satisfies Catalog;
 
 export const es = {
-  'boot.tap': 'Toca para continuar',
   'menu.difficulty': 'Dificultad',
   'menu.practiceTip':
     'Práctica · el enemigo construye y recolecta, pero nunca ataca. La revancha conserva esto.',
@@ -1541,6 +1542,8 @@ export const es = {
   'menu.lastPlayed': 'Anterior',
   'menu.play': 'Jugar',
   'menu.bigScreen': 'Kane necesita una pantalla más grande. Ábrelo en una tableta o un ordenador.',
+  'hub.back': '← Juegos',
+  'hub.backAria': 'Volver a los juegos',
   'menu.playLast': 'Jugar · anterior',
   'menu.friends': 'Amigos',
   'menu.cosmetics': 'Aspecto',
