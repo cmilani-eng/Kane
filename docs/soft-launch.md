@@ -49,7 +49,7 @@ This doc is the honest gate before any public preview URL.
 | End buildings lost tip | **OK** — end screen shows Razed · n from player building destructions (distinct from units Lost tip) | `playerBuildingsLost`, `endBuildingsLostTipLine`, `end.bldLostTip` |
 | End gathered | **OK** — Keep deposits tally gold/crystal; end panel shows Gathered line | `playerGoldGathered`, `playerCrystalsGathered`, `end.gathered` |
 | End gathered tip | **OK** — end screen shows Gathered · n total deposits (gold+crystals; distinct from g/c breakdown) | `endResourcesGatheredTipLine`, `end.gatheredTip` |
-| End APM tip | **OK** — end screen shows APM · n from player commands ÷ match minutes | `playerActions`, `endApmTipLine`, `end.apmTip` |
+| End APM tip | **OK** — end screen shows APM · n from player commands ÷ match minutes (distinct surface from pause APM tip / Time · duration tip) | `playerActions`, `endApmTipLine`, `end.apmTip` |
 | End efficiency tip | **OK** — end screen shows Efficiency · pct% from kills/(kills+losses) (distinct from Kills / Lost / kill-ratio) | `endEfficiencyTipLine`, `end.efficiencyTip` |
 | End win streak tip | **OK** — end screen shows Streak · n from matchPrefs.winStreak after prefs write (distinct from Best streak · / pause Streak tip) | `endWinStreakTipLine`, `end.winStreakTip`, `matchPrefs.winStreak` |
 | End games played tip | **OK** — end screen shows Played · n from matchPrefs gamesPlayed after prefs write (distinct surface from lobby Played tip / end species Played tip) | `endGamesPlayedTipLine`, `end.gamesPlayedTip`, `matchPrefs.gamesPlayed` |
