@@ -16,6 +16,8 @@ export interface HeroAbilityDef {
   costCrystals: number;
   radius: number;
   description: string;
+  /** Instant HP restored per friendly target (repair / heal casts). */
+  healHp?: number;
 }
 
 export interface HeroDef {
@@ -93,6 +95,7 @@ export const HEROES: Record<HeroId, HeroDef> = {
         cooldownMs: 14000,
         costCrystals: 0,
         radius: 180,
+        healHp: 180,
         description: 'Repair nearby friendly buildings.',
       },
       ultimate: {

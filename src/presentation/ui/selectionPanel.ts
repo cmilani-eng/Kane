@@ -39,6 +39,10 @@ import {
 import { sharedUnitDamageLabel, unitDamageLabel } from './unitDamage';
 import { sharedUnitDpsLabel, unitDpsLabel } from './unitDps';
 import {
+  sharedUnitHealRateLabel,
+  unitHealRateLabel,
+} from './unitHealRate';
+import {
   sharedUnitCargoCapacityLabel,
   unitCargoCapacityLabel,
 } from './unitCargoCapacity';
@@ -214,6 +218,8 @@ export type SelectionPanelView =
       armorClass: string | null;
       /** Catalog DPS tip when selection shares one unit type. */
       dpsTip: string | null;
+      /** Catalog heal-rate tip when selection shares a heal-capable hero. */
+      healRateTip: string | null;
       /** Catalog attack-damage tip when selection shares one unit type (distinct from ATK chip / DPS). */
       dmgTip: string | null;
       /** Melee / Ranged tip when selection shares one attack type. */
@@ -689,6 +695,7 @@ export function buildSelectionView(
       range: u.range,
       armorClass: armorClassLabel(u.typeId),
       dpsTip: unitDpsLabel(u.typeId),
+      healRateTip: unitHealRateLabel(u.typeId),
       dmgTip: unitDamageLabel(u.typeId),
       atkTypeTip: unitAttackTypeLabel(u.typeId),
       speedTip: unitMoveSpeedLabel(u.typeId),
@@ -761,6 +768,7 @@ export function buildSelectionView(
     range,
     armorClass: sharedUnitArmorClassTipLabel(alive.map((u) => u.typeId)),
     dpsTip: sharedUnitDpsLabel(alive.map((u) => u.typeId)),
+    healRateTip: sharedUnitHealRateLabel(alive.map((u) => u.typeId)),
     dmgTip: sharedUnitDamageLabel(alive.map((u) => u.typeId)),
     atkTypeTip: sharedUnitAttackTypeLabel(alive.map((u) => u.typeId)),
     speedTip: sharedUnitMoveSpeedLabel(alive.map((u) => u.typeId)),
@@ -1045,6 +1053,7 @@ function structureSignature(view: SelectionPanelView): string {
       view.range ?? '-',
       view.armorClass ?? '',
       view.dpsTip ?? '',
+      view.healRateTip ?? '',
       view.dmgTip ?? '',
       view.atkTypeTip ?? '',
       view.speedTip ?? '',
@@ -1579,6 +1588,9 @@ export function renderSelectionPanel(view: SelectionPanelView): boolean {
         }
         if (view.dpsTip) {
           bits.push(`<span>${escapeHtml(view.dpsTip)}</span>`);
+        }
+        if (view.healRateTip) {
+          bits.push(`<span>${escapeHtml(view.healRateTip)}</span>`);
         }
         if (view.dmgTip) {
           bits.push(`<span>${escapeHtml(view.dmgTip)}</span>`);
