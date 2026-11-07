@@ -7,19 +7,31 @@ import { t } from '../../i18n';
 import {
   minimapHeroStatus,
   minimapHeroStatusTipText,
+  type MinimapHeroStatus,
 } from './minimapHeroStatusTip';
+import { pauseHeroStatusTipLine } from './pauseHeroStatusTip';
 
 describe('minimapHeroStatusTipText', () => {
-  it('labels Ready / Down / sector', () => {
-    expect(minimapHeroStatusTipText({ kind: 'ready' })).toBe(
-      t('hud.minimapHeroReady'),
-    );
-    expect(minimapHeroStatusTipText({ kind: 'ready' })).toMatch(/^Hero ·/);
-    expect(minimapHeroStatusTipText({ kind: 'down' })).toBe(
-      t('hud.minimapHeroDown'),
-    );
-    expect(minimapHeroStatusTipText({ kind: 'live', sector: 'NW' })).toBe(
+  it('labels Ready / Down / sector, distinct from pause tip keys', () => {
+    const ready: MinimapHeroStatus = { kind: 'ready' };
+    const down: MinimapHeroStatus = { kind: 'down' };
+    const live: MinimapHeroStatus = { kind: 'live', sector: 'NW' };
+
+    expect(minimapHeroStatusTipText(ready)).toBe(t('hud.minimapHeroReady'));
+    expect(minimapHeroStatusTipText(ready)).toMatch(/^Hero ·/);
+    expect(minimapHeroStatusTipText(down)).toBe(t('hud.minimapHeroDown'));
+    expect(minimapHeroStatusTipText(live)).toBe(
       t('hud.minimapHeroSector', { sector: 'NW' }),
+    );
+
+    // Same en copy as pause tip; distinct i18n key / surface.
+    expect(minimapHeroStatusTipText(ready)).toBe(pauseHeroStatusTipLine(ready));
+    expect(pauseHeroStatusTipLine(ready)).toBe(t('pause.heroReady'));
+    expect(minimapHeroStatusTipText(down)).toBe(pauseHeroStatusTipLine(down));
+    expect(pauseHeroStatusTipLine(down)).toBe(t('pause.heroDown'));
+    expect(minimapHeroStatusTipText(live)).toBe(pauseHeroStatusTipLine(live));
+    expect(pauseHeroStatusTipLine(live)).toBe(
+      t('pause.heroSector', { sector: 'NW' }),
     );
   });
 });
