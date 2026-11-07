@@ -1,6 +1,6 @@
 /**
  * Pause overlay fog-reveal age tip (HUD label only).
- * Distinct from minimap Scout sector · ns tip — frozen when pause opens.
+ * Distinct from minimap Scout · sector · ns tip — frozen when pause opens.
  */
 import { t } from '../../i18n';
 
