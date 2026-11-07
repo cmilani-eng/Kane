@@ -77,22 +77,28 @@ describe('controls help copy', () => {
     expect(es.body).toContain('Tab · Shift+Tab · todos → un tipo → todos');
   });
 
-  it('lists the minimap attention-ping tip under touch controls', () => {
+  it('lists the hold-to-ping tip under touch controls in every locale', () => {
     setLocale('en-GB');
     const en = controlsHelpCopy('nobles');
     expect(en.body).toContain('Attention mark');
-    expect(en.body).toContain('Hold minimap');
-    expect(en.body).toContain('Double-tap');
+    expect(en.body).toContain(
+      'Hold minimap (cooldown) · Double-tap recenters',
+    );
 
     setLocale('pt-BR');
     const pt = controlsHelpCopy('nobles');
     expect(pt.body).toContain('Marca de atenção');
-    expect(pt.body).toContain('Segure o minimapa');
+    expect(pt.body).toContain(
+      'Segure o minimapa (recarga) · Toque duplo recentra',
+    );
 
     setLocale('es');
     const es = controlsHelpCopy('nobles');
     expect(es.body).toContain('Marca de atención');
-    expect(es.body).toContain('Mantén el minimapa');
+    expect(es.body).toContain(
+      'Mantén el minimapa (enfriamiento) · Doble toque recentra',
+    );
   });
 });
+
 
