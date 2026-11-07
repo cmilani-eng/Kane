@@ -19,6 +19,7 @@ import { playEndFanfare, playSfx } from '../audio/sfx';
 import { endDifficultyPlayedTipLine } from './endDifficultyPlayedTip';
 import { endDurationTipLine } from './endDurationTip';
 import { endMapPlayedTipLine } from './endMapPlayedTip';
+import { endMapSizeTipLine } from './endMapSizeTip';
 import { endObjectiveResultTipLine } from './endObjectiveResultTip';
 import { endSpeciesPlayedTipLine } from './endSpeciesPlayedTip';
 import { endBuildingsLostTipLine } from './endBuildingsLostTip';
@@ -175,7 +176,8 @@ export function showKaneEndScreen(opts: EndScreenOpts): void {
   const yGamesPlayed = short ? yActions - 54 : cy + panelH * 0.772;
   const yWinRate = short ? yActions - 49 : cy + panelH * 0.778;
   const yFavoriteFaction = short ? yActions - 46 : cy + panelH * 0.784;
-  const yShare = short ? yActions - 42 : cy + panelH * 0.79;
+  const yMapSize = short ? yActions - 43 : cy + panelH * 0.787;
+  const yShare = short ? yActions - 40 : cy + panelH * 0.793;
   const yStep = short ? yActions - 44 : cy + panelH * 0.72;
   const yRematch = short ? yActions : cy + panelH * (stepUp ? 0.8 : 0.76);
   const yMenu = short ? yActions : cy + panelH * (stepUp ? 0.91 : 0.85);
@@ -359,6 +361,21 @@ export function showKaneEndScreen(opts: EndScreenOpts): void {
     .setAlpha(0)
     .setVisible(!!mapTip);
   root.push(mapTipText);
+
+  const mapSizeTip = mapId ? endMapSizeTipLine(mapId) : '';
+  const mapSizeTipText = scene.add
+    .text(width / 2, yMapSize, mapSizeTip, {
+      fontFamily: 'system-ui, sans-serif',
+      fontSize: '13px',
+      color: '#c8d8e8',
+      align: 'center',
+    })
+    .setOrigin(0.5)
+    .setScrollFactor(0)
+    .setDepth(202)
+    .setAlpha(0)
+    .setVisible(!!mapSizeTip);
+  root.push(mapSizeTipText);
 
   const difficultyTip = difficulty
     ? endDifficultyPlayedTipLine(difficulty)
@@ -841,6 +858,7 @@ export function showKaneEndScreen(opts: EndScreenOpts): void {
       gamesPlayedTipText,
       winRateTipText,
       favoriteFactionTipText,
+      mapSizeTipText,
       shareBtn,
       ...(stepBtn ? [stepBtn] : []),
       rematchBtn,
