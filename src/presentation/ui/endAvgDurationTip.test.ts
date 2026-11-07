@@ -5,6 +5,9 @@ import { formatMatchClock } from './matchClock';
 import { endAvgDurationTipLine } from './endAvgDurationTip';
 import { endDurationTipLine } from './endDurationTip';
 import { lobbyAvgDurationTipLine } from './lobbyAvgDurationTip';
+import { lobbyBestDurationTipLine } from './lobbyBestDurationTip';
+import { lobbyLastDurationTipLine } from './lobbyLastDurationTip';
+import { lobbyMatchLengthTipLine } from './lobbyPanel';
 import { pauseAvgDurationTipLine } from './pauseAvgDurationTip';
 
 function memoryStorage(): Storage {
@@ -39,56 +42,114 @@ describe('endAvgDurationTipLine', () => {
     expect(endAvgDurationTipLine()).toBeNull();
   });
 
-  it('labels Avg time · mm:ss from career prefs, distinct from lobby/pause avg and match Time ·', () => {
+  it('labels Avg time · mm:ss with middot, distinct from Last · / Best · / Time · / length', () => {
     rememberMatchPrefs('weirdos', 'hard', 'crossing', 90_000, true);
     rememberMatchPrefs('nobles', 'normal', 'ridge', 150_000, false);
     const avgMs = loadMatchPrefs().avgDurationMs;
     expect(avgMs).toBe(120_000);
-    const clock = formatMatchClock(120_000);
-    expect(endAvgDurationTipLine()).toBe(t('end.avgDurationTip', { clock }));
-    expect(endAvgDurationTipLine()).toBe('Avg time · 2:00');
-    expect(endAvgDurationTipLine()).toMatch(/^Avg time \u00b7 /);
-    expect(endAvgDurationTipLine()).toContain(clock);
-    // Same en copy as lobby/pause tip; distinct i18n key / surface.
-    expect(endAvgDurationTipLine()).toBe(lobbyAvgDurationTipLine());
+    expect(loadMatchPrefs().avgDurationSamples).toBe(2);
+    const avgClock = formatMatchClock(120_000);
+    const line = endAvgDurationTipLine();
+    expect(line).toBe(t('end.avgDurationTip', { clock: avgClock }));
+    expect(line).toBe('Avg time · 2:00');
+    expect(line).toMatch(/^Avg time \u00b7 /);
+    expect(line).toContain(avgClock);
+    // Same en copy as lobby/pause tips; distinct i18n key / surface.
+    expect(line).toBe(lobbyAvgDurationTipLine());
     expect(lobbyAvgDurationTipLine()).toBe(
-      t('lobby.avgDurationTip', { clock }),
+      t('lobby.avgDurationTip', { clock: avgClock }),
     );
-    expect(endAvgDurationTipLine()).toBe(pauseAvgDurationTipLine(avgMs));
+    expect(line).toBe(pauseAvgDurationTipLine(avgMs));
     expect(pauseAvgDurationTipLine(avgMs)).toBe(
-      t('pause.avgDurationTip', { clock }),
+      t('pause.avgDurationTip', { clock: avgClock }),
     );
-    expect(endAvgDurationTipLine()).not.toBe(endDurationTipLine(120_000));
+    // Distinct from peer duration tips (Last · / Best · / Time · / ~min).
+    expect(line).not.toBe(lobbyLastDurationTipLine());
+    expect(lobbyLastDurationTipLine()).toBe(
+      t('lobby.lastDurationTip', { clock: formatMatchClock(150_000) }),
+    );
+    expect(lobbyLastDurationTipLine()).toBe('Last · 2:30');
+    expect(lobbyLastDurationTipLine()).toMatch(/^Last \u00b7 /);
+    expect(line).not.toBe(lobbyBestDurationTipLine());
+    expect(lobbyBestDurationTipLine()).toBe(
+      t('lobby.bestDurationTip', { clock: formatMatchClock(90_000) }),
+    );
+    expect(lobbyBestDurationTipLine()).toBe('Best · 1:30');
+    expect(lobbyBestDurationTipLine()).toMatch(/^Best \u00b7 /);
+    expect(line).not.toBe(lobbyMatchLengthTipLine());
+    expect(line).not.toBe(endDurationTipLine(120_000));
     expect(endDurationTipLine(120_000)).toBe(
-      t('end.durationTip', { clock }),
+      t('end.durationTip', { clock: avgClock }),
     );
     expect(endDurationTipLine(120_000)).toMatch(/^Time \u00b7 /);
+    expect(line).not.toMatch(/^Last \u00b7 /);
+    expect(line).not.toMatch(/^Best \u00b7 /);
+    expect(line).not.toMatch(/^Time \u00b7 /);
   });
 
-  it('localizes Avg time middot for pt-BR and es', () => {
-    rememberMatchPrefs('nobles', 'normal', 'gap', 75_000, true);
+  it('localizes Avg time middot for pt-BR and es; stays distinct from Last / Best / Time', () => {
+    rememberMatchPrefs('weirdos', 'hard', 'crossing', 90_000, true);
+    rememberMatchPrefs('nobles', 'normal', 'ridge', 150_000, false);
     const avgMs = loadMatchPrefs().avgDurationMs;
-    const clock = formatMatchClock(75_000);
+    const avgClock = formatMatchClock(120_000);
+
     setLocale('pt-BR');
-    expect(endAvgDurationTipLine()).toBe(t('end.avgDurationTip', { clock }));
-    expect(endAvgDurationTipLine()).toBe('Tempo médio · 1:15');
-    expect(endAvgDurationTipLine()).toMatch(/^Tempo médio \u00b7 /);
-    expect(endAvgDurationTipLine()).toBe(lobbyAvgDurationTipLine());
+    const pt = endAvgDurationTipLine();
+    expect(pt).toBe(t('end.avgDurationTip', { clock: avgClock }));
+    expect(pt).toBe('Tempo médio · 2:00');
+    expect(pt).toMatch(/^Tempo médio \u00b7 /);
+    expect(pt).toBe(lobbyAvgDurationTipLine());
     expect(lobbyAvgDurationTipLine()).toBe(
-      t('lobby.avgDurationTip', { clock }),
+      t('lobby.avgDurationTip', { clock: avgClock }),
     );
-    expect(endAvgDurationTipLine()).toBe(pauseAvgDurationTipLine(avgMs));
-    expect(endAvgDurationTipLine()).not.toBe(endDurationTipLine(75_000));
+    expect(pt).toBe(pauseAvgDurationTipLine(avgMs));
+    expect(pauseAvgDurationTipLine(avgMs)).toBe(
+      t('pause.avgDurationTip', { clock: avgClock }),
+    );
+    expect(pt).not.toBe(lobbyLastDurationTipLine());
+    expect(lobbyLastDurationTipLine()).toBe(
+      t('lobby.lastDurationTip', { clock: formatMatchClock(150_000) }),
+    );
+    expect(lobbyLastDurationTipLine()).toMatch(/^Última \u00b7 /);
+    expect(pt).not.toBe(lobbyBestDurationTipLine());
+    expect(lobbyBestDurationTipLine()).toBe(
+      t('lobby.bestDurationTip', { clock: formatMatchClock(90_000) }),
+    );
+    expect(lobbyBestDurationTipLine()).toMatch(/^Melhor \u00b7 /);
+    expect(pt).not.toBe(endDurationTipLine(120_000));
+    expect(endDurationTipLine(120_000)).toMatch(/^Tempo \u00b7 /);
+    expect(pt).not.toMatch(/^Última \u00b7 /);
+    expect(pt).not.toMatch(/^Melhor \u00b7 /);
+    expect(pt).not.toMatch(/^Tempo \u00b7 /);
+
     setLocale('es');
-    expect(endAvgDurationTipLine()).toBe(t('end.avgDurationTip', { clock }));
-    expect(endAvgDurationTipLine()).toBe('Tiempo medio · 1:15');
-    expect(endAvgDurationTipLine()).toMatch(/^Tiempo medio \u00b7 /);
-    expect(endAvgDurationTipLine()).toBe(lobbyAvgDurationTipLine());
+    const es = endAvgDurationTipLine();
+    expect(es).toBe(t('end.avgDurationTip', { clock: avgClock }));
+    expect(es).toBe('Tiempo medio · 2:00');
+    expect(es).toMatch(/^Tiempo medio \u00b7 /);
+    expect(es).toBe(lobbyAvgDurationTipLine());
     expect(lobbyAvgDurationTipLine()).toBe(
-      t('lobby.avgDurationTip', { clock }),
+      t('lobby.avgDurationTip', { clock: avgClock }),
     );
-    expect(endAvgDurationTipLine()).toBe(pauseAvgDurationTipLine(avgMs));
-    expect(endAvgDurationTipLine()).not.toBe(endDurationTipLine(75_000));
+    expect(es).toBe(pauseAvgDurationTipLine(avgMs));
+    expect(pauseAvgDurationTipLine(avgMs)).toBe(
+      t('pause.avgDurationTip', { clock: avgClock }),
+    );
+    expect(es).not.toBe(lobbyLastDurationTipLine());
+    expect(lobbyLastDurationTipLine()).toBe(
+      t('lobby.lastDurationTip', { clock: formatMatchClock(150_000) }),
+    );
+    expect(lobbyLastDurationTipLine()).toMatch(/^Última \u00b7 /);
+    expect(es).not.toBe(lobbyBestDurationTipLine());
+    expect(lobbyBestDurationTipLine()).toBe(
+      t('lobby.bestDurationTip', { clock: formatMatchClock(90_000) }),
+    );
+    expect(lobbyBestDurationTipLine()).toMatch(/^Mejor \u00b7 /);
+    expect(es).not.toBe(endDurationTipLine(120_000));
+    expect(endDurationTipLine(120_000)).toMatch(/^Tiempo \u00b7 /);
+    expect(es).not.toMatch(/^Última \u00b7 /);
+    expect(es).not.toMatch(/^Mejor \u00b7 /);
+    expect(es).not.toMatch(/^Tiempo \u00b7 /);
     setLocale('en-GB');
   });
 });
