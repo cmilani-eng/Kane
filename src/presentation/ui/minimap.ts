@@ -76,6 +76,10 @@ import { minimapMatchClockTipText } from './minimapMatchClockTip';
 import { minimapSelectedCountTipText } from './minimapSelectedCountTip';
 import { minimapPopulationTipText } from './minimapPopulationTip';
 import { minimapSupplyTipText } from './minimapSupplyTip';
+import {
+  maxPlayerVisionTiles,
+  minimapVisionTipText,
+} from './minimapVisionTip';
 import { walletOf } from '../../gameplay/battlefield/battlefieldEconomy';
 
 export class Minimap {
@@ -117,6 +121,8 @@ export class Minimap {
   private readonly crystalLabel: Phaser.GameObjects.Text;
   /** Live match-clock tip on the minimap chrome. */
   private readonly clockLabel: Phaser.GameObjects.Text;
+  /** Live max vision reach tip on the minimap chrome. */
+  private readonly visionLabel: Phaser.GameObjects.Text;
   /** Match elapsed ms for the Time · tip (set from scene each refresh). */
   private matchElapsedMs = 0;
 
@@ -371,6 +377,19 @@ export class Minimap {
       .setOrigin(0.5, 0)
       .setAlpha(0.9);
 
+    this.visionLabel = scene.add
+      .text(0, 0, minimapVisionTipText(0), {
+        fontFamily: 'Segoe UI, system-ui, sans-serif',
+        fontSize: '10px',
+        color: '#c8d8e8',
+        stroke: '#0a1018',
+        strokeThickness: 3,
+      })
+      .setScrollFactor(0)
+      .setDepth(113)
+      .setOrigin(0.5, 0)
+      .setAlpha(0.9);
+
     this.hit = scene.add
       .rectangle(0, 0, this.mapW, this.mapH, 0x000000, 0.001)
       .setScrollFactor(0)
@@ -453,6 +472,7 @@ export class Minimap {
       this.goldLabel,
       this.crystalLabel,
       this.clockLabel,
+      this.visionLabel,
     ];
   }
 
@@ -902,12 +922,18 @@ export class Minimap {
       .setPosition(this.mapX + this.mapW / 2, this.mapY + this.mapH + 124)
       .setVisible(true);
 
-    // Idle · n under crystal when any gatherer is idle
+    // Vision · n under crystal (max living-player unit vision tiles)
+    this.visionLabel
+      .setText(minimapVisionTipText(maxPlayerVisionTiles(this.world)))
+      .setPosition(this.mapX + this.mapW / 2, this.mapY + this.mapH + 136)
+      .setVisible(true);
+
+    // Idle · n under vision when any gatherer is idle
     const idleN = countIdleWorkers(this.world);
     if (idleN > 0) {
       this.idleLabel
         .setText(minimapIdleWorkerTipText(idleN))
-        .setPosition(this.mapX + this.mapW / 2, this.mapY + this.mapH + 136)
+        .setPosition(this.mapX + this.mapW / 2, this.mapY + this.mapH + 148)
         .setVisible(true);
     } else {
       this.idleLabel.setVisible(false);
