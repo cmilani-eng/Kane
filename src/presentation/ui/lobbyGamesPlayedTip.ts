@@ -1,8 +1,8 @@
 /**
  * Lobby tip for finished-match count from match prefs.
- * Format: Played · {n} — middot (U+00B7).
- * Distinct from Record · / Streak · / Win rate · / Plays · peers and from
- * end/pause Played · tip surfaces / stats panel.
+ * Format: Played · {n} — middot (U+00B7) with single spaces; en/pt-BR/es middot.
+ * Distinct from Record · / Streak · / Win rate · / Plays · peers
+ * and from pause/end Played · tips (same en copy; distinct i18n key / surface).
  */
 import { loadMatchPrefs } from '../../database/matchPrefs';
 import { t } from '../../i18n';
