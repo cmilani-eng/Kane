@@ -70,6 +70,18 @@ describe('match prefs rematch restore', () => {
     expect(loadMatchPrefs().winStreak).toBe(0);
   });
 
+  it('tracks peak win streak as bestWinStreak across losses', () => {
+    rememberMatchPrefs('nobles', 'normal', 'crossing', 90_000, true);
+    expect(loadMatchPrefs().bestWinStreak).toBe(1);
+    rememberMatchPrefs('brutes', 'easy', 'ridge', 80_000, true);
+    expect(loadMatchPrefs().bestWinStreak).toBe(2);
+    rememberMatchPrefs('weirdos', 'hard', 'gap', 70_000, false);
+    expect(loadMatchPrefs().bestWinStreak).toBe(2);
+    rememberMatchPrefs('nobles', 'normal', 'crossing', 60_000, true);
+    expect(loadMatchPrefs().winStreak).toBe(1);
+    expect(loadMatchPrefs().bestWinStreak).toBe(2);
+  });
+
   it('tracks shortest winning match duration as best', () => {
     rememberMatchPrefs('nobles', 'normal', 'crossing', 120_000, true);
     expect(loadMatchPrefs().bestDurationMs).toBe(120_000);
