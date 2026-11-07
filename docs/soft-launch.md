@@ -139,7 +139,7 @@ This doc is the honest gate before any public preview URL.
 | Stock income rate | **OK** — stock strip shows rolling gold/crystal +n/m from deposits (60s window) | `stockIncome`, `hud.incomeRate`, `matchUiStore` |
 | Stock deposit tip | **OK** — stock strip shows quiet Deposit at Keep reminder | `stockDepositTipLine`, `hud.depositTip` |
 | End meta difficulty | **OK** — end screen meta line shows map · difficulty · mm:ss | `endScreen`, `end.meta` |
-| End duration tip | **OK** — end screen shows dedicated Duration mm:ss tip under meta | `endDurationTipLine`, `end.durationTip` |
+| End duration tip | **OK** — end screen shows Time · mm:ss tip from match elapsed (same clock helper as pause; distinct from APM) | `endDurationTipLine`, `end.durationTip` |
 | End species tip | **OK** — end screen shows dedicated Played · faction tip under duration | `endSpeciesPlayedTipLine`, `end.speciesTip` |
 | End map tip | **OK** — end screen shows dedicated Map · name tip under species (distinct from meta line) | `endMapPlayedTipLine`, `end.mapTip` |
 | End difficulty tip | **OK** — end screen shows dedicated Difficulty · label tip under map (distinct from meta line) | `endDifficultyPlayedTipLine`, `end.difficultyTip` |
