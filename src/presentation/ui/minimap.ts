@@ -25,6 +25,7 @@ import {
   countIdleWorkers,
   isIdleWorker,
 } from '../../gameplay/battlefield/idleWorkers';
+import { isMilitaryUnit } from '../../gameplay/battlefield/selectMilitary';
 import {
   TOUCH_LONG_PRESS_MS,
   TOUCH_LONG_PRESS_SLOP_PX,
@@ -56,6 +57,7 @@ import { minimapPingAgeTip } from './minimapPingAgeTip';
 import { minimapPingSectorTipAlpha } from './minimapPingSectorTip';
 import { minimapFogRevealAgeTip } from './minimapFogRevealAgeTip';
 import { minimapScoutPulseLabelAlpha } from './minimapScoutPulseLabel';
+import { minimapArmyCountTipText } from './minimapArmyCountTip';
 import { minimapIdleWorkerTipText } from './minimapIdleWorkerTip';
 import { minimapSupplyTipText } from './minimapSupplyTip';
 
@@ -78,6 +80,8 @@ export class Minimap {
   private readonly supplyLabel: Phaser.GameObjects.Text;
   /** Live idle-worker count tip on the minimap chrome. */
   private readonly idleLabel: Phaser.GameObjects.Text;
+  /** Live army (combat) count tip on the minimap chrome. */
+  private readonly armyLabel: Phaser.GameObjects.Text;
 
   private mapX = 0;
   private mapY = 0;
@@ -200,6 +204,19 @@ export class Minimap {
       .setAlpha(0.9)
       .setVisible(false);
 
+    this.armyLabel = scene.add
+      .text(0, 0, minimapArmyCountTipText(0), {
+        fontFamily: 'Segoe UI, system-ui, sans-serif',
+        fontSize: '10px',
+        color: '#c8d8e8',
+        stroke: '#0a1018',
+        strokeThickness: 3,
+      })
+      .setScrollFactor(0)
+      .setDepth(113)
+      .setOrigin(0.5, 0)
+      .setAlpha(0.9);
+
     this.hit = scene.add
       .rectangle(0, 0, this.mapW, this.mapH, 0x000000, 0.001)
       .setScrollFactor(0)
@@ -272,6 +289,7 @@ export class Minimap {
       this.camSectorLabel,
       this.supplyLabel,
       this.idleLabel,
+      this.armyLabel,
     ];
   }
 
@@ -643,12 +661,22 @@ export class Minimap {
       .setPosition(this.mapX + this.mapW / 2, this.mapY + this.mapH + 4)
       .setVisible(true);
 
-    // Idle · n under supply when any gatherer is idle
+    // Army · n under supply (living player combat units)
+    let armyN = 0;
+    for (const u of this.world.units) {
+      if (isMilitaryUnit(u)) armyN++;
+    }
+    this.armyLabel
+      .setText(minimapArmyCountTipText(armyN))
+      .setPosition(this.mapX + this.mapW / 2, this.mapY + this.mapH + 16)
+      .setVisible(true);
+
+    // Idle · n under army when any gatherer is idle
     const idleN = countIdleWorkers(this.world);
     if (idleN > 0) {
       this.idleLabel
         .setText(minimapIdleWorkerTipText(idleN))
-        .setPosition(this.mapX + this.mapW / 2, this.mapY + this.mapH + 16)
+        .setPosition(this.mapX + this.mapW / 2, this.mapY + this.mapH + 28)
         .setVisible(true);
     } else {
       this.idleLabel.setVisible(false);
