@@ -22,6 +22,20 @@ export function coreHoldProgress(remainMs: number, totalMs: number): number {
 }
 
 const CLOCK_TICK_MS = 180;
+const PANEL_H = 76;
+
+/**
+ * Desktop keeps the banner under the match timer.
+ * A short screen drops it below the stock strip (same band as layoutStockStrip).
+ */
+export function coreBannerCenterY(width: number, height: number): number {
+  if (height >= 500) return 58;
+  const narrow = width < 720;
+  const pad = narrow ? 8 : 12;
+  const stripTop = pad + 50;
+  const stripH = narrow ? 76 : 36;
+  return stripTop + stripH + 8 + PANEL_H / 2;
+}
 
 export class CoreVictoryBanner {
   private readonly scene: Phaser.Scene;
@@ -43,7 +57,7 @@ export class CoreVictoryBanner {
     const w = Math.min(420, scene.scale.width - 32);
 
     this.panel = scene.add
-      .rectangle(0, 0, w, 76, 0x122033, 0.92)
+      .rectangle(0, 0, w, PANEL_H, 0x122033, 0.92)
       .setStrokeStyle(2, 0xf0c75e, 0.95)
       .setScrollFactor(0)
       .setDepth(118)
@@ -114,12 +128,12 @@ export class CoreVictoryBanner {
 
   layout(): void {
     const w = this.scene.scale.width;
+    const h = this.scene.scale.height;
     const panelW = Math.min(420, w - 32);
     this.panelW = panelW;
     const x = w / 2;
-    // Sit under the match timer, above combat focus.
-    const y = 58;
-    this.panel.setSize(panelW, 76).setPosition(x, y);
+    const y = coreBannerCenterY(w, h);
+    this.panel.setSize(panelW, PANEL_H).setPosition(x, y);
     this.label.setPosition(x, y - 18);
     this.clock.setPosition(x, y);
     this.sub.setPosition(x, y + 16);
