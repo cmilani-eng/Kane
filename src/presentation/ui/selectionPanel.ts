@@ -54,6 +54,10 @@ import {
   unitSplashRadiusLabel,
 } from './unitSplashRadius';
 import {
+  sharedUnitProjectileSpeedLabel,
+  unitProjectileSpeedLabel,
+} from './unitProjectileSpeed';
+import {
   sharedUnitHealRateLabel,
   unitHealRateLabel,
 } from './unitHealRate';
@@ -242,6 +246,8 @@ export type SelectionPanelView =
       dmgTip: string | null;
       /** Catalog splash / AoE radius tip when selection shares one splash value. */
       splashTip: string | null;
+      /** Catalog projectile-speed tip when selection shares ranged Proj · tiles/s. */
+      projTip: string | null;
       /** Melee / Ranged tip when selection shares one attack type. */
       atkTypeTip: string | null;
       /** Catalog move-speed tip when selection shares one unit type. */
@@ -729,6 +735,7 @@ export function buildSelectionView(
       healRateTip: unitHealRateLabel(u.typeId),
       dmgTip: unitDamageLabel(u.typeId),
       splashTip: unitSplashRadiusLabel(u.typeId),
+      projTip: unitProjectileSpeedLabel(u.typeId),
       atkTypeTip: unitAttackTypeLabel(u.typeId),
       speedTip: unitMoveSpeedLabel(u.typeId),
       moveCadenceTip: unitMoveCadenceLabel(u.typeId),
@@ -807,6 +814,7 @@ export function buildSelectionView(
     healRateTip: sharedUnitHealRateLabel(alive.map((u) => u.typeId)),
     dmgTip: sharedUnitDamageLabel(alive.map((u) => u.typeId)),
     splashTip: sharedUnitSplashRadiusLabel(alive.map((u) => u.typeId)),
+    projTip: sharedUnitProjectileSpeedLabel(alive.map((u) => u.typeId)),
     atkTypeTip: sharedUnitAttackTypeLabel(alive.map((u) => u.typeId)),
     speedTip: sharedUnitMoveSpeedLabel(alive.map((u) => u.typeId)),
     moveCadenceTip: sharedUnitMoveCadenceLabel(alive.map((u) => u.typeId)),
@@ -1097,6 +1105,7 @@ function structureSignature(view: SelectionPanelView): string {
       view.healRateTip ?? '',
       view.dmgTip ?? '',
       view.splashTip ?? '',
+      view.projTip ?? '',
       view.atkTypeTip ?? '',
       view.speedTip ?? '',
       view.moveCadenceTip ?? '',
@@ -1640,6 +1649,9 @@ export function renderSelectionPanel(view: SelectionPanelView): boolean {
         }
         if (view.splashTip) {
           bits.push(`<span>${escapeHtml(view.splashTip)}</span>`);
+        }
+        if (view.projTip) {
+          bits.push(`<span>${escapeHtml(view.projTip)}</span>`);
         }
         if (view.atkTypeTip) {
           bits.push(`<span>${escapeHtml(view.atkTypeTip)}</span>`);
