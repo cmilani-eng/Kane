@@ -192,7 +192,7 @@ This doc is the honest gate before any public preview URL.
 | Hard lean tip | **OK** — Hard shows a quiet leaner-start tip (same pattern as Easy); Normal stays tip-free; short/landscape menu shows the tip too | `MenuScene`, `menu.hardTip` |
 | In-match tips | **OK** — coach copy covers Pause/Esc, Home, Army, Idle chip, Rematch | `battlefieldTutorial`, `tutorialCoach` |
 | Friend lobby UI | **OK** — Create / Join / Leave local stub; quiet “no live sync” note | `lobbyPanel`, `lobbyStub` |
-| Lobby map tip | **OK** — lobby shows selected map label · blurb tip from match prefs | `lobbyMapTipLine`, `lobby.mapTip` |
+| Lobby map tip | **OK** — lobby shows {label} · {blurb} (U+00B7) from selected match prefs map; en/pt-BR/es middot; same copy shape as menu map tip, distinct key/surface (`lobby.mapTip` vs `menu.mapTip`); distinct from Last map · / Best map · / Map · w×h / Map · name / difficulty · blurb / motto / setup | `lobbyMapTipLine`, `lobby.mapTip` |
 | Lobby faction tip | **OK** — lobby shows selected species name · motto blurb from match prefs | `lobbyFactionTipLine`, `lobby.factionTip` |
 | Lobby last faction tip | **OK** — lobby shows Last · name (U+00B7) from match prefs species; en/pt-BR/es middot; distinct from Favorite · / Played · / Last · duration / Last · Won-Lost / selected motto tip | `lobbyLastFactionTipLine`, `lobby.lastFactionTip`, `matchPrefs.species` |
 | Lobby favorite faction tip | **OK** — lobby shows Favorite · name (U+00B7) from most-played species in matchPrefs.speciesPlays (middot; distinct from Plays · / Wins · / Streak ·; same copy as pause/end Favorite ·, distinct key/surface from last-faction) | `lobbyFavoriteFactionTipLine`, `lobby.favoriteFactionTip`, `matchPrefs.speciesPlays` |
