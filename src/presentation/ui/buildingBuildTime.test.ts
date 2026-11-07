@@ -14,6 +14,7 @@ describe('buildingBuildTime', () => {
     expect(buildingBuildTimeLabel('bonker_hut')).toBe(
       t('sel.buildTimeTip', { n: buildingBuildTimeSec('bonker_hut')! }),
     );
+    expect(buildingBuildTimeLabel('bonker_hut')).toMatch(/^Build · \d+s$/);
   });
 
   it('omits the tip when the building has no catalog build time', () => {

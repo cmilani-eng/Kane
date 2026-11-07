@@ -1,6 +1,6 @@
 /**
  * Catalog building full build-time tip in whole seconds (HUD label only).
- * Distinct from live construction remaining seconds.
+ * Format: Build · {n}s — distinct from live construction remaining / progress tips.
  */
 import { getBuildingType, type BuildingTypeId } from '../../data/buildings';
 import { t } from '../../i18n';
