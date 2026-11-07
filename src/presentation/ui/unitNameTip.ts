@@ -1,11 +1,11 @@
 /**
  * Catalog unit-name tip (HUD label only).
  */
-import { getUnitType, type UnitTypeId } from '../../data/units';
-import { t } from '../../i18n';
+import type { UnitTypeId } from '../../data/units';
+import { t, unitDisplayName } from '../../i18n';
 
 export function unitNameTipLabel(typeId: UnitTypeId): string {
-  return t('sel.nameTip', { name: getUnitType(typeId).name });
+  return t('sel.nameTip', { name: unitDisplayName(typeId) });
 }
 
 /** Shared name tip when every selected unit is the same type. */

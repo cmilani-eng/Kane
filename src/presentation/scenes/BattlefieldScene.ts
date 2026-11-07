@@ -5,7 +5,7 @@
 import Phaser from 'phaser';
 import { BRAND } from '../../config/brand';
 import { flags } from '../../config/flags';
-import { t } from '../../i18n';
+import { buildingDisplayName, t, unitDisplayName } from '../../i18n';
 import { RESOURCES } from '../../data/resources';
 import {
   getBuildingType,
@@ -1667,12 +1667,12 @@ export class BattlefieldScene extends Phaser.Scene {
     // Compact top status — detail lives in the bottom selection panel.
     let status: string;
     if (this.mode === 'rally' && b) {
-      status = t('hud.rallyStatus', { name: b.name });
+      status = t('hud.rallyStatus', { name: buildingDisplayName(b.typeId) });
     } else if (b) {
       const hall = getBuildingType(b.typeId).isMainHall;
       status = hall
-        ? t('hud.buildingBuild', { name: b.name })
-        : t('hud.buildingSelected', { name: b.name });
+        ? t('hud.buildingBuild', { name: buildingDisplayName(b.typeId) })
+        : t('hud.buildingSelected', { name: buildingDisplayName(b.typeId) });
     } else if (node) {
       const remaining = Math.floor(node.remaining);
       status =
@@ -1682,7 +1682,7 @@ export class BattlefieldScene extends Phaser.Scene {
     } else if (n === 0) {
       status = t('hud.alive', { friends, foes });
     } else if (n === 1) {
-      status = t('hud.unitSelected', { name: sel[0]!.name });
+      status = t('hud.unitSelected', { name: unitDisplayName(sel[0]!.typeId) });
     } else {
       status = t('hud.manySelected', { n });
     }
@@ -1697,7 +1697,7 @@ export class BattlefieldScene extends Phaser.Scene {
       const buildSec =
         def.buildMs > 0 ? Math.max(0, Math.ceil(def.buildMs / 1000)) : 0;
       this.hud.setPlacementCost({
-        name: def.name,
+        name: buildingDisplayName(def.id),
         gold,
         crystals,
         canPay,
@@ -1710,7 +1710,7 @@ export class BattlefieldScene extends Phaser.Scene {
     }
     const hint = this.hud.controlHint(
       placing,
-      def?.name,
+      def ? buildingDisplayName(def.id) : undefined,
       def?.cost.gold ?? 0,
       this.mode === 'attackMove',
       def?.cost.magic_crystals ?? 0,
