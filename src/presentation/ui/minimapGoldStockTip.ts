@@ -1,8 +1,10 @@
 /**
  * Minimap gold-stock tip (presentation only).
- * Format: Gold · {n} — middot (U+00B7).
- * Live player gold — distinct from Crystal · / Selected · minimap
- * peers and pause Gold · Crystal combo tip.
+ * Format: Gold · {n} — middot (U+00B7) with single spaces.
+ * Live player gold — distinct from Crystal · (`hud.minimapCrystal`) /
+ * Selected · (`hud.minimapSelected`) minimap peers and pause
+ * Gold · Crystal combo (`pause.stockTip`); en/pt-BR/es middot via
+ * `hud.minimapGold`.
  */
 import { t } from '../../i18n';
 
