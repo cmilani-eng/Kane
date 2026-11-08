@@ -305,6 +305,7 @@ export class BattlefieldScene extends Phaser.Scene {
     this.world = data?.pvp
       ? createBattlefieldWorld(data.pvp.hostSpecies, difficulty, data.mapId, data.pvp.seed, data.pvp.guestSpecies)
       : createBattlefieldWorld(playerSpecies, difficulty, data?.mapId, matchSeed);
+    this.world.controlTeam = this.me;
     if (data?.pvp) this.startLockstep(data.pvp);
     this.placeables = placeableBuildings(playerSpecies);
     this.placeIndex = 0;

@@ -128,6 +128,8 @@ export interface BattlefieldWorld {
   fogAccMs: number;
   /** A two-player match: the enemy team is driven by the other player's orders, not the AI. */
   pvp: boolean;
+  /** Which team this client selects and orders. Selection is local, so it never reaches the simulation. */
+  controlTeam: BattlefieldTeam;
   units: BattlefieldUnit[];
   buildings: BattlefieldBuilding[];
   nodes: ResourceNode[];
@@ -444,6 +446,7 @@ export function createBattlefieldWorld(
     rng: createRng(seed),
     fogAccMs: 0,
     pvp: false,
+    controlTeam: 'player',
     units: [],
     buildings: [],
     nodes: [],
@@ -538,7 +541,7 @@ export function selectAt(
   y: number,
   additive = false,
 ): boolean {
-  const best = findPlayerUnitAt(world, x, y);
+  const best = findUnitAtForTeam(world, x, y, world.controlTeam);
   if (!additive) clearSelection(world);
   if (best) {
     if (additive) best.selected = !best.selected;
@@ -615,7 +618,7 @@ export function selectInRect(
   const maxY = Math.max(y1, y2);
   if (!additive) clearSelection(world);
   for (const u of world.units) {
-    if (u.team !== 'player') continue;
+    if (u.team !== world.controlTeam) continue;
     if (u.x >= minX && u.x <= maxX && u.y >= minY && u.y <= maxY) {
       u.selected = true;
     }
