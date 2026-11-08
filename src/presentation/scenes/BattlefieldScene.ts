@@ -33,7 +33,7 @@ import {
 } from '../../gameplay/battlefield/practiceStepUp';
 import { createAiState, type AiState } from '../../gameplay/battlefield/battlefieldAi';
 import { toggleFormationSelected } from '../../gameplay/battlefield/battlefieldFormations';
-import { castHeroAbility } from '../../gameplay/battlefield/battlefieldHeroes';
+import { castHeroAbility, recruitHero } from '../../gameplay/battlefield/battlefieldHeroes';
 import type { HeroAbilitySlot } from '../../data/heroes';
 import { toggleMutationSelected } from '../../gameplay/battlefield/battlefieldMutations';
 import { toggleRageSelected } from '../../gameplay/battlefield/battlefieldRage';
@@ -353,6 +353,7 @@ export class BattlefieldScene extends Phaser.Scene {
     this.hud.menuBtn.on('pointerup', () => this.scene.start('Menu'));
     this.hud.onArmAttackMove = () => this.toggleAttackMoveMode();
     this.hud.onStopSelected = () => this.issueStopCommand();
+    this.hud.onHeroAbility = (slot) => (slot === 'recruit' ? this.useRecruit() : this.useHeroAbility(slot));
     this.hud.onRecenterBase = () => this.recenterOnPlayerBase();
     this.hud.onPause = () => this.togglePause();
     this.hud.onHelp = () => this.toggleControlsHelp();
@@ -867,15 +868,21 @@ export class BattlefieldScene extends Phaser.Scene {
       return;
     }
     // Production building still uses 1–3 to train when selected.
-    if (
-      this.selectedBuilding &&
-      slot >= 1 &&
-      slot <= 3 &&
-      trainHotkey(this.world, this.selectedBuilding, slot - 1)
-    ) {
-      this.groupTaps.reset();
-      playSfx('train');
-      return;
+    if (this.selectedBuilding && slot >= 1 && slot <= 3) {
+      const b = this.selectedBuilding;
+      if (this.pvp) {
+        const typeId = b.team === this.me && b.complete ? getBuildingType(b.typeId).trains[slot - 1] : undefined;
+        if (typeId) {
+          this.lockstep?.issue(this.simTick, { team: this.me, unitIds: [], kind: 'train', buildingId: b.id, typeId });
+          this.groupTaps.reset();
+          playSfx('train');
+          return;
+        }
+      } else if (trainHotkey(this.world, b, slot - 1)) {
+        this.groupTaps.reset();
+        playSfx('train');
+        return;
+      }
     }
     if (!countKey) return;
     this.clearBuildingSelection();
@@ -1341,6 +1348,16 @@ export class BattlefieldScene extends Phaser.Scene {
     }
     if (castHeroAbility(this.world, slot, this.me)) playSfx('ability');
     else playSfx('ui');
+  }
+
+  /** Recruits this viewer's hero. In a two-player match it runs on the shared tick. */
+  private useRecruit(): void {
+    if (this.pvp) {
+      this.lockstep?.issue(this.simTick, { team: this.me, unitIds: [], kind: 'recruit' });
+      playSfx('hero');
+      return;
+    }
+    if (recruitHero(this.world, this.me)) playSfx('hero');
   }
 
   private issueStopCommand(): void {

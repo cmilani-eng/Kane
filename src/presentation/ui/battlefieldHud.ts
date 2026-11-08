@@ -117,6 +117,8 @@ export class BattlefieldHud {
   onArmAttackMove: (() => void) | null = null;
   /** Scene wires this to issue stop + pulse. */
   onStopSelected: (() => void) | null = null;
+  /** Scene wires this so hero abilities and recruit go through the match, not the local world. */
+  onHeroAbility: ((slot: HeroAbilitySlot | 'recruit') => void) | null = null;
   /** Scene wires this to snap camera to base. */
   onRecenterBase: (() => void) | null = null;
   /** Scene wires this to open/toggle pause menu. */
@@ -616,6 +618,10 @@ export class BattlefieldHud {
         .setDepth(103);
 
       bg.on('pointerup', () => {
+        if (this.onHeroAbility) {
+          this.onHeroAbility(e.slot);
+          return;
+        }
         if (e.slot === 'recruit') {
           if (recruitHero(this.world, 'player')) playSfx('hero');
         } else if (castHeroAbility(this.world, e.slot, 'player')) {

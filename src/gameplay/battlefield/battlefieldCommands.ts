@@ -9,7 +9,7 @@ import type { UnitTypeId } from '../../data/units';
 import type { BattlefieldTeam, BattlefieldUnit, BattlefieldWorld } from './battlefieldWorld';
 import { moveUnitsForTeam, recordPlayerAction } from './battlefieldWorld';
 import { placeBuilding } from './battlefieldBuildings';
-import { castHeroAbility } from './battlefieldHeroes';
+import { castHeroAbility, recruitHero } from './battlefieldHeroes';
 import { cancelQueuedTrain, queueTrain } from './battlefieldProduction';
 import { toggleFormationUnit } from './battlefieldFormations';
 import { toggleMutationUnit } from './battlefieldMutations';
@@ -31,7 +31,8 @@ export type BattleCommand =
   | (OrderBase & { kind: 'train'; buildingId: number; typeId: UnitTypeId })
   | (OrderBase & { kind: 'cancelTrain'; buildingId: number; index?: number })
   | (OrderBase & { kind: 'ability'; slot: HeroAbilitySlot })
-  | (OrderBase & { kind: 'stop' });
+  | (OrderBase & { kind: 'stop' })
+  | (OrderBase & { kind: 'recruit' });
 
 /** The stance keys: rage (Brutes), formation (Nobles) and mutation (Weirdos). */
 export type StanceId = 'rage' | 'formation' | 'mutation';
@@ -62,6 +63,8 @@ function targetKey(command: BattleCommand): string {
       return command.slot;
     case 'stop':
       return 'stop';
+    case 'recruit':
+      return 'recruit';
   }
 }
 
@@ -154,6 +157,9 @@ export function applyBattleCommand(world: BattlefieldWorld, command: BattleComma
     }
     case 'ability':
       castHeroAbility(world, command.slot, command.team);
+      return;
+    case 'recruit':
+      recruitHero(world, command.team);
       return;
     case 'stop': {
       let stopped = 0;
