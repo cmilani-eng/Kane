@@ -3,6 +3,11 @@
  * Phaser 4 APIs: https://docs.phaser.io/
  */
 import { SIM_STEP_MS, stepBattlefieldSim } from "../../gameplay/battlefield/battlefieldSimStep";
+import { applyDueCommands, createCommandSchedule } from "../../gameplay/battlefield/battlefieldCommands";
+import { battlefieldHash } from "../../gameplay/battlefield/battlefieldHash";
+import { createLockstep, type Lockstep } from "../../networking/lockstep";
+import { createMatchChannel } from "../../networking/matchChannel";
+import { getMatchDatabase } from "../../networking/matchDatabase";
 import Phaser from 'phaser';
 import { BRAND } from '../../config/brand';
 import { flags } from '../../config/flags';
@@ -54,6 +59,7 @@ import { findNodeAt, issueGatherSelected, walletOf } from '../../gameplay/battle
 import { cancelQueuedTrain, queueTrain, trainHotkey } from '../../gameplay/battlefield/battlefieldProduction';
 import {
   evaluateMatch,
+  resultForTeam,
   matchEndReason,
   type MatchResult,
 } from '../../gameplay/battlefield/battlefieldVictory';
@@ -83,7 +89,7 @@ import { touchLongPressAction } from '../../gameplay/battlefield/touchLongPress'
 import { spawnControlGroupAssignFx, spawnControlGroupRecallFx } from '../../gameplay/battlefield/battlefieldControlGroupFx';
 import { spawnStopPulses } from '../../gameplay/battlefield/battlefieldStopFx';
 import { findPlayerBasePoint } from '../../gameplay/battlefield/playerBase';
-import { clearSelection, createBattlefieldWorld, findPlayerUnitAt, issueMoveSelected, recordPlayerAction, selectAllVisibleSameType, selectAt, selectInRect, selectedCount, selectedUnits, type BattlefieldBuilding, type BattlefieldWorld, type ResourceNode } from '../../gameplay/battlefield/battlefieldWorld';
+import { clearSelection, createBattlefieldWorld, findUnitAtForTeam, issueMoveSelected, recordPlayerAction, selectAllVisibleSameType, selectAt, selectInRect, selectedCount, selectedUnits, type BattlefieldBuilding, type BattlefieldWorld, type ResourceNode } from '../../gameplay/battlefield/battlefieldWorld';
 import {
   enemyRevealed,
   isExplored,
@@ -183,6 +189,19 @@ type PointerMode =
 
 /** Most sim steps run in one frame; past this the backlog is dropped (see update). */
 const MAX_SIM_STEPS_PER_FRAME = 8;
+/** Ticks between state hashes that the two players compare. */
+const HASH_EVERY_TICKS = 30;
+
+/** A two-player match, as the lobby hands it to the battle scene. */
+export interface PvpMatch {
+  code: string;
+  role: 'host' | 'guest';
+  uid: string;
+  peerUid: string;
+  seed: number;
+  hostSpecies: SpeciesId;
+  guestSpecies: SpeciesId;
+}
 
 export class BattlefieldScene extends Phaser.Scene {
   private world!: BattlefieldWorld;
@@ -245,6 +264,14 @@ export class BattlefieldScene extends Phaser.Scene {
   /** Enemy building id → last animTimeMs while revealed (leave-vision ghost). */
   private enemyBuildingLastSeen = new Map<number, number>();
   private simAccMs = 0;
+  /** The side this player controls: 'player' in single-player and for the host, 'enemy' for the guest. */
+  private me: 'player' | 'enemy' = 'player';
+  private pvp = false;
+  private lockstep: Lockstep | null = null;
+  private schedule = createCommandSchedule();
+  private simTick = 0;
+  private outOfSync = false;
+  private waitText: Phaser.GameObjects.Text | null = null;
   private viewCull: ViewBounds | null = null;
   /** Equipped cosmetics accent for the player species (visual only). */
   private playerSkinAccent = 0xf0c75e;
@@ -259,6 +286,7 @@ export class BattlefieldScene extends Phaser.Scene {
     species?: SpeciesId;
     difficulty?: AiDifficultyId;
     mapId?: string;
+    pvp?: PvpMatch;
   }): void {
     this.input.mouse?.disableContextMenu();
 
@@ -272,7 +300,12 @@ export class BattlefieldScene extends Phaser.Scene {
     const { layer } = createSkirmishMap(this, data?.mapId);
     // Picked here, not in the simulation, so each match differs and clients can share the seed.
     const matchSeed = Math.floor(Math.random() * 0x100000000);
-    this.world = createBattlefieldWorld(playerSpecies, difficulty, data?.mapId, matchSeed);
+    this.pvp = data?.pvp !== undefined;
+    this.me = data?.pvp?.role === 'guest' ? 'enemy' : 'player';
+    this.world = data?.pvp
+      ? createBattlefieldWorld(data.pvp.hostSpecies, difficulty, data.mapId, data.pvp.seed, data.pvp.guestSpecies)
+      : createBattlefieldWorld(playerSpecies, difficulty, data?.mapId, matchSeed);
+    if (data?.pvp) this.startLockstep(data.pvp);
     this.placeables = placeableBuildings(playerSpecies);
     this.placeIndex = 0;
     this.placeType = this.placeables[0] ?? 'bonker_hut';
@@ -281,7 +314,7 @@ export class BattlefieldScene extends Phaser.Scene {
     this.paused = false;
     this.matchElapsedMs = 0;
     this.cameraCtl = new RtsCamera(this);
-    const first = this.world.units.find((u) => u.team === 'player');
+    const first = this.world.units.find((u) => u.team === this.me);
     if (first) this.cameras.main.centerOn(first.x + 80, first.y - 40);
 
     this.boxGfx = this.add.graphics().setDepth(50);
@@ -337,7 +370,7 @@ export class BattlefieldScene extends Phaser.Scene {
       rally: () => this.toggleRallyMode(),
       clearRally: () => {
         const b = this.selectedBuilding;
-        if (!b || b.team !== 'player' || !buildingCanRally(b)) return;
+        if (!b || b.team !== this.me || !buildingCanRally(b)) return;
         clearBuildingRally(b);
         recordPlayerAction(this.world);
         this.clearRallyMode();
@@ -345,8 +378,8 @@ export class BattlefieldScene extends Phaser.Scene {
       },
       cancelQueue: (index) => {
         const b = this.selectedBuilding;
-        if (!b || b.team !== 'player') return;
-        const refunded = cancelQueuedTrain(this.world, b, index);
+        if (!b || b.team !== this.me) return;
+        const refunded = (this.pvp ? null : cancelQueuedTrain(this.world, b, index));
         if (refunded) {
           recordPlayerAction(this.world);
           playSfx('ui');
@@ -361,13 +394,13 @@ export class BattlefieldScene extends Phaser.Scene {
       },
       train: (typeId) => {
         const b = this.selectedBuilding;
-        if (!b || b.team !== 'player') return;
-        if (queueTrain(this.world, b, typeId)) playSfx('train');
+        if (!b || b.team !== this.me) return;
+        if ((this.pvp ? false : queueTrain(this.world, b, typeId))) playSfx('train');
         else playSfx('ui');
       },
       placeBuilding: (typeId) => this.armPlacementFromPanel(typeId),
       castAbility: (slot) => {
-        if (castHeroAbility(this.world, slot, 'player')) playSfx('ability');
+        if ((this.pvp ? false : castHeroAbility(this.world, slot, this.me))) playSfx('ability');
         else playSfx('ui');
       },
       toggleFormation: () => {
@@ -564,17 +597,17 @@ export class BattlefieldScene extends Phaser.Scene {
     this.input.keyboard?.on('keydown-Q', () => {
       if (this.paused || this.matchResult !== 'ongoing') return;
       if (this.controlsHelp.isOpen()) return;
-      if (castHeroAbility(this.world, 'ability1', 'player')) playSfx('ability');
+      if ((this.pvp ? false : castHeroAbility(this.world, 'ability1', this.me))) playSfx('ability');
     });
     this.input.keyboard?.on('keydown-W', () => {
       if (this.paused || this.matchResult !== 'ongoing') return;
       if (this.controlsHelp.isOpen()) return;
-      if (castHeroAbility(this.world, 'ability2', 'player')) playSfx('ability');
+      if ((this.pvp ? false : castHeroAbility(this.world, 'ability2', this.me))) playSfx('ability');
     });
     this.input.keyboard?.on('keydown-E', () => {
       if (this.paused || this.matchResult !== 'ongoing') return;
       if (this.controlsHelp.isOpen()) return;
-      if (castHeroAbility(this.world, 'ultimate', 'player')) playSfx('ability');
+      if ((this.pvp ? false : castHeroAbility(this.world, 'ultimate', this.me))) playSfx('ability');
     });
     this.input.keyboard?.on('keydown-S', () => {
       if (this.paused || this.matchResult !== 'ongoing') return;
@@ -688,7 +721,7 @@ export class BattlefieldScene extends Phaser.Scene {
     const matchPrefs = loadMatchPrefs();
     return {
       elapsedMs: this.matchElapsedMs,
-      supplyCurrent: livingByTeam(this.world, 'player'),
+      supplyCurrent: livingByTeam(this.world, this.me),
       supplyCap: flags.unitCap,
       mapId: this.world.mapId,
       difficulty: this.world.aiDifficulty,
@@ -706,20 +739,20 @@ export class BattlefieldScene extends Phaser.Scene {
           : undefined,
       fogCoveragePct: fogExploredCoveragePct(this.world.fog),
       selectionCount: this.world.units.filter(
-        (u) => u.selected && u.team === 'player' && u.hp > 0,
+        (u) => u.selected && u.team === this.me && u.hp > 0,
       ).length,
       selectedSector:
         pauseSelectedSectorAt(
           this.world.units.filter(
-            (u) => u.selected && u.team === 'player' && u.hp > 0,
+            (u) => u.selected && u.team === this.me && u.hp > 0,
           ),
         ) ?? undefined,
-      stockGold: walletOf(this.world, 'player').gold,
-      stockCrystals: walletOf(this.world, 'player').magic_crystals,
+      stockGold: walletOf(this.world, this.me).gold,
+      stockCrystals: walletOf(this.world, this.me).magic_crystals,
       playerActions: this.world.playerActions,
       armyCount: this.world.units.filter((u) => isMilitaryUnit(u)).length,
       buildingCount: this.world.buildings.filter(
-        (b) => b.team === 'player' && b.hp > 0,
+        (b) => b.team === this.me && b.hp > 0,
       ).length,
       idleWorkerCount: countIdleWorkers(this.world),
       heroStatus: minimapHeroStatus(this.world),
@@ -857,13 +890,14 @@ export class BattlefieldScene extends Phaser.Scene {
   }
 
   private toggleRallyMode(): void {
+    if (this.pvp) return;
     if (this.mode === 'rally') {
       this.clearRallyMode();
       playSfx('ui');
       return;
     }
     const b = this.selectedBuilding;
-    if (!b || b.team !== 'player' || !buildingCanRally(b)) {
+    if (!b || b.team !== this.me || !buildingCanRally(b)) {
       playSfx('ui');
       return;
     }
@@ -906,7 +940,7 @@ export class BattlefieldScene extends Phaser.Scene {
 
     if (this.mode === 'rally' && pointer.leftButtonDown()) {
       const b = this.selectedBuilding;
-      if (b && b.team === 'player' && buildingCanRally(b)) {
+      if (b && b.team === this.me && buildingCanRally(b)) {
         setBuildingRally(b, wp.x, wp.y);
         recordPlayerAction(this.world);
         playSfx('ui');
@@ -919,7 +953,7 @@ export class BattlefieldScene extends Phaser.Scene {
       if (this.ghostValid) {
         const placed = placeBuilding(
           this.world,
-          'player',
+          this.me,
           this.placeType,
           this.ghostPos.x,
           this.ghostPos.y,
@@ -956,6 +990,20 @@ export class BattlefieldScene extends Phaser.Scene {
   }
 
   /** Right-click, and a touch long-press, share this move / attack / gather path. */
+  /** The move order. In a two-player match it goes to the friend and runs on a shared tick. */
+  private issueMoveOrder(worldX: number, worldY: number): void {
+    if (!this.pvp) {
+      issueMoveSelected(this.world, worldX, worldY);
+      return;
+    }
+    if (!this.lockstep) return;
+    const unitIds = this.world.units
+      .filter((u) => u.selected && u.team === this.me && u.hp > 0)
+      .map((u) => u.id);
+    if (unitIds.length === 0) return;
+    this.lockstep.issue(this.simTick, { kind: 'move', team: this.me, unitIds, x: worldX, y: worldY });
+  }
+
   private issuePointerOrder(worldX: number, worldY: number): void {
     if (
       this.mode === 'place' ||
@@ -968,7 +1016,14 @@ export class BattlefieldScene extends Phaser.Scene {
       this.ghostGfx.clear();
       return;
     }
-    const enemy = findEnemyAt(this.world, worldX, worldY, 'player');
+    if (this.pvp) {
+      this.issueMoveOrder(worldX, worldY);
+      this.mode = 'none';
+      this.boxGfx.clear();
+      this.cameraCtl.suppressPan = false;
+      return;
+    }
+    const enemy = findEnemyAt(this.world, worldX, worldY, this.me);
     const node = findNodeAt(this.world, worldX, worldY);
     if (enemy) {
       issueAttackSelected(this.world, enemy);
@@ -1092,7 +1147,7 @@ export class BattlefieldScene extends Phaser.Scene {
     }
     if (this.mode === 'select' && pointer.leftButtonReleased()) {
       const wp = this.cameraCtl.worldPoint(pointer.x, pointer.y);
-      const b = findBuildingAt(this.world, wp.x, wp.y, 'player');
+      const b = findBuildingAt(this.world, wp.x, wp.y, this.me);
       if (b && !additive) {
         clearSelection(this.world);
         this.clearBuildingSelection();
@@ -1102,7 +1157,7 @@ export class BattlefieldScene extends Phaser.Scene {
         playSfx('select');
       } else {
         this.clearBuildingSelection();
-        const hit = findPlayerUnitAt(this.world, wp.x, wp.y);
+        const hit = findUnitAtForTeam(this.world, wp.x, wp.y, this.me);
         // Ctrl/Cmd+click picks every unit of the type at once (macOS reports
         // Ctrl+click as a right-click, so Cmd+click is the Mac route).
         if (
@@ -1174,6 +1229,7 @@ export class BattlefieldScene extends Phaser.Scene {
 
   /** Selection-panel Keep/hall → arm existing place mode for a building type. */
   private armPlacementFromPanel(typeId: BuildingTypeId): void {
+    if (this.pvp) return;
     if (this.paused || this.matchResult !== 'ongoing') return;
     if (this.controlsHelp.isOpen()) return;
     if (!this.placeables.includes(typeId)) {
@@ -1203,7 +1259,7 @@ export class BattlefieldScene extends Phaser.Scene {
       return;
     }
     const def = getBuildingType(this.placeType);
-    const affordable = canAfford(walletOf(this.world, 'player'), def.cost);
+    const affordable = canAfford(walletOf(this.world, this.me), def.cost);
     this.ghostGfx.clear();
     drawPlacementGhost(this.ghostGfx, {
       x: this.ghostPos.x,
@@ -1218,6 +1274,7 @@ export class BattlefieldScene extends Phaser.Scene {
 
   /** S / Stop — halt selection and flash halt rings. */
   private issueStopCommand(): void {
+    if (this.pvp) return;
     const n = stopSelected(this.world);
     if (n <= 0) return;
     spawnStopPulses(this.world);
@@ -1240,6 +1297,7 @@ export class BattlefieldScene extends Phaser.Scene {
   }
 
   private toggleAttackMoveMode(): void {
+    if (this.pvp) return;
     if (this.mode === 'attackMove') {
       this.clearAttackMoveMode();
       playSfx('ui');
@@ -1301,6 +1359,52 @@ export class BattlefieldScene extends Phaser.Scene {
     );
   }
 
+  /** Two-player: connects this match to the friend. Without a database there is no match. */
+  private startLockstep(pvp: PvpMatch): void {
+    this.world.pvp = true;
+    const db = getMatchDatabase();
+    if (db) this.lockstep = createLockstep(createMatchChannel(db, pvp.code, pvp.uid, pvp.peerUid));
+    this.waitText = this.add
+      .text(this.scale.width / 2, this.scale.height * 0.18, t('pvp.waiting'), {
+        fontFamily: 'system-ui, sans-serif',
+        fontSize: '16px',
+        color: '#f0c75e',
+        backgroundColor: '#0a1220cc',
+        padding: { x: 12, y: 6 },
+      })
+      .setOrigin(0.5)
+      .setScrollFactor(0)
+      .setDepth(95)
+      .setVisible(false);
+    this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => this.lockstep?.stop());
+  }
+
+  /** Two-player: runs a fixed step only once the friend's orders for it have arrived. */
+  private stepLockstep(delta: number): void {
+    const lockstep = this.lockstep;
+    if (!lockstep || this.outOfSync) return;
+    this.simAccMs += delta;
+    let waiting = false;
+    for (let steps = 0; this.simAccMs >= SIM_STEP_MS && steps < MAX_SIM_STEPS_PER_FRAME; steps++) {
+      if (!lockstep.canRun(this.simTick)) {
+        waiting = true;
+        break;
+      }
+      for (const command of lockstep.beginTick(this.simTick)) this.schedule.add(this.simTick, command);
+      applyDueCommands(this.world, this.schedule, this.simTick);
+      stepBattlefieldSim(this.world, this.ai);
+      if (this.simTick % HASH_EVERY_TICKS === 0) lockstep.recordHash(this.simTick, battlefieldHash(this.world));
+      this.simTick++;
+      this.simAccMs -= SIM_STEP_MS;
+    }
+    if (this.simAccMs >= SIM_STEP_MS) this.simAccMs = 0;
+    this.waitText?.setVisible(waiting);
+    if (lockstep.desyncTick() !== null) {
+      this.outOfSync = true;
+      this.waitText?.setText(t('pvp.outOfSync')).setVisible(true);
+    }
+  }
+
   update(_t: number, delta: number): void {
     this.pollTouchOrder();
     if (!this.paused) {
@@ -1314,6 +1418,9 @@ export class BattlefieldScene extends Phaser.Scene {
         if (fx.lifeMs >= fx.maxLifeMs - delta) playSfx(fx.sfx);
       }
       // The simulation runs in fixed steps, never on the frame delta, so clients stay in sync.
+      if (this.pvp) {
+        this.stepLockstep(delta);
+      } else {
       this.simAccMs += delta;
       for (
         let steps = 0;
@@ -1325,6 +1432,7 @@ export class BattlefieldScene extends Phaser.Scene {
       }
       // After a stall (background tab, long pause) drop the backlog rather than racing to catch up.
       if (this.simAccMs >= SIM_STEP_MS) this.simAccMs = 0;
+      }
       // Attack flash just set (~120) — one SFX per frame max.
       if (this.world.units.some((u) => u.lastAttackFlashMs > 100)) {
         playSfx('attack');
@@ -1347,7 +1455,7 @@ export class BattlefieldScene extends Phaser.Scene {
         }
       }
       tickTutorial(this.world, this.tutorial, delta);
-      const result = evaluateMatch(this.world);
+      const result = resultForTeam(evaluateMatch(this.world), this.me);
       if (result !== 'ongoing') this.showEndScreen(result);
     }
     if (
@@ -1399,9 +1507,9 @@ export class BattlefieldScene extends Phaser.Scene {
     this.cameraCtl.suppressPan = true;
     this.writeEndMatchSummary(result);
 
-    const playerUnitsLeft = livingByTeam(this.world, 'player');
+    const playerUnitsLeft = livingByTeam(this.world, this.me);
     const playerBuildingsLeft = this.world.buildings.filter(
-      (b) => b.team === 'player' && b.hp > 0,
+      (b) => b.team === this.me && b.hp > 0,
     ).length;
 
     showEndCard({
@@ -1501,10 +1609,10 @@ export class BattlefieldScene extends Phaser.Scene {
   private writeEndMatchSummary(result: Exclude<MatchResult, 'ongoing'>): void {
     const endedAtMs = Date.now();
     const id = makeMatchSummaryId(endedAtMs);
-    const playerUnitsLeft = livingByTeam(this.world, 'player');
+    const playerUnitsLeft = livingByTeam(this.world, this.me);
     const enemyUnitsLeft = livingByTeam(this.world, 'enemy');
     const playerBuildingsLeft = this.world.buildings.filter(
-      (b) => b.team === 'player' && b.hp > 0,
+      (b) => b.team === this.me && b.hp > 0,
     ).length;
     const enemyBuildingsLeft = this.world.buildings.filter(
       (b) => b.team === 'enemy' && b.hp > 0,
@@ -1554,7 +1662,7 @@ export class BattlefieldScene extends Phaser.Scene {
     this.hud.setMatchTimer(this.matchElapsedMs);
     const n = selectedCount(this.world);
     const sel = selectedUnits(this.world);
-    const friends = livingByTeam(this.world, 'player');
+    const friends = livingByTeam(this.world, this.me);
     const foes = livingByTeam(this.world, 'enemy');
     const b = this.selectedBuilding;
     // Units / buildings take priority over a previously inspected node.
@@ -1611,7 +1719,7 @@ export class BattlefieldScene extends Phaser.Scene {
     if (placing && def) {
       const gold = def.cost.gold ?? 0;
       const crystals = def.cost.magic_crystals ?? 0;
-      const canPay = canAfford(walletOf(this.world, 'player'), def.cost);
+      const canPay = canAfford(walletOf(this.world, this.me), def.cost);
       const foot = placementFootprintSize(this.placeType);
       const buildSec =
         def.buildMs > 0 ? Math.max(0, Math.ceil(def.buildMs / 1000)) : 0;
@@ -1635,11 +1743,11 @@ export class BattlefieldScene extends Phaser.Scene {
       def?.cost.magic_crystals ?? 0,
     );
     this.hud.refresh(status, hint, dtMs);
-    const wallet = walletOf(this.world, 'player');
+    const wallet = walletOf(this.world, this.me);
     publishMatchStock({
       gold: wallet.gold,
       crystals: wallet.magic_crystals,
-      supply: livingByTeam(this.world, 'player'),
+      supply: livingByTeam(this.world, this.me),
       supplyCap: flags.unitCap,
       nowMs: this.matchElapsedMs,
     });
@@ -1715,7 +1823,7 @@ export class BattlefieldScene extends Phaser.Scene {
         y: b.y,
         radius: b.radius,
         color: b.color,
-        accent: b.team === 'player' ? this.playerSkinAccent : b.accent,
+        accent: b.team === this.me ? this.playerSkinAccent : b.accent,
         typeId: b.typeId,
         alpha,
         selected: !!b.selected,
@@ -1743,7 +1851,7 @@ export class BattlefieldScene extends Phaser.Scene {
       if (s.team === 'enemy' && !enemyRevealed(this.world.fog, s.x, s.y)) {
         continue;
       }
-      g.lineStyle(1, s.team === 'player' ? 0xf0c75e : 0xc4a0e0, 0.35);
+      g.lineStyle(1, s.team === this.me ? 0xf0c75e : 0xc4a0e0, 0.35);
       g.strokeCircle(s.x, s.y, s.radius);
     }
 
@@ -1791,10 +1899,10 @@ export class BattlefieldScene extends Phaser.Scene {
         mutated: u.mutated,
         inFormation: u.inFormation,
         skinAccent:
-          u.team === 'player' ? this.playerSkinAccent : undefined,
+          u.team === this.me ? this.playerSkinAccent : undefined,
       });
       g.fillStyle(
-        u.team === 'player' ? this.playerSkinAccent : 0xe8a0ff,
+        u.team === this.me ? this.playerSkinAccent : 0xe8a0ff,
         0.95,
       );
       g.fillCircle(u.x, u.y - u.radius * 0.35, 3.2);

@@ -81,7 +81,7 @@ describe('lobby session', () => {
     await host.host();
     await friend.join('abcd23');
     expect(host.peek().status).toBe('hosted');
-    expect(friend.peek()).toEqual({ status: 'joined', code: 'ABCD23' });
+    expect(friend.peek()).toEqual({ status: 'joined', code: 'ABCD23', peerUid: 'host' });
   });
 
   it('a third player is refused with the reason', async () => {
