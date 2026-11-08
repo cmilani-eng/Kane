@@ -1,5 +1,11 @@
 import { describe, expect, it } from 'vitest';
-import { findUnitAtForTeam, findPlayerUnitAt, createBattlefieldWorld } from './battlefieldWorld';
+import {
+  findUnitAtForTeam,
+  findPlayerUnitAt,
+  createBattlefieldWorld,
+  selectedCount,
+  selectedUnits,
+} from './battlefieldWorld';
 import { resultForTeam } from './battlefieldVictory';
 
 describe('two sides of one match', () => {
@@ -33,5 +39,14 @@ describe('two sides of one match', () => {
     expect(resultForTeam('victory', 'enemy')).toBe('defeat');
     expect(resultForTeam('defeat', 'enemy')).toBe('victory');
     expect(resultForTeam('ongoing', 'enemy')).toBe('ongoing');
+  });
+
+  it('a friend who controls the enemy team sees and counts their own selection', () => {
+    const world = createBattlefieldWorld('brutes', 'normal', 'crossing', 7, 'nobles');
+    world.controlTeam = 'enemy';
+    const mine = world.units.find((u) => u.team === 'enemy')!;
+    mine.selected = true;
+    expect(selectedCount(world)).toBe(1);
+    expect(selectedUnits(world)).toEqual([mine]);
   });
 });
