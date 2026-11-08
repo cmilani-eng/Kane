@@ -18,6 +18,13 @@ function sortKey(command: BattleCommand): string {
   return `${command.team}|${command.kind}|${command.x}|${command.y}|${[...command.unitIds].sort((a, b) => a - b).join(',')}`;
 }
 
+/** A fixed order for commands that take effect on the same tick. Every client sorts the same way. */
+export function compareBattleCommands(a: BattleCommand, b: BattleCommand): number {
+  const ka = sortKey(a);
+  const kb = sortKey(b);
+  return ka < kb ? -1 : ka > kb ? 1 : 0;
+}
+
 export interface CommandSchedule {
   /** Queues `command` to run on `tick`. */
   add(tick: number, command: BattleCommand): void;
@@ -37,11 +44,7 @@ export function createCommandSchedule(): CommandSchedule {
     takeDue(tick) {
       const list = byTick.get(tick) ?? [];
       byTick.delete(tick);
-      return [...list].sort((a, b) => {
-        const ka = sortKey(a);
-        const kb = sortKey(b);
-        return ka < kb ? -1 : ka > kb ? 1 : 0;
-      });
+      return [...list].sort(compareBattleCommands);
     },
     size() {
       let total = 0;
