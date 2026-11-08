@@ -4,7 +4,9 @@
  * same strings. The stat lines sit in one column, so they cannot stack over the title.
  */
 import { t } from '../../i18n';
+import { getCurrentAuthUser } from '../../firebase/auth';
 import { getLobbySession } from '../../networking/lobbySingleton';
+import { joinAsGuest, startAsHost, type PvpLaunch } from '../../networking/matchStart';
 import { playSfx } from '../audio/sfx';
 import {
   PICKER_BODY_CLASSES,
@@ -32,7 +34,10 @@ const QUIET_BUTTON = `${BUTTON_BASE} bg-[#3a4555] text-[#f5f8ff]`;
 const MUTED_LINE = 'mt-2 text-[13px] leading-normal text-[#8fa7c2]';
 
 /** Opens the friend lobby card. `onClose` runs once, however the card closes. */
-export function showLobbyCard(onClose: () => void): void {
+export function showLobbyCard(
+  onClose: () => void,
+  onMatch: (launch: PvpLaunch) => void,
+): void {
   const lobby = getLobbySession();
 
   const overlay = document.createElement('div');
@@ -109,14 +114,17 @@ export function showLobbyCard(onClose: () => void): void {
           ? '#7ec8ff'
           : '#6a7f94';
     status.textContent = lobbyStatusLine(st.status, st.code, st.reason);
+    create.textContent = st.status === 'hosted' ? t('pvp.start') : t('lobby.create');
   };
 
   let done = false;
   let unsubscribe = (): void => {};
+  let stopGuestWatch: (() => void) | null = null;
   const destroy = (): void => {
     if (done) return;
     done = true;
     unsubscribe();
+    stopGuestWatch?.();
     window.removeEventListener('keydown', onKey);
     overlay.remove();
     onClose();
@@ -125,15 +133,41 @@ export function showLobbyCard(onClose: () => void): void {
     if (event.key === 'Escape') destroy();
   };
 
+  /** The match is open: the card hands the battle to the menu, which opens it. */
+  const launchMatch = (launch: PvpLaunch): void => {
+    if (done) return;
+    done = true;
+    unsubscribe();
+    stopGuestWatch?.();
+    lobby.release();
+    window.removeEventListener('keydown', onKey);
+    overlay.remove();
+    onClose();
+    onMatch(launch);
+  };
   create.addEventListener('click', () => {
     playSfx('ui');
+    const st = lobby.peek();
+    const uid = getCurrentAuthUser()?.uid;
+    if (st.status === 'hosted' && st.code && st.peerUid && uid) {
+      void startAsHost(st.code, uid, st.peerUid).then((launch) => {
+        if (launch) launchMatch(launch);
+      });
+      return;
+    }
     void lobby.host();
   });
   join.addEventListener('click', () => {
     playSfx('ui');
     const raw = window.prompt(t('lobby.prompt'), 'KANE01');
     if (raw == null) return;
-    void lobby.join(raw);
+    void lobby.join(raw).then(() => {
+      const st = lobby.peek();
+      const uid = getCurrentAuthUser()?.uid;
+      if (st.status !== 'joined' || !st.code || !st.peerUid || !uid) return;
+      stopGuestWatch?.();
+      stopGuestWatch = joinAsGuest(st.code, st.peerUid, uid, launchMatch);
+    });
   });
   leave.addEventListener('click', () => {
     playSfx('ui');
