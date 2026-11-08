@@ -16,13 +16,18 @@ export const FORMATION = {
   stillSpeed: 18,
 } as const;
 
+/** Locks or unlocks formation on one unit. Both clients run this for a synced stance order. */
+export function toggleFormationUnit(u: BattlefieldUnit): void {
+  const def = getUnitType(u.typeId);
+  if (u.speciesId !== 'nobles' || !def.usesFormation) return;
+  u.formationLocked = !u.formationLocked;
+  if (u.formationLocked) u.inFormation = true;
+}
+
 export function toggleFormationSelected(world: BattlefieldWorld): void {
   for (const u of world.units) {
     if (u.team !== 'player' || !u.selected) continue;
-    const def = getUnitType(u.typeId);
-    if (u.speciesId !== 'nobles' || !def.usesFormation) continue;
-    u.formationLocked = !u.formationLocked;
-    if (u.formationLocked) u.inFormation = true;
+    toggleFormationUnit(u);
   }
 }
 

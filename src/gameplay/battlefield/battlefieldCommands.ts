@@ -3,8 +3,13 @@
  * effect on, so the other player can receive it and apply it on the same tick.
  * Commands due on one tick always run in the same order, so both clients agree.
  */
-import type { BattlefieldTeam, BattlefieldWorld } from './battlefieldWorld';
+import type { BuildingTypeId } from '../../data/buildings';
+import type { BattlefieldTeam, BattlefieldUnit, BattlefieldWorld } from './battlefieldWorld';
 import { moveUnitsForTeam, recordPlayerAction } from './battlefieldWorld';
+import { placeBuilding } from './battlefieldBuildings';
+import { toggleFormationUnit } from './battlefieldFormations';
+import { toggleMutationUnit } from './battlefieldMutations';
+import { toggleRageUnit } from './battlefieldRage';
 import { findTarget } from './battlefieldCombat';
 import { setUnitPath } from './battlefieldPathfinding';
 
@@ -16,7 +21,18 @@ interface OrderBase {
 export type BattleCommand =
   | (OrderBase & { kind: 'move'; x: number; y: number })
   | (OrderBase & { kind: 'gather'; nodeId: number })
-  | (OrderBase & { kind: 'attack'; targetId: number });
+  | (OrderBase & { kind: 'attack'; targetId: number })
+  | (OrderBase & { kind: 'place'; buildingType: BuildingTypeId; x: number; y: number })
+  | (OrderBase & { kind: 'stance'; stance: StanceId });
+
+/** The stance keys: rage (Brutes), formation (Nobles) and mutation (Weirdos). */
+export type StanceId = 'rage' | 'formation' | 'mutation';
+
+const STANCE_TOGGLES: Record<StanceId, (u: BattlefieldUnit) => void> = {
+  rage: toggleRageUnit,
+  formation: toggleFormationUnit,
+  mutation: toggleMutationUnit,
+};
 
 function targetKey(command: BattleCommand): string {
   switch (command.kind) {
@@ -26,6 +42,10 @@ function targetKey(command: BattleCommand): string {
       return `${command.nodeId}`;
     case 'attack':
       return `${command.targetId}`;
+    case 'place':
+      return `${command.buildingType}|${command.x}|${command.y}`;
+    case 'stance':
+      return command.stance;
   }
 }
 
@@ -96,6 +116,14 @@ export function applyBattleCommand(world: BattlefieldWorld, command: BattleComma
         ordered += 1;
       }
       if (ordered > 0) recordPlayerAction(world);
+      return;
+    }
+    case 'place':
+      placeBuilding(world, command.team, command.buildingType, command.x, command.y);
+      return;
+    case 'stance': {
+      const toggle = STANCE_TOGGLES[command.stance];
+      for (const u of commandedUnits(world, command)) toggle(u);
       return;
     }
     case 'attack': {

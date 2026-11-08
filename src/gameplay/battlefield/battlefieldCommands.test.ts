@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import { getUnitType } from '../../data/units';
 import { createAiState } from './battlefieldAi';
 import {
   applyBattleCommand,
@@ -192,5 +193,44 @@ describe('battlefield commands', () => {
     const ally = world.units.find((u) => u.team === 'player' && u.id !== mine.id)!;
     applyBattleCommand(world, { kind: 'attack', team: 'player', unitIds: [mine.id], targetId: ally.id });
     expect(mine.attackTargetId).not.toBe(ally.id);
+  });
+
+  it('a building placed on the shared tick lands the same way on both clients', () => {
+    const a = pvpWorld();
+    const b = pvpWorld();
+    const keep = a.buildings.find((x) => x.team === 'player')!;
+    let placed: BattleCommand | null = null;
+    for (let dx = 120; dx <= 400 && !placed; dx += 20) {
+      for (let dy = -200; dy <= 200 && !placed; dy += 20) {
+        const command: BattleCommand = {
+          kind: 'place',
+          team: 'player',
+          unitIds: [],
+          buildingType: 'barracks',
+          x: keep.x + dx,
+          y: keep.y + dy,
+        };
+        const before = a.buildings.length;
+        applyBattleCommand(a, command);
+        if (a.buildings.length > before) placed = command;
+      }
+    }
+    expect(placed).not.toBeNull();
+    applyBattleCommand(b, placed!);
+    expect(b.buildings.length).toBe(a.buildings.length);
+    expect(battlefieldHash(a)).toBe(battlefieldHash(b));
+  });
+
+  it('a stance order locks the same units on both clients, and ignores the other team', () => {
+    const a = pvpWorld();
+    const b = pvpWorld();
+    const mine = a.units.find((u) => u.team === 'player' && getUnitType(u.typeId).canRage)!;
+    const order: BattleCommand = { kind: 'stance', team: 'player', unitIds: [mine.id], stance: 'rage' };
+    applyBattleCommand(a, order);
+    applyBattleCommand(b, order);
+    expect(a.units.find((u) => u.id === mine.id)!.rageLocked).toBe(true);
+    expect(b.units.find((u) => u.id === mine.id)!.rageLocked).toBe(true);
+    applyBattleCommand(a, { kind: 'stance', team: 'enemy', unitIds: [mine.id], stance: 'rage' });
+    expect(a.units.find((u) => u.id === mine.id)!.rageLocked).toBe(true);
   });
 });

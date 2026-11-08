@@ -16,13 +16,18 @@ export const RAGE = {
   lingerMs: 900,
 } as const;
 
+/** Locks or unlocks rage on one unit. Both clients run this for a synced stance order. */
+export function toggleRageUnit(u: BattlefieldUnit): void {
+  const def = getUnitType(u.typeId);
+  if (u.speciesId !== 'brutes' || !def.canRage) return;
+  u.rageLocked = !u.rageLocked;
+  if (u.rageLocked) u.enraged = true;
+}
+
 export function toggleRageSelected(world: BattlefieldWorld): void {
   for (const u of world.units) {
     if (u.team !== 'player' || !u.selected) continue;
-    const def = getUnitType(u.typeId);
-    if (u.speciesId !== 'brutes' || !def.canRage) continue;
-    u.rageLocked = !u.rageLocked;
-    if (u.rageLocked) u.enraged = true;
+    toggleRageUnit(u);
   }
 }
 
