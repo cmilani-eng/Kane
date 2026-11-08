@@ -4,14 +4,18 @@
  * Commands due on one tick always run in the same order, so both clients agree.
  */
 import type { BuildingTypeId } from '../../data/buildings';
+import type { HeroAbilitySlot } from '../../data/heroes';
+import type { UnitTypeId } from '../../data/units';
 import type { BattlefieldTeam, BattlefieldUnit, BattlefieldWorld } from './battlefieldWorld';
 import { moveUnitsForTeam, recordPlayerAction } from './battlefieldWorld';
 import { placeBuilding } from './battlefieldBuildings';
+import { castHeroAbility } from './battlefieldHeroes';
+import { cancelQueuedTrain, queueTrain } from './battlefieldProduction';
 import { toggleFormationUnit } from './battlefieldFormations';
 import { toggleMutationUnit } from './battlefieldMutations';
 import { toggleRageUnit } from './battlefieldRage';
 import { findTarget } from './battlefieldCombat';
-import { setUnitPath } from './battlefieldPathfinding';
+import { clearUnitPath, setUnitPath } from './battlefieldPathfinding';
 
 interface OrderBase {
   team: BattlefieldTeam;
@@ -23,7 +27,11 @@ export type BattleCommand =
   | (OrderBase & { kind: 'gather'; nodeId: number })
   | (OrderBase & { kind: 'attack'; targetId: number })
   | (OrderBase & { kind: 'place'; buildingType: BuildingTypeId; x: number; y: number })
-  | (OrderBase & { kind: 'stance'; stance: StanceId });
+  | (OrderBase & { kind: 'stance'; stance: StanceId })
+  | (OrderBase & { kind: 'train'; buildingId: number; typeId: UnitTypeId })
+  | (OrderBase & { kind: 'cancelTrain'; buildingId: number; index?: number })
+  | (OrderBase & { kind: 'ability'; slot: HeroAbilitySlot })
+  | (OrderBase & { kind: 'stop' });
 
 /** The stance keys: rage (Brutes), formation (Nobles) and mutation (Weirdos). */
 export type StanceId = 'rage' | 'formation' | 'mutation';
@@ -46,6 +54,14 @@ function targetKey(command: BattleCommand): string {
       return `${command.buildingType}|${command.x}|${command.y}`;
     case 'stance':
       return command.stance;
+    case 'train':
+      return `${command.buildingId}|${command.typeId}`;
+    case 'cancelTrain':
+      return `${command.buildingId}|${command.index ?? ''}`;
+    case 'ability':
+      return command.slot;
+    case 'stop':
+      return 'stop';
   }
 }
 
@@ -124,6 +140,31 @@ export function applyBattleCommand(world: BattlefieldWorld, command: BattleComma
     case 'stance': {
       const toggle = STANCE_TOGGLES[command.stance];
       for (const u of commandedUnits(world, command)) toggle(u);
+      return;
+    }
+    case 'train': {
+      const b = world.buildings.find((x) => x.id === command.buildingId && x.team === command.team);
+      if (b) queueTrain(world, b, command.typeId);
+      return;
+    }
+    case 'cancelTrain': {
+      const b = world.buildings.find((x) => x.id === command.buildingId && x.team === command.team);
+      if (b) cancelQueuedTrain(world, b, command.index);
+      return;
+    }
+    case 'ability':
+      castHeroAbility(world, command.slot, command.team);
+      return;
+    case 'stop': {
+      let stopped = 0;
+      for (const u of commandedUnits(world, command)) {
+        clearUnitPath(u);
+        u.attackTargetId = null;
+        u.gatherNodeId = null;
+        u.attackMove = false;
+        stopped += 1;
+      }
+      if (stopped > 0) recordPlayerAction(world);
       return;
     }
     case 'attack': {
