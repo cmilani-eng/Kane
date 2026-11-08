@@ -208,7 +208,7 @@ describe('signed in as alice', () => {
 
     it('rejects a setup with missing fields', async () => {
       const { seed: _seed, ...partial } = setup();
-      await assertFails(as('alice').ref('matches/ABCD/setup').set({ ...partial, seed: undefined }));
+      await assertFails(as('alice').ref('matches/ABCD/setup').set(partial));
     });
 
     it('a stranger cannot read the match', async () => {
