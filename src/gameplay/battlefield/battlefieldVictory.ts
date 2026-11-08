@@ -7,6 +7,12 @@ import type { BattlefieldWorld } from './battlefieldWorld';
 
 export type MatchResult = 'ongoing' | 'victory' | 'defeat';
 
+/** The result as seen from `team`: the simulation reports it from the player side. */
+export function resultForTeam(result: MatchResult, team: 'player' | 'enemy'): MatchResult {
+  if (team === 'player' || result === 'ongoing') return result;
+  return result === 'victory' ? 'defeat' : 'victory';
+}
+
 export type MatchEndReason = 'keep' | 'wipe' | 'core_hold' | null;
 
 export function evaluateMatch(world: BattlefieldWorld): MatchResult {

@@ -434,8 +434,9 @@ export function createBattlefieldWorld(
   difficulty: AiDifficultyId = 'normal',
   mapId?: string | null,
   seed = 1,
+  enemySpeciesOverride?: SpeciesId,
 ): BattlefieldWorld {
-  const enemySpecies = oppositePlayable(playerSpecies);
+  const enemySpecies = enemySpeciesOverride ?? oppositePlayable(playerSpecies);
   const ai = getAiDifficulty(difficulty);
   const layout = getSkirmishMap(mapId);
   const world: BattlefieldWorld = {
@@ -558,10 +559,20 @@ export function findPlayerUnitAt(
   x: number,
   y: number,
 ): BattlefieldUnit | null {
+  return findUnitAtForTeam(world, x, y, 'player');
+}
+
+/** The nearest living unit of `team` under (x, y), or null. */
+export function findUnitAtForTeam(
+  world: BattlefieldWorld,
+  x: number,
+  y: number,
+  team: BattlefieldTeam,
+): BattlefieldUnit | null {
   let best: BattlefieldUnit | null = null;
   let bestD = Infinity;
   for (const u of world.units) {
-    if (!isLivingPlayerUnit(u)) continue;
+    if (u.team !== team || u.hp <= 0) continue;
     const d = dist(u.x, u.y, x, y);
     if (d <= u.radius + 12 && d < bestD) {
       best = u;
