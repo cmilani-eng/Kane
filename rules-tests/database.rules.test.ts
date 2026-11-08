@@ -241,5 +241,19 @@ describe('signed in as alice', () => {
       await assertSucceeds(as('alice').ref('matches/ABCD/hash/alice/30').set('a1b2c3d4'));
       await assertFails(as('bob').ref('matches/ABCD/hash/alice/30').set('ffffffff'));
     });
+
+    it('each player marks their own presence as here or away, and only theirs', async () => {
+      await assertSucceeds(as('alice').ref('matches/ABCD/presence/alice').set('here'));
+      await assertSucceeds(as('bob').ref('matches/ABCD/presence/bob').set('away'));
+      await assertSucceeds(read(as('alice'), 'matches/ABCD/presence/bob'));
+      await assertFails(as('alice').ref('matches/ABCD/presence/bob').set('here'));
+      await assertFails(as('bob').ref('matches/ABCD/presence/alice').set('away'));
+    });
+
+    it('presence takes only the two values here and away, and a stranger cannot mark presence', async () => {
+      await assertFails(as('alice').ref('matches/ABCD/presence/alice').set('gone'));
+      await assertFails(as('alice').ref('matches/ABCD/presence/alice').set({ at: 1 }));
+      await assertFails(as('carol').ref('matches/ABCD/presence/carol').set('here'));
+    });
   });
 });

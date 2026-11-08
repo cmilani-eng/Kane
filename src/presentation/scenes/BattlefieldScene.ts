@@ -3,11 +3,12 @@
  * Phaser 4 APIs: https://docs.phaser.io/
  */
 import { SIM_STEP_MS, stepBattlefieldSim } from "../../gameplay/battlefield/battlefieldSimStep";
-import { applyDueCommands, createCommandSchedule } from "../../gameplay/battlefield/battlefieldCommands";
+import { applyDueCommands, createCommandSchedule, type BattleCommand } from "../../gameplay/battlefield/battlefieldCommands";
 import { battlefieldHash } from "../../gameplay/battlefield/battlefieldHash";
 import { createLockstep, type Lockstep } from "../../networking/lockstep";
 import { createMatchChannel } from "../../networking/matchChannel";
 import { getMatchDatabase } from "../../networking/matchDatabase";
+import { announcePresence, watchPresence, type PeerPresence } from "../../networking/matchPresence";
 import Phaser from 'phaser';
 import { BRAND } from '../../config/brand';
 import { flags } from '../../config/flags';
@@ -272,6 +273,14 @@ export class BattlefieldScene extends Phaser.Scene {
   private simTick = 0;
   private outOfSync = false;
   private waitText: Phaser.GameObjects.Text | null = null;
+  /** Two-player: the friend's presence, whether they have been seen yet, and whether they are gone. */
+  private peerPresence: PeerPresence = 'missing';
+  private peerSeen = false;
+  private peerLeft = false;
+  /** Two-player: true while the last step could not run because the friend's orders are missing. */
+  private waitingNow = false;
+  private stopPresence: (() => void) | null = null;
+  private stopPeerWatch: (() => void) | null = null;
   private viewCull: ViewBounds | null = null;
   /** Equipped cosmetics accent for the player species (visual only). */
   private playerSkinAccent = 0xf0c75e;
@@ -991,18 +1000,24 @@ export class BattlefieldScene extends Phaser.Scene {
   }
 
   /** Right-click, and a touch long-press, share this move / attack / gather path. */
-  /** The move order. In a two-player match it goes to the friend and runs on a shared tick. */
-  private issueMoveOrder(worldX: number, worldY: number): void {
-    if (!this.pvp) {
-      issueMoveSelected(this.world, worldX, worldY);
-      return;
-    }
+  /**
+   * Two-player: an attack on an enemy, a gather on a resource, or otherwise a move. The
+   * order goes to the friend and runs on a shared tick, so both sides apply the same one.
+   */
+  private issueFriendOrder(worldX: number, worldY: number): void {
     if (!this.lockstep) return;
     const unitIds = this.world.units
       .filter((u) => u.selected && u.team === this.me && u.hp > 0)
       .map((u) => u.id);
     if (unitIds.length === 0) return;
-    this.lockstep.issue(this.simTick, { kind: 'move', team: this.me, unitIds, x: worldX, y: worldY });
+    const enemy = findEnemyAt(this.world, worldX, worldY, this.me);
+    const node = findNodeAt(this.world, worldX, worldY);
+    const command: BattleCommand = enemy
+      ? { team: this.me, unitIds, kind: 'attack', targetId: enemy.id }
+      : node
+        ? { team: this.me, unitIds, kind: 'gather', nodeId: node.id }
+        : { team: this.me, unitIds, kind: 'move', x: worldX, y: worldY };
+    this.lockstep.issue(this.simTick, command);
   }
 
   private issuePointerOrder(worldX: number, worldY: number): void {
@@ -1018,7 +1033,7 @@ export class BattlefieldScene extends Phaser.Scene {
       return;
     }
     if (this.pvp) {
-      this.issueMoveOrder(worldX, worldY);
+      this.issueFriendOrder(worldX, worldY);
       this.mode = 'none';
       this.boxGfx.clear();
       this.cameraCtl.suppressPan = false;
@@ -1364,7 +1379,11 @@ export class BattlefieldScene extends Phaser.Scene {
   private startLockstep(pvp: PvpMatch): void {
     this.world.pvp = true;
     const db = getMatchDatabase();
-    if (db) this.lockstep = createLockstep(createMatchChannel(db, pvp.code, pvp.uid, pvp.peerUid));
+    if (db) {
+      this.lockstep = createLockstep(createMatchChannel(db, pvp.code, pvp.uid, pvp.peerUid));
+      this.stopPresence = announcePresence(db, pvp.code, pvp.uid);
+      this.stopPeerWatch = watchPresence(db, pvp.code, pvp.peerUid, (presence) => this.onPeerPresence(presence));
+    }
     this.waitText = this.add
       .text(this.scale.width / 2, this.scale.height * 0.18, t('pvp.waiting'), {
         fontFamily: 'system-ui, sans-serif',
@@ -1377,7 +1396,33 @@ export class BattlefieldScene extends Phaser.Scene {
       .setScrollFactor(0)
       .setDepth(95)
       .setVisible(false);
-    this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => this.lockstep?.stop());
+    this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => {
+      this.lockstep?.stop();
+      this.stopPeerWatch?.();
+      this.stopPresence?.();
+    });
+  }
+
+  /** Two-player: the friend's presence changed. Stepping pauses while they are gone and resumes if they return. */
+  private onPeerPresence(presence: PeerPresence): void {
+    if (presence !== 'missing') this.peerSeen = true;
+    this.peerPresence = presence;
+    this.peerLeft = this.peerSeen && presence === 'missing';
+    this.refreshWaitText();
+  }
+
+  /** Two-player: says why the battle is not moving, or that the friend has left. */
+  private refreshWaitText(): void {
+    if (!this.waitText || this.outOfSync) return;
+    let message: string | null = null;
+    if (this.matchResult === 'ongoing' && this.peerLeft) {
+      message = t('pvp.peerLeft');
+    } else if (this.waitingNow) {
+      if (!this.peerSeen) message = t('pvp.waitingJoin');
+      else if (this.peerPresence === 'away') message = t('pvp.peerAway');
+      else message = t('pvp.waiting');
+    }
+    this.waitText.setText(message ?? '').setVisible(message !== null);
   }
 
   /** Two-player: runs a fixed step only once the friend's orders for it have arrived. */
@@ -1386,7 +1431,7 @@ export class BattlefieldScene extends Phaser.Scene {
     if (!lockstep || this.outOfSync) return;
     this.simAccMs += delta;
     let waiting = false;
-    for (let steps = 0; this.simAccMs >= SIM_STEP_MS && steps < MAX_SIM_STEPS_PER_FRAME; steps++) {
+    for (let steps = 0; !this.peerLeft && this.simAccMs >= SIM_STEP_MS && steps < MAX_SIM_STEPS_PER_FRAME; steps++) {
       if (!lockstep.canRun(this.simTick)) {
         waiting = true;
         break;
@@ -1399,7 +1444,8 @@ export class BattlefieldScene extends Phaser.Scene {
       this.simAccMs -= SIM_STEP_MS;
     }
     if (this.simAccMs >= SIM_STEP_MS) this.simAccMs = 0;
-    this.waitText?.setVisible(waiting);
+    this.waitingNow = waiting || this.peerLeft;
+    this.refreshWaitText();
     if (lockstep.desyncTick() !== null) {
       this.outOfSync = true;
       this.waitText?.setText(t('pvp.outOfSync')).setVisible(true);

@@ -4,18 +4,33 @@
  * Commands due on one tick always run in the same order, so both clients agree.
  */
 import type { BattlefieldTeam, BattlefieldWorld } from './battlefieldWorld';
-import { moveUnitsForTeam } from './battlefieldWorld';
+import { moveUnitsForTeam, recordPlayerAction } from './battlefieldWorld';
+import { findTarget } from './battlefieldCombat';
+import { setUnitPath } from './battlefieldPathfinding';
 
-export type BattleCommand = {
-  kind: 'move';
+interface OrderBase {
   team: BattlefieldTeam;
   unitIds: readonly number[];
-  x: number;
-  y: number;
-};
+}
+
+export type BattleCommand =
+  | (OrderBase & { kind: 'move'; x: number; y: number })
+  | (OrderBase & { kind: 'gather'; nodeId: number })
+  | (OrderBase & { kind: 'attack'; targetId: number });
+
+function targetKey(command: BattleCommand): string {
+  switch (command.kind) {
+    case 'move':
+      return `${command.x}|${command.y}`;
+    case 'gather':
+      return `${command.nodeId}`;
+    case 'attack':
+      return `${command.targetId}`;
+  }
+}
 
 function sortKey(command: BattleCommand): string {
-  return `${command.team}|${command.kind}|${command.x}|${command.y}|${[...command.unitIds].sort((a, b) => a - b).join(',')}`;
+  return `${command.team}|${command.kind}|${targetKey(command)}|${[...command.unitIds].sort((a, b) => a - b).join(',')}`;
 }
 
 /** A fixed order for commands that take effect on the same tick. Every client sorts the same way. */
@@ -54,14 +69,51 @@ export function createCommandSchedule(): CommandSchedule {
   };
 }
 
-/** Applies one order. Only living units of the command's own team can be moved. */
-export function applyBattleCommand(world: BattlefieldWorld, command: BattleCommand): void {
-  if (command.kind !== 'move') return;
+/** The living units of the command's own team that it names. */
+function commandedUnits(world: BattlefieldWorld, command: BattleCommand) {
   const wanted = new Set(command.unitIds);
-  const units = world.units.filter(
+  return world.units.filter(
     (u) => u.team === command.team && wanted.has(u.id) && u.hp > 0,
   );
-  moveUnitsForTeam(world, command.team, units, command.x, command.y);
+}
+
+/** Applies one order. Only living units of the command's own team can be ordered. */
+export function applyBattleCommand(world: BattlefieldWorld, command: BattleCommand): void {
+  switch (command.kind) {
+    case 'move':
+      moveUnitsForTeam(world, command.team, commandedUnits(world, command), command.x, command.y);
+      return;
+    case 'gather': {
+      const node = world.nodes.find((n) => n.id === command.nodeId && n.remaining > 0);
+      if (!node) return;
+      let ordered = 0;
+      for (const u of commandedUnits(world, command)) {
+        if (!u.canGather) continue;
+        u.attackTargetId = null;
+        u.attackMove = false;
+        u.gatherNodeId = node.id;
+        setUnitPath(world, u, { x: node.x, y: node.y });
+        ordered += 1;
+      }
+      if (ordered > 0) recordPlayerAction(world);
+      return;
+    }
+    case 'attack': {
+      const target = findTarget(world, command.targetId);
+      if (!target || target.hp <= 0 || target.team === command.team || target.team === 'neutral') return;
+      let ordered = 0;
+      for (const u of commandedUnits(world, command)) {
+        u.path = [];
+        u.moveTarget = null;
+        u.gatherNodeId = null;
+        u.attackMove = false;
+        u.attackTargetId = target.id;
+        ordered += 1;
+      }
+      if (ordered > 0) recordPlayerAction(world);
+      return;
+    }
+  }
 }
 
 /** Applies every command due on `tick`, in the fixed order. Call before the tick's simulation step. */

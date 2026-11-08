@@ -48,6 +48,12 @@
               ".validate": "$tick.matches(/^[0-9]+$/) && newData.isString() && newData.val().length <= 16"
             }
           }
+        },
+        "presence": {
+          "$uid": {
+            ".write": "auth != null && $uid === auth.uid && (root.child('lobbies').child($code).child('hostUid').val() === auth.uid || root.child('lobbies').child($code).child('guestUid').val() === auth.uid)",
+            ".validate": "newData.isString() && newData.val().matches(/^(here|away)$/)"
+          }
         }
       }
     },
