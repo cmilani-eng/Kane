@@ -148,4 +148,49 @@ describe('battlefield commands', () => {
     applyDueCommands(world, schedule, 5);
     expect(schedule.size()).toBe(0);
   });
+
+  it('gather and attack orders run the same on both clients', () => {
+    const a = pvpWorld();
+    const b = pvpWorld();
+    const gatherer = a.units.find((u) => u.team === 'player' && u.canGather)!.id;
+    const node = a.nodes[0]!.id;
+    const foe = a.units.find((u) => u.team === 'enemy')!.id;
+    const others = livingIds(a, 'player').filter((id) => id !== gatherer);
+    const orders: Array<[number, BattleCommand]> = [
+      [20, { kind: 'gather', team: 'player', unitIds: [gatherer], nodeId: node }],
+      [40, { kind: 'attack', team: 'player', unitIds: others, targetId: foe }],
+    ];
+    const scheduleA = createCommandSchedule();
+    const scheduleB = createCommandSchedule();
+    for (const [tick, command] of orders) {
+      scheduleA.add(tick, command);
+      scheduleB.add(tick, command);
+    }
+    expect(play(a, scheduleA, 300)).toEqual(play(b, scheduleB, 300));
+  });
+
+  it('a gather order sends the gatherer to the resource it names', () => {
+    const world = pvpWorld();
+    const node = world.nodes[0]!;
+    const gatherer = world.units.find((u) => u.team === 'player' && u.canGather)!;
+    applyBattleCommand(world, { kind: 'gather', team: 'player', unitIds: [gatherer.id], nodeId: node.id });
+    expect(gatherer.gatherNodeId).toBe(node.id);
+  });
+
+  it('a gather order on a depleted resource does nothing', () => {
+    const world = pvpWorld();
+    const node = world.nodes[0]!;
+    node.remaining = 0;
+    const gatherer = world.units.find((u) => u.team === 'player' && u.canGather)!;
+    applyBattleCommand(world, { kind: 'gather', team: 'player', unitIds: [gatherer.id], nodeId: node.id });
+    expect(gatherer.gatherNodeId).toBeNull();
+  });
+
+  it('an attack order cannot target the ordering team', () => {
+    const world = pvpWorld();
+    const mine = world.units.find((u) => u.team === 'player')!;
+    const ally = world.units.find((u) => u.team === 'player' && u.id !== mine.id)!;
+    applyBattleCommand(world, { kind: 'attack', team: 'player', unitIds: [mine.id], targetId: ally.id });
+    expect(mine.attackTargetId).not.toBe(ally.id);
+  });
 });
