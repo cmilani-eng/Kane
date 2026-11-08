@@ -100,8 +100,23 @@ export function showLobbyCard(
   leave.className = QUIET_BUTTON;
   leave.textContent = t('lobby.leave');
 
+  const joinRow = document.createElement('div');
+  joinRow.className = 'mt-4 flex flex-wrap items-center justify-center gap-3';
+  joinRow.style.display = 'none';
+  const codeInput = document.createElement('input');
+  codeInput.type = 'text';
+  codeInput.placeholder = t('lobby.prompt');
+  codeInput.maxLength = 8;
+  codeInput.autocomplete = 'off';
+  codeInput.spellcheck = false;
+  codeInput.className = 'w-64 max-w-full rounded-2xl border border-[#7be0ff]/40 bg-[#0a1220] px-4 py-3 text-center text-[16px] font-bold uppercase tracking-[0.12em] text-[#f5f8ff] outline-none focus:border-[#7be0ff]';
+  const confirmJoin = document.createElement('button');
+  confirmJoin.type = 'button';
+  confirmJoin.className = PRIMARY_BUTTON;
+  confirmJoin.textContent = t('lobby.joinConfirm');
+  joinRow.append(codeInput, confirmJoin);
   row.append(create, join, leave);
-  card.append(close, tag, code, status, subtitle, setup, tips, quiet, row);
+  card.append(close, tag, code, status, subtitle, setup, tips, quiet, joinRow, row);
   overlay.append(card);
 
   const refresh = (): void => {
@@ -157,10 +172,15 @@ export function showLobbyCard(
     }
     void lobby.host();
   });
-  join.addEventListener('click', () => {
+  const submitJoin = (): void => {
+    const raw = codeInput.value.trim();
+    if (!raw) {
+      codeInput.focus();
+      return;
+    }
     playSfx('ui');
-    const raw = window.prompt(t('lobby.prompt'), 'KANE01');
-    if (raw == null) return;
+    joinRow.style.display = 'none';
+    codeInput.value = '';
     void lobby.join(raw).then(() => {
       const st = lobby.peek();
       const uid = getCurrentAuthUser()?.uid;
@@ -168,6 +188,21 @@ export function showLobbyCard(
       stopGuestWatch?.();
       stopGuestWatch = joinAsGuest(st.code, st.peerUid, uid, launchMatch);
     });
+  };
+  join.addEventListener('click', () => {
+    playSfx('ui');
+    const open = joinRow.style.display === 'none';
+    joinRow.style.display = open ? 'flex' : 'none';
+    if (open) codeInput.focus();
+  });
+  confirmJoin.addEventListener('click', submitJoin);
+  codeInput.addEventListener('keydown', (event) => {
+    // Keep typing in the code field from reaching the game's own shortcuts; Escape still closes the card.
+    if (event.key !== 'Escape') event.stopPropagation();
+    if (event.key === 'Enter') {
+      event.preventDefault();
+      submitJoin();
+    }
   });
   leave.addEventListener('click', () => {
     playSfx('ui');
