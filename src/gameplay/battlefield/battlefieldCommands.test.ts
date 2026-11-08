@@ -237,6 +237,16 @@ describe('battlefield commands', () => {
     expect(battlefieldHash(a)).toBe(battlefieldHash(b));
   });
 
+  it('a recruit order charges the same wallet on both clients', () => {
+    const a = pvpWorld();
+    const b = pvpWorld();
+    const order: BattleCommand = { kind: 'recruit', team: 'player', unitIds: [] };
+    applyBattleCommand(a, order);
+    applyBattleCommand(b, order);
+    expect(a.wallet).toEqual(b.wallet);
+    expect(battlefieldHash(a)).toBe(battlefieldHash(b));
+  });
+
   it('a stop order clears the same orders on both clients', () => {
     const a = pvpWorld();
     const b = pvpWorld();
