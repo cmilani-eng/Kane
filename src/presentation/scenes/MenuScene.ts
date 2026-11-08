@@ -41,7 +41,7 @@ import { ensureAmbientBgm } from '../audio/bgm';
 import { playSfx } from '../audio/sfx';
 import { hideDomHud } from '../ui/domHud';
 import { showAuthPanel, hideAuthPanel } from '../ui/authPanel';
-import { showCosmeticsPanel } from '../ui/cosmeticsPanel';
+import { showCosmeticsCard } from '../ui/cosmeticsCard';
 import { accountChipName, showDashboardPanel } from '../ui/dashboardPanel';
 import { flags } from '../../config/flags';
 import { showLobbyCard } from '../ui/lobbyCard';
@@ -200,7 +200,7 @@ export class MenuScene extends Phaser.Scene {
     this.cosmeticsOpen = true;
     playSfx('ui');
     this.resetMenuCamera();
-    showCosmeticsPanel(this, () => {
+    showCosmeticsCard(() => {
       this.cosmeticsOpen = false;
       this.fitMenuCamera();
     });
