@@ -772,10 +772,11 @@ function softSeparateUnits(world: BattlefieldWorld): void {
   }
 }
 
+/** The viewer's own selection. A friend in a two-player match controls the enemy team. */
 export function selectedCount(world: BattlefieldWorld): number {
-  return world.units.filter((u) => u.selected).length;
+  return world.units.filter((u) => u.selected && u.team === world.controlTeam).length;
 }
 
 export function selectedUnits(world: BattlefieldWorld): BattlefieldUnit[] {
-  return world.units.filter((u) => u.selected && u.team === 'player');
+  return world.units.filter((u) => u.selected && u.team === world.controlTeam);
 }
