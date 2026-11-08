@@ -110,11 +110,10 @@ import { playSfx } from '../audio/sfx';
 import { RtsCamera } from '../camera/rtsCamera';
 import { createSkirmishMap } from '../maps/mapManager';
 import { FogOverlay } from '../ui/fogOverlay';
-import { showKaneEndScreen } from '../ui/endScreen';
+import { showEndCard } from '../ui/endCard';
 import { resolveMissionObjective } from '../ui/missionObjective';
 import { minimapCameraSectorAt } from '../ui/minimapCameraSectorTip';
 import { fogExploredCoveragePct } from '../ui/minimapFogCoverageTip';
-import { maxPlayerVisionTiles } from '../ui/minimapVisionTip';
 import { pauseSelectedSectorAt } from '../ui/pauseSelectedSectorTip';
 import { PauseMenu } from '../ui/pauseMenu';
 import { publishMatchStock, resetMatchStock } from '../ui/matchUiStore';
@@ -1405,8 +1404,7 @@ export class BattlefieldScene extends Phaser.Scene {
       (b) => b.team === 'player' && b.hp > 0,
     ).length;
 
-    showKaneEndScreen({
-      scene: this,
+    showEndCard({
       win: result === 'victory',
       speciesId: this.world.speciesId,
       mapId: this.world.mapId,
@@ -1416,12 +1414,9 @@ export class BattlefieldScene extends Phaser.Scene {
       playerUnitKills: this.world.playerUnitKills,
       playerUnitLosses: this.world.playerUnitLosses,
       playerUnitsTrained: this.world.playerUnitsTrained,
-      playerBuildingsRaised: this.world.playerBuildingsRaised,
       playerBuildingsLost: this.world.playerBuildingsLost,
       playerGoldGathered: this.world.playerGoldGathered,
       playerCrystalsGathered: this.world.playerCrystalsGathered,
-      playerActions: this.world.playerActions,
-      playerVisionTiles: maxPlayerVisionTiles(this.world),
       reason: matchEndReason(this.world, result),
       onMenu: () => this.scene.start('Menu'),
       onRematch: () => this.rematchSameSkirmish(),
@@ -1457,9 +1452,6 @@ export class BattlefieldScene extends Phaser.Scene {
         );
         return next ? () => this.stepUpSpecies(next.species, next.mapId) : undefined;
       })(),
-      ignoreOnMain: (objs) => {
-        this.cameras.main.ignore(objs);
-      },
     });
   }
 
