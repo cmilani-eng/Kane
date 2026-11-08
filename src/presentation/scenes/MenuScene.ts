@@ -48,6 +48,7 @@ import { showLobbyCard } from '../ui/lobbyCard';
 import { isPhoneSizedScreen } from '../ui/screenSize';
 import { hideMenuGamesLink, showMenuGamesLink } from '../ui/menuGamesLink';
 import { softLaunchStatusStrip } from '../ui/softLaunchStatus';
+import { showStatsCard } from '../ui/statsCard';
 import { showStatsPanel } from '../ui/statsPanel';
 import { addLocalePicker } from '../ui/localePicker';
 import { createVolumeSlider } from '../ui/volumeSlider';
@@ -172,14 +173,15 @@ export class MenuScene extends Phaser.Scene {
     this.statsOpen = true;
     playSfx('ui');
     this.resetMenuCamera();
-    showStatsPanel(
-      this,
-      () => {
-        this.statsOpen = false;
-        this.fitMenuCamera();
-      },
-      { adminTools },
-    );
+    const onClose = (): void => {
+      this.statsOpen = false;
+      this.fitMenuCamera();
+    };
+    if (adminTools) {
+      showStatsPanel(this, onClose, { adminTools });
+    } else {
+      showStatsCard(onClose);
+    }
   }
 
   private openLobby(): void {
