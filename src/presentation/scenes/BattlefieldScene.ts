@@ -3,7 +3,7 @@
  * Phaser 4 APIs: https://docs.phaser.io/
  */
 import { SIM_STEP_MS, stepBattlefieldSim } from "../../gameplay/battlefield/battlefieldSimStep";
-import { applyDueCommands, createCommandSchedule, type BattleCommand } from "../../gameplay/battlefield/battlefieldCommands";
+import { applyDueCommands, createCommandSchedule, type BattleCommand, type StanceId } from "../../gameplay/battlefield/battlefieldCommands";
 import { battlefieldHash } from "../../gameplay/battlefield/battlefieldHash";
 import { createLockstep, type Lockstep } from "../../networking/lockstep";
 import { createMatchChannel } from "../../networking/matchChannel";
@@ -570,24 +570,24 @@ export class BattlefieldScene extends Phaser.Scene {
     });
     this.input.keyboard?.on('keydown-F', () => {
       if (this.paused || this.matchResult !== 'ongoing') return;
-      if (this.world.speciesId === 'nobles') {
-        toggleFormationSelected(this.world);
+      if (this.viewerSpecies() === 'nobles') {
+        this.toggleStance('formation');
         flashStanceHotkey('formation');
         playSfx('ui');
       }
     });
     this.input.keyboard?.on('keydown-M', () => {
       if (this.paused || this.matchResult !== 'ongoing') return;
-      if (this.world.speciesId === 'weirdos') {
-        toggleMutationSelected(this.world);
+      if (this.viewerSpecies() === 'weirdos') {
+        this.toggleStance('mutation');
         flashStanceHotkey('mutation');
         playSfx('ui');
       }
     });
     this.input.keyboard?.on('keydown-R', () => {
       if (this.paused || this.matchResult !== 'ongoing') return;
-      if (this.world.speciesId === 'brutes') {
-        toggleRageSelected(this.world);
+      if (this.viewerSpecies() === 'brutes') {
+        this.toggleStance('rage');
         flashStanceHotkey('rage');
         playSfx('ui');
       }
@@ -961,6 +961,21 @@ export class BattlefieldScene extends Phaser.Scene {
 
     if (this.mode === 'place' && pointer.leftButtonDown()) {
       if (this.ghostValid) {
+        // In a two-player match the building goes through the shared tick, so both sides place it.
+        if (this.pvp) {
+          this.lockstep?.issue(this.simTick, {
+            team: this.me,
+            unitIds: [],
+            kind: 'place',
+            buildingType: this.placeType,
+            x: this.ghostPos.x,
+            y: this.ghostPos.y,
+          });
+          playSfx('build');
+          this.mode = 'none';
+          this.ghostGfx.clear();
+          return;
+        }
         const placed = placeBuilding(
           this.world,
           this.me,
@@ -1018,6 +1033,27 @@ export class BattlefieldScene extends Phaser.Scene {
         ? { team: this.me, unitIds, kind: 'gather', nodeId: node.id }
         : { team: this.me, unitIds, kind: 'move', x: worldX, y: worldY };
     this.lockstep.issue(this.simTick, command);
+  }
+
+  /** The species this viewer plays: the host's in the host's battle, the friend's in the friend's. */
+  private viewerSpecies(): string {
+    return this.pvp && this.me === 'enemy' ? this.world.enemySpeciesId : this.world.speciesId;
+  }
+
+  /** Locks or unlocks a stance on the selected units. In a two-player match it runs on the shared tick. */
+  private toggleStance(stance: StanceId): void {
+    if (this.pvp) {
+      if (!this.lockstep) return;
+      const unitIds = this.world.units
+        .filter((u) => u.selected && u.team === this.me && u.hp > 0)
+        .map((u) => u.id);
+      if (unitIds.length === 0) return;
+      this.lockstep.issue(this.simTick, { team: this.me, unitIds, kind: 'stance', stance });
+      return;
+    }
+    if (stance === 'rage') toggleRageSelected(this.world);
+    else if (stance === 'formation') toggleFormationSelected(this.world);
+    else toggleMutationSelected(this.world);
   }
 
   private issuePointerOrder(worldX: number, worldY: number): void {
@@ -1245,7 +1281,6 @@ export class BattlefieldScene extends Phaser.Scene {
 
   /** Selection-panel Keep/hall → arm existing place mode for a building type. */
   private armPlacementFromPanel(typeId: BuildingTypeId): void {
-    if (this.pvp) return;
     if (this.paused || this.matchResult !== 'ongoing') return;
     if (this.controlsHelp.isOpen()) return;
     if (!this.placeables.includes(typeId)) {
