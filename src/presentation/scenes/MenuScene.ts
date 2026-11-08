@@ -22,6 +22,7 @@ import {
   type SkirmishMapId,
 } from '../../data/skirmishMaps';
 import type { SpeciesId } from '../../data/speciesStub';
+import type { PvpLaunch } from '../../networking/matchStart';
 import {
   difficultyCopy,
   mapCopy,
@@ -189,9 +190,31 @@ export class MenuScene extends Phaser.Scene {
     this.lobbyOpen = true;
     playSfx('ui');
     this.resetMenuCamera();
-    showLobbyCard(() => {
-      this.lobbyOpen = false;
-      this.fitMenuCamera();
+    showLobbyCard(
+      () => {
+        this.lobbyOpen = false;
+        this.fitMenuCamera();
+      },
+      (launch) => this.startPvpMatch(launch),
+    );
+  }
+
+  /** A two-player match from the friend lobby: both players open the same battle. */
+  private startPvpMatch(launch: PvpLaunch): void {
+    const species = (launch.role === 'host' ? launch.hostSpecies : launch.guestSpecies) as SpeciesId;
+    this.scene.start('Battlefield', {
+      species,
+      difficulty: launch.difficulty as AiDifficultyId,
+      mapId: launch.mapId,
+      pvp: {
+        code: launch.code,
+        role: launch.role,
+        uid: launch.uid,
+        peerUid: launch.peerUid,
+        seed: launch.seed,
+        hostSpecies: launch.hostSpecies as SpeciesId,
+        guestSpecies: launch.guestSpecies as SpeciesId,
+      },
     });
   }
 

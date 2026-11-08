@@ -3,7 +3,7 @@
  * or leave. It talks to the lobby store and reports changes as one state object,
  * so the panel only renders. Failures come back as translation keys.
  */
-import { LOBBY_CODE_LENGTH, isLobbyCode, newLobbyCode } from './lobbyStore';
+import { LOBBY_CODE_LENGTH, isLobbyCode, newLobbyCode, type LobbyRecord } from './lobbyStore';
 import type { RealtimeLobbies } from './lobbyRealtime';
 
 export type SessionStatus = 'idle' | 'hosting' | 'hosted' | 'joining' | 'joined' | 'blocked';
@@ -13,6 +13,8 @@ export interface SessionState {
   code: string | null;
   /** Translation key for the reason behind a blocked or closed lobby. */
   reason?: string;
+  /** The friend in the lobby: the guest, for the host, and the host, for the guest. */
+  peerUid?: string;
 }
 
 export interface LobbySessionDeps {
@@ -51,12 +53,12 @@ export function createLobbySession(deps: LobbySessionDeps) {
     lobbies: RealtimeLobbies,
     code: string,
     onLobbyGone: () => void,
-    onSeated: () => void,
+    onSeated: (lobby: LobbyRecord) => void,
   ): void => {
     stopWatchingLobby();
     stopWatching = lobbies.watch(code, (lobby) => {
       if (!lobby || lobby.status === 'closed') return onLobbyGone();
-      if (lobby.guestUid) onSeated();
+      if (lobby.guestUid) onSeated(lobby);
     });
   };
 
@@ -92,7 +94,7 @@ export function createLobbySession(deps: LobbySessionDeps) {
               stopWatchingLobby();
               set({ status: 'idle', code: null, reason: 'lobby.reason.closed' });
             },
-            () => set({ status: 'hosted', code }),
+            (lobby) => set({ status: 'hosted', code, peerUid: lobby.guestUid }),
           );
           return;
         }
@@ -119,7 +121,7 @@ export function createLobbySession(deps: LobbySessionDeps) {
         const reason = result.reason === 'failed' ? 'lobby.reason.failed' : `lobby.reason.${result.reason}`;
         return set({ status: 'blocked', code: null, reason });
       }
-      set({ status: 'joined', code });
+      set({ status: 'joined', code, peerUid: result.lobby.hostUid });
       watchLobby(
         lobbies,
         code,
@@ -129,6 +131,13 @@ export function createLobbySession(deps: LobbySessionDeps) {
         },
         () => undefined,
       );
+    },
+
+    /** Stops following the lobby without closing it, for when the match starts. */
+    release(): void {
+      hostUid = null;
+      stopWatchingLobby();
+      set({ status: 'idle', code: null });
     },
 
     /** Closes a lobby this player hosts, or stops following one they joined. */

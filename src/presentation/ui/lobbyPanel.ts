@@ -16,6 +16,10 @@ import {
 } from '../../i18n';
 import type { MessageKey } from '../../i18n/messages';
 import { getLobbySession } from '../../networking/lobbySingleton';
+import { getCurrentAuthUser } from '../../firebase/auth';
+import type { SpeciesId } from '../../data/speciesStub';
+import type { AiDifficultyId } from '../../gameplay/battlefield/aiDifficulty';
+import { joinAsGuest, startAsHost, type PvpLaunch } from '../../networking/matchStart';
 import type { SessionStatus } from '../../networking/lobbySession';
 import { playSfx } from '../audio/sfx';
 import { lobbyLastDifficultyTipLine } from './lobbyLastDifficultyTip';
@@ -249,6 +253,49 @@ export function showLobbyPanel(scene: Phaser.Scene, onClose: () => void): void {
     .setOrigin(0.5)
     .setDepth(302);
 
+  /** The Create button turns into Start match once a friend is seated. */
+  let startBtn: Phaser.GameObjects.Text | null = null;
+  let stopGuestWatch: (() => void) | null = null;
+  /** Starts the match as host: writes the setup, then opens the battle scene. */
+  const beginHostMatch = async (code: string, guestUid: string): Promise<void> => {
+    const uid = getCurrentAuthUser()?.uid;
+    if (!uid) return;
+    const launch = await startAsHost(code, uid, guestUid);
+    if (launch) launchMatch(launch);
+  };
+  /** Waits as guest for the host's setup, then opens the battle scene. */
+  const beginGuestMatch = (code: string, hostUid: string): void => {
+    const uid = getCurrentAuthUser()?.uid;
+    if (!uid) return;
+    stopGuestWatch?.();
+    stopGuestWatch = joinAsGuest(code, hostUid, uid, (launch) => {
+      stopGuestWatch?.();
+      stopGuestWatch = null;
+      launchMatch(launch);
+    });
+  };
+  /** Hands the match to the battle scene. The lobby stays open; this player only stops following it. */
+  const launchMatch = (launch: PvpLaunch): void => {
+    unsubscribe();
+    lobby.release();
+    destroy();
+    const species = (launch.role === 'host' ? launch.hostSpecies : launch.guestSpecies) as SpeciesId;
+    scene.scene.start('Battlefield', {
+      species,
+      difficulty: launch.difficulty as AiDifficultyId,
+      mapId: launch.mapId,
+      pvp: {
+        code: launch.code,
+        role: launch.role,
+        uid: launch.uid,
+        peerUid: launch.peerUid,
+        seed: launch.seed,
+        hostSpecies: launch.hostSpecies as SpeciesId,
+        guestSpecies: launch.guestSpecies as SpeciesId,
+      },
+    });
+  };
+
   const refresh = (): void => {
     const st = lobby.peek();
     codeText.setText(st.code ?? '————');
@@ -260,6 +307,7 @@ export function showLobbyPanel(scene: Phaser.Scene, onClose: () => void): void {
           : '#6a7f94',
     );
     statusText.setText(lobbyStatusLine(st.status, st.code, st.reason));
+    startBtn?.setText(st.status === 'hosted' ? t('pvp.start') : t('lobby.create'));
   };
   refresh();
   const unsubscribe = lobby.subscribe(refresh);
@@ -305,15 +353,24 @@ export function showLobbyPanel(scene: Phaser.Scene, onClose: () => void): void {
   const rowY = short ? bottom - 32 : bottom - 78;
   quietNote.setPosition(cx, rowY - 36);
   const createBtn = mkBtn(t('lobby.create'), '#2a4a38', () => {
+    const st = lobby.peek();
+    if (st.status === 'hosted' && st.code && st.peerUid) {
+      void beginHostMatch(st.code, st.peerUid);
+      return;
+    }
     void lobby.host();
   });
+  startBtn = createBtn;
   const joinBtn = mkBtn(t('lobby.join'), '#2a3a50', () => {
     const raw =
       typeof window !== 'undefined'
         ? window.prompt(t('lobby.prompt'), 'KANE01')
         : null;
     if (raw == null) return;
-    void lobby.join(raw);
+    void lobby.join(raw).then(() => {
+      const st = lobby.peek();
+      if (st.status === 'joined' && st.code && st.peerUid) beginGuestMatch(st.code, st.peerUid);
+    });
   });
   const leaveBtn = mkBtn(t('lobby.leave'), '#3a4555', () => {
     void lobby.leave();
@@ -368,6 +425,7 @@ export function showLobbyPanel(scene: Phaser.Scene, onClose: () => void): void {
 
   const destroy = (): void => {
     unsubscribe();
+    stopGuestWatch?.();
     for (const n of nodes) n.destroy();
   };
 }
