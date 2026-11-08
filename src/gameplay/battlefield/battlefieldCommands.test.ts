@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import { getBuildingType } from '../../data/buildings';
 import { getUnitType } from '../../data/units';
 import { createAiState } from './battlefieldAi';
 import {
@@ -218,6 +219,40 @@ describe('battlefield commands', () => {
     expect(placed).not.toBeNull();
     applyBattleCommand(b, placed!);
     expect(b.buildings.length).toBe(a.buildings.length);
+    expect(battlefieldHash(a)).toBe(battlefieldHash(b));
+  });
+
+  it('a training order queues the same unit on both clients and charges the same wallet', () => {
+    const a = pvpWorld();
+    const b = pvpWorld();
+    const trainer = a.buildings.find((x) => x.team === 'player' && x.complete && getBuildingType(x.typeId).trains.length > 0)!;
+    const typeId = getBuildingType(trainer.typeId).trains[0]!;
+    const order: BattleCommand = { kind: 'train', team: 'player', unitIds: [], buildingId: trainer.id, typeId };
+    applyBattleCommand(a, order);
+    applyBattleCommand(b, order);
+    const qa = a.buildings.find((x) => x.id === trainer.id)!.trainQueue;
+    const qb = b.buildings.find((x) => x.id === trainer.id)!.trainQueue;
+    expect(qa).toEqual([typeId]);
+    expect(qb).toEqual([typeId]);
+    expect(battlefieldHash(a)).toBe(battlefieldHash(b));
+  });
+
+  it('a stop order clears the same orders on both clients', () => {
+    const a = pvpWorld();
+    const b = pvpWorld();
+    const ids = livingIds(a, 'player');
+    const move: BattleCommand = { kind: 'move', team: 'player', unitIds: ids, x: 400, y: 400 };
+    const stop: BattleCommand = { kind: 'stop', team: 'player', unitIds: ids };
+    applyBattleCommand(a, move);
+    applyBattleCommand(b, move);
+    applyBattleCommand(a, stop);
+    applyBattleCommand(b, stop);
+    for (const world of [a, b]) {
+      for (const u of world.units.filter((unit) => unit.team === 'player')) {
+        expect(u.path).toEqual([]);
+        expect(u.attackTargetId).toBeNull();
+      }
+    }
     expect(battlefieldHash(a)).toBe(battlefieldHash(b));
   });
 

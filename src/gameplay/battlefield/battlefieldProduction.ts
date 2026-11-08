@@ -52,7 +52,8 @@ export function cancelQueuedTrain(
   building: BattlefieldBuilding,
   index?: number,
 ): QueueCancelRefund | null {
-  if (building.team !== 'player' || building.hp <= 0) return null;
+  // The caller picks the building: a viewer cancels only their own queue.
+  if (building.hp <= 0) return null;
   const q = building.trainQueue;
   if (q.length === 0) return null;
   const i =

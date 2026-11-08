@@ -34,6 +34,7 @@ import {
 import { createAiState, type AiState } from '../../gameplay/battlefield/battlefieldAi';
 import { toggleFormationSelected } from '../../gameplay/battlefield/battlefieldFormations';
 import { castHeroAbility } from '../../gameplay/battlefield/battlefieldHeroes';
+import type { HeroAbilitySlot } from '../../data/heroes';
 import { toggleMutationSelected } from '../../gameplay/battlefield/battlefieldMutations';
 import { toggleRageSelected } from '../../gameplay/battlefield/battlefieldRage';
 import { BattlefieldHud } from '../ui/battlefieldHud';
@@ -389,7 +390,12 @@ export class BattlefieldScene extends Phaser.Scene {
       cancelQueue: (index) => {
         const b = this.selectedBuilding;
         if (!b || b.team !== this.me) return;
-        const refunded = (this.pvp ? null : cancelQueuedTrain(this.world, b, index));
+        if (this.pvp) {
+          this.lockstep?.issue(this.simTick, { team: this.me, unitIds: [], kind: 'cancelTrain', buildingId: b.id, index });
+          playSfx('ui');
+          return;
+        }
+        const refunded = cancelQueuedTrain(this.world, b, index);
         if (refunded) {
           recordPlayerAction(this.world);
           playSfx('ui');
@@ -405,14 +411,16 @@ export class BattlefieldScene extends Phaser.Scene {
       train: (typeId) => {
         const b = this.selectedBuilding;
         if (!b || b.team !== this.me) return;
-        if ((this.pvp ? false : queueTrain(this.world, b, typeId))) playSfx('train');
+        if (this.pvp) {
+          this.lockstep?.issue(this.simTick, { team: this.me, unitIds: [], kind: 'train', buildingId: b.id, typeId });
+          playSfx('train');
+          return;
+        }
+        if (queueTrain(this.world, b, typeId)) playSfx('train');
         else playSfx('ui');
       },
       placeBuilding: (typeId) => this.armPlacementFromPanel(typeId),
-      castAbility: (slot) => {
-        if ((this.pvp ? false : castHeroAbility(this.world, slot, this.me))) playSfx('ability');
-        else playSfx('ui');
-      },
+      castAbility: (slot) => this.useHeroAbility(slot),
       toggleFormation: () => {
         if (this.paused || this.matchResult !== 'ongoing') return;
         if (this.world.speciesId !== 'nobles') {
@@ -607,17 +615,17 @@ export class BattlefieldScene extends Phaser.Scene {
     this.input.keyboard?.on('keydown-Q', () => {
       if (this.paused || this.matchResult !== 'ongoing') return;
       if (this.controlsHelp.isOpen()) return;
-      if ((this.pvp ? false : castHeroAbility(this.world, 'ability1', this.me))) playSfx('ability');
+      this.useHeroAbility('ability1');
     });
     this.input.keyboard?.on('keydown-W', () => {
       if (this.paused || this.matchResult !== 'ongoing') return;
       if (this.controlsHelp.isOpen()) return;
-      if ((this.pvp ? false : castHeroAbility(this.world, 'ability2', this.me))) playSfx('ability');
+      this.useHeroAbility('ability2');
     });
     this.input.keyboard?.on('keydown-E', () => {
       if (this.paused || this.matchResult !== 'ongoing') return;
       if (this.controlsHelp.isOpen()) return;
-      if ((this.pvp ? false : castHeroAbility(this.world, 'ultimate', this.me))) playSfx('ability');
+      this.useHeroAbility('ultimate');
     });
     this.input.keyboard?.on('keydown-S', () => {
       if (this.paused || this.matchResult !== 'ongoing') return;
@@ -1324,8 +1332,28 @@ export class BattlefieldScene extends Phaser.Scene {
   }
 
   /** S / Stop — halt selection and flash halt rings. */
+  /** A hero ability. In a two-player match it runs on the shared tick, so both sides cast it. */
+  private useHeroAbility(slot: HeroAbilitySlot): void {
+    if (this.pvp) {
+      this.lockstep?.issue(this.simTick, { team: this.me, unitIds: [], kind: 'ability', slot });
+      playSfx('ability');
+      return;
+    }
+    if (castHeroAbility(this.world, slot, this.me)) playSfx('ability');
+    else playSfx('ui');
+  }
+
   private issueStopCommand(): void {
-    if (this.pvp) return;
+    if (this.pvp) {
+      const unitIds = this.world.units
+        .filter((u) => u.selected && u.team === this.me && u.hp > 0)
+        .map((u) => u.id);
+      if (unitIds.length === 0) return;
+      this.lockstep?.issue(this.simTick, { team: this.me, unitIds, kind: 'stop' });
+      this.hud.flashStopButton();
+      playSfx('ui');
+      return;
+    }
     const n = stopSelected(this.world);
     if (n <= 0) return;
     spawnStopPulses(this.world);
