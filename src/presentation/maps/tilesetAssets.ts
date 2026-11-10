@@ -1,6 +1,7 @@
 /**
  * Procedural tileset + unit/building placeholder textures (Phaser 4).
  * Richer faction-colored placeholders until production sheets land.
+ * All keys are prefixed to avoid collisions in single-engine build.
  */
 import Phaser from 'phaser';
 
@@ -12,8 +13,8 @@ export const TILE = {
   crystal: 5,
 } as const;
 
-/** Horizontal tileset sheet → key `tileset-kane`. */
-export function generateTilesetTexture(scene: Phaser.Scene): void {
+/** Horizontal tileset sheet → key `${prefix}tileset`. */
+export function generateTilesetTexture(scene: Phaser.Scene, prefix = ''): void {
   const size = 40;
   const n = 6;
   const canvas = document.createElement('canvas');
@@ -55,24 +56,25 @@ export function generateTilesetTexture(scene: Phaser.Scene): void {
   ctx.arc(5 * size + 28, 12, 3, 0, Math.PI * 2);
   ctx.fill();
 
-  if (scene.textures.exists('tileset-kane')) scene.textures.remove('tileset-kane');
-  scene.textures.addCanvas('tileset-kane', canvas);
+  const key = `${prefix}tileset`;
+  if (scene.textures.exists(key)) scene.textures.remove(key);
+  scene.textures.addCanvas(key, canvas);
 }
 
 /** Legacy GameScene sheets + richer battlefield silhouettes. */
-export function generateUnitSpriteSheets(scene: Phaser.Scene): void {
-  makeSheet(scene, 'sheet-scout', '#3d7ea6', '#f0c75e', 'circle');
-  makeSheet(scene, 'sheet-melee', '#3d7ea6', '#f0c75e', 'diamond');
-  makeSheet(scene, 'sheet-ranged', '#3d7ea6', '#f0c75e', 'triangle');
-  makeSheet(scene, 'sheet-scout-enemy', '#6b4a8a', '#c4a0e0', 'circle');
-  makeSheet(scene, 'sheet-melee-enemy', '#6b4a8a', '#c4a0e0', 'diamond');
-  makeSheet(scene, 'sheet-ranged-enemy', '#6b4a8a', '#c4a0e0', 'triangle');
+export function generateUnitSpriteSheets(scene: Phaser.Scene, prefix = ''): void {
+  makeSheet(scene, `${prefix}sheet-scout`, '#3d7ea6', '#f0c75e', 'circle');
+  makeSheet(scene, `${prefix}sheet-melee`, '#3d7ea6', '#f0c75e', 'diamond');
+  makeSheet(scene, `${prefix}sheet-ranged`, '#3d7ea6', '#f0c75e', 'triangle');
+  makeSheet(scene, `${prefix}sheet-scout-enemy`, '#6b4a8a', '#c4a0e0', 'circle');
+  makeSheet(scene, `${prefix}sheet-melee-enemy`, '#6b4a8a', '#c4a0e0', 'diamond');
+  makeSheet(scene, `${prefix}sheet-ranged-enemy`, '#6b4a8a', '#c4a0e0', 'triangle');
 
   // Species silhouette sheets for battlefield placeholders
-  makeSheet(scene, 'sil-brutes', '#4a7a3a', '#d4782e', 'circle');
-  makeSheet(scene, 'sil-nobles', '#3d7ea6', '#f0c75e', 'diamond');
-  makeSheet(scene, 'sil-weirdos', '#7a4aa8', '#6ecfbf', 'triangle');
-  makeSheet(scene, 'sil-hero', '#f0c75e', '#fff8e8', 'star');
+  makeSheet(scene, `${prefix}sil-brutes`, '#4a7a3a', '#d4782e', 'circle');
+  makeSheet(scene, `${prefix}sil-nobles`, '#3d7ea6', '#f0c75e', 'diamond');
+  makeSheet(scene, `${prefix}sil-weirdos`, '#7a4aa8', '#6ecfbf', 'triangle');
+  makeSheet(scene, `${prefix}sil-hero`, '#f0c75e', '#fff8e8', 'star');
 }
 
 function makeSheet(
@@ -156,7 +158,7 @@ function makeSheet(
   }
 }
 
-export function generatePropTextures(scene: Phaser.Scene): void {
+export function generatePropTextures(scene: Phaser.Scene, prefix = ''): void {
   const g = scene.make.graphics({ x: 0, y: 0 });
 
   const hall = (
@@ -188,7 +190,7 @@ export function generatePropTextures(scene: Phaser.Scene): void {
     g.fillStyle(0xfff4c2, 1);
     g.fillCircle(26, 42, 4);
     g.fillCircle(54, 42, 4);
-    g.generateTexture(key, 80, 80);
+    g.generateTexture(`${prefix}${key}`, 80, 80);
   };
   hall('hall-brutes', 0x4a7a3a, 0xd4782e, 'junk');
   hall('hall-nobles', 0x3d7ea6, 0xf0c75e, 'keep');
@@ -205,7 +207,7 @@ export function generatePropTextures(scene: Phaser.Scene): void {
     g.fillStyle(accent, 1);
     g.fillRect(14, 20, 10, 22);
     g.fillRect(32, 20, 10, 22);
-    g.generateTexture(key, 56, 56);
+    g.generateTexture(`${prefix}${key}`, 56, 56);
   };
   barracks('barracks-player', 0x3d7ea6, 0xf0c75e);
   barracks('barracks-enemy', 0x6b4a8a, 0xc4a0e0);
@@ -226,7 +228,7 @@ export function generatePropTextures(scene: Phaser.Scene): void {
   g.fillCircle(23, 14, 7);
   g.fillStyle(0xffffff, 0.85);
   g.fillCircle(20, 11, 2);
-  g.generateTexture('node-gold', 48, 48);
+  g.generateTexture(`${prefix}node-gold`, 48, 48);
 
   g.clear();
   g.fillStyle(0x000000, 0.28);
@@ -241,7 +243,7 @@ export function generatePropTextures(scene: Phaser.Scene): void {
   g.fillTriangle(23, 12, 30, 32, 17, 32);
   g.fillStyle(0xffffff, 1);
   g.fillTriangle(24, 6, 27, 16, 21, 16);
-  g.generateTexture('node-crystal', 48, 48);
+  g.generateTexture(`${prefix}node-crystal`, 48, 48);
 
   g.clear();
   g.fillStyle(0x8ec8ff, 0.25);
@@ -252,7 +254,7 @@ export function generatePropTextures(scene: Phaser.Scene): void {
   g.fillCircle(32, 28, 8);
   g.lineStyle(3, 0x6aa8e8, 1);
   g.strokeCircle(32, 32, 18);
-  g.generateTexture('wardstone', 64, 64);
+  g.generateTexture(`${prefix}wardstone`, 64, 64);
 
   g.clear();
   g.fillStyle(0x3a6b2e, 1);
@@ -261,12 +263,12 @@ export function generatePropTextures(scene: Phaser.Scene): void {
   g.fillCircle(12, 14, 4);
   g.fillCircle(20, 16, 4);
   g.fillCircle(16, 20, 3);
-  g.generateTexture('forage', 32, 32);
+  g.generateTexture(`${prefix}forage`, 32, 32);
 
   g.clear();
   g.lineStyle(3, 0xf0c75e, 1);
   g.strokeCircle(20, 20, 16);
-  g.generateTexture('select-ring', 40, 40);
+  g.generateTexture(`${prefix}select-ring`, 40, 40);
 
   g.destroy();
 }

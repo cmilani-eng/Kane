@@ -1,36 +1,43 @@
 /**
- * Boot — generate placeholders, brief branded splash, then Menu.
- * Splash is short and tap-to-skip (mobile-safe); never a long block.
+ * Kane Boot Scene — generates placeholder textures, brief branded splash, then GamePicker.
+ * Asset keys prefixed with 'kane_' to avoid collisions in single-engine build.
+ *
+ * Called by: src/main.ts (registers in scene array as 'KaneBoot')
+ * Replaces: src/presentation/scenes/BootScene.ts (for Kane-specific boot)
+ * Reads: tilesetAssets functions with prefix parameter
  */
 import Phaser from 'phaser';
 import { BRAND } from '../../config/brand';
 import { t } from '../../i18n';
-import { registerUnitAnims } from '../animations/unitAnims';
-import { hideDomHud } from '../ui/domHud';
+import { registerUnitAnims } from '../../presentation/animations/unitAnims';
+import { hideDomHud } from '../../presentation/ui/domHud';
 import {
   generatePropTextures,
   generateTilesetTexture,
   generateUnitSpriteSheets,
-} from '../maps/tilesetAssets';
+} from '../../presentation/maps/tilesetAssets';
 
 /** Visible splash window before auto-advance (tap skips sooner). */
 const SPLASH_MS = 1400;
 
-export class BootScene extends Phaser.Scene {
+export class KaneBootScene extends Phaser.Scene {
   private advanced = false;
 
   constructor() {
-    super('Boot');
+    super('KaneBoot');
   }
 
   create(): void {
     hideDomHud();
     this.advanced = false;
 
-    generateTilesetTexture(this);
-    generateUnitSpriteSheets(this);
-    generatePropTextures(this);
-    registerUnitAnims(this);
+    // Generate all Kane textures with kane_ prefix
+    // Order matters: generateUnitSpriteSheets must run before registerUnitAnims
+    // because animations reference the generated sprite sheet keys
+    generateTilesetTexture(this, 'kane_');
+    generateUnitSpriteSheets(this, 'kane_');
+    generatePropTextures(this, 'kane_');
+    registerUnitAnims(this, 'kane_');
 
     this.buildSplash();
     this.scale.on('resize', this.onResize, this);
@@ -132,6 +139,6 @@ export class BootScene extends Phaser.Scene {
   private advance(): void {
     if (this.advanced) return;
     this.advanced = true;
-    this.scene.start('Menu');
+    this.scene.start('KaneMenu');
   }
 }

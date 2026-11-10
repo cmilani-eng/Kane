@@ -158,6 +158,14 @@ export class CoreVictoryBanner {
     this.layout();
   }
 
+  hide(): void {
+    for (const obj of this.gameObjects()) {
+      if ('setVisible' in obj) {
+        (obj as Phaser.GameObjects.GameObject & { setVisible: (v: boolean) => void }).setVisible(false);
+      }
+    }
+  }
+
   gameObjects(): Phaser.GameObjects.GameObject[] {
     return [
       this.panel,

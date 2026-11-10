@@ -1,6 +1,11 @@
 /**
- * Battlefield — select/move/combat + economy (gather Gold / Magic Crystals).
- * Phaser 4 APIs: https://docs.phaser.io/
+ * Kane Battlefield Scene — main gameplay for Kane game.
+ * Based on src/presentation/scenes/BattlefieldScene.ts with Kane-specific navigation.
+ * Navigation: Menu -> GamePicker, Rematch -> KaneBattlefield
+ *
+ * Called by: src/games/kane/index.ts (exports for registry)
+ * Replaces: src/presentation/scenes/BattlefieldScene.ts (for Kane-specific battlefield)
+ * Reads: Same data as original BattlefieldScene
  */
 import Phaser from 'phaser';
 import { BRAND } from '../../config/brand';
@@ -46,8 +51,8 @@ import {
   toggleRageSelected,
 } from '../../gameplay/battlefield/battlefieldRage';
 import { tickCoreFragments } from '../../gameplay/battlefield/battlefieldCoreFragments';
-import { BattlefieldHud } from '../ui/battlefieldHud';
-import { Minimap } from '../ui/minimap';
+import { BattlefieldHud } from '../../presentation/ui/battlefieldHud';
+import { Minimap } from '../../presentation/ui/minimap';
 import {
   buildSelectionView,
   flashQueueCancel,
@@ -56,9 +61,9 @@ import {
   renderSelectionPanel,
   selectionPanelInsetPx,
   unmountSelectionPanel,
-} from '../ui/selectionPanel';
-import { CoreVictoryBanner } from '../ui/coreVictoryBanner';
-import { TutorialCoach } from '../ui/tutorialCoach';
+} from '../../presentation/ui/selectionPanel';
+import { CoreVictoryBanner } from '../../presentation/ui/coreVictoryBanner';
+import { TutorialCoach } from '../../presentation/ui/tutorialCoach';
 import {
   createTutorialState,
   tickTutorial,
@@ -117,7 +122,7 @@ import {
 import { selectsWholeType } from '../../gameplay/battlefield/battlefieldSelectClick';
 import { countIdleWorkers } from '../../gameplay/battlefield/idleWorkers';
 import { isMilitaryUnit } from '../../gameplay/battlefield/selectMilitary';
-import { minimapHeroStatus } from '../ui/minimapHeroStatusTip';
+import { minimapHeroStatus } from '../../presentation/ui/minimapHeroStatusTip';
 import { touchLongPressAction } from '../../gameplay/battlefield/touchLongPress';
 import {
   spawnControlGroupAssignFx,
@@ -161,7 +166,7 @@ import {
 } from '../../database/matchSummary';
 import { getEquippedSkin } from '../../database/cosmeticsLoadout';
 import { loadMatchPrefs, rememberMatchPrefs } from '../../database/matchPrefs';
-import { favoriteFactionId } from '../ui/lobbyFavoriteFactionTip';
+import { favoriteFactionId } from '../../presentation/ui/lobbyFavoriteFactionTip';
 import { isCoachSeen } from '../../database/coachPrefs';
 import { isReduceMotion } from '../../database/motionPrefs';
 import { rematchPrefsFromWorld } from '../../gameplay/battlefield/rematchPrefs';
@@ -171,63 +176,63 @@ import {
   maybeRecordCloudGameStarted,
   maybeWriteCloudMatch,
 } from '../../firebase/cloudProgression';
-import { ensureAmbientBgm } from '../audio/bgm';
-import { playSfx } from '../audio/sfx';
-import { RtsCamera } from '../camera/rtsCamera';
-import { createSkirmishMap } from '../maps/mapManager';
-import { FogOverlay } from '../ui/fogOverlay';
-import { showKaneEndScreen } from '../ui/endScreen';
-import { resolveMissionObjective } from '../ui/missionObjective';
-import { minimapCameraSectorAt } from '../ui/minimapCameraSectorTip';
-import { fogExploredCoveragePct } from '../ui/minimapFogCoverageTip';
-import { maxPlayerVisionTiles } from '../ui/minimapVisionTip';
-import { pauseSelectedSectorAt } from '../ui/pauseSelectedSectorTip';
-import { PauseMenu } from '../ui/pauseMenu';
-import { publishMatchStock, resetMatchStock } from '../ui/matchUiStore';
+import { ensureAmbientBgm } from '../../presentation/audio/bgm';
+import { playSfx } from '../../presentation/audio/sfx';
+import { RtsCamera } from '../../presentation/camera/rtsCamera';
+import { createSkirmishMap } from '../../presentation/maps/mapManager';
+import { FogOverlay } from '../../presentation/ui/fogOverlay';
+import { showKaneEndScreen } from '../../presentation/ui/endScreen';
+import { resolveMissionObjective } from '../../presentation/ui/missionObjective';
+import { minimapCameraSectorAt } from '../../presentation/ui/minimapCameraSectorTip';
+import { fogExploredCoveragePct } from '../../presentation/ui/minimapFogCoverageTip';
+import { maxPlayerVisionTiles } from '../../presentation/ui/minimapVisionTip';
+import { pauseSelectedSectorAt } from '../../presentation/ui/pauseSelectedSectorTip';
+import { PauseMenu } from '../../presentation/ui/pauseMenu';
+import { publishMatchStock, resetMatchStock } from '../../presentation/ui/matchUiStore';
 import {
   layoutStockStrip,
   mountStockStrip,
   unmountStockStrip,
-} from '../ui/stockStrip';
+} from '../../presentation/ui/stockStrip';
 import {
   createControlsHelpPanel,
   type ControlsHelpHandle,
-} from '../ui/controlsHelpPanel';
-import { drawBuildingSilhouette } from '../buildings/buildingSilhouette';
+} from '../../presentation/ui/controlsHelpPanel';
+import { drawBuildingSilhouette } from '../../presentation/buildings/buildingSilhouette';
 import {
   enemyBuildingGhostAlpha,
   noteEnemyBuildingVisible,
   pruneBuildingGhosts,
-} from '../fx/buildingLastSeenGhost';
+} from '../../presentation/fx/buildingLastSeenGhost';
 import {
   drawPlacementGhost,
   placementFootprintSize,
-} from '../buildings/placementGhost';
-import { drawProductionQueueFeedback } from '../buildings/productionQueueFeedback';
-import { drawResourceNodeSilhouette } from '../resources/resourceNodeSilhouette';
-import { drawCombatFxList } from '../fx/combatFxDraw';
-import { drawCoreFragments } from '../fx/coreFragmentDraw';
-import { drawEconomyFxList } from '../fx/economyFxDraw';
-import { drawFormationVisuals } from '../fx/formationVisual';
+} from '../../presentation/buildings/placementGhost';
+import { drawProductionQueueFeedback } from '../../presentation/buildings/productionQueueFeedback';
+import { drawResourceNodeSilhouette } from '../../presentation/resources/resourceNodeSilhouette';
+import { drawCombatFxList } from '../../presentation/fx/combatFxDraw';
+import { drawCoreFragments } from '../../presentation/fx/coreFragmentDraw';
+import { drawEconomyFxList } from '../../presentation/fx/economyFxDraw';
+import { drawFormationVisuals } from '../../presentation/fx/formationVisual';
 import {
   drawAttackMoveReticle,
   drawAttackMoveScreenTint,
   setAttackMoveCursor,
-} from '../fx/attackMoveFeedback';
-import { drawUnderAttackEdgeFlash } from '../fx/underAttackAlert';
-import { drawHeroAbilityVfxList } from '../fx/heroAbilityVfx';
-import { drawMutationVisuals } from '../fx/mutationVisual';
-import { drawRageVisuals } from '../fx/rageVisual';
-import { drawControlGroupFxList } from '../fx/controlGroupFeedback';
-import { drawStopFxList } from '../fx/stopCommandFeedback';
-import { drawWaypointMarkers } from '../fx/waypointMarkersDraw';
-import { ControlGroupBadgeLayer } from '../fx/controlGroupBadges';
-import { RallyDistanceLabel } from '../fx/rallyDistanceLabel';
-import { BuildingGhostAgeLabels } from '../fx/buildingGhostAgeLabel';
-import { drawBuildingRallyMarkers } from '../fx/rallyMarkerDraw';
-import { drawGatherTargetHighlights } from '../fx/gatherTargetHighlight';
-import { drawAttentionPingList } from '../fx/attentionPingDraw';
-import { drawScoutPulseList } from '../fx/scoutPulseDraw';
+} from '../../presentation/fx/attackMoveFeedback';
+import { drawUnderAttackEdgeFlash } from '../../presentation/fx/underAttackAlert';
+import { drawHeroAbilityVfxList } from '../../presentation/fx/heroAbilityVfx';
+import { drawMutationVisuals } from '../../presentation/fx/mutationVisual';
+import { drawRageVisuals } from '../../presentation/fx/rageVisual';
+import { drawControlGroupFxList } from '../../presentation/fx/controlGroupFeedback';
+import { drawStopFxList } from '../../presentation/fx/stopCommandFeedback';
+import { drawWaypointMarkers } from '../../presentation/fx/waypointMarkersDraw';
+import { ControlGroupBadgeLayer } from '../../presentation/fx/controlGroupBadges';
+import { RallyDistanceLabel } from '../../presentation/fx/rallyDistanceLabel';
+import { BuildingGhostAgeLabels } from '../../presentation/fx/buildingGhostAgeLabel';
+import { drawBuildingRallyMarkers } from '../../presentation/fx/rallyMarkerDraw';
+import { drawGatherTargetHighlights } from '../../presentation/fx/gatherTargetHighlight';
+import { drawAttentionPingList } from '../../presentation/fx/attentionPingDraw';
+import { drawScoutPulseList } from '../../presentation/fx/scoutPulseDraw';
 import {
   buildingCanRally,
   clearBuildingRally,
@@ -236,13 +241,13 @@ import {
 import {
   drawUnitSilhouette,
   resolveUnitAnimPhase,
-} from '../units/unitSilhouette';
+} from '../../presentation/units/unitSilhouette';
 import {
   inView,
   MOBILE_PERF,
   viewBoundsFromCamera,
   type ViewBounds,
-} from '../perf/mobileBudget';
+} from '../../presentation/perf/mobileBudget';
 
 type PointerMode =
   | 'none'
@@ -253,7 +258,7 @@ type PointerMode =
   | 'attackMove'
   | 'rally';
 
-export class BattlefieldScene extends Phaser.Scene {
+export class KaneBattlefieldScene extends Phaser.Scene {
   private world!: BattlefieldWorld;
   private cameraCtl!: RtsCamera;
   private hudCam!: Phaser.Cameras.Scene2D.Camera;
@@ -285,11 +290,8 @@ export class BattlefieldScene extends Phaser.Scene {
   private ctrlKey: Phaser.Input.Keyboard.Key | null = null;
   private altKey: Phaser.Input.Keyboard.Key | null = null;
   private controlGroups!: ControlGroups;
-  /** Spots a double-tap on a group key, which centres the camera. */
   private groupTaps = new GroupTapTracker();
-  /** Where Tab is in its walk through the unit types of the selection. */
   private subgroupCycle: SubgroupCycle | null = null;
-  /** Finger-down that may become a move / attack / gather order. */
   private touchOrderPress: {
     pointerId: number;
     sx: number;
@@ -304,24 +306,19 @@ export class BattlefieldScene extends Phaser.Scene {
   private ghostPos = { x: 0, y: 0 };
   private ghostValid = false;
   private selectedBuilding: BattlefieldBuilding | null = null;
-  /** Inspected map resource node (remaining Gold / Crystals). */
   private selectedNode: ResourceNode | null = null;
   private ai!: AiState;
   private matchResult: MatchResult = 'ongoing';
-  /** Active match time only — does not advance while paused. */
   private matchElapsedMs = 0;
   private animTimeMs = 0;
-  /** Enemy building id → last animTimeMs while revealed (leave-vision ghost). */
   private enemyBuildingLastSeen = new Map<number, number>();
   private fogAccMs = 999;
   private viewCull: ViewBounds | null = null;
-  /** Equipped cosmetics accent for the player species (visual only). */
   private playerSkinAccent = 0xf0c75e;
-  /** Double-click / double-tap tracking for same-type select. */
   private lastSelectTap = { t: 0, unitId: -1, sx: 0, sy: 0 };
 
   constructor() {
-    super('Battlefield');
+    super('KaneBattlefield');
   }
 
   create(data?: {
@@ -373,7 +370,7 @@ export class BattlefieldScene extends Phaser.Scene {
     resetMatchStock();
     mountStockStrip();
     layoutStockStrip(this.scale.width, this.scale.height);
-    this.hud.menuBtn.on('pointerup', () => this.scene.start('Menu'));
+    this.hud.menuBtn.on('pointerup', () => this.scene.start('GamePicker'));
     this.hud.onArmAttackMove = () => this.toggleAttackMoveMode();
     this.hud.onStopSelected = () => this.issueStopCommand();
     this.hud.onRecenterBase = () => this.recenterOnPlayerBase();
@@ -477,7 +474,7 @@ export class BattlefieldScene extends Phaser.Scene {
       scene: this,
       onResume: () => this.setPaused(false),
       onRematch: () => this.rematchSameSkirmish(),
-      onQuit: () => this.scene.start('Menu'),
+      onQuit: () => this.scene.start('GamePicker'),
       ignoreOnMain: (objs) => {
         this.cameras.main.ignore(objs);
       },
@@ -541,7 +538,6 @@ export class BattlefieldScene extends Phaser.Scene {
     this.altKey =
       this.input.keyboard?.addKey(Phaser.Input.Keyboard.KeyCodes.ALT) ?? null;
     this.controlGroups = createControlGroups();
-    // Phaser reuses this scene object between matches.
     this.groupTaps.reset();
     this.subgroupCycle = null;
     this.touchOrderPress = null;
@@ -554,12 +550,6 @@ export class BattlefieldScene extends Phaser.Scene {
     }
   }
 
-  /**
-   * Phaser applies camera zoom to every object, scrollFactor 0 included, so
-   * HUD drawn by the zoomed main camera drifts off the screen edges. A second
-   * camera at zoom 1 draws the HUD instead: everything in `world` is hidden
-   * from it, and everything else currently in the scene is hidden from main.
-   */
   private splitHudCamera(world: Phaser.GameObjects.GameObject[]): void {
     this.cameras.main.ignore(this.children.list.filter((o) => !world.includes(o)));
     this.hudCam = this.cameras.add(0, 0, this.scale.width, this.scale.height);
@@ -616,7 +606,6 @@ export class BattlefieldScene extends Phaser.Scene {
         playSfx('ui');
       }
     });
-    // H / ? open the controls cheat sheet (Recruit stays on the ability pad).
     this.input.keyboard?.on('keydown-H', () => {
       if (this.matchResult !== 'ongoing') return;
       this.toggleControlsHelp();
@@ -680,9 +669,6 @@ export class BattlefieldScene extends Phaser.Scene {
       );
     });
 
-    // Tab is a plain window listener, not a Phaser key capture: Phaser queues
-    // key events, so it would preventDefault too late, and a capture would
-    // outlive this scene and break Tab in the login and lobby forms.
     const onTab = (e: KeyboardEvent): void => {
       if (e.key !== 'Tab' || e.ctrlKey || e.altKey || e.metaKey) return;
       if (this.paused || this.matchResult !== 'ongoing') return;
@@ -698,7 +684,6 @@ export class BattlefieldScene extends Phaser.Scene {
     );
   }
 
-  /** Tab / Shift+Tab: step through the unit types in the selection. */
   private cycleSubgroup(dir: 1 | -1): void {
     const step = stepSubgroup(this.world, this.subgroupCycle, dir);
     if (!step) {
@@ -712,7 +697,6 @@ export class BattlefieldScene extends Phaser.Scene {
     playSfx('select');
   }
 
-  /** Esc: close help, cancel place/A-move, else toggle pause (resume when open). */
   private onEscapeKey(): void {
     if (this.matchResult !== 'ongoing') return;
     if (this.controlsHelp.isOpen()) {
@@ -834,10 +818,6 @@ export class BattlefieldScene extends Phaser.Scene {
     }
   }
 
-  /**
-   * Blur the world camera only. The pause menu is drawn by the HUD camera,
-   * so it stays sharp.
-   */
   private setGameplayBlur(on: boolean): void {
     if (on) {
       if (this.pauseBlur) return;
@@ -860,18 +840,11 @@ export class BattlefieldScene extends Phaser.Scene {
     this.pauseBlur = null;
   }
 
-  /**
-   * `now` is the key event's DOM timestamp (ms), used to spot a double-tap.
-   * Repeats must not recall a group or centre the camera. Holding 1–3 still
-   * keeps training when a production building is selected.
-   */
   private onDigitHotkey(slot: number, now: number, repeat: boolean): void {
     if (this.paused || this.matchResult !== 'ongoing') return;
     const countKey = shouldCountGroupHotkey(repeat);
-    // Alt+N is a fallback: browsers can reserve Ctrl+digit for tab switching.
     if (this.ctrlHeld() || this.altHeld()) {
       this.groupTaps.reset();
-      // With Shift the selection is added to the group instead of replacing it.
       const save = this.shiftHeld() ? addToControlGroup : assignControlGroup;
       if (countKey && save(this.world, this.controlGroups, slot)) {
         spawnControlGroupAssignFx(this.world, slot);
@@ -880,7 +853,6 @@ export class BattlefieldScene extends Phaser.Scene {
       }
       return;
     }
-    // Production building still uses 1–3 to train when selected.
     if (
       this.selectedBuilding &&
       slot >= 1 &&
@@ -904,7 +876,6 @@ export class BattlefieldScene extends Phaser.Scene {
       spawnControlGroupRecallFx(this.world, slot);
       this.hud.flashControlGroup(slot, 'recall');
       playSfx('select');
-      // Pressing the same group key twice jumps the camera to it, as in StarCraft.
       if (this.groupTaps.press(slot, now)) {
         const center = groupCenter(this.world, this.controlGroups.get(slot) ?? []);
         if (center) this.cameraCtl.centerOn(center.x, center.y);
@@ -1020,7 +991,6 @@ export class BattlefieldScene extends Phaser.Scene {
     }
   }
 
-  /** Right-click, and a touch long-press, share this move / attack / gather path. */
   private issuePointerOrder(worldX: number, worldY: number): void {
     if (
       this.mode === 'place' ||
@@ -1168,8 +1138,6 @@ export class BattlefieldScene extends Phaser.Scene {
       } else {
         this.clearBuildingSelection();
         const hit = findPlayerUnitAt(this.world, wp.x, wp.y);
-        // Ctrl/Cmd+click picks every unit of the type at once (macOS reports
-        // Ctrl+click as a right-click, so Cmd+click is the Mac route).
         if (
           hit &&
           selectsWholeType({
@@ -1195,7 +1163,6 @@ export class BattlefieldScene extends Phaser.Scene {
             this.lastSelectTap.t = 0;
           }
         } else {
-          // Empty ground — inspect a resource node (remaining Gold / Crystals).
           const node = findNodeAt(this.world, wp.x, wp.y);
           if (node && !additive && isExplored(this.world.fog, node.x, node.y)) {
             clearSelection(this.world);
@@ -1237,7 +1204,6 @@ export class BattlefieldScene extends Phaser.Scene {
     this.refreshPlacementGhost();
   }
 
-  /** Selection-panel Keep/hall → arm existing place mode for a building type. */
   private armPlacementFromPanel(typeId: BuildingTypeId): void {
     if (this.paused || this.matchResult !== 'ongoing') return;
     if (this.controlsHelp.isOpen()) return;
@@ -1281,7 +1247,6 @@ export class BattlefieldScene extends Phaser.Scene {
     });
   }
 
-  /** S / Stop — halt selection and flash halt rings. */
   private issueStopCommand(): void {
     const n = stopSelected(this.world);
     if (n <= 0) return;
@@ -1290,7 +1255,6 @@ export class BattlefieldScene extends Phaser.Scene {
     playSfx('ui');
   }
 
-  /** Home / Base HUD — snap camera to player keep. */
   private recenterOnPlayerBase(): void {
     const pt = findPlayerBasePoint(this.world);
     if (!pt) return;
@@ -1298,7 +1262,6 @@ export class BattlefieldScene extends Phaser.Scene {
     playSfx('ui');
   }
 
-  /** Ctrl+A / Army HUD — fog-visible combat units only (not workers). */
   private selectAllMilitary(): void {
     this.clearBuildingSelection();
     this.hud.pickArmy();
@@ -1349,7 +1312,6 @@ export class BattlefieldScene extends Phaser.Scene {
     );
   }
 
-  /** Brief screen-edge flash while friendlies are under enemy fire. */
   private drawUnderAttackFeedback(): void {
     const alert = this.world.underAttackAlert;
     if (!alert || alert.lifeMs <= 0) {
@@ -1376,7 +1338,6 @@ export class BattlefieldScene extends Phaser.Scene {
       this.matchElapsedMs += delta;
       tickBattlefield(this.world, delta);
       tickBattlefieldEconomy(this.world);
-      // Mute-aware gather/deposit SFX — fire once while FX is fresh.
       for (const fx of this.world.economyFx) {
         if (fx.lifeMs >= fx.maxLifeMs - delta) playSfx(fx.sfx);
       }
@@ -1403,14 +1364,12 @@ export class BattlefieldScene extends Phaser.Scene {
       tickAttentionPings(this.world, delta);
       tickCoreFragments(this.world, delta);
       tickBattlefieldCombat(this.world, delta);
-      // Attack flash just set (~120) — one SFX per frame max.
       if (this.world.units.some((u) => u.lastAttackFlashMs > 100)) {
         playSfx('attack');
       }
       if (this.world.coreClaimFlashMs > 180) {
         playSfx('ability');
       }
-      // Under-attack pulse — mute-aware alert + soft camera nudge (rate-limited).
       const alert = this.world.underAttackAlert;
       if (alert?.pulse) {
         alert.pulse = false;
@@ -1453,10 +1412,12 @@ export class BattlefieldScene extends Phaser.Scene {
       this.drawUnderAttackFeedback();
     }
     this.fogOverlay.refresh(this.world.fog, cam);
-    if (this.matchResult === 'ongoing') this.refreshHud(delta);
-    this.coach.refresh();
-    this.coreBanner.refresh(delta);
-    this.minimap.refresh(delta, this.selectedBuilding, this.matchElapsedMs);
+    if (this.matchResult === 'ongoing') {
+      this.refreshHud(delta);
+      this.coach.refresh();
+      this.coreBanner.refresh(delta);
+      this.minimap.refresh(delta, this.selectedBuilding, this.matchElapsedMs);
+    }
   }
 
   private showEndScreen(result: MatchResult): void {
@@ -1474,6 +1435,13 @@ export class BattlefieldScene extends Phaser.Scene {
     unmountStockStrip();
     this.hud.setBottomInset(0);
     this.minimap.setBottomInset(0);
+    this.coreBanner.hide();
+    for (const obj of this.children.list) {
+      const depth = (obj as { depth?: number }).depth ?? 0;
+      if (depth < 200 && 'setVisible' in obj) {
+        (obj as { setVisible: (v: boolean) => void }).setVisible(false);
+      }
+    }
     this.cameraCtl.suppressPan = true;
     this.writeEndMatchSummary(result);
 
@@ -1500,7 +1468,7 @@ export class BattlefieldScene extends Phaser.Scene {
       playerActions: this.world.playerActions,
       playerVisionTiles: maxPlayerVisionTiles(this.world),
       reason: matchEndReason(this.world, result),
-      onMenu: () => this.scene.start('Menu'),
+      onMenu: () => this.scene.start('GamePicker'),
       onRematch: () => this.rematchSameSkirmish(),
       difficulty: this.world.aiDifficulty,
       onStepUp: (() => {
@@ -1540,49 +1508,41 @@ export class BattlefieldScene extends Phaser.Scene {
     });
   }
 
-  /** Win — same species and map, one step up the difficulty ladder. */
   private stepUpDifficulty(difficulty: AiDifficultyId): void {
     const { species, mapId } = rematchPrefsFromWorld(this.world);
     rememberMatchPrefs(species, difficulty, mapId);
     recordGameStarted(species);
     void maybeRecordCloudGameStarted(species);
-    this.scene.start('Battlefield', { species, difficulty, mapId });
+    this.scene.start('KaneBattlefield', { species, difficulty, mapId });
   }
 
-  /** Hard win on the last map — next species at Hard on the first map. */
   private stepUpSpecies(species: SpeciesId, mapId: SkirmishMapId): void {
     rememberMatchPrefs(species, 'hard', mapId);
     recordGameStarted(species);
     void maybeRecordCloudGameStarted(species);
-    this.scene.start('Battlefield', {
+    this.scene.start('KaneBattlefield', {
       species,
       difficulty: 'hard',
       mapId,
     });
   }
 
-  /** Hard win — same species and difficulty, the next map in the catalog. */
   private stepUpMap(mapId: SkirmishMapId): void {
     const { species, difficulty } = rematchPrefsFromWorld(this.world);
     rememberMatchPrefs(species, difficulty, mapId);
     recordGameStarted(species);
     void maybeRecordCloudGameStarted(species);
-    this.scene.start('Battlefield', { species, difficulty, mapId });
+    this.scene.start('KaneBattlefield', { species, difficulty, mapId });
   }
 
-  /** End-screen Rematch — same species + difficulty + map, no menu hop. */
   private rematchSameSkirmish(): void {
     const { species, difficulty, mapId } = rematchPrefsFromWorld(this.world);
     rememberMatchPrefs(species, difficulty, mapId);
     recordGameStarted(species);
     void maybeRecordCloudGameStarted(species);
-    this.scene.start('Battlefield', { species, difficulty, mapId });
+    this.scene.start('KaneBattlefield', { species, difficulty, mapId });
   }
 
-  /**
-   * Always write local admin stub; also cloud write when email-authed
-   * (client-trusted MVP — Functions deferred).
-   */
   private writeEndMatchSummary(result: Exclude<MatchResult, 'ongoing'>): void {
     const endedAtMs = Date.now();
     const id = makeMatchSummaryId(endedAtMs);
@@ -1642,7 +1602,6 @@ export class BattlefieldScene extends Phaser.Scene {
     const friends = livingByTeam(this.world, 'player');
     const foes = livingByTeam(this.world, 'enemy');
     const b = this.selectedBuilding;
-    // Units / buildings take priority over a previously inspected node.
     const node =
       n > 0 || b ? null : this.selectedNode;
 
@@ -1655,7 +1614,6 @@ export class BattlefieldScene extends Phaser.Scene {
       node,
       this.mode === 'place' ? this.placeType : null,
     );
-    // Short landscape has no room for the empty-state card over the field.
     const panelOpen = renderSelectionPanel(
       selView.kind === 'empty' && this.scale.height < 500
         ? { kind: 'hidden' }
@@ -1668,7 +1626,6 @@ export class BattlefieldScene extends Phaser.Scene {
     this.hud.setBottomInset(inset);
     this.minimap.setBottomInset(inset);
 
-    // Compact top status — detail lives in the bottom selection panel.
     let status: string;
     if (this.mode === 'rally' && b) {
       status = t('hud.rallyStatus', { name: buildingDisplayName(b.typeId) });
@@ -1779,7 +1736,6 @@ export class BattlefieldScene extends Phaser.Scene {
             this.animTimeMs,
           );
           if (ghostA <= 0.02) continue;
-          // Leave-vision ghost — silhouette only, no HP/queue chrome.
           drawBuildingSilhouette(g, {
             x: b.x,
             y: b.y,
@@ -1935,5 +1891,4 @@ export class BattlefieldScene extends Phaser.Scene {
       view,
     );
   }
-
 }
