@@ -1117,9 +1117,8 @@ export class BlobEvolutionScene extends Phaser.Scene {
     const radius = this.player.radius;
     const speed = this.player.speed;
 
-    let hudLine = '';
     const stageNames = ['Purple', 'Blue', 'Green', 'Rock', 'Rainbow', 'Angel'];
-    hudLine = `Stage: ${stageNames[stage]} (${radius.toFixed(2)})  Speed: ${speed.toFixed(2)}  Remaining: ${remaining}`;
+    const hudLine = `Stage: ${stageNames[stage]} (${radius.toFixed(2)})  Speed: ${speed.toFixed(2)}  Remaining: ${remaining}`;
 
     this.hudText.setText(hudLine);
 

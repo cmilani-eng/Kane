@@ -20,7 +20,7 @@ export interface GameManifest {
   /** Phaser scene key to start (the game's first scene). */
   readonly sceneKey: string;
   /** Lazy-load the game's scene module. */
-  readonly dynamicImport: () => Promise<{ [key: string]: any }>;
+  readonly dynamicImport: () => Promise<Record<string, unknown>>;
 }
 
 /**

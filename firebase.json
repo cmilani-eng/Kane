@@ -12,14 +12,6 @@
       ],
       "rewrites": [
         {
-          "source": "/kane/**",
-          "destination": "/kane/index.html"
-        },
-        {
-          "source": "/blob-evolution/**",
-          "destination": "/blob-evolution/index.html"
-        },
-        {
           "source": "**",
           "destination": "/index.html"
         }

@@ -57,10 +57,12 @@ describe('games registry', () => {
     expect(gamePages).toContain(`./${id}/index.html`);
   });
 
-  it.each(GAMES.map((game) => game.id))('%s has a Hosting rewrite before the hub catch-all', (id) => {
-    const index = rewrites.indexOf(`/${id}/**`);
-    expect(index).toBeGreaterThanOrEqual(0);
-    expect(index).toBeLessThan(rewrites.indexOf('**'));
+  // In the single-engine architecture, all routes are handled by the SPA.
+  // The only Firebase rewrite is the catch-all to /index.html.
+  // Games are loaded dynamically via GamePickerScene, not via separate rewrites.
+  it('has a single SPA catch-all rewrite for all routes', () => {
+    expect(rewrites).toContain('**');
+    expect(rewrites.indexOf('**')).toBe(rewrites.length - 1);
   });
 
   it('loads Kane from an entry inside the Vite root', () => {
