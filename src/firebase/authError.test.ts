@@ -1,24 +1,7 @@
 import { beforeEach, describe, expect, it } from 'vitest';
 import { resetLocaleForTests, setLocale, t } from '../i18n';
 import { authErrorMessage } from './auth';
-
-function memoryStorage(): Storage {
-  const data = new Map<string, string>();
-  return {
-    get length() {
-      return data.size;
-    },
-    clear: () => data.clear(),
-    getItem: (key) => data.get(key) ?? null,
-    key: (index) => [...data.keys()][index] ?? null,
-    removeItem: (key) => {
-      data.delete(key);
-    },
-    setItem: (key, value) => {
-      data.set(key, value);
-    },
-  };
-}
+import { memoryStorage } from '../test/memoryStorage';
 
 beforeEach(() => {
   Object.defineProperty(globalThis, 'localStorage', {
