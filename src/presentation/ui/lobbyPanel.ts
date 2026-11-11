@@ -59,8 +59,56 @@ export function lobbyStatusLine(status: SessionStatus, code: string | null, reas
     case 'joined':
       return t('lobby.joinedHost');
     case 'blocked':
-      return t('lobby.codeShort');
+      return t('lobby.unavailable');
   }
+}
+
+const BTN_GAP = 12;
+const ROW_GAP = 8;
+const BOTTOM_PAD = 12;
+const NOTE_GAP = 6;
+
+const rowWidth = (widths: readonly number[]): number =>
+  widths.reduce((sum, w) => sum + w, 0) + BTN_GAP * (widths.length - 1);
+
+export interface LobbyButtonLayout {
+  /** Centres of Create, Join and Leave, in that order. */
+  readonly buttons: readonly { readonly x: number; readonly y: number }[];
+  /** Centre y of the quiet note, just above the top button row. */
+  readonly noteY: number;
+}
+
+/**
+ * Places Create / Join / Leave from their measured widths, bottom-up so every row stays
+ * inside the panel: one row when all three fit, else Create + Join over Leave, else one per
+ * row. The quiet note goes above the top row, so no button covers it.
+ */
+export function lobbyButtonLayout(
+  cx: number,
+  bottom: number,
+  maxRowW: number,
+  widths: readonly [number, number, number],
+  btnH: number,
+  noteH: number,
+): LobbyButtonLayout {
+  const rows =
+    rowWidth(widths) <= maxRowW
+      ? [[0, 1, 2]]
+      : rowWidth(widths.slice(0, 2)) <= maxRowW
+        ? [[0, 1], [2]]
+        : [[0], [1], [2]];
+  const lastY = bottom - BOTTOM_PAD - btnH / 2;
+  const topY = lastY - (rows.length - 1) * (btnH + ROW_GAP);
+  const buttons: { x: number; y: number }[] = [];
+  rows.forEach((row, i) => {
+    const y = topY + i * (btnH + ROW_GAP);
+    let x = cx - rowWidth(row.map((b) => widths[b])) / 2;
+    for (const b of row) {
+      buttons[b] = { x: x + widths[b] / 2, y };
+      x += widths[b] + BTN_GAP;
+    }
+  });
+  return { buttons, noteY: topY - btnH / 2 - NOTE_GAP - noteH / 2 };
 }
 
 /**
@@ -242,8 +290,9 @@ export function showLobbyPanel(scene: Phaser.Scene, onClose: () => void): void {
     .setOrigin(0.5, 0)
     .setDepth(302);
 
+  // Placed above the buttons once they are measured.
   const quietNote = scene.add
-    .text(cx, short ? bottom - 64 : bottom - 22, t('lobby.quiet'), {
+    .text(cx, 0, t('lobby.quiet'), {
       fontFamily: 'system-ui, sans-serif',
       fontSize: '11px',
       color: '#6a7f94',
@@ -252,6 +301,12 @@ export function showLobbyPanel(scene: Phaser.Scene, onClose: () => void): void {
     })
     .setOrigin(0.5)
     .setDepth(302);
+  /** The note is only a hint: hide it when a long status line would run into it. */
+  const fitQuietNote = (): void => {
+    quietNote.setVisible(
+      statusText.y + statusText.height + 2 <= quietNote.y - quietNote.height / 2,
+    );
+  };
 
   /** The Create button turns into Start match once a friend is seated. */
   let startBtn: Phaser.GameObjects.Text | null = null;
@@ -307,6 +362,7 @@ export function showLobbyPanel(scene: Phaser.Scene, onClose: () => void): void {
           : '#6a7f94',
     );
     statusText.setText(lobbyStatusLine(st.status, st.code, st.reason));
+    fitQuietNote();
     startBtn?.setText(st.status === 'hosted' ? t('pvp.start') : t('lobby.create'));
   };
   refresh();
@@ -350,8 +406,6 @@ export function showLobbyPanel(scene: Phaser.Scene, onClose: () => void): void {
     return btn;
   };
 
-  const rowY = short ? bottom - 32 : bottom - 78;
-  quietNote.setPosition(cx, rowY - 36);
   const createBtn = mkBtn(t('lobby.create'), '#2a4a38', () => {
     const st = lobby.peek();
     if (st.status === 'hosted' && st.code && st.peerUid) {
@@ -375,35 +429,17 @@ export function showLobbyPanel(scene: Phaser.Scene, onClose: () => void): void {
   const leaveBtn = mkBtn(t('lobby.leave'), '#3a4555', () => {
     void lobby.leave();
   });
-  const gap = 12;
-  const place = (buttons: Phaser.GameObjects.Text[], y: number): void => {
-    const total = buttons.reduce((sum, b) => sum + b.width, 0) + gap * (buttons.length - 1);
-    let x = cx - total / 2;
-    for (const b of buttons) {
-      b.setPosition(x + b.width / 2, y);
-      x += b.width + gap;
-    }
-  };
-  if (short) {
-    const row = [createBtn, joinBtn, leaveBtn];
-    const total = row.reduce((sum, b) => sum + b.width, 0) + gap * 2;
-    if (total <= panelW - 24) place(row, rowY);
-    else {
-      createBtn.setPosition(cx, rowY - 44);
-      joinBtn.setPosition(cx, rowY);
-      leaveBtn.setPosition(cx, rowY + 44);
-    }
-  } else {
-    const pair = createBtn.width + joinBtn.width + gap;
-    if (pair <= panelW - 32) {
-      place([createBtn, joinBtn], rowY);
-      leaveBtn.setPosition(cx, rowY + 46);
-    } else {
-      createBtn.setPosition(cx, rowY - 46);
-      joinBtn.setPosition(cx, rowY);
-      leaveBtn.setPosition(cx, rowY + 46);
-    }
-  }
+  const layout = lobbyButtonLayout(
+    cx,
+    bottom,
+    panelW - 32,
+    [createBtn.width, joinBtn.width, leaveBtn.width],
+    createBtn.height,
+    quietNote.height,
+  );
+  [createBtn, joinBtn, leaveBtn].forEach((b, i) => b.setPosition(layout.buttons[i].x, layout.buttons[i].y));
+  quietNote.setY(layout.noteY);
+  fitQuietNote();
 
   const closeBtn = scene.add
     .text(cx + panelW / 2 - 18, top + 14, '✕', {

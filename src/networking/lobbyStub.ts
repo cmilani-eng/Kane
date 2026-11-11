@@ -41,7 +41,7 @@ export function createLobbyStub(auth: AuthStub) {
         state = {
           status: 'blocked',
           code: null,
-          reason: 'Lobby code too short',
+          reason: 'lobby.codeShort',
         };
         return this.peek();
       }
