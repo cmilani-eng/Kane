@@ -39,6 +39,7 @@ interface Bot {
 }
 
 export class BlobEvolutionScene extends Phaser.Scene {
+  private threeCanvas: HTMLCanvasElement | null = null;
   private threeScene: THREE.Scene | null = null;
   private threeCamera: THREE.PerspectiveCamera | null = null;
   private threeRenderer: THREE.WebGLRenderer | null = null;
@@ -53,6 +54,7 @@ export class BlobEvolutionScene extends Phaser.Scene {
   private lastHud = 0;
 
   private hudText: Phaser.GameObjects.Text | null = null;
+  private stageText: Phaser.GameObjects.Text | null = null;
   private hintText: Phaser.GameObjects.Text | null = null;
 
   private keys: Phaser.Types.Input.Keyboard.CursorKeys | null = null;
@@ -69,6 +71,7 @@ export class BlobEvolutionScene extends Phaser.Scene {
   }
 
   create(): void {
+    this.createThreeCanvas();
     this.createThreeScene();
     this.createPhaserUI();
     this.setupInput();
@@ -78,7 +81,22 @@ export class BlobEvolutionScene extends Phaser.Scene {
     this.showStartPanel();
   }
 
+  private createThreeCanvas(): void {
+    // Create a separate canvas for Three.js, positioned behind Phaser
+    const canvas = document.createElement('canvas');
+    canvas.style.position = 'absolute';
+    canvas.style.top = '0';
+    canvas.style.left = '0';
+    canvas.style.width = '100%';
+    canvas.style.height = '100%';
+    canvas.style.zIndex = '0';
+    canvas.style.display = 'block';
+    document.body.appendChild(canvas);
+    this.threeCanvas = canvas;
+  }
+
   private createThreeScene(): void {
+    if (!this.threeCanvas) return;
     const { width, height } = this.scale;
 
     this.threeScene = new THREE.Scene();
@@ -90,9 +108,9 @@ export class BlobEvolutionScene extends Phaser.Scene {
     this.threeCamera.lookAt(0, 0, 0);
 
     this.threeRenderer = new THREE.WebGLRenderer({
-      canvas: this.game.canvas as HTMLCanvasElement,
+      canvas: this.threeCanvas,
       antialias: true,
-      alpha: false,
+      alpha: true,
     });
     this.threeRenderer.setSize(width, height);
     this.threeRenderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
@@ -159,11 +177,11 @@ export class BlobEvolutionScene extends Phaser.Scene {
   private createPhaserUI(): void {
     const { width, height } = this.scale;
 
-    // HUD
+    // HUD - top-left
     this.hudText = this.add
-      .text(20, 20, 'BLOB EVOLUTION', {
+      .text(30, 30, 'BLOB EVOLUTION', {
         fontFamily: 'Arial, sans-serif',
-        fontSize: '15px',
+        fontSize: '16px',
         fontStyle: 'bold',
         color: '#b8e3ff',
         lineSpacing: 5,
@@ -173,15 +191,29 @@ export class BlobEvolutionScene extends Phaser.Scene {
       .setScrollFactor(0)
       .setDepth(20);
 
-    // Hint
-    this.hintText = this.add
-      .text(width / 2, height - 100, this.getHudHint(), {
+    // Stage indicator - top-right
+    this.stageText = this.add
+      .text(width - 30, 30, 'Stage: Blue', {
         fontFamily: 'Arial, sans-serif',
-        fontSize: '10px',
+        fontSize: '16px',
+        fontStyle: 'bold',
+        color: '#f0c75e',
+        stroke: '#071321',
+        strokeThickness: 3,
+      })
+      .setOrigin(1, 0)
+      .setScrollFactor(0)
+      .setDepth(20);
+
+    // Hint - bottom-center
+    this.hintText = this.add
+      .text(width / 2, height - 60, this.getHudHint(), {
+        fontFamily: 'Arial, sans-serif',
+        fontSize: '13px',
         color: '#91a9c1',
         stroke: '#071321',
         strokeThickness: 3,
-        wordWrap: { width: Math.max(160, width - 140) },
+        wordWrap: { width: Math.max(200, width - 140) },
         align: 'center',
       })
       .setOrigin(0.5)
@@ -191,17 +223,20 @@ export class BlobEvolutionScene extends Phaser.Scene {
     // Touch stick (hidden by default)
     this.createTouchStick();
 
-    // Touch help text
+    // Touch help text (mobile only)
     this.add
       .text(width - 20, height - 20, 'MOVE: STICK OR WASD  •  EAT: BUMP INTO PREY', {
         fontFamily: 'Arial, sans-serif',
         fontSize: '11px',
         color: 'rgba(230, 241, 255, 0.48)',
+        stroke: '#071321',
+        strokeThickness: 2,
       })
       .setOrigin(1, 1)
       .setScrollFactor(0)
       .setDepth(10);
   }
+
 
   private createTouchStick(): void {
     const { height } = this.scale;
@@ -353,85 +388,115 @@ export class BlobEvolutionScene extends Phaser.Scene {
 
     const panel = this.add.container(width / 2, height / 2).setDepth(30);
 
+    // Background glow
+    const glow = this.add.circle(0, 0, 200, 0x00ffff, 0.15);
+    panel.add(glow);
+    this.tweens.add({
+      targets: glow,
+      scaleX: { from: 1, to: 1.4 },
+      scaleY: { from: 1, to: 1.4 },
+      alpha: { from: 0.15, to: 0.05 },
+      duration: 2000,
+      yoyo: true,
+      repeat: -1,
+      ease: 'Sine.easeInOut',
+    });
+
+    // Card background
     const bg = this.add.graphics();
     bg.fillStyle(0x0f1a2e, 1);
-    bg.lineStyle(2, 0x00ffff, 0.5);
-    bg.fillRoundedRect(-180, -180, 360, 360, 20);
-    bg.strokeRoundedRect(-180, -180, 360, 360, 20);
+    bg.lineStyle(3, 0x00ffff, 0.4);
+    bg.fillRoundedRect(-200, -200, 400, 400, 24);
+    bg.strokeRoundedRect(-200, -200, 400, 400, 24);
     panel.add(bg);
 
+    // Accent top
+    const accent = this.add.graphics();
+    accent.fillStyle(0x00ffff, 1);
+    accent.fillRoundedRect(-200, -200, 400, 6, { tl: 24, tr: 24 });
+    panel.add(accent);
+
     const pill = this.add
-      .text(0, -140, '3D BLOB SURVIVAL', {
+      .text(0, -150, '3D BLOB SURVIVAL', {
         fontFamily: 'Arial, sans-serif',
-        fontSize: '12px',
+        fontSize: '13px',
         fontStyle: 'bold',
         color: '#00ffff',
         backgroundColor: 'rgba(0, 255, 255, 0.15)',
-        padding: { x: 12, y: 4 },
+        padding: { x: 14, y: 5 },
       })
       .setOrigin(0.5);
     panel.add(pill);
 
     const title = this.add
-      .text(0, -80, 'Blob Evolution', {
+      .text(0, -95, 'Blob Evolution', {
         fontFamily: 'Georgia, serif',
-        fontSize: '32px',
+        fontSize: '38px',
         fontStyle: 'bold',
         color: '#f5e6c8',
         stroke: '#071321',
-        strokeThickness: 4,
+        strokeThickness: 5,
       })
       .setOrigin(0.5);
     panel.add(title);
 
     const blurb = this.add
-      .text(0, -10, 'Start as a tiny blue blob. Eat your way through the evolution chain, grow bigger and faster, and become the one-and-only Angel.', {
+      .text(0, -5, 'Start as a tiny blue blob. Eat your way through the evolution chain, grow bigger and faster, and become the one-and-only Angel.', {
         fontFamily: 'Arial, sans-serif',
-        fontSize: '14px',
+        fontSize: '15px',
         color: '#b8c9d9',
-        wordWrap: { width: 300 },
+        wordWrap: { width: 340 },
         align: 'center',
+        lineSpacing: 6,
       })
       .setOrigin(0.5);
     panel.add(blurb);
 
     const chain = this.add
-      .text(0, 60, '<b>Blue → Green → Rock → Rainbow → Angel</b>', {
+      .text(0, 70, 'Blue → Green → Rock → Rainbow → Angel', {
         fontFamily: 'Arial, sans-serif',
-        fontSize: '14px',
+        fontSize: '16px',
         color: '#f0c75e',
+        fontStyle: 'bold',
         align: 'center',
       })
       .setOrigin(0.5);
     panel.add(chain);
 
     const note = this.add
-      .text(0, 100, 'On phone: drag the stick. On desktop: WASD or arrows. You can only eat the stage below you — unless you\'re Rainbow!', {
+      .text(0, 110, 'Desktop: WASD or arrows to move · Mobile: drag the stick', {
         fontFamily: 'Arial, sans-serif',
-        fontSize: '11px',
+        fontSize: '12px',
         color: '#8aa3b8',
-        wordWrap: { width: 300 },
+        wordWrap: { width: 340 },
         align: 'center',
+        lineSpacing: 4,
       })
       .setOrigin(0.5);
     panel.add(note);
 
     const startBtn = this.add
-      .text(0, 150, 'START GAME', {
+      .text(0, 165, 'START GAME', {
         fontFamily: 'Arial, sans-serif',
-        fontSize: '16px',
+        fontSize: '18px',
         fontStyle: 'bold',
         color: '#071321',
         backgroundColor: '#00ffff',
-        padding: { x: 40, y: 14 },
+        padding: { x: 46, y: 16 },
       })
       .setOrigin(0.5)
       .setInteractive({ useHandCursor: true })
-      .on('pointerover', () => startBtn.setStyle({ backgroundColor: '#33ffff' }))
-      .on('pointerout', () => startBtn.setStyle({ backgroundColor: '#00ffff' }))
-      .on('pointerdown', () => startBtn.setScale(0.98))
-      .on('pointerup', () => {
+      .on('pointerover', () => {
+        startBtn.setStyle({ backgroundColor: '#33ffff' });
+        startBtn.setScale(1.05);
+      })
+      .on('pointerout', () => {
+        startBtn.setStyle({ backgroundColor: '#00ffff' });
         startBtn.setScale(1);
+      })
+      .on('pointerdown', () => startBtn.setScale(0.95))
+      .on('pointerup', () => {
+        startBtn.setScale(1.05);
         panel.destroy();
         this.startGame();
       });
@@ -709,36 +774,59 @@ export class BlobEvolutionScene extends Phaser.Scene {
 
   private showEndPanel(titleText: string, copyText: string): void {
     const { width, height } = this.scale;
+    const isVictory = titleText.includes('Angel');
 
     const panel = this.add.container(width / 2, height / 2).setDepth(30);
 
+    // Background glow
+    const glowColor = isVictory ? 0xffdb72 : 0xff4444;
+    const glow = this.add.circle(0, 0, 220, glowColor, 0.15);
+    panel.add(glow);
+    this.tweens.add({
+      targets: glow,
+      scaleX: { from: 1, to: 1.3 },
+      scaleY: { from: 1, to: 1.3 },
+      alpha: { from: 0.15, to: 0.05 },
+      duration: 2000,
+      yoyo: true,
+      repeat: -1,
+      ease: 'Sine.easeInOut',
+    });
+
+    // Card background
     const bg = this.add.graphics();
     bg.fillStyle(0x0f1a2e, 1);
-    bg.lineStyle(2, titleText.includes('Angel') ? 0xffdb72 : 0xff4444, 0.5);
-    bg.fillRoundedRect(-180, -180, 360, 360, 20);
-    bg.strokeRoundedRect(-180, -180, 360, 360, 20);
+    bg.lineStyle(3, glowColor, 0.5);
+    bg.fillRoundedRect(-200, -200, 400, 400, 24);
+    bg.strokeRoundedRect(-200, -200, 400, 400, 24);
     panel.add(bg);
 
+    // Accent top
+    const accent = this.add.graphics();
+    accent.fillStyle(glowColor, 1);
+    accent.fillRoundedRect(-200, -200, 400, 6, { tl: 24, tr: 24 });
+    panel.add(accent);
+
     const pill = this.add
-      .text(0, -140, titleText.includes('Angel') ? 'ASCENDED' : 'GAME OVER', {
+      .text(0, -150, isVictory ? 'ASCENDED' : 'GAME OVER', {
         fontFamily: 'Arial, sans-serif',
-        fontSize: '12px',
+        fontSize: '13px',
         fontStyle: 'bold',
-        color: titleText.includes('Angel') ? '#ffdb72' : '#ff4444',
-        backgroundColor: titleText.includes('Angel') ? 'rgba(255, 219, 114, 0.15)' : 'rgba(255, 68, 68, 0.15)',
-        padding: { x: 12, y: 4 },
+        color: '#' + glowColor.toString(16).padStart(6, '0'),
+        backgroundColor: `rgba(${isVictory ? '255, 219, 114' : '255, 68, 68'}, 0.15)`,
+        padding: { x: 14, y: 5 },
       })
       .setOrigin(0.5);
     panel.add(pill);
 
     const title = this.add
-      .text(0, -80, titleText, {
+      .text(0, -90, titleText, {
         fontFamily: 'Georgia, serif',
-        fontSize: '28px',
+        fontSize: '32px',
         fontStyle: 'bold',
         color: '#f5e6c8',
         stroke: '#071321',
-        strokeThickness: 4,
+        strokeThickness: 5,
       })
       .setOrigin(0.5);
     panel.add(title);
@@ -746,30 +834,37 @@ export class BlobEvolutionScene extends Phaser.Scene {
     const copy = this.add
       .text(0, -10, copyText, {
         fontFamily: 'Arial, sans-serif',
-        fontSize: '14px',
+        fontSize: '15px',
         color: '#b8c9d9',
-        wordWrap: { width: 300 },
+        wordWrap: { width: 340 },
         align: 'center',
+        lineSpacing: 6,
       })
       .setOrigin(0.5);
     panel.add(copy);
 
     const restartBtn = this.add
-      .text(0, 80, 'PLAY AGAIN', {
+      .text(0, 100, 'PLAY AGAIN', {
         fontFamily: 'Arial, sans-serif',
-        fontSize: '16px',
+        fontSize: '18px',
         fontStyle: 'bold',
         color: '#071321',
         backgroundColor: '#00ffff',
-        padding: { x: 40, y: 14 },
+        padding: { x: 46, y: 16 },
       })
       .setOrigin(0.5)
       .setInteractive({ useHandCursor: true })
-      .on('pointerover', () => restartBtn.setStyle({ backgroundColor: '#33ffff' }))
-      .on('pointerout', () => restartBtn.setStyle({ backgroundColor: '#00ffff' }))
-      .on('pointerdown', () => restartBtn.setScale(0.98))
-      .on('pointerup', () => {
+      .on('pointerover', () => {
+        restartBtn.setStyle({ backgroundColor: '#33ffff' });
+        restartBtn.setScale(1.05);
+      })
+      .on('pointerout', () => {
+        restartBtn.setStyle({ backgroundColor: '#00ffff' });
         restartBtn.setScale(1);
+      })
+      .on('pointerdown', () => restartBtn.setScale(0.95))
+      .on('pointerup', () => {
+        restartBtn.setScale(1.05);
         panel.destroy();
         this.startGame();
       });
@@ -1121,6 +1216,7 @@ export class BlobEvolutionScene extends Phaser.Scene {
     const hudLine = `Stage: ${stageNames[stage]} (${radius.toFixed(2)})  Speed: ${speed.toFixed(2)}  Remaining: ${remaining}`;
 
     this.hudText.setText(hudLine);
+    this.stageText?.setText(`Stage: ${stageNames[stage]}`);
 
     if (stage === 4) {
       this.hudText.setColor('#ffdb72');
@@ -1197,5 +1293,11 @@ export class BlobEvolutionScene extends Phaser.Scene {
     this.threeScene = null;
     this.threeCamera = null;
     this.threeClock = null;
+
+    // Remove Three.js canvas from DOM
+    if (this.threeCanvas && this.threeCanvas.parentNode) {
+      this.threeCanvas.parentNode.removeChild(this.threeCanvas);
+    }
+    this.threeCanvas = null;
   };
 }

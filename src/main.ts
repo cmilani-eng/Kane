@@ -25,7 +25,7 @@ const config: Phaser.Types.Core.GameConfig = {
   type: Phaser.AUTO,
   parent,
   title: BRAND.name,
-  backgroundColor: '#0f1a2e',
+  backgroundColor: 'transparent', // transparent — Three.js canvas shows through for BlobEvolution
   scale: {
     mode: Phaser.Scale.RESIZE,
     autoCenter: Phaser.Scale.CENTER_BOTH,
@@ -38,11 +38,17 @@ const config: Phaser.Types.Core.GameConfig = {
     mouse: true,
   },
   // GamePicker (hub) first → Kane scenes eagerly registered for direct scene.start() transitions
-  // (not lazy-loaded; lazy loading is for future games via GAME_REGISTRY dynamicImport)
   scene: [GamePickerScene, KaneBootScene, KaneMenuScene, KaneBattlefieldScene, BlobEvolutionScene],
 };
 
 const game = new Phaser.Game(config);
+
+// Ensure Phaser canvas renders on top of Three.js canvas (used by BlobEvolution)
+const phaserCanvas = game.canvas as HTMLCanvasElement;
+phaserCanvas.style.position = 'absolute';
+phaserCanvas.style.zIndex = '1';
+phaserCanvas.style.top = '0';
+phaserCanvas.style.left = '0';
 
 // Dev/test hook — not a public API.
 (globalThis as unknown as { __KANE_GAME?: Phaser.Game }).__KANE_GAME = game;
