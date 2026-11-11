@@ -25,7 +25,10 @@ const config: Phaser.Types.Core.GameConfig = {
   type: Phaser.AUTO,
   parent,
   title: BRAND.name,
-  backgroundColor: 'transparent', // transparent — Three.js canvas shows through for BlobEvolution
+  // The canvas is transparent so a 3D game (Blob Evolution draws Three.js on a canvas behind
+  // this one) shows through. The page behind it is the same navy Kane always used (#app in
+  // index.html), and each 2D scene that wants a different backdrop paints its own.
+  transparent: true,
   scale: {
     mode: Phaser.Scale.RESIZE,
     autoCenter: Phaser.Scale.CENTER_BOTH,
