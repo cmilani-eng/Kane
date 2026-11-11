@@ -1,6 +1,7 @@
 /**
  * Catalog train gold-cost tip (HUD label only).
- * Format: Gold · {n} — distinct from inline sel.goldCost chip.
+ * Format: Gold · {n} — middot (U+00B7); distinct from inline sel.goldCost chip
+ * and from Supply · / Max HP · / DPS ·. Buildings use sel.buildCost* instead.
  */
 import { getUnitType, type UnitTypeId } from '../../data/units';
 import { t } from '../../i18n';

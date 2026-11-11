@@ -1,6 +1,9 @@
 /**
  * Minimap fog-reveal scout sector mark (presentation only).
- * Format: Scout · {sector} — distinct from Scout · {sector} · {n}s age tip.
+ * Format: Scout · {sector} — middot (U+00B7).
+ * Distinct from Scout · {sector} · {n}s age tip (`hud.fogRevealAge`),
+ * Fog age · ns (`hud.minimapFogAge`), Fog · pct% (`hud.minimapFog`),
+ * and Cam · sector (`hud.minimapCamSector` / `pause.camSectorTip`).
  */
 import { SCOUT_SECTOR_HINT_MS } from '../../gameplay/battlefield/battlefieldScoutPulse';
 import type { MapSectorId } from '../../gameplay/battlefield/mapSector';

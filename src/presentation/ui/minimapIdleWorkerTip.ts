@@ -1,6 +1,9 @@
 /**
  * Minimap idle-worker count tip (presentation only).
- * Distinct from HUD idle chip, Workers · tip, and pause Idle tip surface.
+ * Format: Idle · {n} — middot (U+00B7).
+ * Idle gatherer count — distinct from Workers · / Army · / Pop ·
+ * minimap peers and HUD idle chip; same en/pt-BR/es copy as pause
+ * Idle tip (`pause.idleTip` / `pauseIdleWorkersTipLine`), own key.
  */
 import { t } from '../../i18n';
 

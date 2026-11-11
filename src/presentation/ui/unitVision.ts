@@ -1,6 +1,7 @@
 /**
  * Catalog vision/sight-radius tip in map tiles (HUD label only).
- * Format: Sight · {n} — distinct from attack Range · n tip.
+ * Format: Sight · {n} (middot U+00B7) — distinct from Range · /
+ * Speed · / Proj ·, and from minimap/end Vision · tips.
  * Buildings omit (no catalog vision radius).
  */
 import { MAP } from '../../config/balance';

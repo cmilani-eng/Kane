@@ -1,6 +1,7 @@
 /**
  * Minimap / HUD attention-ping sector tip (presentation only).
- * Distinct from fog scout sector chip copy.
+ * Format: Mark · {sector} — middot (U+00B7).
+ * Distinct from Mark · sector · ns age / Scout · / Fog age · / Cam · peers.
  */
 import { ATTENTION_PING_SECTOR_HINT_MS } from '../../gameplay/battlefield/battlefieldAttentionPing';
 import type { MapSectorId } from '../../gameplay/battlefield/mapSector';

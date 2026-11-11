@@ -1,6 +1,12 @@
 /**
  * Minimap fog coverage tip (presentation only).
- * Explored cell % of the fog grid — distinct from fog age / scout tips.
+ * Explored / revealed cell % of the fog grid.
+ * Format: Fog · {pct}% — middot (U+00B7).
+ * Distinct from Vision · (`hud.minimapVision`), Fog age · ns
+ * (`hud.minimapFogAge`), pause Fog · ns (`pause.fogAgeTip`), Selected ·
+ * (`hud.minimapSelected`), Scout · sector (`hud.minimapScoutPulse`), and
+ * Scout · sector · ns (`hud.fogRevealAge`). Same en/pt-BR/es copy as pause
+ * Fog · pct% (`pause.fogCoverageTip`); distinct key/surface.
  */
 import type { FogState } from '../../gameplay/battlefield/battlefieldFog';
 import { t } from '../../i18n';

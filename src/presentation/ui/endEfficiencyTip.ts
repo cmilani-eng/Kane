@@ -1,7 +1,9 @@
 /**
  * End-screen efficiency tip (HUD label only).
+ * Format: Efficiency · {pct}% — middot (U+00B7).
  * Combat efficiency % = kills / (kills + losses).
- * Distinct from the Kills · n / Lost · n tips and kill-ratio line.
+ * Distinct from Kills · / Lost · / Win rate · / kill-ratio peers;
+ * end-only combat tip (no lobby/pause twin).
  */
 import { t } from '../../i18n';
 

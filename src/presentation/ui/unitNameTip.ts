@@ -1,5 +1,8 @@
 /**
  * Catalog unit-name tip (HUD label only).
+ * Format: Name · {name} — middot (U+00B7).
+ * Distinct from Species · / Role · / Armor · class;
+ * selection-only tip (no lobby/pause twin).
  */
 import type { UnitTypeId } from '../../data/units';
 import { t, unitDisplayName } from '../../i18n';

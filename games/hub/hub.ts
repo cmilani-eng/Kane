@@ -8,7 +8,7 @@ import {
   t,
 } from '../../src/i18n';
 import { GAMES, type GameEntry } from '../registry';
-import { hubBlurb, hubBlobPathTip, hubChrome, hubKanePathTip } from './hubCopy';
+import { hubBlurb, hubChrome, hubPlayBlocked } from './hubCopy';
 import { gamePlayHref, hubLegalHref } from './hubLinks';
 
 const PILL =
@@ -57,7 +57,12 @@ function gameCard(
   const colors = CARD_COLORS[game.id] ?? DEFAULT_CARD_COLORS;
   link.style.setProperty('--card-accent', colors.accent);
   link.style.setProperty('--card-edge', colors.edge);
-  link.href = gamePlayHref(game.id);
+  const blocked = hubPlayBlocked(game.id, window.innerWidth, window.innerHeight);
+  if (blocked) {
+    link.setAttribute('aria-disabled', 'true');
+  } else {
+    link.href = gamePlayHref(game.id);
+  }
   link.setAttribute(
     'aria-label',
     t('hub.cardOpen', { title: game.title, play: playLabel }),
@@ -75,35 +80,36 @@ function gameCard(
   title.textContent = game.title;
 
   const description = document.createElement('p');
-  description.className = 'mt-2 mb-2 leading-normal text-muted';
+  description.className = blocked
+    ? 'mt-2 mb-2 leading-normal text-muted'
+    : 'mt-2 mb-[18px] leading-normal text-muted';
   description.textContent = hubBlurb(game.id, game.description);
-
-  const pathTipText =
-    game.id === 'kane'
-      ? hubKanePathTip()
-      : game.id === 'blob-evolution'
-        ? hubBlobPathTip()
-        : null;
-  const pathTip = pathTipText
-    ? (() => {
-        const tip = document.createElement('p');
-        tip.className = 'mb-[18px] text-xs font-semibold tracking-wide text-gold';
-        tip.textContent = pathTipText;
-        return tip;
-      })()
-    : null;
-  if (!pathTip) description.classList.add('mb-[18px]');
 
   const play = document.createElement('span');
   play.className = [
     'hub-play mt-auto inline-flex min-h-12 items-center justify-center rounded-[14px] px-7 py-[13px]',
     'text-[15px] font-black uppercase text-ink-dark',
-    'group-hover:brightness-108 group-active:translate-y-0.5',
+    blocked ? 'cursor-not-allowed opacity-50' : 'group-hover:brightness-108 group-active:translate-y-0.5',
   ].join(' ');
   play.textContent = playLabel;
 
+  if (game.cover) {
+    // Decorative: the card's aria-label already names the game.
+    const cover = document.createElement('img');
+    cover.className = 'mb-4 aspect-[5/3] w-full rounded-2xl object-cover';
+    cover.src = game.cover;
+    cover.alt = '';
+    cover.loading = 'lazy';
+    cover.decoding = 'async';
+    link.append(cover);
+  }
   link.append(pills, title, description);
-  if (pathTip) link.append(pathTip);
+  if (blocked) {
+    const notice = document.createElement('p');
+    notice.className = 'mb-[18px] text-sm font-semibold text-gold';
+    notice.textContent = t('menu.bigScreen');
+    link.append(notice);
+  }
   link.append(play);
   item.append(link);
   return item;
@@ -150,6 +156,12 @@ function render(): void {
   privacy.href = hubLegalHref('privacy');
   terms.href = hubLegalHref('terms');
   renderLocale(text('hub-locale'));
+  renderGames();
+}
+
+/** Cards depend on the screen size (Kane is blocked on phones), so rebuild them on resize too. */
+function renderGames(): void {
+  const chrome = hubChrome();
   text('game-list').replaceChildren(
     ...GAMES.map((game) =>
       gameCard(game, chrome.play, chrome.live, chrome.experimental),
@@ -159,3 +171,4 @@ function render(): void {
 
 render();
 subscribeLocale(render);
+window.addEventListener('resize', renderGames);

@@ -1,7 +1,10 @@
 /**
  * Pause overlay career win-rate tip (HUD label only).
- * Frozen matchPrefs gamesWon / gamesPlayed at pause open — distinct surface
- * from lobby/end Win rate · tips.
+ * Format: Win rate · {n}% — middot (U+00B7).
+ * Frozen matchPrefs gamesWon / gamesPlayed at pause open. Same en/pt-BR/es
+ * copy as lobby/end Win rate · tips; distinct i18n key / surface
+ * (`pause.winRateTip` vs `lobby.winRateTip` / `end.winRateTip`). Distinct
+ * from Played · / Record · / Streak · / Wins · / Efficiency · peers.
  */
 import { t } from '../../i18n';
 

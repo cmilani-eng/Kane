@@ -1,7 +1,8 @@
 /**
  * Pause overlay career favorite-faction tip (HUD label only).
- * Frozen most-played species at pause open — distinct surface from
- * lobby/end Favorite · tips.
+ * Format: Favorite · {name} — middot (U+00B7); most-played species from
+ * matchPrefs.speciesPlays frozen at pause open.
+ * Distinct from Plays · / Wins · / Streak · and from lobby/end Favorite surfaces.
  */
 import type { SpeciesId } from '../../data/speciesStub';
 import { speciesCopy, t } from '../../i18n';

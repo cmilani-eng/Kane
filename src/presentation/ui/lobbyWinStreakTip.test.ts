@@ -39,19 +39,27 @@ describe('lobbyWinStreakTipLine', () => {
     expect(lobbyWinStreakTipLine()).toBeNull();
   });
 
-  it('labels Streak · n with middot, distinct from Loss streak · / Record · / Wins · / Best streak ·', () => {
+  it('labels Streak · n with middot, distinct from Best streak · / Loss streak · / Record · / Wins ·', () => {
     rememberMatchPrefs('weirdos', 'hard', 'crossing', 90_000, true);
     expect(lobbyWinStreakTipLine()).toBe(t('lobby.winStreakTip', { n: 1 }));
     rememberMatchPrefs('brutes', 'easy', 'ridge', 80_000, true);
     expect(lobbyWinStreakTipLine()).toBe(t('lobby.winStreakTip', { n: 2 }));
-    expect(lobbyWinStreakTipLine()).toBe('Streak · 2');
-    expect(lobbyWinStreakTipLine()).toMatch(/^Streak \u00b7 /);
-    expect(lobbyWinStreakTipLine()).not.toBe(lobbyLastOutcomeTipLine());
-    expect(lobbyWinStreakTipLine()).not.toBe(lobbyBestWinStreakTipLine());
-    expect(lobbyBestWinStreakTipLine()).toMatch(/^Best streak ·/);
+    const streak = lobbyWinStreakTipLine();
+    expect(streak).toBe('Streak · 2');
+    expect(streak).toMatch(/^Streak \u00b7 /);
+    expect(streak).toContain(' \u00b7 ');
+    expect(streak).not.toMatch(/ {2}/);
+    expect(streak).not.toMatch(/^Best streak \u00b7 /);
+    expect(streak).not.toMatch(/^Loss streak \u00b7 /);
+    expect(streak).not.toMatch(/^Record \u00b7 /);
+    expect(streak).not.toMatch(/^Wins \u00b7 /);
+    expect(streak).not.toBe(lobbyLastOutcomeTipLine());
+    expect(streak).not.toBe(lobbyBestWinStreakTipLine());
+    expect(lobbyBestWinStreakTipLine()).toBe('Best streak · 2');
+    expect(lobbyBestWinStreakTipLine()).toMatch(/^Best streak \u00b7 /);
     // Same en copy as end/pause tips; distinct i18n key / surface.
-    expect(lobbyWinStreakTipLine()).toBe(endWinStreakTipLine());
-    expect(lobbyWinStreakTipLine()).toBe(pauseWinStreakTipLine(2));
+    expect(streak).toBe(endWinStreakTipLine());
+    expect(streak).toBe(pauseWinStreakTipLine(2));
     expect(endWinStreakTipLine()).toBe(t('end.winStreakTip', { n: 2 }));
     expect(pauseWinStreakTipLine(2)).toBe(t('pause.winStreakTip', { n: 2 }));
     // Distinct from peer career tips (Loss streak · / Record · / Wins ·).
@@ -64,13 +72,22 @@ describe('lobbyWinStreakTipLine', () => {
     // Rebuild a win streak of 2 for peer-distinctness checks.
     rememberMatchPrefs('weirdos', 'hard', 'crossing', 90_000, true);
     rememberMatchPrefs('brutes', 'easy', 'ridge', 80_000, true);
-    expect(lobbyWinStreakTipLine()).toBe('Streak · 2');
-    expect(lobbyWinStreakTipLine()).not.toBe(lobbyRecordTipLine());
+    const rebuilt = lobbyWinStreakTipLine();
+    expect(rebuilt).toBe('Streak · 2');
+    expect(rebuilt).toContain(' \u00b7 ');
+    expect(rebuilt).not.toMatch(/ {2}/);
+    expect(rebuilt).not.toBe(lobbyRecordTipLine());
     expect(lobbyRecordTipLine()).toBe(t('lobby.recordTip', { w: 4, l: 1 }));
+    expect(lobbyRecordTipLine()).toBe('Record · 4–1');
     expect(lobbyRecordTipLine()).toMatch(/^Record \u00b7 /);
-    expect(lobbyWinStreakTipLine()).not.toBe(lobbyWinsTipLine());
+    expect(rebuilt).not.toBe(lobbyWinsTipLine());
     expect(lobbyWinsTipLine()).toBe(t('lobby.winsTip', { n: 4 }));
+    expect(lobbyWinsTipLine()).toBe('Wins · 4');
     expect(lobbyWinsTipLine()).toMatch(/^Wins \u00b7 /);
+    expect(rebuilt).not.toMatch(/^Best streak \u00b7 /);
+    expect(rebuilt).not.toMatch(/^Loss streak \u00b7 /);
+    expect(rebuilt).not.toMatch(/^Record \u00b7 /);
+    expect(rebuilt).not.toMatch(/^Wins \u00b7 /);
   });
 
   it('keeps streak when later remember omits outcome', () => {
@@ -80,23 +97,36 @@ describe('lobbyWinStreakTipLine', () => {
     expect(lobbyWinStreakTipLine()).toBe(t('lobby.winStreakTip', { n: 2 }));
   });
 
-  it('localizes Streak middot for pt-BR and es; stays distinct from Loss streak · / Record · / Wins ·', () => {
+  it('localizes Streak middot for pt-BR and es; stays distinct from Best streak / Loss streak / Record / Wins', () => {
     rememberMatchPrefs('nobles', 'normal', 'crossing', 90_000, true);
     rememberMatchPrefs('brutes', 'easy', 'ridge', 60_000, true);
+
     setLocale('pt-BR');
-    expect(lobbyWinStreakTipLine()).toBe(t('lobby.winStreakTip', { n: 2 }));
-    expect(lobbyWinStreakTipLine()).toBe('Sequência · 2');
-    expect(lobbyWinStreakTipLine()).toMatch(/^Sequência \u00b7 /);
-    expect(lobbyWinStreakTipLine()).toBe(pauseWinStreakTipLine(2));
-    expect(lobbyWinStreakTipLine()).toBe(endWinStreakTipLine());
+    const pt = lobbyWinStreakTipLine();
+    expect(pt).toBe(t('lobby.winStreakTip', { n: 2 }));
+    expect(pt).toBe('Sequência · 2');
+    expect(pt).toMatch(/^Sequência \u00b7 /);
+    expect(pt).toContain(' \u00b7 ');
+    expect(pt).not.toMatch(/ {2}/);
+    expect(pt).toBe(pauseWinStreakTipLine(2));
+    expect(pt).toBe(endWinStreakTipLine());
     expect(pauseWinStreakTipLine(2)).toBe(t('pause.winStreakTip', { n: 2 }));
     expect(endWinStreakTipLine()).toBe(t('end.winStreakTip', { n: 2 }));
-    expect(lobbyWinStreakTipLine()).not.toBe(lobbyRecordTipLine());
+    expect(pt).not.toBe(lobbyBestWinStreakTipLine());
+    expect(lobbyBestWinStreakTipLine()).toBe(t('lobby.bestWinStreakTip', { n: 2 }));
+    expect(lobbyBestWinStreakTipLine()).toBe('Melhor sequência · 2');
+    expect(lobbyBestWinStreakTipLine()).toMatch(/^Melhor sequência \u00b7 /);
+    expect(pt).not.toBe(lobbyRecordTipLine());
     expect(lobbyRecordTipLine()).toBe(t('lobby.recordTip', { w: 2, l: 0 }));
     expect(lobbyRecordTipLine()).toMatch(/^Recorde \u00b7 /);
-    expect(lobbyWinStreakTipLine()).not.toBe(lobbyWinsTipLine());
+    expect(pt).not.toBe(lobbyWinsTipLine());
     expect(lobbyWinsTipLine()).toBe(t('lobby.winsTip', { n: 2 }));
+    expect(lobbyWinsTipLine()).toBe('Vitórias · 2');
     expect(lobbyWinsTipLine()).toMatch(/^Vitórias \u00b7 /);
+    expect(pt).not.toMatch(/^Melhor sequência \u00b7 /);
+    expect(pt).not.toMatch(/^Sequência de derrotas \u00b7 /);
+    expect(pt).not.toMatch(/^Recorde \u00b7 /);
+    expect(pt).not.toMatch(/^Vitórias \u00b7 /);
     // Loss streak peer after a loss.
     rememberMatchPrefs('weirdos', 'hard', 'gap', 50_000, false);
     expect(lobbyWinStreakTipLine()).toBeNull();
@@ -107,19 +137,31 @@ describe('lobbyWinStreakTipLine', () => {
     rememberMatchPrefs('nobles', 'normal', 'crossing', 90_000, true);
     rememberMatchPrefs('brutes', 'easy', 'ridge', 60_000, true);
     setLocale('es');
-    expect(lobbyWinStreakTipLine()).toBe(t('lobby.winStreakTip', { n: 2 }));
-    expect(lobbyWinStreakTipLine()).toBe('Racha · 2');
-    expect(lobbyWinStreakTipLine()).toMatch(/^Racha \u00b7 /);
-    expect(lobbyWinStreakTipLine()).toBe(pauseWinStreakTipLine(2));
-    expect(lobbyWinStreakTipLine()).toBe(endWinStreakTipLine());
+    const es = lobbyWinStreakTipLine();
+    expect(es).toBe(t('lobby.winStreakTip', { n: 2 }));
+    expect(es).toBe('Racha · 2');
+    expect(es).toMatch(/^Racha \u00b7 /);
+    expect(es).toContain(' \u00b7 ');
+    expect(es).not.toMatch(/ {2}/);
+    expect(es).toBe(pauseWinStreakTipLine(2));
+    expect(es).toBe(endWinStreakTipLine());
     expect(pauseWinStreakTipLine(2)).toBe(t('pause.winStreakTip', { n: 2 }));
     expect(endWinStreakTipLine()).toBe(t('end.winStreakTip', { n: 2 }));
-    expect(lobbyWinStreakTipLine()).not.toBe(lobbyRecordTipLine());
+    expect(es).not.toBe(lobbyBestWinStreakTipLine());
+    expect(lobbyBestWinStreakTipLine()).toBe(t('lobby.bestWinStreakTip', { n: 2 }));
+    expect(lobbyBestWinStreakTipLine()).toBe('Mejor racha · 2');
+    expect(lobbyBestWinStreakTipLine()).toMatch(/^Mejor racha \u00b7 /);
+    expect(es).not.toBe(lobbyRecordTipLine());
     expect(lobbyRecordTipLine()).toBe(t('lobby.recordTip', { w: 4, l: 1 }));
     expect(lobbyRecordTipLine()).toMatch(/^Récord \u00b7 /);
-    expect(lobbyWinStreakTipLine()).not.toBe(lobbyWinsTipLine());
+    expect(es).not.toBe(lobbyWinsTipLine());
     expect(lobbyWinsTipLine()).toBe(t('lobby.winsTip', { n: 4 }));
+    expect(lobbyWinsTipLine()).toBe('Victorias · 4');
     expect(lobbyWinsTipLine()).toMatch(/^Victorias \u00b7 /);
+    expect(es).not.toMatch(/^Mejor racha \u00b7 /);
+    expect(es).not.toMatch(/^Racha de derrotas \u00b7 /);
+    expect(es).not.toMatch(/^Récord \u00b7 /);
+    expect(es).not.toMatch(/^Victorias \u00b7 /);
     rememberMatchPrefs('weirdos', 'hard', 'gap', 50_000, false);
     expect(lobbyWinStreakTipLine()).toBeNull();
     expect(lobbyLossStreakTipLine()).toBe(t('lobby.lossStreakTip', { n: 1 }));

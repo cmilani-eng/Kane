@@ -16,6 +16,8 @@ export interface GameEntry {
   readonly description: string;
   readonly build: GameBuild;
   readonly status: GameStatus;
+  /** Artwork shown on the picker card, a file under `public/` (e.g. `/covers/x.jpg`). */
+  readonly cover?: string;
 }
 
 export const GAMES: readonly GameEntry[] = gamesJson as GameEntry[];

@@ -20,6 +20,7 @@ import {
   type IdleChipResult,
 } from '../../gameplay/battlefield/idleWorkers';
 import { idleWorkerGatherTypeTip } from './idleWorkerGatherTypeTip';
+import { matchTitleLeftPx } from './matchTitleLeft';
 import {
   minimapPingSectorTipAlpha,
   minimapPingSectorTipText,
@@ -116,6 +117,8 @@ export class BattlefieldHud {
   onArmAttackMove: (() => void) | null = null;
   /** Scene wires this to issue stop + pulse. */
   onStopSelected: (() => void) | null = null;
+  /** Scene wires this so hero abilities and recruit go through the match, not the local world. */
+  onHeroAbility: ((slot: HeroAbilitySlot | 'recruit') => void) | null = null;
   /** Scene wires this to snap camera to base. */
   onRecenterBase: (() => void) | null = null;
   /** Scene wires this to open/toggle pause menu. */
@@ -161,7 +164,7 @@ export class BattlefieldHud {
           : '#d4782e';
 
     this.title = scene.add
-      .text(12, 8, `KANE  ·  ${speciesName(this.speciesId)}`, {
+      .text(124, 8, `KANE  ·  ${speciesName(this.speciesId)}`, {
         fontFamily: 'Georgia, "Times New Roman", serif',
         fontSize: '18px',
         color: '#f5e6c8',
@@ -615,6 +618,10 @@ export class BattlefieldHud {
         .setDepth(103);
 
       bg.on('pointerup', () => {
+        if (this.onHeroAbility) {
+          this.onHeroAbility(e.slot);
+          return;
+        }
         if (e.slot === 'recruit') {
           if (recruitHero(this.world, 'player')) playSfx('hero');
         } else if (castHeroAbility(this.world, e.slot, 'player')) {
@@ -694,7 +701,14 @@ export class BattlefieldHud {
     const pad = this.narrow ? 8 : 12;
     const inset = this.bottomInset;
     const titleSize = this.narrow ? '15px' : '18px';
-    this.title.setFontSize(titleSize).setPosition(pad, pad);
+    const pill = document.getElementById('hub-back')?.getBoundingClientRect();
+    const titleX = matchTitleLeftPx(
+      pill?.right ?? 0,
+      this.scene.scale.canvasBounds.left,
+      this.scene.scale.displayScale.x,
+      pad,
+    );
+    this.title.setFontSize(titleSize).setPosition(titleX, pad);
     this.matchLine
       .setFontSize(this.narrow ? '11px' : '12px')
       .setPosition(pad, pad + (this.narrow ? 28 : 34));
@@ -816,7 +830,7 @@ export class BattlefieldHud {
         b.setFontSize('12px').setPosition(rx, pad);
         rx -= b.width + 6;
       }
-      const titleRight = pad + this.title.width;
+      const titleRight = this.title.x + this.title.width;
       this.timerText.setPosition((titleRight + rx) / 2, pad);
     }
 

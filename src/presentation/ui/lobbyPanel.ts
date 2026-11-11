@@ -14,8 +14,13 @@ import {
   speciesName,
   t,
 } from '../../i18n';
-import { getLobbyStub } from '../../networking/lobbySingleton';
-import type { LobbyStatus } from '../../networking/lobbyStub';
+import type { MessageKey } from '../../i18n/messages';
+import { getLobbySession } from '../../networking/lobbySingleton';
+import { getCurrentAuthUser } from '../../firebase/auth';
+import type { SpeciesId } from '../../data/speciesStub';
+import type { AiDifficultyId } from '../../gameplay/battlefield/aiDifficulty';
+import { joinAsGuest, startAsHost, type PvpLaunch } from '../../networking/matchStart';
+import type { SessionStatus } from '../../networking/lobbySession';
 import { playSfx } from '../audio/sfx';
 import { lobbyLastDifficultyTipLine } from './lobbyLastDifficultyTip';
 import { lobbyLastDurationTipLine } from './lobbyLastDurationTip';
@@ -39,32 +44,55 @@ import { lobbyBestWinStreakTipLine } from './lobbyBestWinStreakTip';
 import { lobbyLossStreakTipLine } from './lobbyLossStreakTip';
 import { lobbyWinStreakTipLine } from './lobbyWinStreakTip';
 
-export function lobbyStatusLine(status: LobbyStatus, code: string | null): string {
+/** `reason` is a translation key from the session, shown instead of the status when set. */
+export function lobbyStatusLine(status: SessionStatus, code: string | null, reason?: string): string {
+  if (reason) return t(reason as MessageKey);
   switch (status) {
     case 'idle':
       return t('lobby.idle');
     case 'hosting':
       return t('lobby.hosting');
+    case 'hosted':
+      return t('lobby.hostedGuest');
     case 'joining':
       return t('lobby.joining', { code: code ?? '' });
+    case 'joined':
+      return t('lobby.joinedHost');
     case 'blocked':
       return t('lobby.codeShort');
   }
 }
 
-/** Selected skirmish map tip — label · blurb from match prefs. */
+/**
+ * Selected skirmish map tip — {label} · {blurb} (U+00B7) from match prefs.
+ * Blurb may itself contain middots. Same en copy shape as menu map tip,
+ * distinct key/surface (`lobby.mapTip` vs `menu.mapTip`). Distinct from
+ * Last map · / Best map · / Map · w×h / Map · name / difficulty · blurb /
+ * species motto / setup line.
+ */
 export function lobbyMapTipLine(): string {
   const map = mapCopy(loadMatchPrefs().mapId);
   return t('lobby.mapTip', { label: map.label, blurb: map.blurb });
 }
 
-/** Selected faction motto tip — name · blurb from match prefs. */
+/**
+ * Selected faction motto tip — {name} · {blurb} (U+00B7) from match prefs.
+ * Same en copy as pause species motto tip, distinct key/surface
+ * (`lobby.factionTip` vs `pause.speciesMotto`). Distinct from Last · /
+ * Favorite · / Map · / Objective · / Difficulty · / setup line.
+ */
 export function lobbyFactionTipLine(): string {
   const s = speciesCopy(loadMatchPrefs().species);
   return t('lobby.factionTip', { name: s.name, blurb: s.motto });
 }
 
-/** Selected difficulty tip — label · blurb from match prefs. */
+/**
+ * Selected difficulty tip — {label} · {blurb} (U+00B7) from match prefs.
+ * Blurb may itself contain middots. Same en copy as pause difficulty tip,
+ * distinct key/surface (`lobby.difficultyTip` vs `pause.difficultyTip`).
+ * Distinct from Last difficulty · / end Difficulty · (double-spaced) /
+ * setup line / Objective · / Map · / species motto.
+ */
 export function lobbyDifficultyTipLine(): string {
   const d = difficultyCopy(loadMatchPrefs().difficulty);
   return t('lobby.difficultyTip', { label: d.label, blurb: d.blurb });
@@ -96,7 +124,7 @@ export function lobbyMatchLengthTipLine(limit = 8): string {
 
 export function showLobbyPanel(scene: Phaser.Scene, onClose: () => void): void {
   const { width, height } = scene.scale;
-  const lobby = getLobbyStub();
+  const lobby = getLobbySession();
 
   const overlay = scene.add
     .rectangle(width / 2, height / 2, width, height, 0x0a1220, 0.84)
@@ -225,19 +253,64 @@ export function showLobbyPanel(scene: Phaser.Scene, onClose: () => void): void {
     .setOrigin(0.5)
     .setDepth(302);
 
+  /** The Create button turns into Start match once a friend is seated. */
+  let startBtn: Phaser.GameObjects.Text | null = null;
+  let stopGuestWatch: (() => void) | null = null;
+  /** Starts the match as host: writes the setup, then opens the battle scene. */
+  const beginHostMatch = async (code: string, guestUid: string): Promise<void> => {
+    const uid = getCurrentAuthUser()?.uid;
+    if (!uid) return;
+    const launch = await startAsHost(code, uid, guestUid);
+    if (launch) launchMatch(launch);
+  };
+  /** Waits as guest for the host's setup, then opens the battle scene. */
+  const beginGuestMatch = (code: string, hostUid: string): void => {
+    const uid = getCurrentAuthUser()?.uid;
+    if (!uid) return;
+    stopGuestWatch?.();
+    stopGuestWatch = joinAsGuest(code, hostUid, uid, (launch) => {
+      stopGuestWatch?.();
+      stopGuestWatch = null;
+      launchMatch(launch);
+    });
+  };
+  /** Hands the match to the battle scene. The lobby stays open; this player only stops following it. */
+  const launchMatch = (launch: PvpLaunch): void => {
+    unsubscribe();
+    lobby.release();
+    destroy();
+    const species = (launch.role === 'host' ? launch.hostSpecies : launch.guestSpecies) as SpeciesId;
+    scene.scene.start('Battlefield', {
+      species,
+      difficulty: launch.difficulty as AiDifficultyId,
+      mapId: launch.mapId,
+      pvp: {
+        code: launch.code,
+        role: launch.role,
+        uid: launch.uid,
+        peerUid: launch.peerUid,
+        seed: launch.seed,
+        hostSpecies: launch.hostSpecies as SpeciesId,
+        guestSpecies: launch.guestSpecies as SpeciesId,
+      },
+    });
+  };
+
   const refresh = (): void => {
     const st = lobby.peek();
     codeText.setText(st.code ?? '————');
     codeText.setColor(
-      st.status === 'hosting'
+      st.status === 'hosting' || st.status === 'hosted'
         ? '#f0c75e'
-        : st.status === 'joining'
+        : st.status === 'joining' || st.status === 'joined'
           ? '#7ec8ff'
           : '#6a7f94',
     );
-    statusText.setText(lobbyStatusLine(st.status, st.code));
+    statusText.setText(lobbyStatusLine(st.status, st.code, st.reason));
+    startBtn?.setText(st.status === 'hosted' ? t('pvp.start') : t('lobby.create'));
   };
   refresh();
+  const unsubscribe = lobby.subscribe(refresh);
 
   const nodes: Phaser.GameObjects.GameObject[] = [
     overlay,
@@ -280,18 +353,27 @@ export function showLobbyPanel(scene: Phaser.Scene, onClose: () => void): void {
   const rowY = short ? bottom - 32 : bottom - 78;
   quietNote.setPosition(cx, rowY - 36);
   const createBtn = mkBtn(t('lobby.create'), '#2a4a38', () => {
-    lobby.hostLocal();
+    const st = lobby.peek();
+    if (st.status === 'hosted' && st.code && st.peerUid) {
+      void beginHostMatch(st.code, st.peerUid);
+      return;
+    }
+    void lobby.host();
   });
+  startBtn = createBtn;
   const joinBtn = mkBtn(t('lobby.join'), '#2a3a50', () => {
     const raw =
       typeof window !== 'undefined'
         ? window.prompt(t('lobby.prompt'), 'KANE01')
         : null;
     if (raw == null) return;
-    lobby.joinLocal(raw);
+    void lobby.join(raw).then(() => {
+      const st = lobby.peek();
+      if (st.status === 'joined' && st.code && st.peerUid) beginGuestMatch(st.code, st.peerUid);
+    });
   });
   const leaveBtn = mkBtn(t('lobby.leave'), '#3a4555', () => {
-    lobby.leave();
+    void lobby.leave();
   });
   const gap = 12;
   const place = (buttons: Phaser.GameObjects.Text[], y: number): void => {
@@ -342,6 +424,8 @@ export function showLobbyPanel(scene: Phaser.Scene, onClose: () => void): void {
   nodes.push(closeBtn);
 
   const destroy = (): void => {
+    unsubscribe();
+    stopGuestWatch?.();
     for (const n of nodes) n.destroy();
   };
 }

@@ -1,6 +1,7 @@
 /**
  * Catalog DPS tip from unit type dmg / attack cooldown (HUD label only).
- * Format: DPS · {n} — distinct from Damage · and Rate · tips.
+ * Format: DPS · {n} — middot (U+00B7).
+ * Distinct from Atk CD · / Proj · / Splash · / Range · (and Damage · / Rate ·).
  */
 import { getUnitType, type UnitTypeId } from '../../data/units';
 import { t } from '../../i18n';

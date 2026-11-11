@@ -1,6 +1,8 @@
 /**
  * Lobby tip for career average APM from match prefs.
- * Format: Avg APM · n — distinct from end/pause APM · match-rate tips.
+ * Format: Avg APM · {n} — middot (U+00B7).
+ * Distinct from Best APM · / APM · (match-rate) / Avg time · peers;
+ * same en/pt-BR/es copy as end/pause Avg APM · (distinct i18n key / surface).
  */
 import { loadMatchPrefs } from '../../database/matchPrefs';
 import { t } from '../../i18n';

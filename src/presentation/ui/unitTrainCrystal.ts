@@ -1,6 +1,7 @@
 /**
  * Catalog train crystal-cost tip (HUD label only).
- * Format: Crystal · {n} — distinct from inline sel.crystalCost chip.
+ * Format: Crystal · {n} — middot (U+00B7); distinct from inline sel.crystalCost chip
+ * and from Gold · / Supply · / Max HP · / DPS ·. Omitted when catalog cost is 0.
  */
 import { getUnitType, type UnitTypeId } from '../../data/units';
 import { t } from '../../i18n';

@@ -1,7 +1,8 @@
 /**
  * Selection panel catalog move-speed tip (HUD label only).
- * Format: Speed · {n} (tiles/s numeric; distinct from Pace · cadence and
- * Rate · attack-speed tips).
+ * Format: Speed · {n} (tiles/s numeric; middot U+00B7).
+ * Distinct from Proj · / Atk CD · / Splash ·, and from Pace · cadence /
+ * Rate · attack-speed tips.
  */
 import { MAP } from '../../config/balance';
 import { getUnitType, type UnitTypeId } from '../../data/units';

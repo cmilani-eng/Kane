@@ -2,17 +2,16 @@
   "rules": {
     ".read": false,
     ".write": false,
-
     "lobbies": {
       "$code": {
-        ".read": "auth != null && (data.child('hostUid').val() === auth.uid || data.child('guestUid').val() === auth.uid || !data.exists())",
-        ".write": "auth != null && (!data.exists() || data.child('hostUid').val() === auth.uid || data.child('guestUid').val() === auth.uid)",
+        ".read": "auth != null && (data.child('hostUid').val() === auth.uid || data.child('guestUid').val() === auth.uid || !data.exists() || data.child('status').val() === 'open')",
+        ".write": "auth != null && (!data.exists() || data.child('hostUid').val() === auth.uid || data.child('guestUid').val() === auth.uid || (data.child('status').val() === 'open' && !data.child('guestUid').exists() && newData.child('guestUid').val() === auth.uid))",
         ".validate": "newData.hasChildren(['hostUid', 'createdAt', 'status']) && newData.child('hostUid').isString() && newData.child('createdAt').isNumber() && newData.child('status').val().matches(/^(open|full|closed)$/) && $code.matches(/^[A-Z0-9]{4,8}$/)",
         "hostUid": {
           ".validate": "newData.isString() && newData.val().length > 0 && (!data.exists() || data.val() === newData.val())"
         },
         "guestUid": {
-          ".validate": "newData.isString() && newData.val() === auth.uid"
+          ".validate": "newData.isString() && (newData.val() === auth.uid || newData.val() === data.val())"
         },
         "createdAt": {
           ".validate": "newData.isNumber() && newData.val() <= now"
@@ -22,50 +21,42 @@
         }
       }
     },
-
     "matches": {
-      "$matchId": {
-        ".read": "auth != null && data.child('players').child(auth.uid).exists()",
-        ".validate": "newData.hasChildren(['players', 'lobbyCode', 'createdAt'])",
-        "players": {
+      "$code": {
+        ".read": "auth != null && (root.child('lobbies').child($code).child('hostUid').val() === auth.uid || root.child('lobbies').child($code).child('guestUid').val() === auth.uid)",
+        ".validate": "$code.matches(/^[A-Z0-9]{4,8}$/)",
+        "setup": {
+          ".write": "auth != null && root.child('lobbies').child($code).child('hostUid').val() === auth.uid",
+          ".validate": "newData.hasChildren(['seed', 'mapId', 'difficulty', 'hostSpecies', 'startedAt']) && newData.child('seed').isNumber() && newData.child('mapId').isString() && newData.child('difficulty').isString() && newData.child('hostSpecies').isString() && newData.child('startedAt').isNumber()"
+        },
+        "guestSpecies": {
+          ".write": "auth != null && root.child('lobbies').child($code).child('guestUid').val() === auth.uid",
+          ".validate": "newData.isString() && newData.val().length <= 16"
+        },
+        "cmd": {
           "$uid": {
-            ".write": "auth != null && auth.uid === $uid && (!data.exists() || root.child('matches').child($matchId).child('hostUid').val() === auth.uid)",
-            ".validate": "newData.hasChildren(['joinedAt']) && newData.child('joinedAt').isNumber()"
-          }
-        },
-        "hostUid": {
-          ".write": "auth != null && (!data.exists() ? newData.val() === auth.uid : data.val() === auth.uid)",
-          ".validate": "newData.isString()"
-        },
-        "lobbyCode": {
-          ".validate": "newData.isString() && newData.val().matches(/^[A-Z0-9]{4,8}$/)"
-        },
-        "createdAt": {
-          ".validate": "newData.isNumber() && newData.val() <= now"
-        },
-        "commands": {
-          "$tick": {
-            "$uid": {
-              ".write": "auth != null && $uid === auth.uid && root.child('matches').child($matchId).child('players').child(auth.uid).exists()",
-              ".validate": "newData.hasChildren(['kind', 'payload', 'seq']) && newData.child('kind').isString() && newData.child('payload').isString() && newData.child('seq').isNumber() && newData.child('seq').val() >= 0"
+            "$tick": {
+              ".write": "auth != null && $uid === auth.uid && (root.child('lobbies').child($code).child('hostUid').val() === auth.uid || root.child('lobbies').child($code).child('guestUid').val() === auth.uid)",
+              ".validate": "$tick.matches(/^[0-9]+$/) && newData.isString() && newData.val().length <= 8000"
             }
           }
         },
-        "hashes": {
-          "$tick": {
-            "$uid": {
-              ".write": "auth != null && $uid === auth.uid && root.child('matches').child($matchId).child('players').child(auth.uid).exists()",
-              ".validate": "newData.isString() && newData.val().length >= 8 && newData.val().length <= 64"
+        "hash": {
+          "$uid": {
+            "$tick": {
+              ".write": "auth != null && $uid === auth.uid && (root.child('lobbies').child($code).child('hostUid').val() === auth.uid || root.child('lobbies').child($code).child('guestUid').val() === auth.uid)",
+              ".validate": "$tick.matches(/^[0-9]+$/) && newData.isString() && newData.val().length <= 16"
             }
           }
         },
-        "meta": {
-          ".write": "auth != null && root.child('matches').child($matchId).child('players').child(auth.uid).exists()",
-          ".validate": "newData.hasChildren(['tick']) && newData.child('tick').isNumber() && newData.child('tick').val() >= 0"
+        "presence": {
+          "$uid": {
+            ".write": "auth != null && $uid === auth.uid && (root.child('lobbies').child($code).child('hostUid').val() === auth.uid || root.child('lobbies').child($code).child('guestUid').val() === auth.uid)",
+            ".validate": "newData.isString() && newData.val().matches(/^(here|away)$/)"
+          }
         }
       }
     },
-
     "stats": {
       ".read": false,
       ".write": false,
@@ -84,7 +75,6 @@
         }
       }
     },
-
     "moderation": {
       ".read": false,
       ".write": false,
@@ -95,7 +85,6 @@
         }
       }
     },
-
     "profiles": {
       "$uid": {
         ".read": "auth != null && auth.uid === $uid",

@@ -1,6 +1,6 @@
 /**
  * Catalog attack-range tip in map tiles (HUD label only).
- * Format: Range · {n} — distinct from Sight · n vision tip.
+ * Format: Range · {n} — distinct from Proj · / Atk CD · / Splash · / Speed · / Sight ·.
  */
 import { MAP } from '../../config/balance';
 import { getUnitType, type UnitTypeId } from '../../data/units';

@@ -13,13 +13,18 @@ export const MUTATION = {
   speedMult: 1.12,
 } as const;
 
+/** Locks or unlocks mutation on one unit. Both clients run this for a synced stance order. */
+export function toggleMutationUnit(u: BattlefieldUnit): void {
+  const def = getUnitType(u.typeId);
+  if (u.speciesId !== 'weirdos' || !def.canMutate) return;
+  u.mutationLocked = !u.mutationLocked;
+  if (u.mutationLocked) u.mutated = true;
+}
+
 export function toggleMutationSelected(world: BattlefieldWorld): void {
   for (const u of world.units) {
     if (u.team !== 'player' || !u.selected) continue;
-    const def = getUnitType(u.typeId);
-    if (u.speciesId !== 'weirdos' || !def.canMutate) continue;
-    u.mutationLocked = !u.mutationLocked;
-    if (u.mutationLocked) u.mutated = true;
+    toggleMutationUnit(u);
   }
 }
 

@@ -1,6 +1,8 @@
 /**
  * Lobby tip for the last-played / remembered difficulty from match prefs.
- * Distinct from the selected difficulty blurb tip (`lobby.difficultyTip`).
+ * Last difficulty · {label} (U+00B7). Distinct from selected difficulty
+ * label · blurb (`lobby.difficultyTip` / pause twin), end Difficulty ·, and
+ * Last · faction same-prefix peer.
  */
 import { loadMatchPrefs } from '../../database/matchPrefs';
 import { difficultyCopy, t } from '../../i18n';

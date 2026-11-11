@@ -1,6 +1,7 @@
 /**
  * Catalog gather-yield tip for workers (HUD label only).
- * Carry capacity per trip — distinct from live cargo and node gather tips.
+ * Format: Yield · {n} per trip (U+00B7 middot) — distinct from Cargo · n max,
+ * Cargo · empty / Cargo · n/cap, and the longer carry-line deposit copy.
  */
 import { getUnitType, type UnitTypeId } from '../../data/units';
 import { t } from '../../i18n';

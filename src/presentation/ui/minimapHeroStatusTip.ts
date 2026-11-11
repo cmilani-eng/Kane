@@ -1,7 +1,10 @@
 /**
  * Minimap hero status tip (presentation only).
+ * Format: Hero · Ready / Down / {sector} — middot (U+00B7).
  * Ready before recruit, Down after death, sector while alive.
- * Distinct surface from pause Hero · Ready / Down / sector tip.
+ * Distinct from Cam · / Scout · / Mark · / Army · minimap peers;
+ * same en/pt-BR/es copy as pause Hero tip (`pause.heroReady` /
+ * `pause.heroDown` / `pause.heroSector`), own keys.
  */
 import { mapSectorAt, type MapSectorId } from '../../gameplay/battlefield/mapSector';
 import { findPlayerHero } from '../../gameplay/battlefield/battlefieldHeroes';

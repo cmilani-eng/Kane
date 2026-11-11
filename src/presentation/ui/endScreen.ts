@@ -20,6 +20,7 @@ import { endDifficultyPlayedTipLine } from './endDifficultyPlayedTip';
 import { endAvgApmTipLine } from './endAvgApmTip';
 import { endBestApmTipLine } from './endBestApmTip';
 import { endAvgDurationTipLine } from './endAvgDurationTip';
+import { endBestMapTipLine } from './endBestMapTip';
 import { endDurationTipLine } from './endDurationTip';
 import { endMapPlayedTipLine } from './endMapPlayedTip';
 import { endMapSizeTipLine } from './endMapSizeTip';
@@ -38,6 +39,7 @@ import { endGamesPlayedTipLine } from './endGamesPlayedTip';
 import { endWinRateTipLine } from './endWinRateTip';
 import { endFavoriteFactionTipLine } from './endFavoriteFactionTip';
 import { endLossesTipLine } from './endLossesTip';
+import { endSpeciesPlaysTipLine } from './endSpeciesPlaysTip';
 import { endWinsTipLine } from './endWinsTip';
 import { endWinStreakTipLine } from './endWinStreakTip';
 import { endLossStreakTipLine } from './endLossStreakTip';
@@ -136,104 +138,105 @@ export function showKaneEndScreen(opts: EndScreenOpts): void {
     (speciesOffer != null && onTrySpecies != null) ||
     (mapOffer != null && onTryMap != null);
   const { width, height } = scene.scale;
-  const accent = win ? 0xffe28a : 0xe85a5a;
-  const accentHex = win ? '#ffe28a' : '#e87a7a';
-  const wash = 0x0c1624;
+  const accent = win ? 0xf0c75e : 0xe85a5a;
+  const accentHex = win ? '#f0c75e' : '#e87a7a';
+  const wash = win ? 0x1a2818 : 0x1a0e14;
 
   const root: Phaser.GameObjects.GameObject[] = [];
 
   const dim = scene.add
-    .rectangle(width / 2, height / 2, width, height, 0x07111d, 0.92)
+    .rectangle(width / 2, height / 2, width, height, 0x060a12, 0.78)
     .setScrollFactor(0)
     .setDepth(200)
     .setAlpha(0);
   root.push(dim);
 
   const short = height < 500;
-  const panelW = Math.min(short ? 720 : 520, width - (short ? 24 : 32));
-  const panelH = short ? height - 16 : Math.min(760, height - 16);
+  const panelW = short ? Math.min(720, width - 24) : Math.min(440, width - 32);
+  const panelH = short
+    ? height - 16
+    : Math.min(stepUp ? 720 : 660, height * (stepUp ? 0.96 : 0.92));
   const cy = short ? height / 2 : height * 0.48;
   const top = cy - panelH / 2;
-  const yActions = top + panelH - (short ? 28 : 26);
-  const yBrand = short ? top + 18 : top + 22;
-  const yTitle = short ? top + 58 : top + 72;
-  const yTag = short ? top + 90 : top + 112;
-  const ySub = short ? top + 108 : top + 136;
-  const yMeta = short ? top + 128 : top + 158;
-  // Tall cards stay one column. Two columns crossed the long lines.
-  const statRows = short ? 8 : 28;
-  const statOrigin = short ? top + 140 : top + 180;
-  const yMenu = short ? yActions : top + panelH - 26;
-  const yRematch = short ? yActions : yMenu - 40;
-  const yStep = short ? yActions - 44 : stepUp ? yRematch - 40 : yRematch;
-  const yShare = short ? yActions - 39 : (stepUp ? yStep : yRematch) - 36;
-  const statLimit = yShare - 24;
-  const statStep = short ? 13 : (statLimit - statOrigin) / (statRows - 1);
-  const statRowY = (i: number) => statOrigin + (i % statRows) * statStep;
+  const yBrand = short ? top + 18 : cy - panelH * 0.4;
+  const yTitle = short ? top + 58 : cy - panelH * 0.18;
+  const yTag = short ? top + 90 : cy + panelH * 0.02;
+  const ySub = short ? top + 108 : cy + panelH * 0.1;
+  const yMeta = short ? top + 128 : cy + panelH * 0.17;
+  const yActions = top + panelH - (short ? 28 : 36);
+  // Short screens: two columns of eight stat lines so the actions stay on-panel.
+  const statRowY = (i: number) => top + 140 + (i % 8) * 13;
   const statX = (i: number) =>
-    short ? width / 2 + (i < statRows ? -1 : 1) * (panelW / 4) : width / 2;
-  const yDuration = statRowY(0);
-  const ySpecies = statRowY(1);
-  const yMap = statRowY(2);
-  const yDifficulty = statRowY(3);
-  const yObjective = statRowY(4);
-  const yRecap = statRowY(5);
-  const yApm = statRowY(6);
-  const yEfficiency = statRowY(7);
-  const yTrained = statRowY(8);
-  const yRaised = statRowY(9);
-  const yKills = statRowY(10);
-  const yLost = statRowY(11);
-  const yBldLost = statRowY(12);
-  const yKill = statRowY(13);
-  const yGathered = statRowY(14);
-  const yStreak = statRowY(15);
-  const yLossStreak = short ? yActions - 60 : statRowY(16);
-  const yBestStreak = short ? yActions - 58 : statRowY(17);
-  const yGamesPlayed = short ? yActions - 54 : statRowY(18);
-  const yWinRate = short ? yActions - 49 : statRowY(19);
-  const yWins = short ? yActions - 48 : statRowY(20);
-  const yLosses = short ? yActions - 46 : statRowY(21);
-  const yFavoriteFaction = short ? yActions - 44 : statRowY(22);
-  const yAvgDuration = short ? yActions - 43 : statRowY(23);
-  const yAvgApm = short ? yActions - 42.5 : statRowY(24);
-  const yBestApm = short ? yActions - 42.25 : statRowY(25);
-  const yMapSize = short ? yActions - 42 : statRowY(26);
-  const yVision = short ? yActions - 40 : statRowY(27);
+    short ? width / 2 + (i < 8 ? -1 : 1) * (panelW / 4) : width / 2;
+  const yDuration = short ? statRowY(0) : cy + panelH * 0.2;
+  const ySpecies = short ? statRowY(1) : cy + panelH * 0.24;
+  const yMap = short ? statRowY(2) : cy + panelH * 0.28;
+  const yDifficulty = short ? statRowY(3) : cy + panelH * 0.32;
+  const yObjective = short ? statRowY(4) : cy + panelH * 0.36;
+  const yRecap = short ? statRowY(5) : cy + panelH * 0.4;
+  const yApm = short ? statRowY(6) : cy + panelH * 0.44;
+  const yEfficiency = short ? statRowY(7) : cy + panelH * 0.48;
+  const yTrained = short ? statRowY(8) : cy + panelH * 0.52;
+  const yRaised = short ? statRowY(9) : cy + panelH * 0.555;
+  const yKills = short ? statRowY(10) : cy + panelH * 0.59;
+  const yLost = short ? statRowY(11) : cy + panelH * 0.625;
+  const yBldLost = short ? statRowY(12) : cy + panelH * 0.66;
+  const yKill = short ? statRowY(13) : cy + panelH * 0.695;
+  const yGathered = short ? statRowY(14) : cy + panelH * 0.73;
+  const yStreak = short ? statRowY(15) : cy + panelH * 0.745;
+  const yLossStreak = short ? yActions - 60 : cy + panelH * 0.752;
+  const yBestStreak = short ? yActions - 58 : cy + panelH * 0.76;
+  const yGamesPlayed = short ? yActions - 54 : cy + panelH * 0.772;
+  const yWinRate = short ? yActions - 49 : cy + panelH * 0.778;
+  const yWins = short ? yActions - 48 : cy + panelH * 0.78;
+  const yLosses = short ? yActions - 46 : cy + panelH * 0.782;
+  const yFavoriteFaction = short ? yActions - 44 : cy + panelH * 0.784;
+  const ySpeciesPlays = short ? yActions - 43.5 : cy + panelH * 0.7848;
+  const yAvgDuration = short ? yActions - 43 : cy + panelH * 0.7855;
+  const yBestMap = short ? yActions - 42.75 : cy + panelH * 0.78585;
+  const yAvgApm = short ? yActions - 42.5 : cy + panelH * 0.7862;
+  const yBestApm = short ? yActions - 42.25 : cy + panelH * 0.7866;
+  const yMapSize = short ? yActions - 42 : cy + panelH * 0.787;
+  const yVision = short ? yActions - 40 : cy + panelH * 0.79;
+  const yShare = short ? yActions - 39 : cy + panelH * 0.793;
+  const yStep = short ? yActions - 44 : cy + panelH * 0.72;
+  const yRematch = short ? yActions : cy + panelH * (stepUp ? 0.8 : 0.76);
+  const yMenu = short ? yActions : cy + panelH * (stepUp ? 0.91 : 0.85);
   const xRematch = short ? width / 2 - 110 : width / 2;
   const xMenu = short ? width / 2 + 110 : width / 2;
   const xShare = short && stepUp ? width / 2 - 100 : width / 2;
   const xStep = short ? width / 2 + 100 : width / 2;
-  const panel = scene.add.container(width / 2, cy).setDepth(201).setScale(0.92).setAlpha(0);
-  const panelGfx = scene.add.graphics();
-  const radius = 22;
-  panelGfx.fillStyle(accent, 0.16);
-  panelGfx.fillRoundedRect(
-    -panelW / 2 - 10,
-    -panelH / 2 - 10,
-    panelW + 20,
-    panelH + 20,
-    radius + 8,
-  );
-  panelGfx.fillStyle(wash, 0.96);
-  panelGfx.fillRoundedRect(-panelW / 2, -panelH / 2, panelW, panelH, radius);
-  panelGfx.lineStyle(2, accent, 0.9);
-  panelGfx.strokeRoundedRect(-panelW / 2, -panelH / 2, panelW, panelH, radius);
-  panel.add(panelGfx);
+  const panel = scene.add
+    .rectangle(width / 2, cy, panelW, panelH, wash, 0.92)
+    .setStrokeStyle(2, accent, 0.85)
+    .setScrollFactor(0)
+    .setDepth(201)
+    .setScale(0.92)
+    .setAlpha(0);
   root.push(panel);
 
-  // Soft atmosphere orbs, same night lights as the game picker.
-  const glow = scene.add.graphics().setScrollFactor(0).setDepth(201);
-  for (const light of [
-    { x: width * 0.16, y: height * 0.12, color: 0xff4fd8, r: 180 },
-    { x: width * 0.86, y: height * 0.22, color: 0x33d1ff, r: 160 },
-  ]) {
-    for (let i = 8; i >= 1; i -= 1) {
-      glow.fillStyle(light.color, 0.016);
-      glow.fillCircle(light.x, light.y, light.r * (0.35 + i * 0.12));
-    }
-  }
-  root.push(glow);
+  // Soft atmosphere orbs
+  const orbA = scene.add
+    .circle(
+      width / 2 - panelW * 0.28,
+      height * 0.38,
+      48,
+      win ? 0x3d7ea6 : 0x7a2a3a,
+      0.2,
+    )
+    .setScrollFactor(0)
+    .setDepth(201);
+  const orbB = scene.add
+    .circle(
+      width / 2 + panelW * 0.3,
+      height * 0.58,
+      36,
+      win ? 0x4a7a3a : 0x4a2030,
+      0.18,
+    )
+    .setScrollFactor(0)
+    .setDepth(201);
+  root.push(orbA, orbB);
 
   const brand = scene.add
     .text(width / 2, yBrand, BRAND.name, {
@@ -753,6 +756,21 @@ export function showKaneEndScreen(opts: EndScreenOpts): void {
     .setVisible(!!favoriteFactionTip);
   root.push(favoriteFactionTipText);
 
+  const speciesPlaysTip = endSpeciesPlaysTipLine() ?? '';
+  const speciesPlaysTipText = scene.add
+    .text(width / 2, ySpeciesPlays, speciesPlaysTip, {
+      fontFamily: 'system-ui, sans-serif',
+      fontSize: '13px',
+      color: '#c8d8e8',
+      align: 'center',
+    })
+    .setOrigin(0.5)
+    .setScrollFactor(0)
+    .setDepth(202)
+    .setAlpha(0)
+    .setVisible(!!speciesPlaysTip);
+  root.push(speciesPlaysTipText);
+
   const avgDurationTip = endAvgDurationTipLine() ?? '';
   const avgDurationTipText = scene.add
     .text(width / 2, yAvgDuration, avgDurationTip, {
@@ -767,6 +785,21 @@ export function showKaneEndScreen(opts: EndScreenOpts): void {
     .setAlpha(0)
     .setVisible(!!avgDurationTip);
   root.push(avgDurationTipText);
+
+  const bestMapTip = endBestMapTipLine() ?? '';
+  const bestMapTipText = scene.add
+    .text(width / 2, yBestMap, bestMapTip, {
+      fontFamily: 'system-ui, sans-serif',
+      fontSize: '13px',
+      color: '#c8d8e8',
+      align: 'center',
+    })
+    .setOrigin(0.5)
+    .setScrollFactor(0)
+    .setDepth(202)
+    .setAlpha(0)
+    .setVisible(!!bestMapTip);
+  root.push(bestMapTipText);
 
   const avgApmTip = endAvgApmTipLine() ?? '';
   const avgApmTipText = scene.add
@@ -871,10 +904,10 @@ export function showKaneEndScreen(opts: EndScreenOpts): void {
         yStep,
         offer.label,
         {
-          fontFamily: 'system-ui, sans-serif',
+          fontFamily: 'Georgia, "Times New Roman", serif',
           fontSize: short ? '16px' : '18px',
-          color: '#06121f',
-          backgroundColor: '#ffe28a',
+          color: '#fff8e8',
+          backgroundColor: '#3a5530',
           padding: { x: short ? 16 : 28, y: short ? 8 : 12 },
         },
       )
@@ -883,8 +916,8 @@ export function showKaneEndScreen(opts: EndScreenOpts): void {
       .setDepth(202)
       .setAlpha(0)
       .setInteractive({ useHandCursor: true })
-      .on('pointerover', () => btn.setStyle({ color: '#06121f' }))
-      .on('pointerout', () => btn.setStyle({ color: '#06121f' }))
+      .on('pointerover', () => btn.setStyle({ color: accentHex }))
+      .on('pointerout', () => btn.setStyle({ color: '#fff8e8' }))
       .on('pointerup', () => {
         playSfx('ui');
         go();
@@ -985,7 +1018,9 @@ export function showKaneEndScreen(opts: EndScreenOpts): void {
       winsTipText,
       lossesTipText,
       favoriteFactionTipText,
+      speciesPlaysTipText,
       avgDurationTipText,
+      bestMapTipText,
       avgApmTipText,
       bestApmTipText,
       mapSizeTipText,
@@ -1011,6 +1046,24 @@ export function showKaneEndScreen(opts: EndScreenOpts): void {
 
   if (win) {
     scene.tweens.add({
+      targets: orbA,
+      y: orbA.y - 18,
+      alpha: 0.32,
+      duration: 2200,
+      yoyo: true,
+      repeat: -1,
+      ease: 'Sine.easeInOut',
+    });
+    scene.tweens.add({
+      targets: orbB,
+      y: orbB.y + 14,
+      alpha: 0.28,
+      duration: 2600,
+      yoyo: true,
+      repeat: -1,
+      ease: 'Sine.easeInOut',
+    });
+    scene.tweens.add({
       targets: title,
       y: title.y - 4,
       duration: 1600,
@@ -1026,6 +1079,13 @@ export function showKaneEndScreen(opts: EndScreenOpts): void {
       yoyo: true,
       repeat: 5,
       ease: 'Sine.easeInOut',
+    });
+    scene.tweens.add({
+      targets: [orbA, orbB],
+      alpha: 0.08,
+      duration: 1800,
+      yoyo: true,
+      repeat: -1,
     });
   }
 }
