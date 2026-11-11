@@ -82,7 +82,19 @@
           ]
         }
       ],
-      "cleanUrls": true
+      "cleanUrls": true,
+      "redirects": [
+        { "source": "/kane", "destination": "/?game=kane", "type": 302 },
+        { "source": "/kane/", "destination": "/?game=kane", "type": 302 },
+        { "source": "/blob-evolution", "destination": "/?game=blob-evolution", "type": 302 },
+        { "source": "/blob-evolution/", "destination": "/?game=blob-evolution", "type": 302 }
+      ],
+      "rewrites": [
+        { "source": "/privacy", "destination": "/games/privacy.html" },
+        { "source": "/privacy.html", "destination": "/games/privacy.html" },
+        { "source": "/terms", "destination": "/games/terms.html" },
+        { "source": "/terms.html", "destination": "/games/terms.html" }
+      ]
     }
   ],
   "emulators": {
