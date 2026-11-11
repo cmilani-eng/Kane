@@ -7,7 +7,7 @@ const here = dirname(fileURLToPath(import.meta.url));
 
 describe('stance hotkey echo', () => {
   it('wires F/R/M keyboard presses to flashStanceHotkey', () => {
-    const scene = readFileSync(resolve(here, '../scenes/BattlefieldScene.ts'), 'utf8');
+    const scene = readFileSync(resolve(here, '../../games/kane/KaneBattlefieldScene.ts'), 'utf8');
     expect(scene).toContain("flashStanceHotkey('formation')");
     expect(scene).toContain("flashStanceHotkey('rage')");
     expect(scene).toContain("flashStanceHotkey('mutation')");

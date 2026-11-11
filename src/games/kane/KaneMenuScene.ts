@@ -1,3 +1,11 @@
+/**
+ * Kane Menu Scene — main menu for Kane game.
+ * Moved from src/presentation/scenes/MenuScene.ts with kane_ asset prefixes.
+ *
+ * Called by: src/games/kane/index.ts (exports for registry)
+ * Replaces: src/presentation/scenes/MenuScene.ts (for Kane-specific menu)
+ * Reads: Same data as original MenuScene, uses kane_ prefixed assets
+ */
 import Phaser from 'phaser';
 import { BRAND } from '../../config/brand';
 import {
@@ -22,7 +30,6 @@ import {
   type SkirmishMapId,
 } from '../../data/skirmishMaps';
 import type { SpeciesId } from '../../data/speciesStub';
-import type { PvpLaunch } from '../../networking/matchStart';
 import {
   difficultyCopy,
   mapCopy,
@@ -38,24 +45,21 @@ import {
   hideMenuBannerStub,
   showMenuBannerStub,
 } from '../../ads/adsSdkStub';
-import { ensureAmbientBgm } from '../audio/bgm';
-import { playSfx } from '../audio/sfx';
-import { hideDomHud } from '../ui/domHud';
-import { showAuthPanel, hideAuthPanel } from '../ui/authPanel';
-import { showCosmeticsCard } from '../ui/cosmeticsCard';
-import { accountChipName, showDashboardPanel } from '../ui/dashboardPanel';
-import { flags } from '../../config/flags';
-import { showLobbyCard } from '../ui/lobbyCard';
-import { isPhoneSizedScreen } from '../ui/screenSize';
-import { hideMenuGamesLink, showMenuGamesLink } from '../ui/menuGamesLink';
-import { softLaunchStatusStrip } from '../ui/softLaunchStatus';
-import { showStatsCard } from '../ui/statsCard';
-import { showStatsPanel } from '../ui/statsPanel';
-import { addLocalePicker } from '../ui/localePicker';
-import { createVolumeSlider } from '../ui/volumeSlider';
-import { drawSpeciesPreview } from '../units/unitSilhouette';
+import { ensureAmbientBgm } from '../../presentation/audio/bgm';
+import { playSfx } from '../../presentation/audio/sfx';
+import { hideDomHud } from '../../presentation/ui/domHud';
+import { showAuthPanel, hideAuthPanel } from '../../presentation/ui/authPanel';
+import { showCosmeticsPanel } from '../../presentation/ui/cosmeticsPanel';
+import { accountChipName, showDashboardPanel } from '../../presentation/ui/dashboardPanel';
+import { showLobbyPanel } from '../../presentation/ui/lobbyPanel';
+import { hideMenuGamesLink, showMenuGamesLink } from '../../presentation/ui/menuGamesLink';
+import { softLaunchStatusStrip } from '../../presentation/ui/softLaunchStatus';
+import { showStatsPanel } from '../../presentation/ui/statsPanel';
+import { addLocalePicker } from '../../presentation/ui/localePicker';
+import { createVolumeSlider } from '../../presentation/ui/volumeSlider';
+import { drawSpeciesPreview } from '../../presentation/units/unitSilhouette';
 
-export class MenuScene extends Phaser.Scene {
+export class KaneMenuScene extends Phaser.Scene {
   private statsOpen = false;
   private lobbyOpen = false;
   private cosmeticsOpen = false;
@@ -64,16 +68,14 @@ export class MenuScene extends Phaser.Scene {
   private accountLabel: Phaser.GameObjects.Text | null = null;
   private difficulty: AiDifficultyId = 'normal';
   private mapId: SkirmishMapId = 'crossing';
-  /** Last played / remembered species — highlighted on the menu. */
   private lastSpecies: SpeciesId = 'nobles';
   private previewGfx: Phaser.GameObjects.Graphics | null = null;
   private previewSlots: { id: SpeciesId; x: number; y: number; scale: number }[] = [];
   private localeUnsub: (() => void) | null = null;
-  /** Camera zoom that fits a tall portrait menu; popups draw at zoom 1. */
   private menuZoom = 1;
 
   constructor() {
-    super('Menu');
+    super('KaneMenu');
   }
 
   create(): void {
@@ -94,7 +96,6 @@ export class MenuScene extends Phaser.Scene {
     this.authUnsub = subscribeAuth(() => this.refreshAccountChip());
     this.localeUnsub?.();
     this.localeUnsub = subscribeLocale(() => this.rebuildForLocale());
-    // Ambient BGM needs a user gesture for autoplay policy.
     this.input.once('pointerdown', () => ensureAmbientBgm());
     this.scale.on('resize', this.onResize, this);
     this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => {
@@ -112,7 +113,6 @@ export class MenuScene extends Phaser.Scene {
     }
   }
 
-  /** Locale changes destroy the text that received the click, so rebuild next tick. */
   private rebuildForLocale(): void {
     if (this.anyOverlayOpen()) return;
     this.time.delayedCall(0, () => {
@@ -174,15 +174,14 @@ export class MenuScene extends Phaser.Scene {
     this.statsOpen = true;
     playSfx('ui');
     this.resetMenuCamera();
-    const onClose = (): void => {
-      this.statsOpen = false;
-      this.fitMenuCamera();
-    };
-    if (adminTools) {
-      showStatsPanel(this, onClose, { adminTools });
-    } else {
-      showStatsCard(onClose);
-    }
+    showStatsPanel(
+      this,
+      () => {
+        this.statsOpen = false;
+        this.fitMenuCamera();
+      },
+      { adminTools },
+    );
   }
 
   private openLobby(): void {
@@ -190,31 +189,9 @@ export class MenuScene extends Phaser.Scene {
     this.lobbyOpen = true;
     playSfx('ui');
     this.resetMenuCamera();
-    showLobbyCard(
-      () => {
-        this.lobbyOpen = false;
-        this.fitMenuCamera();
-      },
-      (launch) => this.startPvpMatch(launch),
-    );
-  }
-
-  /** A two-player match from the friend lobby: both players open the same battle. */
-  private startPvpMatch(launch: PvpLaunch): void {
-    const species = (launch.role === 'host' ? launch.hostSpecies : launch.guestSpecies) as SpeciesId;
-    this.scene.start('Battlefield', {
-      species,
-      difficulty: launch.difficulty as AiDifficultyId,
-      mapId: launch.mapId,
-      pvp: {
-        code: launch.code,
-        role: launch.role,
-        uid: launch.uid,
-        peerUid: launch.peerUid,
-        seed: launch.seed,
-        hostSpecies: launch.hostSpecies as SpeciesId,
-        guestSpecies: launch.guestSpecies as SpeciesId,
-      },
+    showLobbyPanel(this, () => {
+      this.lobbyOpen = false;
+      this.fitMenuCamera();
     });
   }
 
@@ -223,7 +200,7 @@ export class MenuScene extends Phaser.Scene {
     this.cosmeticsOpen = true;
     playSfx('ui');
     this.resetMenuCamera();
-    showCosmeticsCard(() => {
+    showCosmeticsPanel(this, () => {
       this.cosmeticsOpen = false;
       this.fitMenuCamera();
     });
@@ -253,78 +230,42 @@ export class MenuScene extends Phaser.Scene {
     }
   }
 
-  /**
-   * Kane needs a big screen. On a phone the menu stays drawn, but a veil and a message cover
-   * it, and startMatch refuses to start a match (see isPhoneSizedScreen).
-   */
-  private addBigScreenNotice(width: number, height: number): void {
-    if (!isPhoneSizedScreen(width, height)) return;
-    this.add
-      .rectangle(width / 2, height / 2, width, height, 0x0a1220, 0.84)
-      .setScrollFactor(0)
-      .setDepth(400);
-    this.add
-      .text(width / 2, height / 2, t('menu.bigScreen'), {
-        fontFamily: 'system-ui, sans-serif',
-        fontSize: '18px',
-        color: '#fff8e8',
-        align: 'center',
-        wordWrap: { width: width * 0.8 },
-      })
-      .setOrigin(0.5)
-      .setScrollFactor(0)
-      .setDepth(401);
+  private paintGlow(
+    bg: Phaser.GameObjects.Graphics,
+    x: number,
+    y: number,
+    color: number,
+    radius: number,
+  ): void {
+    for (let i = 8; i >= 1; i -= 1) {
+      bg.fillStyle(color, 0.018);
+      bg.fillCircle(x, y, radius * (0.35 + i * 0.12));
+    }
   }
 
   private buildLayout(intro: boolean): void {
     const { width, height } = this.scale;
     this.menuZoom = 1;
     this.resetMenuCamera();
-    this.addBigScreenNotice(width, height);
-    // iPhone 17 landscape is wide (~874) and short (~402). Percentage rows overlap.
     if (height < 500) {
       this.buildShortLayout(intro, width, height);
       return;
     }
     this.previewSlots = [];
     const bg = this.add.graphics();
-    bg.fillGradientStyle(0x0f1a2e, 0x0f1a2e, 0x1a3a4a, 0x243a28, 1);
+    bg.fillStyle(0x07111d, 1);
     bg.fillRect(0, 0, width, height);
+    this.paintGlow(bg, width * 0.16, height * 0.08, 0xff4fd8, 220);
+    this.paintGlow(bg, width * 0.88, height * 0.18, 0x33d1ff, 200);
+    this.paintGlow(bg, width * 0.5, height * 0.96, 0xffd23f, 180);
     this.previewGfx = this.add.graphics().setDepth(20);
-
-    const orb = this.add.circle(width * 0.72, height * 0.22, 90, 0x3d7ea6, 0.18);
-    this.tweens.add({
-      targets: orb,
-      scale: 1.15,
-      alpha: 0.28,
-      duration: 3200,
-      yoyo: true,
-      repeat: -1,
-    });
-    const orb2 = this.add.circle(width * 0.18, height * 0.72, 60, 0x4a7a3a, 0.14);
-    this.tweens.add({
-      targets: orb2,
-      y: orb2.y - 20,
-      duration: 4000,
-      yoyo: true,
-      repeat: -1,
-    });
-    const orb3 = this.add.circle(width * 0.5, height * 0.18, 50, 0x7a4aa8, 0.16);
-    this.tweens.add({
-      targets: orb3,
-      scale: 1.2,
-      alpha: 0.3,
-      duration: 2800,
-      yoyo: true,
-      repeat: -1,
-    });
 
     const title = this.add
       .text(width / 2, width < 700 ? Math.max(height * 0.12, 96) : height * 0.12, BRAND.name, {
         fontFamily: 'Georgia, "Times New Roman", serif',
         fontSize: Math.min(72, width * 0.16) + 'px',
-        color: '#f5e6c8',
-        stroke: '#1a2a4a',
+        color: '#f5f8ff',
+        stroke: '#06121f',
         strokeThickness: 8,
       })
       .setOrigin(0.5);
@@ -339,12 +280,13 @@ export class MenuScene extends Phaser.Scene {
       .text(width / 2, height * 0.22, BRAND.tagline, {
         fontFamily: 'system-ui, sans-serif',
         fontSize: Math.min(18, width * 0.045) + 'px',
-        color: '#f0c75e',
+        color: '#ffe28a',
         fontStyle: 'bold',
+        backgroundColor: '#1a2438',
+        padding: { x: 12, y: 6 },
       })
       .setOrigin(0.5);
 
-    // Phone portrait: rows flow top to bottom so they cannot collide.
     const narrow = width < 700;
     const diffLabelY = narrow ? height * 0.22 + 32 : height * 0.26;
     this.add
@@ -358,7 +300,6 @@ export class MenuScene extends Phaser.Scene {
     const diffRowY = narrow ? diffLabelY + 30 : height * 0.29;
     this.drawDifficultyRow(width, diffRowY, narrow);
 
-    // One quiet line while Practice, Easy, or Hard is selected — no tip on Normal.
     const diffTip =
       this.difficulty === 'practice'
         ? t('menu.practiceTip')
@@ -396,7 +337,6 @@ export class MenuScene extends Phaser.Scene {
 
     this.drawMapRow(width, mapRowY, narrow);
 
-    // Quiet flavor line for the selected skirmish map (same pattern as difficulty tips).
     const selectedMap = mapCopy(this.mapId);
     const mapTip = t('menu.mapTip', {
       label: selectedMap.label,
@@ -494,7 +434,7 @@ export class MenuScene extends Phaser.Scene {
       y: Math.max(40, height * 0.055),
       depth: 40,
     });
-    this.addTipsToggle(128, Math.max(40, height * 0.055));
+    this.addTipsToggle(88, Math.max(40, height * 0.055));
 
     const strip = this.add
       .text(width / 2, narrow ? volumeY + 24 : height * 0.81, softLaunchStatusStrip(), {
@@ -508,19 +448,17 @@ export class MenuScene extends Phaser.Scene {
     const chipsY = narrow ? strip.y + strip.height + 22 : height * 0.855;
 
     const gap = Math.min(88, width * 0.22);
-    if (flags.multiplayerLobby) {
-      this.add
-        .text(width / 2 - gap * 1.5, chipsY, t('menu.friends'), {
-          fontFamily: 'system-ui, sans-serif',
-          fontSize: '12px',
-          color: '#fff8e8',
-          backgroundColor: '#2a3a50',
-          padding: { x: 10, y: 7 },
-        })
-        .setOrigin(0.5)
-        .setInteractive({ useHandCursor: true })
-        .on('pointerup', () => this.openLobby());
-    }
+    this.add
+      .text(width / 2 - gap * 1.5, chipsY, t('menu.friends'), {
+        fontFamily: 'system-ui, sans-serif',
+        fontSize: '12px',
+        color: '#fff8e8',
+        backgroundColor: '#2a3a50',
+        padding: { x: 10, y: 7 },
+      })
+      .setOrigin(0.5)
+      .setInteractive({ useHandCursor: true })
+      .on('pointerup', () => this.openLobby());
     this.add
       .text(width / 2 - gap * 0.5, chipsY, t('menu.cosmetics'), {
         fontFamily: 'system-ui, sans-serif',
@@ -579,7 +517,7 @@ export class MenuScene extends Phaser.Scene {
       if (contentBottom > height) {
         this.menuZoom = height / contentBottom;
         bg.clear();
-        bg.fillGradientStyle(0x0f1a2e, 0x0f1a2e, 0x1a3a4a, 0x243a28, 1);
+        bg.fillStyle(0x07111d, 1);
         const viewW = width / this.menuZoom;
         bg.fillRect(width / 2 - viewW / 2, 0, viewW, contentBottom);
       }
@@ -587,7 +525,6 @@ export class MenuScene extends Phaser.Scene {
     }
   }
 
-  /** Zooms around the top centre without scrolling, so fixed (scroll-factor 0) widgets scale too. */
   private fitMenuCamera(): void {
     this.cameras.main.setOrigin(0.5, 0).setScroll(0, 0).setZoom(this.menuZoom);
   }
@@ -596,23 +533,21 @@ export class MenuScene extends Phaser.Scene {
     this.cameras.main.setOrigin(0.5, 0.5).setScroll(0, 0).setZoom(1);
   }
 
-  /**
-   * Landscape phone menu. Fixed bands so difficulty, maps, species cards,
-   * and the footer each get their own row inside ~402px.
-   */
   private buildShortLayout(intro: boolean, width: number, height: number): void {
     this.previewSlots = [];
     const bg = this.add.graphics();
-    bg.fillGradientStyle(0x0f1a2e, 0x0f1a2e, 0x1a3a4a, 0x243a28, 1);
+    bg.fillStyle(0x07111d, 1);
     bg.fillRect(0, 0, width, height);
+    this.paintGlow(bg, width * 0.1, 10, 0xff4fd8, 140);
+    this.paintGlow(bg, width * 0.9, height * 0.3, 0x33d1ff, 120);
     this.previewGfx = this.add.graphics().setDepth(20);
 
     const title = this.add
       .text(width / 2, 16, BRAND.name, {
         fontFamily: 'Georgia, "Times New Roman", serif',
         fontSize: '28px',
-        color: '#f5e6c8',
-        stroke: '#1a2a4a',
+        color: '#f5f8ff',
+        stroke: '#06121f',
         strokeThickness: 6,
       })
       .setOrigin(0.5);
@@ -625,7 +560,7 @@ export class MenuScene extends Phaser.Scene {
       .text(width / 2, 40, BRAND.tagline, {
         fontFamily: 'system-ui, sans-serif',
         fontSize: '11px',
-        color: '#f0c75e',
+        color: '#ffe28a',
         fontStyle: 'bold',
       })
       .setOrigin(0.5);
@@ -636,11 +571,10 @@ export class MenuScene extends Phaser.Scene {
       y: 42,
       depth: 40,
     });
-    this.addTipsToggle(124, 42);
+    this.addTipsToggle(78, 42);
 
     this.drawDifficultyRow(width, 78, true);
 
-    // Compact difficulty buttons hide blurbs — tip only for Practice / Easy / Hard.
     const shortDiffTip =
       this.difficulty === 'practice'
         ? t('menu.practiceTip')
@@ -664,7 +598,6 @@ export class MenuScene extends Phaser.Scene {
     const mapY = shortDiffTip ? 120 : 112;
     this.drawMapRow(width, mapY, true);
 
-    // Compact map buttons hide per-tile blurbs — surface the selected map here.
     const shortMap = mapCopy(this.mapId);
     const mapTipY = mapY + 20;
     this.add
@@ -742,9 +675,7 @@ export class MenuScene extends Phaser.Scene {
         .setInteractive({ useHandCursor: true })
         .on('pointerup', onClick);
 
-    if (flags.multiplayerLobby) {
-      link(width / 2 - gap * 1.5, t('menu.friends'), '#2a3a50', () => this.openLobby());
-    }
+    link(width / 2 - gap * 1.5, t('menu.friends'), '#2a3a50', () => this.openLobby());
     link(width / 2 - gap * 0.5, t('menu.cosmetics'), '#3a4a2a', () => this.openCosmetics());
     this.accountLabel = link(width / 2 + gap * 0.5, t('menu.account'), '#3a2a4a', () =>
       this.openAccount(),
@@ -763,7 +694,6 @@ export class MenuScene extends Phaser.Scene {
     this.addLegalFooter(width, height - 14);
   }
 
-  /** Games (hub) · Privacy · Terms footer row. */
   private addLegalFooter(width: number, legalY: number): void {
     const link = (
       x: number,
@@ -821,15 +751,21 @@ export class MenuScene extends Phaser.Scene {
       const d = difficultyCopy(id);
       const selected = this.difficulty === id;
       const x = width / 2 + (i - (count - 1) / 2) * gap;
-      const bg = this.add
-        .rectangle(x, y, buttonW, compact ? 32 : 44, selected ? 0x2a3a28 : 0x1a2433, 0.95)
-        .setStrokeStyle(2, selected ? 0xf0c75e : 0x3a4555)
-        .setInteractive({ useHandCursor: true });
+      const bg = this.add.graphics().setPosition(x, y);
+      const btnFill = selected ? 0xffe28a : 0x12253c;
+      const btnStroke = selected ? 0xc9a84c : 0x2a3a50;
+      const btnH = compact ? 32 : 44;
+      const btnRadius = compact ? 8 : 14;
+      bg.fillStyle(btnFill, 0.95);
+      bg.fillRoundedRect(-buttonW / 2, -btnH / 2, buttonW, btnH, btnRadius);
+      bg.lineStyle(2, btnStroke, 1);
+      bg.strokeRoundedRect(-buttonW / 2, -btnH / 2, buttonW, btnH, btnRadius);
+      bg.setInteractive({ useHandCursor: true });
       this.add
         .text(x, compact ? y : y - 8, d.label, {
           fontFamily: 'Georgia, "Times New Roman", serif',
           fontSize: '15px',
-          color: selected ? '#f0c75e' : '#fff8e8',
+          color: selected ? '#06121f' : '#f5f8ff',
         })
         .setOrigin(0.5);
       if (!compact) this.add
@@ -863,10 +799,16 @@ export class MenuScene extends Phaser.Scene {
       const m = mapCopy(id);
       const selected = this.mapId === id;
       const x = width / 2 + (i - (count - 1) / 2) * gap;
-      const bg = this.add
-        .rectangle(x, y, buttonW, compact ? 32 : 44, selected ? 0x2a2838 : 0x1a2433, 0.95)
-        .setStrokeStyle(2, selected ? 0x6ecfbf : 0x3a4555)
-        .setInteractive({ useHandCursor: true });
+      const bg = this.add.graphics().setPosition(x, y);
+      const btnFill = selected ? 0x3a4555 : 0x1a2433;
+      const btnStroke = selected ? 0x6ecfbf : 0x3a4555;
+      const btnH = compact ? 32 : 44;
+      const btnRadius = compact ? 8 : 14;
+      bg.fillStyle(btnFill, 0.95);
+      bg.fillRoundedRect(-buttonW / 2, -btnH / 2, buttonW, btnH, btnRadius);
+      bg.lineStyle(2, btnStroke, 1);
+      bg.strokeRoundedRect(-buttonW / 2, -btnH / 2, buttonW, btnH, btnRadius);
+      bg.setInteractive({ useHandCursor: true });
       this.add
         .text(x, compact ? y : y - 8, m.label, {
           fontFamily: 'Georgia, "Times New Roman", serif',
@@ -903,19 +845,14 @@ export class MenuScene extends Phaser.Scene {
     recordGameStarted(species);
     void maybeRecordCloudGameStarted(species);
     playSfx('ui');
-    this.scene.start('Battlefield', {
+    this.scene.start('KaneBattlefield', {
       species,
       difficulty: this.difficulty,
       mapId: this.mapId,
     });
   }
 
-  /**
-   * Start Game: signed-in (email or Firebase anonymous) → play;
-   * else offer Login / Create / Play as guest (anonymous when SDK ready).
-   */
   private startMatch(species: SpeciesId): void {
-    if (isPhoneSizedScreen(this.scale.width, this.scale.height)) return;
     if (this.anyOverlayOpen()) return;
     if (isCloudAccount(getCurrentAuthUser())) {
       this.launchMatch(species);
@@ -931,7 +868,6 @@ export class MenuScene extends Phaser.Scene {
         this.launchMatch(species);
       },
       onGuest: () => {
-        // Local-only fallback when Firebase env is missing.
         this.accountOpen = false;
         this.launchMatch(species);
       },
@@ -958,11 +894,17 @@ export class MenuScene extends Phaser.Scene {
     const w = cardW ?? Math.min(190, this.scale.width * 0.28);
     const h = cardH ?? 150;
     const compact = h <= 100;
+    const radius = compact ? 10 : 18;
     const bg = this.add
-      .rectangle(x, y, w, h, fill, 1)
-      .setStrokeStyle(remembered ? 4 : 3, remembered ? 0xf0c75e : stroke)
+      .graphics()
+      .setPosition(x, y)
       .setInteractive({ useHandCursor: true });
-    // Compact cards: the motto needs the full width, so the mascot sits beside the name.
+    const cardFill = fill;
+    const cardStroke = remembered ? 0xffe28a : stroke;
+    bg.fillStyle(cardFill, 1);
+    bg.fillRoundedRect(-w / 2, -h / 2, w, h, radius);
+    bg.lineStyle(remembered ? 4 : 3, cardStroke, 1);
+    bg.strokeRoundedRect(-w / 2, -h / 2, w, h, radius);
     this.previewSlots.push({
       id: speciesId,
       x: compact ? x - w / 2 + 22 : x,
@@ -1006,7 +948,9 @@ export class MenuScene extends Phaser.Scene {
       .text(x, compact ? y + 36 : y + 58, remembered ? t('menu.playLast') : t('menu.play'), {
         fontFamily: 'system-ui, sans-serif',
         fontSize: '14px',
-        color: remembered ? '#f0c75e' : '#fff8e8',
+        color: '#06121f',
+        backgroundColor: '#ffe28a',
+        padding: { x: 12, y: 4 },
       })
       .setOrigin(0.5);
     bg.on('pointerover', () => bg.setAlpha(0.92));
