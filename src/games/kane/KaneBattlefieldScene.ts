@@ -7,6 +7,13 @@
  * Replaces: src/presentation/scenes/BattlefieldScene.ts (for Kane-specific battlefield)
  * Reads: Same data as original BattlefieldScene
  */
+import { SIM_STEP_MS, stepBattlefieldSim } from "../../gameplay/battlefield/battlefieldSimStep";
+import { applyDueCommands, createCommandSchedule, type BattleCommand, type StanceId } from "../../gameplay/battlefield/battlefieldCommands";
+import { battlefieldHash } from "../../gameplay/battlefield/battlefieldHash";
+import { createLockstep, type Lockstep } from "../../networking/lockstep";
+import { createMatchChannel } from "../../networking/matchChannel";
+import { getMatchDatabase } from "../../networking/matchDatabase";
+import { announcePresence, watchPresence, type PeerPresence } from "../../networking/matchPresence";
 import Phaser from 'phaser';
 import { BRAND } from '../../config/brand';
 import { flags } from '../../config/flags';
@@ -29,28 +36,12 @@ import {
   nextDifficultyAfterWin,
   previousDifficultyAfterLoss,
 } from '../../gameplay/battlefield/practiceStepUp';
-import {
-  createAiState,
-  tickBattlefieldAi,
-  type AiState,
-} from '../../gameplay/battlefield/battlefieldAi';
-import {
-  tickFormations,
-  toggleFormationSelected,
-} from '../../gameplay/battlefield/battlefieldFormations';
-import {
-  castHeroAbility,
-  tickHeroes,
-} from '../../gameplay/battlefield/battlefieldHeroes';
-import {
-  tickMutations,
-  toggleMutationSelected,
-} from '../../gameplay/battlefield/battlefieldMutations';
-import {
-  tickRage,
-  toggleRageSelected,
-} from '../../gameplay/battlefield/battlefieldRage';
-import { tickCoreFragments } from '../../gameplay/battlefield/battlefieldCoreFragments';
+import { createAiState, type AiState } from '../../gameplay/battlefield/battlefieldAi';
+import { toggleFormationSelected } from '../../gameplay/battlefield/battlefieldFormations';
+import { castHeroAbility, recruitHero } from '../../gameplay/battlefield/battlefieldHeroes';
+import type { HeroAbilitySlot } from '../../data/heroes';
+import { toggleMutationSelected } from '../../gameplay/battlefield/battlefieldMutations';
+import { toggleRageSelected } from '../../gameplay/battlefield/battlefieldRage';
 import { BattlefieldHud } from '../../presentation/ui/battlefieldHud';
 import { Minimap } from '../../presentation/ui/minimap';
 import {
@@ -69,35 +60,13 @@ import {
   tickTutorial,
   type TutorialState,
 } from '../../gameplay/battlefield/battlefieldTutorial';
-import {
-  buildingBlocks,
-  canAfford,
-  findBuildingAt,
-  placeBuilding,
-  snapBuildingWorld,
-  tickBuildings,
-} from '../../gameplay/battlefield/battlefieldBuildings';
-import {
-  findEnemyAt,
-  issueAttackSelected,
-  livingByTeam,
-  tickBattlefieldCombat,
-} from '../../gameplay/battlefield/battlefieldCombat';
-import {
-  findNodeAt,
-  issueGatherSelected,
-  tickBattlefieldEconomy,
-  walletOf,
-} from '../../gameplay/battlefield/battlefieldEconomy';
-import { tickEconomyFx } from '../../gameplay/battlefield/battlefieldEconomyFx';
-import {
-  cancelQueuedTrain,
-  queueTrain,
-  tickProduction,
-  trainHotkey,
-} from '../../gameplay/battlefield/battlefieldProduction';
+import { buildingBlocks, canAfford, findBuildingAt, placeBuilding, snapBuildingWorld } from '../../gameplay/battlefield/battlefieldBuildings';
+import { findEnemyAt, issueAttackSelected, livingByTeam } from '../../gameplay/battlefield/battlefieldCombat';
+import { findNodeAt, issueGatherSelected, walletOf } from '../../gameplay/battlefield/battlefieldEconomy';
+import { cancelQueuedTrain, queueTrain, trainHotkey } from '../../gameplay/battlefield/battlefieldProduction';
 import {
   evaluateMatch,
+  resultForTeam,
   matchEndReason,
   type MatchResult,
 } from '../../gameplay/battlefield/battlefieldVictory';
@@ -124,49 +93,22 @@ import { countIdleWorkers } from '../../gameplay/battlefield/idleWorkers';
 import { isMilitaryUnit } from '../../gameplay/battlefield/selectMilitary';
 import { minimapHeroStatus } from '../../presentation/ui/minimapHeroStatusTip';
 import { touchLongPressAction } from '../../gameplay/battlefield/touchLongPress';
-import {
-  spawnControlGroupAssignFx,
-  spawnControlGroupRecallFx,
-  tickControlGroupFx,
-} from '../../gameplay/battlefield/battlefieldControlGroupFx';
-import {
-  spawnStopPulses,
-  tickStopFx,
-} from '../../gameplay/battlefield/battlefieldStopFx';
-import { tickWaypointMarkers } from '../../gameplay/battlefield/battlefieldWaypointMarkers';
+import { spawnControlGroupAssignFx, spawnControlGroupRecallFx } from '../../gameplay/battlefield/battlefieldControlGroupFx';
+import { spawnStopPulses } from '../../gameplay/battlefield/battlefieldStopFx';
 import { findPlayerBasePoint } from '../../gameplay/battlefield/playerBase';
-import {
-  clearSelection,
-  createBattlefieldWorld,
-  findPlayerUnitAt,
-  issueMoveSelected,
-  recordPlayerAction,
-  selectAllVisibleSameType,
-  selectAt,
-  selectInRect,
-  selectedCount,
-  selectedUnits,
-  tickBattlefield,
-  type BattlefieldBuilding,
-  type BattlefieldWorld,
-  type ResourceNode,
-} from '../../gameplay/battlefield/battlefieldWorld';
+import { clearSelection, createBattlefieldWorld, findUnitAtForTeam, issueMoveSelected, recordPlayerAction, selectAllVisibleSameType, selectAt, selectInRect, selectedCount, selectedUnits, type BattlefieldBuilding, type BattlefieldWorld, type ResourceNode } from '../../gameplay/battlefield/battlefieldWorld';
 import {
   enemyRevealed,
   isExplored,
   tickFog,
 } from '../../gameplay/battlefield/battlefieldFog';
-import { tickAttentionPings } from '../../gameplay/battlefield/battlefieldAttentionPing';
-import {
-  spawnScoutPulsesFromFog,
-  tickScoutPulses,
-} from '../../gameplay/battlefield/battlefieldScoutPulse';
 import {
   makeMatchSummaryId,
 } from '../../database/matchSummary';
 import { getEquippedSkin } from '../../database/cosmeticsLoadout';
 import { loadMatchPrefs, rememberMatchPrefs } from '../../database/matchPrefs';
 import { favoriteFactionId } from '../../presentation/ui/lobbyFavoriteFactionTip';
+import { lobbySpeciesPlaysCount } from '../../presentation/ui/lobbySpeciesPlaysTip';
 import { isCoachSeen } from '../../database/coachPrefs';
 import { isReduceMotion } from '../../database/motionPrefs';
 import { rematchPrefsFromWorld } from '../../gameplay/battlefield/rematchPrefs';
@@ -181,11 +123,10 @@ import { playSfx } from '../../presentation/audio/sfx';
 import { RtsCamera } from '../../presentation/camera/rtsCamera';
 import { createSkirmishMap } from '../../presentation/maps/mapManager';
 import { FogOverlay } from '../../presentation/ui/fogOverlay';
-import { showKaneEndScreen } from '../../presentation/ui/endScreen';
+import { showEndCard } from '../../presentation/ui/endCard';
 import { resolveMissionObjective } from '../../presentation/ui/missionObjective';
 import { minimapCameraSectorAt } from '../../presentation/ui/minimapCameraSectorTip';
 import { fogExploredCoveragePct } from '../../presentation/ui/minimapFogCoverageTip';
-import { maxPlayerVisionTiles } from '../../presentation/ui/minimapVisionTip';
 import { pauseSelectedSectorAt } from '../../presentation/ui/pauseSelectedSectorTip';
 import { PauseMenu } from '../../presentation/ui/pauseMenu';
 import { publishMatchStock, resetMatchStock } from '../../presentation/ui/matchUiStore';
@@ -242,12 +183,7 @@ import {
   drawUnitSilhouette,
   resolveUnitAnimPhase,
 } from '../../presentation/units/unitSilhouette';
-import {
-  inView,
-  MOBILE_PERF,
-  viewBoundsFromCamera,
-  type ViewBounds,
-} from '../../presentation/perf/mobileBudget';
+import { inView, viewBoundsFromCamera, type ViewBounds } from '../../presentation/perf/mobileBudget';
 
 type PointerMode =
   | 'none'
@@ -257,6 +193,22 @@ type PointerMode =
   | 'place'
   | 'attackMove'
   | 'rally';
+
+/** Most sim steps run in one frame; past this the backlog is dropped (see update). */
+const MAX_SIM_STEPS_PER_FRAME = 8;
+/** Ticks between state hashes that the two players compare. */
+const HASH_EVERY_TICKS = 30;
+
+/** A two-player match, as the lobby hands it to the battle scene. */
+export interface PvpMatch {
+  code: string;
+  role: 'host' | 'guest';
+  uid: string;
+  peerUid: string;
+  seed: number;
+  hostSpecies: SpeciesId;
+  guestSpecies: SpeciesId;
+}
 
 export class KaneBattlefieldScene extends Phaser.Scene {
   private world!: BattlefieldWorld;
@@ -312,7 +264,23 @@ export class KaneBattlefieldScene extends Phaser.Scene {
   private matchElapsedMs = 0;
   private animTimeMs = 0;
   private enemyBuildingLastSeen = new Map<number, number>();
-  private fogAccMs = 999;
+  private simAccMs = 0;
+  /** The side this player controls: 'player' in single-player and for the host, 'enemy' for the guest. */
+  private me: 'player' | 'enemy' = 'player';
+  private pvp = false;
+  private lockstep: Lockstep | null = null;
+  private schedule = createCommandSchedule();
+  private simTick = 0;
+  private outOfSync = false;
+  private waitText: Phaser.GameObjects.Text | null = null;
+  /** Two-player: the friend's presence, whether they have been seen yet, and whether they are gone. */
+  private peerPresence: PeerPresence = 'missing';
+  private peerSeen = false;
+  private peerLeft = false;
+  /** Two-player: true while the last step could not run because the friend's orders are missing. */
+  private waitingNow = false;
+  private stopPresence: (() => void) | null = null;
+  private stopPeerWatch: (() => void) | null = null;
   private viewCull: ViewBounds | null = null;
   private playerSkinAccent = 0xf0c75e;
   private lastSelectTap = { t: 0, unitId: -1, sx: 0, sy: 0 };
@@ -325,6 +293,7 @@ export class KaneBattlefieldScene extends Phaser.Scene {
     species?: SpeciesId;
     difficulty?: AiDifficultyId;
     mapId?: string;
+    pvp?: PvpMatch;
   }): void {
     this.input.mouse?.disableContextMenu();
 
@@ -336,7 +305,15 @@ export class KaneBattlefieldScene extends Phaser.Scene {
     this.playerSkinAccent = getEquippedSkin(playerSpecies).accent;
 
     const { layer } = createSkirmishMap(this, data?.mapId);
-    this.world = createBattlefieldWorld(playerSpecies, difficulty, data?.mapId);
+    // Picked here, not in the simulation, so each match differs and clients can share the seed.
+    const matchSeed = Math.floor(Math.random() * 0x100000000);
+    this.pvp = data?.pvp !== undefined;
+    this.me = data?.pvp?.role === 'guest' ? 'enemy' : 'player';
+    this.world = data?.pvp
+      ? createBattlefieldWorld(data.pvp.hostSpecies, difficulty, data.mapId, data.pvp.seed, data.pvp.guestSpecies)
+      : createBattlefieldWorld(playerSpecies, difficulty, data?.mapId, matchSeed);
+    this.world.controlTeam = this.me;
+    if (data?.pvp) this.startLockstep(data.pvp);
     this.placeables = placeableBuildings(playerSpecies);
     this.placeIndex = 0;
     this.placeType = this.placeables[0] ?? 'bonker_hut';
@@ -345,7 +322,7 @@ export class KaneBattlefieldScene extends Phaser.Scene {
     this.paused = false;
     this.matchElapsedMs = 0;
     this.cameraCtl = new RtsCamera(this);
-    const first = this.world.units.find((u) => u.team === 'player');
+    const first = this.world.units.find((u) => u.team === this.me);
     if (first) this.cameras.main.centerOn(first.x + 80, first.y - 40);
 
     this.boxGfx = this.add.graphics().setDepth(50);
@@ -373,6 +350,7 @@ export class KaneBattlefieldScene extends Phaser.Scene {
     this.hud.menuBtn.on('pointerup', () => this.scene.start('GamePicker'));
     this.hud.onArmAttackMove = () => this.toggleAttackMoveMode();
     this.hud.onStopSelected = () => this.issueStopCommand();
+    this.hud.onHeroAbility = (slot) => (slot === 'recruit' ? this.useRecruit() : this.useHeroAbility(slot));
     this.hud.onRecenterBase = () => this.recenterOnPlayerBase();
     this.hud.onPause = () => this.togglePause();
     this.hud.onHelp = () => this.toggleControlsHelp();
@@ -401,7 +379,7 @@ export class KaneBattlefieldScene extends Phaser.Scene {
       rally: () => this.toggleRallyMode(),
       clearRally: () => {
         const b = this.selectedBuilding;
-        if (!b || b.team !== 'player' || !buildingCanRally(b)) return;
+        if (!b || b.team !== this.me || !buildingCanRally(b)) return;
         clearBuildingRally(b);
         recordPlayerAction(this.world);
         this.clearRallyMode();
@@ -409,7 +387,12 @@ export class KaneBattlefieldScene extends Phaser.Scene {
       },
       cancelQueue: (index) => {
         const b = this.selectedBuilding;
-        if (!b || b.team !== 'player') return;
+        if (!b || b.team !== this.me) return;
+        if (this.pvp) {
+          this.lockstep?.issue(this.simTick, { team: this.me, unitIds: [], kind: 'cancelTrain', buildingId: b.id, index });
+          playSfx('ui');
+          return;
+        }
         const refunded = cancelQueuedTrain(this.world, b, index);
         if (refunded) {
           recordPlayerAction(this.world);
@@ -425,15 +408,17 @@ export class KaneBattlefieldScene extends Phaser.Scene {
       },
       train: (typeId) => {
         const b = this.selectedBuilding;
-        if (!b || b.team !== 'player') return;
+        if (!b || b.team !== this.me) return;
+        if (this.pvp) {
+          this.lockstep?.issue(this.simTick, { team: this.me, unitIds: [], kind: 'train', buildingId: b.id, typeId });
+          playSfx('train');
+          return;
+        }
         if (queueTrain(this.world, b, typeId)) playSfx('train');
         else playSfx('ui');
       },
       placeBuilding: (typeId) => this.armPlacementFromPanel(typeId),
-      castAbility: (slot) => {
-        if (castHeroAbility(this.world, slot, 'player')) playSfx('ability');
-        else playSfx('ui');
-      },
+      castAbility: (slot) => this.useHeroAbility(slot),
       toggleFormation: () => {
         if (this.paused || this.matchResult !== 'ongoing') return;
         if (this.world.speciesId !== 'nobles') {
@@ -584,24 +569,24 @@ export class KaneBattlefieldScene extends Phaser.Scene {
     });
     this.input.keyboard?.on('keydown-F', () => {
       if (this.paused || this.matchResult !== 'ongoing') return;
-      if (this.world.speciesId === 'nobles') {
-        toggleFormationSelected(this.world);
+      if (this.viewerSpecies() === 'nobles') {
+        this.toggleStance('formation');
         flashStanceHotkey('formation');
         playSfx('ui');
       }
     });
     this.input.keyboard?.on('keydown-M', () => {
       if (this.paused || this.matchResult !== 'ongoing') return;
-      if (this.world.speciesId === 'weirdos') {
-        toggleMutationSelected(this.world);
+      if (this.viewerSpecies() === 'weirdos') {
+        this.toggleStance('mutation');
         flashStanceHotkey('mutation');
         playSfx('ui');
       }
     });
     this.input.keyboard?.on('keydown-R', () => {
       if (this.paused || this.matchResult !== 'ongoing') return;
-      if (this.world.speciesId === 'brutes') {
-        toggleRageSelected(this.world);
+      if (this.viewerSpecies() === 'brutes') {
+        this.toggleStance('rage');
         flashStanceHotkey('rage');
         playSfx('ui');
       }
@@ -620,17 +605,17 @@ export class KaneBattlefieldScene extends Phaser.Scene {
     this.input.keyboard?.on('keydown-Q', () => {
       if (this.paused || this.matchResult !== 'ongoing') return;
       if (this.controlsHelp.isOpen()) return;
-      if (castHeroAbility(this.world, 'ability1', 'player')) playSfx('ability');
+      this.useHeroAbility('ability1');
     });
     this.input.keyboard?.on('keydown-W', () => {
       if (this.paused || this.matchResult !== 'ongoing') return;
       if (this.controlsHelp.isOpen()) return;
-      if (castHeroAbility(this.world, 'ability2', 'player')) playSfx('ability');
+      this.useHeroAbility('ability2');
     });
     this.input.keyboard?.on('keydown-E', () => {
       if (this.paused || this.matchResult !== 'ongoing') return;
       if (this.controlsHelp.isOpen()) return;
-      if (castHeroAbility(this.world, 'ultimate', 'player')) playSfx('ability');
+      this.useHeroAbility('ultimate');
     });
     this.input.keyboard?.on('keydown-S', () => {
       if (this.paused || this.matchResult !== 'ongoing') return;
@@ -739,7 +724,7 @@ export class KaneBattlefieldScene extends Phaser.Scene {
     const matchPrefs = loadMatchPrefs();
     return {
       elapsedMs: this.matchElapsedMs,
-      supplyCurrent: livingByTeam(this.world, 'player'),
+      supplyCurrent: livingByTeam(this.world, this.me),
       supplyCap: flags.unitCap,
       mapId: this.world.mapId,
       difficulty: this.world.aiDifficulty,
@@ -757,20 +742,20 @@ export class KaneBattlefieldScene extends Phaser.Scene {
           : undefined,
       fogCoveragePct: fogExploredCoveragePct(this.world.fog),
       selectionCount: this.world.units.filter(
-        (u) => u.selected && u.team === 'player' && u.hp > 0,
+        (u) => u.selected && u.team === this.me && u.hp > 0,
       ).length,
       selectedSector:
         pauseSelectedSectorAt(
           this.world.units.filter(
-            (u) => u.selected && u.team === 'player' && u.hp > 0,
+            (u) => u.selected && u.team === this.me && u.hp > 0,
           ),
         ) ?? undefined,
-      stockGold: walletOf(this.world, 'player').gold,
-      stockCrystals: walletOf(this.world, 'player').magic_crystals,
+      stockGold: walletOf(this.world, this.me).gold,
+      stockCrystals: walletOf(this.world, this.me).magic_crystals,
       playerActions: this.world.playerActions,
       armyCount: this.world.units.filter((u) => isMilitaryUnit(u)).length,
       buildingCount: this.world.buildings.filter(
-        (b) => b.team === 'player' && b.hp > 0,
+        (b) => b.team === this.me && b.hp > 0,
       ).length,
       idleWorkerCount: countIdleWorkers(this.world),
       heroStatus: minimapHeroStatus(this.world),
@@ -783,9 +768,11 @@ export class KaneBattlefieldScene extends Phaser.Scene {
       gamesPlayed: matchPrefs.gamesPlayed ?? 0,
       gamesWon: matchPrefs.gamesWon ?? 0,
       avgDurationMs: matchPrefs.avgDurationMs,
+      bestDurationMapId: matchPrefs.bestDurationMapId,
       avgApm: matchPrefs.avgApm,
       bestApm: matchPrefs.bestApm,
       favoriteFactionId: favoriteFactionId(),
+      speciesPlays: lobbySpeciesPlaysCount() ?? 0,
     };
   }
 
@@ -853,15 +840,22 @@ export class KaneBattlefieldScene extends Phaser.Scene {
       }
       return;
     }
-    if (
-      this.selectedBuilding &&
-      slot >= 1 &&
-      slot <= 3 &&
-      trainHotkey(this.world, this.selectedBuilding, slot - 1)
-    ) {
-      this.groupTaps.reset();
-      playSfx('train');
-      return;
+    // Production building still uses 1–3 to train when selected.
+    if (this.selectedBuilding && slot >= 1 && slot <= 3) {
+      const b = this.selectedBuilding;
+      if (this.pvp) {
+        const typeId = b.team === this.me && b.complete ? getBuildingType(b.typeId).trains[slot - 1] : undefined;
+        if (typeId) {
+          this.lockstep?.issue(this.simTick, { team: this.me, unitIds: [], kind: 'train', buildingId: b.id, typeId });
+          this.groupTaps.reset();
+          playSfx('train');
+          return;
+        }
+      } else if (trainHotkey(this.world, b, slot - 1)) {
+        this.groupTaps.reset();
+        playSfx('train');
+        return;
+      }
     }
     if (!countKey) return;
     this.clearBuildingSelection();
@@ -893,13 +887,14 @@ export class KaneBattlefieldScene extends Phaser.Scene {
   }
 
   private toggleRallyMode(): void {
+    if (this.pvp) return;
     if (this.mode === 'rally') {
       this.clearRallyMode();
       playSfx('ui');
       return;
     }
     const b = this.selectedBuilding;
-    if (!b || b.team !== 'player' || !buildingCanRally(b)) {
+    if (!b || b.team !== this.me || !buildingCanRally(b)) {
       playSfx('ui');
       return;
     }
@@ -942,7 +937,7 @@ export class KaneBattlefieldScene extends Phaser.Scene {
 
     if (this.mode === 'rally' && pointer.leftButtonDown()) {
       const b = this.selectedBuilding;
-      if (b && b.team === 'player' && buildingCanRally(b)) {
+      if (b && b.team === this.me && buildingCanRally(b)) {
         setBuildingRally(b, wp.x, wp.y);
         recordPlayerAction(this.world);
         playSfx('ui');
@@ -953,9 +948,24 @@ export class KaneBattlefieldScene extends Phaser.Scene {
 
     if (this.mode === 'place' && pointer.leftButtonDown()) {
       if (this.ghostValid) {
+        // In a two-player match the building goes through the shared tick, so both sides place it.
+        if (this.pvp) {
+          this.lockstep?.issue(this.simTick, {
+            team: this.me,
+            unitIds: [],
+            kind: 'place',
+            buildingType: this.placeType,
+            x: this.ghostPos.x,
+            y: this.ghostPos.y,
+          });
+          playSfx('build');
+          this.mode = 'none';
+          this.ghostGfx.clear();
+          return;
+        }
         const placed = placeBuilding(
           this.world,
-          'player',
+          this.me,
           this.placeType,
           this.ghostPos.x,
           this.ghostPos.y,
@@ -991,6 +1001,48 @@ export class KaneBattlefieldScene extends Phaser.Scene {
     }
   }
 
+  /** Right-click, and a touch long-press, share this move / attack / gather path. */
+  /**
+   * Two-player: an attack on an enemy, a gather on a resource, or otherwise a move. The
+   * order goes to the friend and runs on a shared tick, so both sides apply the same one.
+   */
+  private issueFriendOrder(worldX: number, worldY: number): void {
+    if (!this.lockstep) return;
+    const unitIds = this.world.units
+      .filter((u) => u.selected && u.team === this.me && u.hp > 0)
+      .map((u) => u.id);
+    if (unitIds.length === 0) return;
+    const enemy = findEnemyAt(this.world, worldX, worldY, this.me);
+    const node = findNodeAt(this.world, worldX, worldY);
+    const command: BattleCommand = enemy
+      ? { team: this.me, unitIds, kind: 'attack', targetId: enemy.id }
+      : node
+        ? { team: this.me, unitIds, kind: 'gather', nodeId: node.id }
+        : { team: this.me, unitIds, kind: 'move', x: worldX, y: worldY };
+    this.lockstep.issue(this.simTick, command);
+  }
+
+  /** The species this viewer plays: the host's in the host's battle, the friend's in the friend's. */
+  private viewerSpecies(): string {
+    return this.pvp && this.me === 'enemy' ? this.world.enemySpeciesId : this.world.speciesId;
+  }
+
+  /** Locks or unlocks a stance on the selected units. In a two-player match it runs on the shared tick. */
+  private toggleStance(stance: StanceId): void {
+    if (this.pvp) {
+      if (!this.lockstep) return;
+      const unitIds = this.world.units
+        .filter((u) => u.selected && u.team === this.me && u.hp > 0)
+        .map((u) => u.id);
+      if (unitIds.length === 0) return;
+      this.lockstep.issue(this.simTick, { team: this.me, unitIds, kind: 'stance', stance });
+      return;
+    }
+    if (stance === 'rage') toggleRageSelected(this.world);
+    else if (stance === 'formation') toggleFormationSelected(this.world);
+    else toggleMutationSelected(this.world);
+  }
+
   private issuePointerOrder(worldX: number, worldY: number): void {
     if (
       this.mode === 'place' ||
@@ -1003,7 +1055,14 @@ export class KaneBattlefieldScene extends Phaser.Scene {
       this.ghostGfx.clear();
       return;
     }
-    const enemy = findEnemyAt(this.world, worldX, worldY, 'player');
+    if (this.pvp) {
+      this.issueFriendOrder(worldX, worldY);
+      this.mode = 'none';
+      this.boxGfx.clear();
+      this.cameraCtl.suppressPan = false;
+      return;
+    }
+    const enemy = findEnemyAt(this.world, worldX, worldY, this.me);
     const node = findNodeAt(this.world, worldX, worldY);
     if (enemy) {
       issueAttackSelected(this.world, enemy);
@@ -1127,7 +1186,7 @@ export class KaneBattlefieldScene extends Phaser.Scene {
     }
     if (this.mode === 'select' && pointer.leftButtonReleased()) {
       const wp = this.cameraCtl.worldPoint(pointer.x, pointer.y);
-      const b = findBuildingAt(this.world, wp.x, wp.y, 'player');
+      const b = findBuildingAt(this.world, wp.x, wp.y, this.me);
       if (b && !additive) {
         clearSelection(this.world);
         this.clearBuildingSelection();
@@ -1137,7 +1196,9 @@ export class KaneBattlefieldScene extends Phaser.Scene {
         playSfx('select');
       } else {
         this.clearBuildingSelection();
-        const hit = findPlayerUnitAt(this.world, wp.x, wp.y);
+        const hit = findUnitAtForTeam(this.world, wp.x, wp.y, this.me);
+        // Ctrl/Cmd+click picks every unit of the type at once (macOS reports
+        // Ctrl+click as a right-click, so Cmd+click is the Mac route).
         if (
           hit &&
           selectsWholeType({
@@ -1234,7 +1295,7 @@ export class KaneBattlefieldScene extends Phaser.Scene {
       return;
     }
     const def = getBuildingType(this.placeType);
-    const affordable = canAfford(walletOf(this.world, 'player'), def.cost);
+    const affordable = canAfford(walletOf(this.world, this.me), def.cost);
     this.ghostGfx.clear();
     drawPlacementGhost(this.ghostGfx, {
       x: this.ghostPos.x,
@@ -1247,7 +1308,39 @@ export class KaneBattlefieldScene extends Phaser.Scene {
     });
   }
 
+  /** S / Stop — halt selection and flash halt rings. */
+  /** A hero ability. In a two-player match it runs on the shared tick, so both sides cast it. */
+  private useHeroAbility(slot: HeroAbilitySlot): void {
+    if (this.pvp) {
+      this.lockstep?.issue(this.simTick, { team: this.me, unitIds: [], kind: 'ability', slot });
+      playSfx('ability');
+      return;
+    }
+    if (castHeroAbility(this.world, slot, this.me)) playSfx('ability');
+    else playSfx('ui');
+  }
+
+  /** Recruits this viewer's hero. In a two-player match it runs on the shared tick. */
+  private useRecruit(): void {
+    if (this.pvp) {
+      this.lockstep?.issue(this.simTick, { team: this.me, unitIds: [], kind: 'recruit' });
+      playSfx('hero');
+      return;
+    }
+    if (recruitHero(this.world, this.me)) playSfx('hero');
+  }
+
   private issueStopCommand(): void {
+    if (this.pvp) {
+      const unitIds = this.world.units
+        .filter((u) => u.selected && u.team === this.me && u.hp > 0)
+        .map((u) => u.id);
+      if (unitIds.length === 0) return;
+      this.lockstep?.issue(this.simTick, { team: this.me, unitIds, kind: 'stop' });
+      this.hud.flashStopButton();
+      playSfx('ui');
+      return;
+    }
     const n = stopSelected(this.world);
     if (n <= 0) return;
     spawnStopPulses(this.world);
@@ -1268,6 +1361,7 @@ export class KaneBattlefieldScene extends Phaser.Scene {
   }
 
   private toggleAttackMoveMode(): void {
+    if (this.pvp) return;
     if (this.mode === 'attackMove') {
       this.clearAttackMoveMode();
       playSfx('ui');
@@ -1328,6 +1422,83 @@ export class KaneBattlefieldScene extends Phaser.Scene {
     );
   }
 
+  /** Two-player: connects this match to the friend. Without a database there is no match. */
+  private startLockstep(pvp: PvpMatch): void {
+    this.world.pvp = true;
+    const db = getMatchDatabase();
+    if (db) {
+      this.lockstep = createLockstep(createMatchChannel(db, pvp.code, pvp.uid, pvp.peerUid));
+      this.stopPresence = announcePresence(db, pvp.code, pvp.uid);
+      this.stopPeerWatch = watchPresence(db, pvp.code, pvp.peerUid, (presence) => this.onPeerPresence(presence));
+    }
+    this.waitText = this.add
+      .text(this.scale.width / 2, this.scale.height * 0.18, t('pvp.waiting'), {
+        fontFamily: 'system-ui, sans-serif',
+        fontSize: '16px',
+        color: '#f0c75e',
+        backgroundColor: '#0a1220cc',
+        padding: { x: 12, y: 6 },
+      })
+      .setOrigin(0.5)
+      .setScrollFactor(0)
+      .setDepth(95)
+      .setVisible(false);
+    this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => {
+      this.lockstep?.stop();
+      this.stopPeerWatch?.();
+      this.stopPresence?.();
+    });
+  }
+
+  /** Two-player: the friend's presence changed. Stepping pauses while they are gone and resumes if they return. */
+  private onPeerPresence(presence: PeerPresence): void {
+    if (presence !== 'missing') this.peerSeen = true;
+    this.peerPresence = presence;
+    this.peerLeft = this.peerSeen && presence === 'missing';
+    this.refreshWaitText();
+  }
+
+  /** Two-player: says why the battle is not moving, or that the friend has left. */
+  private refreshWaitText(): void {
+    if (!this.waitText || this.outOfSync) return;
+    let message: string | null = null;
+    if (this.matchResult === 'ongoing' && this.peerLeft) {
+      message = t('pvp.peerLeft');
+    } else if (this.waitingNow) {
+      if (!this.peerSeen) message = t('pvp.waitingJoin');
+      else if (this.peerPresence === 'away') message = t('pvp.peerAway');
+      else message = t('pvp.waiting');
+    }
+    this.waitText.setText(message ?? '').setVisible(message !== null);
+  }
+
+  /** Two-player: runs a fixed step only once the friend's orders for it have arrived. */
+  private stepLockstep(delta: number): void {
+    const lockstep = this.lockstep;
+    if (!lockstep || this.outOfSync) return;
+    this.simAccMs += delta;
+    let waiting = false;
+    for (let steps = 0; !this.peerLeft && this.simAccMs >= SIM_STEP_MS && steps < MAX_SIM_STEPS_PER_FRAME; steps++) {
+      if (!lockstep.canRun(this.simTick)) {
+        waiting = true;
+        break;
+      }
+      for (const command of lockstep.beginTick(this.simTick)) this.schedule.add(this.simTick, command);
+      applyDueCommands(this.world, this.schedule, this.simTick);
+      stepBattlefieldSim(this.world, this.ai);
+      if (this.simTick % HASH_EVERY_TICKS === 0) lockstep.recordHash(this.simTick, battlefieldHash(this.world));
+      this.simTick++;
+      this.simAccMs -= SIM_STEP_MS;
+    }
+    if (this.simAccMs >= SIM_STEP_MS) this.simAccMs = 0;
+    this.waitingNow = waiting || this.peerLeft;
+    this.refreshWaitText();
+    if (lockstep.desyncTick() !== null) {
+      this.outOfSync = true;
+      this.waitText?.setText(t('pvp.outOfSync')).setVisible(true);
+    }
+  }
+
   update(_t: number, delta: number): void {
     this.pollTouchOrder();
     if (!this.paused) {
@@ -1336,34 +1507,27 @@ export class KaneBattlefieldScene extends Phaser.Scene {
     }
     if (this.matchResult === 'ongoing' && !this.paused) {
       this.matchElapsedMs += delta;
-      tickBattlefield(this.world, delta);
-      tickBattlefieldEconomy(this.world);
+      // Mute-aware gather/deposit SFX — fire once while FX is fresh.
       for (const fx of this.world.economyFx) {
         if (fx.lifeMs >= fx.maxLifeMs - delta) playSfx(fx.sfx);
       }
-      tickEconomyFx(this.world, delta);
-      tickStopFx(this.world, delta);
-      tickControlGroupFx(this.world, delta);
-      tickWaypointMarkers(this.world, delta);
-      tickBuildings(this.world, delta);
-      tickProduction(this.world, delta);
-      tickFormations(this.world, delta);
-      tickMutations(this.world, delta);
-      tickRage(this.world, delta);
-      tickHeroes(this.world, delta);
-      tickBattlefieldAi(this.world, this.ai, delta);
-      this.fogAccMs += delta;
-      if (this.fogAccMs >= MOBILE_PERF.fogMs) {
-        this.fogAccMs = 0;
-        tickFog(this.world, this.world.fog);
-        if (this.world.fog.exploredDirty) {
-          spawnScoutPulsesFromFog(this.world, this.world.fog);
-        }
+      // The simulation runs in fixed steps, never on the frame delta, so clients stay in sync.
+      if (this.pvp) {
+        this.stepLockstep(delta);
+      } else {
+      this.simAccMs += delta;
+      for (
+        let steps = 0;
+        this.simAccMs >= SIM_STEP_MS && steps < MAX_SIM_STEPS_PER_FRAME;
+        steps++
+      ) {
+        stepBattlefieldSim(this.world, this.ai);
+        this.simAccMs -= SIM_STEP_MS;
       }
-      tickScoutPulses(this.world, delta);
-      tickAttentionPings(this.world, delta);
-      tickCoreFragments(this.world, delta);
-      tickBattlefieldCombat(this.world, delta);
+      // After a stall (background tab, long pause) drop the backlog rather than racing to catch up.
+      if (this.simAccMs >= SIM_STEP_MS) this.simAccMs = 0;
+      }
+      // Attack flash just set (~120) — one SFX per frame max.
       if (this.world.units.some((u) => u.lastAttackFlashMs > 100)) {
         playSfx('attack');
       }
@@ -1384,7 +1548,7 @@ export class KaneBattlefieldScene extends Phaser.Scene {
         }
       }
       tickTutorial(this.world, this.tutorial, delta);
-      const result = evaluateMatch(this.world);
+      const result = resultForTeam(evaluateMatch(this.world), this.me);
       if (result !== 'ongoing') this.showEndScreen(result);
     }
     if (
@@ -1445,13 +1609,12 @@ export class KaneBattlefieldScene extends Phaser.Scene {
     this.cameraCtl.suppressPan = true;
     this.writeEndMatchSummary(result);
 
-    const playerUnitsLeft = livingByTeam(this.world, 'player');
+    const playerUnitsLeft = livingByTeam(this.world, this.me);
     const playerBuildingsLeft = this.world.buildings.filter(
-      (b) => b.team === 'player' && b.hp > 0,
+      (b) => b.team === this.me && b.hp > 0,
     ).length;
 
-    showKaneEndScreen({
-      scene: this,
+    showEndCard({
       win: result === 'victory',
       speciesId: this.world.speciesId,
       mapId: this.world.mapId,
@@ -1461,12 +1624,9 @@ export class KaneBattlefieldScene extends Phaser.Scene {
       playerUnitKills: this.world.playerUnitKills,
       playerUnitLosses: this.world.playerUnitLosses,
       playerUnitsTrained: this.world.playerUnitsTrained,
-      playerBuildingsRaised: this.world.playerBuildingsRaised,
       playerBuildingsLost: this.world.playerBuildingsLost,
       playerGoldGathered: this.world.playerGoldGathered,
       playerCrystalsGathered: this.world.playerCrystalsGathered,
-      playerActions: this.world.playerActions,
-      playerVisionTiles: maxPlayerVisionTiles(this.world),
       reason: matchEndReason(this.world, result),
       onMenu: () => this.scene.start('GamePicker'),
       onRematch: () => this.rematchSameSkirmish(),
@@ -1502,9 +1662,6 @@ export class KaneBattlefieldScene extends Phaser.Scene {
         );
         return next ? () => this.stepUpSpecies(next.species, next.mapId) : undefined;
       })(),
-      ignoreOnMain: (objs) => {
-        this.cameras.main.ignore(objs);
-      },
     });
   }
 
@@ -1546,10 +1703,10 @@ export class KaneBattlefieldScene extends Phaser.Scene {
   private writeEndMatchSummary(result: Exclude<MatchResult, 'ongoing'>): void {
     const endedAtMs = Date.now();
     const id = makeMatchSummaryId(endedAtMs);
-    const playerUnitsLeft = livingByTeam(this.world, 'player');
+    const playerUnitsLeft = livingByTeam(this.world, this.me);
     const enemyUnitsLeft = livingByTeam(this.world, 'enemy');
     const playerBuildingsLeft = this.world.buildings.filter(
-      (b) => b.team === 'player' && b.hp > 0,
+      (b) => b.team === this.me && b.hp > 0,
     ).length;
     const enemyBuildingsLeft = this.world.buildings.filter(
       (b) => b.team === 'enemy' && b.hp > 0,
@@ -1599,7 +1756,7 @@ export class KaneBattlefieldScene extends Phaser.Scene {
     this.hud.setMatchTimer(this.matchElapsedMs);
     const n = selectedCount(this.world);
     const sel = selectedUnits(this.world);
-    const friends = livingByTeam(this.world, 'player');
+    const friends = livingByTeam(this.world, this.me);
     const foes = livingByTeam(this.world, 'enemy');
     const b = this.selectedBuilding;
     const node =
@@ -1653,7 +1810,7 @@ export class KaneBattlefieldScene extends Phaser.Scene {
     if (placing && def) {
       const gold = def.cost.gold ?? 0;
       const crystals = def.cost.magic_crystals ?? 0;
-      const canPay = canAfford(walletOf(this.world, 'player'), def.cost);
+      const canPay = canAfford(walletOf(this.world, this.me), def.cost);
       const foot = placementFootprintSize(this.placeType);
       const buildSec =
         def.buildMs > 0 ? Math.max(0, Math.ceil(def.buildMs / 1000)) : 0;
@@ -1677,11 +1834,11 @@ export class KaneBattlefieldScene extends Phaser.Scene {
       def?.cost.magic_crystals ?? 0,
     );
     this.hud.refresh(status, hint, dtMs);
-    const wallet = walletOf(this.world, 'player');
+    const wallet = walletOf(this.world, this.me);
     publishMatchStock({
       gold: wallet.gold,
       crystals: wallet.magic_crystals,
-      supply: livingByTeam(this.world, 'player'),
+      supply: livingByTeam(this.world, this.me),
       supplyCap: flags.unitCap,
       nowMs: this.matchElapsedMs,
     });
@@ -1756,7 +1913,7 @@ export class KaneBattlefieldScene extends Phaser.Scene {
         y: b.y,
         radius: b.radius,
         color: b.color,
-        accent: b.team === 'player' ? this.playerSkinAccent : b.accent,
+        accent: b.team === this.me ? this.playerSkinAccent : b.accent,
         typeId: b.typeId,
         alpha,
         selected: !!b.selected,
@@ -1784,7 +1941,7 @@ export class KaneBattlefieldScene extends Phaser.Scene {
       if (s.team === 'enemy' && !enemyRevealed(this.world.fog, s.x, s.y)) {
         continue;
       }
-      g.lineStyle(1, s.team === 'player' ? 0xf0c75e : 0xc4a0e0, 0.35);
+      g.lineStyle(1, s.team === this.me ? 0xf0c75e : 0xc4a0e0, 0.35);
       g.strokeCircle(s.x, s.y, s.radius);
     }
 
@@ -1832,10 +1989,10 @@ export class KaneBattlefieldScene extends Phaser.Scene {
         mutated: u.mutated,
         inFormation: u.inFormation,
         skinAccent:
-          u.team === 'player' ? this.playerSkinAccent : undefined,
+          u.team === this.me ? this.playerSkinAccent : undefined,
       });
       g.fillStyle(
-        u.team === 'player' ? this.playerSkinAccent : 0xe8a0ff,
+        u.team === this.me ? this.playerSkinAccent : 0xe8a0ff,
         0.95,
       );
       g.fillCircle(u.x, u.y - u.radius * 0.35, 3.2);
