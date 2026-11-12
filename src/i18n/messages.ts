@@ -191,8 +191,6 @@ export const enGB = {
     'Fantasy real-time strategy. Pick a species, build a base and crush the enemy.',
   'hub.loading': 'Loading {title}…',
   'hub.loadError': 'Failed to load game. Please try again.',
-  'hub.kanePathTip': 'Soft-launch path · {path}',
-  'hub.blobPathTip': 'Soft-launch path · {path}',
   'soft.hubPathTip': 'Hub · {path}',
   'hub.blob.blurb':
     'Start as a tiny blob and eat your way up the chain to become the Angel.',
@@ -981,8 +979,6 @@ export const ptBR = {
     'Estratégia em tempo real de fantasia. Escolha uma espécie, construa uma base e esmague o inimigo.',
   'hub.loading': 'Carregando {title}…',
   'hub.loadError': 'Falha ao carregar o jogo. Tente novamente.',
-  'hub.kanePathTip': 'Caminho soft-launch · {path}',
-  'hub.blobPathTip': 'Caminho soft-launch · {path}',
   'soft.hubPathTip': 'Hub · {path}',
   'hub.blob.blurb':
     'Comece como uma bolha minúscula e coma até o topo para virar o Anjo.',
@@ -1767,8 +1763,6 @@ export const es = {
     'Estrategia en tiempo real de fantasía. Elige una especie, construye una base y aplasta al enemigo.',
   'hub.loading': 'Cargando {title}…',
   'hub.loadError': 'Error al cargar el juego. Inténtalo de nuevo.',
-  'hub.kanePathTip': 'Ruta soft-launch · {path}',
-  'hub.blobPathTip': 'Ruta soft-launch · {path}',
   'soft.hubPathTip': 'Hub · {path}',
   'hub.blob.blurb':
     'Empieza como una masa diminuta y come hasta la cima para convertirte en el Ángel.',
