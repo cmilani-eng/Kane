@@ -10,6 +10,8 @@ import {
   botStagePlan,
   canEat,
   findChaseTarget,
+  RPS_CHOICES,
+  rpsOutcome,
   spawnPoint,
   wanderTarget,
 } from './blobRules';
@@ -192,5 +194,20 @@ describe('wanderTarget', () => {
     const t = wanderTarget({ stage: 0, x: 0, z: 0 }, () => 1);
     expect(t.x).toBeCloseTo(7.5);
     expect(t.z).toBeCloseTo(7.5);
+  });
+});
+
+describe('rpsOutcome', () => {
+  it('ties on the same choice', () => {
+    for (const c of RPS_CHOICES) expect(rpsOutcome(c, c)).toBe('tie');
+  });
+
+  it('follows rock > scissors > paper > rock', () => {
+    expect(rpsOutcome('rock', 'scissors')).toBe('win');
+    expect(rpsOutcome('scissors', 'paper')).toBe('win');
+    expect(rpsOutcome('paper', 'rock')).toBe('win');
+    expect(rpsOutcome('scissors', 'rock')).toBe('lose');
+    expect(rpsOutcome('paper', 'scissors')).toBe('lose');
+    expect(rpsOutcome('rock', 'paper')).toBe('lose');
   });
 });

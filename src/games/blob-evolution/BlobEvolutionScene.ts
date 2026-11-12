@@ -9,9 +9,38 @@
  */
 import Phaser from 'phaser';
 import * as THREE from 'three';
+import { t } from '../../i18n';
 import { ensureAmbientBgm } from '../../presentation/audio/bgm';
 import { playSfx } from '../../presentation/audio/sfx';
 import {
+  blobChain,
+  blobChoiceLabel,
+  blobEaten,
+  blobEndPill,
+  blobHudHint,
+  blobHudLine,
+  blobRpsLose,
+  blobRpsLoseTitle,
+  blobRpsOpen,
+  blobRpsTie,
+  blobRpsWin,
+  blobWin,
+} from '../../../games/blob-evolution/blobCopy';
+import {
+  type AngelAscension,
+  buildArena,
+  clearAscension,
+  disposeBlob,
+  disposeBlobArt,
+  followCamera,
+  makeBlob,
+  poseBlob,
+  startAscension,
+  updateAscension,
+} from './blobArt';
+import { BlobPanel, type BlobPanelSpec, createBackPill } from './blobPanels';
+import {
+  ANGEL_STAGE,
   ARENA,
   BOT_CHASE_RANGE,
   BOT_COUNT,
@@ -21,22 +50,18 @@ import {
   BOT_WANDER_CHANCE,
   PLAYER_RESPONSE,
   PLAYER_START_STAGE,
+  RAINBOW_STAGE,
+  RPS_CHOICES,
+  type RpsChoice,
+  STAGES,
   approach,
   botStagePlan,
   canEat,
   findChaseTarget,
+  rpsOutcome,
   spawnPoint,
   wanderTarget,
 } from './blobRules';
-
-const STAGES = [
-  { name: 'Purple', color: 0x8b4fd4, radius: 0.42, speed: 2.35 },
-  { name: 'Blue', color: 0x1e8ef0, radius: 0.58, speed: 3.05 },
-  { name: 'Green', color: 0x2fbf6e, radius: 0.77, speed: 3.85 },
-  { name: 'Rock', color: 0x9a9386, radius: 0.98, speed: 4.55 },
-  { name: 'Rainbow', color: 0xffffff, radius: 1.18, speed: 5.35 },
-  { name: 'Angel', color: 0xfff0a8, radius: 1.35, speed: 5.9 },
-] as const;
 
 interface Bot {
   stage: number;
@@ -52,6 +77,10 @@ interface Bot {
   tz: number;
   /** Seconds until a bot next decides where to go. */
   think: number;
+  /** Heading in radians, so the blob faces where it is going. */
+  facing: number;
+  /** Offsets the idle bob so bots do not wobble in unison. */
+  phase: number;
   alive: boolean;
   group: THREE.Group;
 }
@@ -72,8 +101,13 @@ export class BlobEvolutionScene extends Phaser.Scene {
   private lastHud = 0;
 
   private hudText: Phaser.GameObjects.Text | null = null;
-  private stageText: Phaser.GameObjects.Text | null = null;
   private hintText: Phaser.GameObjects.Text | null = null;
+  private touchHelpText: Phaser.GameObjects.Text | null = null;
+
+  private panel: BlobPanel | null = null;
+  private ascension: AngelAscension | null = null;
+  /** Blocks a second click on a rock-paper-scissors key while a win is being shown. */
+  private rpsLocked = false;
 
   private keys: Phaser.Types.Input.Keyboard.CursorKeys | null = null;
   private wasdKeys: { W: Phaser.Input.Keyboard.Key; A: Phaser.Input.Keyboard.Key; S: Phaser.Input.Keyboard.Key; D: Phaser.Input.Keyboard.Key } | null = null;
@@ -118,88 +152,29 @@ export class BlobEvolutionScene extends Phaser.Scene {
     const { width, height } = this.scale;
 
     this.threeScene = new THREE.Scene();
-    this.threeScene.background = new THREE.Color(0x07111d);
-    this.threeScene.fog = new THREE.FogExp2(0x07111d, 0.015);
+    buildArena(this.threeScene);
 
-    this.threeCamera = new THREE.PerspectiveCamera(50, width / height, 0.1, 200);
-    this.threeCamera.position.set(0, 22, 22);
-    this.threeCamera.lookAt(0, 0, 0);
+    this.threeCamera = new THREE.PerspectiveCamera(52, width / height, 0.1, 180);
+    this.threeCamera.position.set(0, 17, 20);
 
-    this.threeRenderer = new THREE.WebGLRenderer({
-      canvas: this.threeCanvas,
-      antialias: true,
-      alpha: true,
-    });
+    // The Three.js canvas sits behind the (transparent) Phaser canvas, so it needs no alpha of its own.
+    this.threeRenderer = new THREE.WebGLRenderer({ canvas: this.threeCanvas, antialias: true });
     this.threeRenderer.setSize(width, height);
     this.threeRenderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
     this.threeRenderer.shadowMap.enabled = true;
     this.threeRenderer.shadowMap.type = THREE.PCFSoftShadowMap;
-    this.threeRenderer.toneMapping = THREE.ACESFilmicToneMapping;
-    this.threeRenderer.toneMappingExposure = 1.1;
 
     this.threeClock = new THREE.Clock();
-
-    // Lights
-    const hemi = new THREE.HemisphereLight(0xffffff, 0x2a2a3a, 0.9);
-    hemi.position.set(0, 30, 0);
-    this.threeScene.add(hemi);
-
-    const dir = new THREE.DirectionalLight(0xffeedd, 1.1);
-    dir.position.set(20, 40, 15);
-    dir.castShadow = true;
-    dir.shadow.mapSize.width = 2048;
-    dir.shadow.mapSize.height = 2048;
-    dir.shadow.camera.near = 1;
-    dir.shadow.camera.far = 80;
-    dir.shadow.camera.left = -45;
-    dir.shadow.camera.right = 45;
-    dir.shadow.camera.top = 45;
-    dir.shadow.camera.bottom = -45;
-    dir.shadow.bias = -0.0005;
-    this.threeScene.add(dir);
-
-    // Arena floor
-    const waterTex = this.makeWaterTexture();
-    waterTex.wrapS = THREE.RepeatWrapping;
-    waterTex.wrapT = THREE.RepeatWrapping;
-    waterTex.repeat.set(6, 6);
-
-    const floorGeo = new THREE.PlaneGeometry(ARENA * 2, ARENA * 2, 1, 1);
-    const floorMat = new THREE.MeshStandardMaterial({
-      map: waterTex,
-      color: 0x3a9dff,
-      transparent: true,
-      opacity: 0.85,
-      roughness: 0.1,
-      metalness: 0.0,
-    });
-    const floor = new THREE.Mesh(floorGeo, floorMat);
-    floor.rotation.x = -Math.PI / 2;
-    floor.receiveShadow = true;
-    this.threeScene.add(floor);
-
-    // Boundary ring
-    const ringGeo = new THREE.RingGeometry(ARENA - 0.5, ARENA + 0.5, 128);
-    const ringMat = new THREE.MeshBasicMaterial({
-      color: 0x2a9dff,
-      transparent: true,
-      opacity: 0.35,
-      side: THREE.DoubleSide,
-    });
-    const ring = new THREE.Mesh(ringGeo, ringMat);
-    ring.rotation.x = -Math.PI / 2;
-    ring.position.y = 0.02;
-    this.threeScene.add(ring);
   }
 
   private createPhaserUI(): void {
     const { width, height } = this.scale;
 
-    // HUD - top-left
+    // HUD sits to the right of the back pill, as in the original.
     this.hudText = this.add
-      .text(30, 30, 'BLOB EVOLUTION', {
+      .text(118, 20, 'BLOB EVOLUTION', {
         fontFamily: 'Arial, sans-serif',
-        fontSize: '16px',
+        fontSize: '15px',
         fontStyle: 'bold',
         color: '#b8e3ff',
         lineSpacing: 5,
@@ -209,56 +184,41 @@ export class BlobEvolutionScene extends Phaser.Scene {
       .setScrollFactor(0)
       .setDepth(20);
 
-    // Stage indicator - top-right
-    this.stageText = this.add
-      .text(width - 30, 30, 'Stage: Blue', {
-        fontFamily: 'Arial, sans-serif',
-        fontSize: '16px',
-        fontStyle: 'bold',
-        color: '#f0c75e',
-        stroke: '#071321',
-        strokeThickness: 3,
-      })
-      .setOrigin(1, 0)
-      .setScrollFactor(0)
-      .setDepth(20);
-
-    // Hint - bottom-center
     this.hintText = this.add
-      .text(width / 2, height - 60, this.getHudHint(), {
+      .text(118, 108, blobHudHint(), {
         fontFamily: 'Arial, sans-serif',
-        fontSize: '13px',
+        fontSize: '10px',
         color: '#91a9c1',
         stroke: '#071321',
         strokeThickness: 3,
-        wordWrap: { width: Math.max(200, width - 140) },
-        align: 'center',
+        wordWrap: { width: Math.max(160, width - 140) },
       })
-      .setOrigin(0.5)
       .setScrollFactor(0)
       .setDepth(20);
 
-    // Touch stick (hidden by default)
+    this.touchHelpText = this.add
+      .text(width - 16, height - 14, t('blob.touchHelp'), {
+        fontFamily: 'Arial, sans-serif',
+        fontSize: '11px',
+        color: 'rgba(230, 241, 255, 0.48)',
+        align: 'right',
+        wordWrap: { width: width * 0.46 },
+      })
+      .setOrigin(1, 1)
+      .setScrollFactor(0)
+      .setDepth(20);
+
+    createBackPill(this, `← ${t('hub.title')}`, () => this.scene.start('GamePicker'));
+
     this.createTouchStick();
-    this.layoutHud();
   }
 
-  /** Keeps the top labels apart and the hint centred, whatever the canvas size. */
+  /** Keeps the hint and bottom-right help inside the canvas after a resize. */
   private layoutHud(): void {
     const { width, height } = this.scale;
-    this.stageText?.setPosition(width - 30, 30);
-    this.hintText
-      ?.setPosition(width / 2, height - 60)
-      .setWordWrapWidth(Math.max(160, width - 140));
-    this.wrapHud();
+    this.hintText?.setWordWrapWidth(Math.max(160, width - 140));
+    this.touchHelpText?.setPosition(width - 16, height - 14).setWordWrapWidth(width * 0.46);
   }
-
-  /** Wraps the left HUD line so it never runs under the stage label on the right. */
-  private wrapHud(): void {
-    if (!this.hudText || !this.stageText) return;
-    this.hudText.setWordWrapWidth(Math.max(120, this.scale.width - 60 - this.stageText.width - 16));
-  }
-
 
   private createTouchStick(): void {
     const { height } = this.scale;
@@ -269,13 +229,13 @@ export class BlobEvolutionScene extends Phaser.Scene {
 
     this.stickBase = this.add.graphics();
     this.stickBase.fillStyle(0x12253c, 0.55);
-    this.stickBase.lineStyle(2, 0x00ffff, 0.35);
+    this.stickBase.lineStyle(2, 0x7be0ff, 0.35);
     this.stickBase.fillCircle(baseX, baseY, baseRadius);
     this.stickBase.strokeCircle(baseX, baseY, baseRadius);
     this.stickBase.setScrollFactor(0).setDepth(10).setVisible(false);
 
     this.stickKnob = this.add.graphics();
-    this.stickKnob.fillStyle(0x00ffff, 0.88);
+    this.stickKnob.fillStyle(0x7be0ff, 0.88);
     this.stickKnob.lineStyle(2, 0xffffff, 0.55);
     this.stickKnob.fillCircle(baseX, baseY, knobRadius);
     this.stickKnob.strokeCircle(baseX, baseY, knobRadius);
@@ -406,128 +366,23 @@ export class BlobEvolutionScene extends Phaser.Scene {
   }
 
   private showStartPanel(): void {
-    const { width, height } = this.scale;
-
-    const panel = this.add.container(width / 2, height / 2).setDepth(30);
-
-    // Background glow
-    const glow = this.add.circle(0, 0, 200, 0x00ffff, 0.15);
-    panel.add(glow);
-    this.tweens.add({
-      targets: glow,
-      scaleX: { from: 1, to: 1.4 },
-      scaleY: { from: 1, to: 1.4 },
-      alpha: { from: 0.15, to: 0.05 },
-      duration: 2000,
-      yoyo: true,
-      repeat: -1,
-      ease: 'Sine.easeInOut',
+    this.openPanel({
+      pill: t('blob.pill'),
+      title: 'Blob Evolution',
+      copy: t('blob.startBlurb'),
+      chain: blobChain(),
+      note: t('blob.note'),
+      buttons: [{ label: t('blob.start'), onClick: () => this.startGame() }],
     });
-
-    // Card background
-    const bg = this.add.graphics();
-    bg.fillStyle(0x0f1a2e, 1);
-    bg.lineStyle(3, 0x00ffff, 0.4);
-    bg.fillRoundedRect(-200, -200, 400, 400, 24);
-    bg.strokeRoundedRect(-200, -200, 400, 400, 24);
-    panel.add(bg);
-
-    // Accent top
-    const accent = this.add.graphics();
-    accent.fillStyle(0x00ffff, 1);
-    accent.fillRoundedRect(-200, -200, 400, 6, { tl: 24, tr: 24 });
-    panel.add(accent);
-
-    const pill = this.add
-      .text(0, -150, '3D BLOB SURVIVAL', {
-        fontFamily: 'Arial, sans-serif',
-        fontSize: '13px',
-        fontStyle: 'bold',
-        color: '#00ffff',
-        backgroundColor: 'rgba(0, 255, 255, 0.15)',
-        padding: { x: 14, y: 5 },
-      })
-      .setOrigin(0.5);
-    panel.add(pill);
-
-    const title = this.add
-      .text(0, -95, 'Blob Evolution', {
-        fontFamily: 'Georgia, serif',
-        fontSize: '38px',
-        fontStyle: 'bold',
-        color: '#f5e6c8',
-        stroke: '#071321',
-        strokeThickness: 5,
-      })
-      .setOrigin(0.5);
-    panel.add(title);
-
-    const blurb = this.add
-      .text(0, -5, 'Start as a tiny blue blob. Eat your way through the evolution chain, grow bigger and faster, and become the one-and-only Angel.', {
-        fontFamily: 'Arial, sans-serif',
-        fontSize: '15px',
-        color: '#b8c9d9',
-        wordWrap: { width: 340 },
-        align: 'center',
-        lineSpacing: 6,
-      })
-      .setOrigin(0.5);
-    panel.add(blurb);
-
-    const chain = this.add
-      .text(0, 70, 'Blue → Green → Rock → Rainbow → Angel', {
-        fontFamily: 'Arial, sans-serif',
-        fontSize: '16px',
-        color: '#f0c75e',
-        fontStyle: 'bold',
-        align: 'center',
-      })
-      .setOrigin(0.5);
-    panel.add(chain);
-
-    const note = this.add
-      .text(0, 110, 'Desktop: WASD or arrows to move · Mobile: drag the stick', {
-        fontFamily: 'Arial, sans-serif',
-        fontSize: '12px',
-        color: '#8aa3b8',
-        wordWrap: { width: 340 },
-        align: 'center',
-        lineSpacing: 4,
-      })
-      .setOrigin(0.5);
-    panel.add(note);
-
-    const startBtn = this.add
-      .text(0, 165, 'START GAME', {
-        fontFamily: 'Arial, sans-serif',
-        fontSize: '18px',
-        fontStyle: 'bold',
-        color: '#071321',
-        backgroundColor: '#00ffff',
-        padding: { x: 46, y: 16 },
-      })
-      .setOrigin(0.5)
-      .setInteractive({ useHandCursor: true })
-      .on('pointerover', () => {
-        startBtn.setStyle({ backgroundColor: '#33ffff' });
-        startBtn.setScale(1.05);
-      })
-      .on('pointerout', () => {
-        startBtn.setStyle({ backgroundColor: '#00ffff' });
-        startBtn.setScale(1);
-      })
-      .on('pointerdown', () => startBtn.setScale(0.95))
-      .on('pointerup', () => {
-        startBtn.setScale(1.05);
-        panel.destroy();
-        this.startGame();
-      });
-    panel.add(startBtn);
   }
 
   private startGame(): void {
+    this.closePanel();
+    if (this.threeScene) clearAscension(this.threeScene, this.ascension);
+    this.ascension = null;
     this.duelBot = null;
     this.duelBusy = false;
+    this.rpsLocked = false;
     ensureAmbientBgm();
     playSfx('ui');
     this.spawnGame();
@@ -539,13 +394,11 @@ export class BlobEvolutionScene extends Phaser.Scene {
     // Clear existing
     if (this.playerGroup) {
       this.threeScene.remove(this.playerGroup);
-      this.disposeGroup(this.playerGroup);
+      disposeBlob(this.playerGroup);
     }
     for (const bot of this.bots) {
-      if (bot.group) {
-        this.threeScene.remove(bot.group);
-        this.disposeGroup(bot.group);
-      }
+      this.threeScene.remove(bot.group);
+      disposeBlob(bot.group);
     }
     this.bots = [];
 
@@ -562,8 +415,10 @@ export class BlobEvolutionScene extends Phaser.Scene {
       tx: 0,
       tz: 0,
       think: 0,
+      facing: 0,
+      phase: 0,
       alive: true,
-      group: this.makeBlob(startStage, true),
+      group: makeBlob(startStage),
     };
     this.playerGroup = this.player.group;
     this.threeScene.add(this.playerGroup);
@@ -593,155 +448,14 @@ export class BlobEvolutionScene extends Phaser.Scene {
       tx: x,
       tz: z,
       think: 0,
+      facing: 0,
+      phase: Math.random() * Math.PI * 2,
       alive: true,
-      group: this.makeBlob(stage),
+      group: makeBlob(stage),
     };
 
     this.threeScene.add(bot.group);
     this.bots.push(bot);
-  }
-
-  private makeBlob(stage: number, isPlayer = false): THREE.Group {
-    const group = new THREE.Group();
-    const data = STAGES[stage];
-
-    // Body
-    const bodyGeo = new THREE.SphereGeometry(data.radius, 32, 24);
-    const bodyMat = new THREE.MeshStandardMaterial({
-      color: data.color,
-      roughness: stage === 4 ? 0.05 : stage === 5 ? 0.0 : 0.35,
-      metalness: stage === 4 ? 0.85 : stage === 5 ? 1.0 : 0.15,
-      emissive: stage === 5 ? new THREE.Color(0xfff0a8) : stage === 4 ? new THREE.Color(data.color) : new THREE.Color(0x000000),
-      emissiveIntensity: stage === 5 ? 0.4 : stage === 4 ? 0.35 : 0,
-    });
-    const body = new THREE.Mesh(bodyGeo, bodyMat);
-    body.castShadow = true;
-    body.receiveShadow = true;
-    group.add(body);
-
-    // Eyes for player
-    if (isPlayer) {
-      const eyeGeo = new THREE.SphereGeometry(data.radius * 0.12, 12, 12);
-      const eyeMat = new THREE.MeshBasicMaterial({ color: 0x071321 });
-      const leftEye = new THREE.Mesh(eyeGeo, eyeMat);
-      leftEye.position.set(-data.radius * 0.35, data.radius * 0.15, data.radius * 0.85);
-      const rightEye = new THREE.Mesh(eyeGeo, eyeMat);
-      rightEye.position.set(data.radius * 0.35, data.radius * 0.15, data.radius * 0.85);
-      group.add(leftEye, rightEye);
-    }
-
-    // Rainbow texture for stage 4
-    if (stage === 4) {
-      const rainbowTex = this.makeRainbowTexture();
-      bodyMat.map = rainbowTex;
-      bodyMat.needsUpdate = true;
-    }
-
-    // Angel effects for stage 5
-    if (stage === 5) {
-      // Halo
-      const haloGeo = new THREE.RingGeometry(data.radius * 1.3, data.radius * 1.6, 64);
-      const haloMat = new THREE.MeshBasicMaterial({
-        color: 0xfff0a8,
-        transparent: true,
-        opacity: 0.4,
-        side: THREE.DoubleSide,
-      });
-      const halo = new THREE.Mesh(haloGeo, haloMat);
-      halo.rotation.x = -Math.PI / 2;
-      halo.position.y = data.radius * 1.6;
-      group.add(halo);
-
-      // Wings (simple planes)
-      for (let w = -1; w <= 1; w += 2) {
-        const wingGeo = new THREE.PlaneGeometry(data.radius * 1.2, data.radius * 1.5);
-        const wingMat = new THREE.MeshBasicMaterial({
-          color: 0xfff0a8,
-          transparent: true,
-          opacity: 0.35,
-          side: THREE.DoubleSide,
-        });
-        const wing = new THREE.Mesh(wingGeo, wingMat);
-        wing.position.set(w * data.radius * 0.7, data.radius * 0.4, -data.radius * 0.2);
-        wing.rotation.y = w * 0.5;
-        group.add(wing);
-      }
-    }
-
-    return group;
-  }
-
-  private disposeGroup(group: THREE.Group): void {
-    group.traverse((obj: THREE.Object3D) => {
-      if (obj instanceof THREE.Mesh) {
-        obj.geometry?.dispose();
-        if (Array.isArray(obj.material)) {
-          obj.material.forEach((m: THREE.Material) => m.dispose());
-        } else {
-          obj.material?.dispose();
-        }
-      }
-    });
-  }
-
-  private makeRainbowTexture(): THREE.CanvasTexture {
-    const canvas = document.createElement('canvas');
-    canvas.width = 256;
-    canvas.height = 256;
-    const ctx = canvas.getContext('2d')!;
-    const stops: [number, string][] = [
-      [0, '#ff1a1a'],
-      [1 / 6, '#ff8a1a'],
-      [2 / 6, '#ffe01a'],
-      [3 / 6, '#2adf4a'],
-      [4 / 6, '#1a8cff'],
-      [5 / 6, '#7a3dff'],
-      [1, '#ff1ad6'],
-    ];
-    const g = ctx.createLinearGradient(0, 0, 256, 0);
-    stops.forEach(([t, c]) => g.addColorStop(t, c));
-    ctx.fillStyle = g;
-    ctx.fillRect(0, 0, 256, 256);
-    const v = ctx.createLinearGradient(0, 0, 0, 256);
-    v.addColorStop(0, 'rgba(255,255,255,.22)');
-    v.addColorStop(0.5, 'rgba(255,255,255,0)');
-    v.addColorStop(1, 'rgba(0,0,0,.18)');
-    ctx.fillStyle = v;
-    ctx.fillRect(0, 0, 256, 256);
-    const tex = new THREE.CanvasTexture(canvas);
-    tex.colorSpace = THREE.SRGBColorSpace;
-    tex.wrapS = THREE.RepeatWrapping;
-    tex.wrapT = THREE.ClampToEdgeWrapping;
-    return tex;
-  }
-
-  private makeWaterTexture(): THREE.CanvasTexture {
-    const canvas = document.createElement('canvas');
-    canvas.width = 256;
-    canvas.height = 256;
-    const ctx = canvas.getContext('2d')!;
-    const g = ctx.createRadialGradient(110, 90, 20, 128, 128, 160);
-    g.addColorStop(0, '#8fd6ff');
-    g.addColorStop(0.45, '#2a9dff');
-    g.addColorStop(1, '#0d5fb8');
-    ctx.fillStyle = g;
-    ctx.fillRect(0, 0, 256, 256);
-    for (let i = 0; i < 18; i++) {
-      const x = Math.random() * 256;
-      const y = Math.random() * 256;
-      const r = 4 + Math.random() * 16;
-      const bubble = ctx.createRadialGradient(x - r * 0.25, y - r * 0.25, 1, x, y, r);
-      bubble.addColorStop(0, 'rgba(255,255,255,.55)');
-      bubble.addColorStop(0.55, 'rgba(180,230,255,.18)');
-      bubble.addColorStop(1, 'rgba(20,80,160,0)');
-      ctx.fillStyle = bubble;
-      ctx.beginPath();
-      ctx.arc(x, y, r, 0, Math.PI * 2);
-      ctx.fill();
-    }
-    const tex = new THREE.CanvasTexture(canvas);
-    tex.colorSpace = THREE.SRGBColorSpace;
-    return tex;
   }
 
   private distance(a: Bot, b: Bot): number {
@@ -755,139 +469,82 @@ export class BlobEvolutionScene extends Phaser.Scene {
   }
 
   private playerEat(bot: Bot): void {
-    if (!this.player || !this.threeScene) return;
+    if (!this.player) return;
 
-    this.threeScene.remove(bot.group);
-    this.disposeGroup(bot.group);
-    bot.alive = false;
+    this.removeBot(bot);
     playSfx('gather');
 
-    if (this.player.stage < 4) {
-      this.player.stage++;
-      this.player.radius = STAGES[this.player.stage].radius;
-      this.player.speed = STAGES[this.player.stage].speed;
-      this.threeScene.remove(this.playerGroup!);
-      this.disposeGroup(this.playerGroup!);
-      this.playerGroup = this.makeBlob(this.player.stage, true);
-      this.threeScene.add(this.playerGroup);
+    if (this.player.stage < RAINBOW_STAGE) {
+      this.evolvePlayer(this.player.stage + 1);
       playSfx('build');
     }
 
+    this.updateHud(true);
+    this.checkVictory();
+  }
+
+  private evolvePlayer(stage: number): void {
+    const player = this.player;
+    if (!player || !this.threeScene) return;
+
+    player.stage = stage;
+    player.radius = STAGES[stage].radius;
+    player.speed = STAGES[stage].speed;
+
+    if (this.playerGroup) {
+      this.threeScene.remove(this.playerGroup);
+      disposeBlob(this.playerGroup);
+    }
+    this.playerGroup = makeBlob(stage);
+    player.group = this.playerGroup;
+    this.threeScene.add(this.playerGroup);
     this.updateHud(true);
   }
 
   private loseGame(): void {
     this.running = false;
     playSfx('defeat');
-    this.showEndPanel('You were eaten!', 'The arena has a new champion.');
+    const eaten = blobEaten();
+    this.openEndPanel(false, eaten.title, eaten.body);
   }
 
+  /** The last blob standing ascends: it becomes the Angel and the ascension plays before the win panel. */
   private checkVictory(): void {
-    const aliveBots = this.bots.filter((b) => b.alive);
-    if (aliveBots.length === 0 && this.player?.stage === 5) {
-      this.running = false;
-      playSfx('victory');
-      this.showEndPanel('You became the Angel!', 'You have ascended. The arena is yours.');
+    if (!this.running || this.ascension || !this.threeScene) return;
+    if (!this.bots.every((b) => !b.alive)) return;
+
+    this.running = false;
+    this.evolvePlayer(ANGEL_STAGE);
+    if (this.playerGroup) {
+      this.ascension = startAscension(this.threeScene, this.playerGroup, performance.now());
     }
+    playSfx('victory');
   }
 
-  private showEndPanel(titleText: string, copyText: string): void {
-    const { width, height } = this.scale;
-    const isVictory = titleText.includes('Angel');
+  private finishAscension(): void {
+    if (this.threeScene) clearAscension(this.threeScene, this.ascension);
+    this.ascension = null;
+    const won = blobWin();
+    this.openEndPanel(true, won.title, won.body);
+  }
 
-    const panel = this.add.container(width / 2, height / 2).setDepth(30);
-
-    // Background glow
-    const glowColor = isVictory ? 0xffdb72 : 0xff4444;
-    const glow = this.add.circle(0, 0, 220, glowColor, 0.15);
-    panel.add(glow);
-    this.tweens.add({
-      targets: glow,
-      scaleX: { from: 1, to: 1.3 },
-      scaleY: { from: 1, to: 1.3 },
-      alpha: { from: 0.15, to: 0.05 },
-      duration: 2000,
-      yoyo: true,
-      repeat: -1,
-      ease: 'Sine.easeInOut',
+  private openEndPanel(won: boolean, title: string, body: string): void {
+    this.openPanel({
+      pill: blobEndPill(won),
+      title,
+      copy: body,
+      buttons: [{ label: t('blob.playAgain'), onClick: () => this.startGame() }],
     });
+  }
 
-    // Card background
-    const bg = this.add.graphics();
-    bg.fillStyle(0x0f1a2e, 1);
-    bg.lineStyle(3, glowColor, 0.5);
-    bg.fillRoundedRect(-200, -200, 400, 400, 24);
-    bg.strokeRoundedRect(-200, -200, 400, 400, 24);
-    panel.add(bg);
+  private openPanel(spec: BlobPanelSpec): void {
+    this.closePanel();
+    this.panel = new BlobPanel(this, spec);
+  }
 
-    // Accent top
-    const accent = this.add.graphics();
-    accent.fillStyle(glowColor, 1);
-    accent.fillRoundedRect(-200, -200, 400, 6, { tl: 24, tr: 24 });
-    panel.add(accent);
-
-    const pill = this.add
-      .text(0, -150, isVictory ? 'ASCENDED' : 'GAME OVER', {
-        fontFamily: 'Arial, sans-serif',
-        fontSize: '13px',
-        fontStyle: 'bold',
-        color: '#' + glowColor.toString(16).padStart(6, '0'),
-        backgroundColor: `rgba(${isVictory ? '255, 219, 114' : '255, 68, 68'}, 0.15)`,
-        padding: { x: 14, y: 5 },
-      })
-      .setOrigin(0.5);
-    panel.add(pill);
-
-    const title = this.add
-      .text(0, -90, titleText, {
-        fontFamily: 'Georgia, serif',
-        fontSize: '32px',
-        fontStyle: 'bold',
-        color: '#f5e6c8',
-        stroke: '#071321',
-        strokeThickness: 5,
-      })
-      .setOrigin(0.5);
-    panel.add(title);
-
-    const copy = this.add
-      .text(0, -10, copyText, {
-        fontFamily: 'Arial, sans-serif',
-        fontSize: '15px',
-        color: '#b8c9d9',
-        wordWrap: { width: 340 },
-        align: 'center',
-        lineSpacing: 6,
-      })
-      .setOrigin(0.5);
-    panel.add(copy);
-
-    const restartBtn = this.add
-      .text(0, 100, 'PLAY AGAIN', {
-        fontFamily: 'Arial, sans-serif',
-        fontSize: '18px',
-        fontStyle: 'bold',
-        color: '#071321',
-        backgroundColor: '#00ffff',
-        padding: { x: 46, y: 16 },
-      })
-      .setOrigin(0.5)
-      .setInteractive({ useHandCursor: true })
-      .on('pointerover', () => {
-        restartBtn.setStyle({ backgroundColor: '#33ffff' });
-        restartBtn.setScale(1.05);
-      })
-      .on('pointerout', () => {
-        restartBtn.setStyle({ backgroundColor: '#00ffff' });
-        restartBtn.setScale(1);
-      })
-      .on('pointerdown', () => restartBtn.setScale(0.95))
-      .on('pointerup', () => {
-        restartBtn.setScale(1.05);
-        panel.destroy();
-        this.startGame();
-      });
-    panel.add(restartBtn);
+  private closePanel(): void {
+    this.panel?.destroy();
+    this.panel = null;
   }
 
   private updatePlayer(dt: number): void {
@@ -896,6 +553,7 @@ export class BlobEvolutionScene extends Phaser.Scene {
     // Velocity eases toward (direction × top speed) and is applied per second,
     // so the blob moves at the same pace at any frame rate.
     const input = this.getMoveDirection();
+    if (input.x !== 0 || input.z !== 0) this.player.facing = Math.atan2(input.x, input.z);
     this.player.vx = approach(this.player.vx, input.x * this.player.speed, dt, PLAYER_RESPONSE);
     this.player.vz = approach(this.player.vz, input.z * this.player.speed, dt, PLAYER_RESPONSE);
 
@@ -906,18 +564,6 @@ export class BlobEvolutionScene extends Phaser.Scene {
     const lim = ARENA - this.player.radius * 0.8;
     this.player.x = Phaser.Math.Clamp(this.player.x, -lim, lim);
     this.player.z = Phaser.Math.Clamp(this.player.z, -lim, lim);
-
-    // Update Three.js position
-    if (this.playerGroup) {
-      this.playerGroup.position.set(this.player.x, this.player.radius, this.player.z);
-    }
-
-    // Camera follow
-    if (this.threeCamera) {
-      this.threeCamera.position.x = Phaser.Math.Linear(this.threeCamera.position.x, this.player.x, 0.08);
-      this.threeCamera.position.z = Phaser.Math.Linear(this.threeCamera.position.z, this.player.z + 22, 0.08);
-      this.threeCamera.lookAt(this.player.x, 0, this.player.z);
-    }
   }
 
   private updateBots(dt: number): void {
@@ -946,6 +592,7 @@ export class BlobEvolutionScene extends Phaser.Scene {
       if (dist > 0.2) {
         dx /= dist;
         dz /= dist;
+        bot.facing = Math.atan2(dx, dz);
       } else {
         dx = 0;
         dz = 0;
@@ -967,10 +614,6 @@ export class BlobEvolutionScene extends Phaser.Scene {
         bot.vz *= -0.7;
         bot.tz = -bot.tz * 0.8;
         bot.z = Phaser.Math.Clamp(bot.z, -lim, lim);
-      }
-
-      if (bot.group) {
-        bot.group.position.set(bot.x, bot.radius, bot.z);
       }
     }
   }
@@ -1081,183 +724,139 @@ export class BlobEvolutionScene extends Phaser.Scene {
   private botEat(eater: Bot, prey: Bot): void {
     if (!eater.alive || !prey.alive || !this.threeScene) return;
 
-    this.threeScene.remove(prey.group);
-    this.disposeGroup(prey.group);
-    prey.alive = false;
+    this.removeBot(prey);
     playSfx('gather');
 
-    if (eater.stage < 4) {
+    if (eater.stage < RAINBOW_STAGE) {
       eater.stage++;
       eater.radius = STAGES[eater.stage].radius;
       eater.speed = STAGES[eater.stage].speed;
       this.threeScene.remove(eater.group);
-      this.disposeGroup(eater.group);
-      eater.group = this.makeBlob(eater.stage);
+      disposeBlob(eater.group);
+      eater.group = makeBlob(eater.stage);
       this.threeScene.add(eater.group);
       playSfx('build');
     }
   }
 
+  private removeBot(bot: Bot): void {
+    if (!bot.alive) return;
+    bot.alive = false;
+    this.threeScene?.remove(bot.group);
+    disposeBlob(bot.group);
+  }
+
   private showRPS(opponent: Bot): void {
+    if (this.duelBusy || !this.running) return;
     this.duelBot = opponent;
     this.duelBusy = true;
     this.running = false;
+    this.rpsLocked = false;
     playSfx('alert');
 
-    const { width, height } = this.scale;
-
-    const panel = this.add.container(width / 2, height / 2).setDepth(30);
-
-    const bg = this.add.graphics();
-    bg.fillStyle(0x0f1a2e, 1);
-    bg.lineStyle(2, 0xffdb72, 0.5);
-    bg.fillRoundedRect(-180, -180, 360, 360, 20);
-    bg.strokeRoundedRect(-180, -180, 360, 360, 20);
-    panel.add(bg);
-
-    const pill = this.add
-      .text(0, -140, 'RAINBOW SHOWDOWN', {
-        fontFamily: 'Arial, sans-serif',
-        fontSize: '12px',
-        fontStyle: 'bold',
-        color: '#ffdb72',
-        backgroundColor: 'rgba(255, 219, 114, 0.15)',
-        padding: { x: 12, y: 4 },
-      })
-      .setOrigin(0.5);
-    panel.add(pill);
-
-    const title = this.add
-      .text(0, -80, 'Rock Paper Scissors', {
-        fontFamily: 'Georgia, serif',
-        fontSize: '28px',
-        fontStyle: 'bold',
-        color: '#f5e6c8',
-        stroke: '#071321',
-        strokeThickness: 4,
-      })
-      .setOrigin(0.5);
-    panel.add(title);
-
-    const copy = this.add
-      .text(0, -10, 'Another Rainbow blob! Choose secretly. Your opponent has already made its hidden choice.', {
-        fontFamily: 'Arial, sans-serif',
-        fontSize: '14px',
-        color: '#b8c9d9',
-        wordWrap: { width: 300 },
-        align: 'center',
-      })
-      .setOrigin(0.5);
-    panel.add(copy);
-
-    const choices = ['rock', 'paper', 'scissors'] as const;
-    const opponentChoice = choices[Math.floor(Math.random() * 3)];
-
-    choices.forEach((choice, i) => {
-      const btn = this.add
-        .text(-100 + i * 100, 60, choice === 'rock' ? '✊ Rock' : choice === 'paper' ? '✋ Paper' : '✌️ Scissors', {
-          fontFamily: 'Arial, sans-serif',
-          fontSize: '14px',
-          fontStyle: 'bold',
-          color: '#071321',
-          backgroundColor: '#ffdb72',
-          padding: { x: 20, y: 12 },
-        })
-        .setOrigin(0.5)
-        .setInteractive({ useHandCursor: true })
-        .on('pointerover', () => btn.setStyle({ backgroundColor: '#ffe072' }))
-        .on('pointerout', () => btn.setStyle({ backgroundColor: '#ffdb72' }))
-        .on('pointerdown', () => btn.setScale(0.98))
-        .on('pointerup', () => {
-          this.resolveRPS(choice, opponentChoice, panel);
-        });
-      panel.add(btn);
+    const open = blobRpsOpen();
+    this.openPanel({
+      pill: open.pill,
+      title: open.title,
+      copy: open.copy,
+      result: '',
+      note: t('blob.rpsHint'),
+      buttons: RPS_CHOICES.map((choice) => ({
+        label: blobChoiceLabel(choice),
+        choice: true,
+        onClick: () => this.chooseRPS(choice),
+      })),
     });
   }
 
-  private resolveRPS(playerChoice: 'rock' | 'paper' | 'scissors', opponentChoice: 'rock' | 'paper' | 'scissors', panel: Phaser.GameObjects.Container): void {
-    const result = this.getRPSResult(playerChoice, opponentChoice);
+  private chooseRPS(choice: RpsChoice): void {
+    const bot = this.duelBot;
+    if (!this.duelBusy || !bot || !bot.alive || this.rpsLocked) return;
 
-    if (result === 'tie') {
-      // Tie - choose again
-      this.showRPS(this.duelBot!);
-      panel.destroy();
+    const botChoice = RPS_CHOICES[Math.floor(Math.random() * RPS_CHOICES.length)];
+    const outcome = rpsOutcome(choice, botChoice);
+
+    if (outcome === 'tie') {
+      this.panel?.setResult(blobRpsTie(choice));
       return;
     }
 
-    if (result === 'win') {
-      // Player wins - eat opponent
-      if (this.duelBot) {
-        this.playerEat(this.duelBot);
-      }
-      this.duelBot = null;
-      this.duelBusy = false;
-      this.running = true;
-      panel.destroy();
-    } else {
-      // Player loses - eaten
-      this.loseGame();
-      panel.destroy();
+    this.rpsLocked = true;
+    if (outcome === 'win') {
+      this.panel?.setResult(blobRpsWin(choice, botChoice));
+      this.time.delayedCall(900, () => {
+        this.removeBot(bot);
+        playSfx('gather');
+        this.duelBot = null;
+        this.duelBusy = false;
+        this.closePanel();
+        this.running = true;
+        this.checkVictory();
+      });
+      return;
     }
-  }
 
-  private getRPSResult(player: 'rock' | 'paper' | 'scissors', opponent: 'rock' | 'paper' | 'scissors'): 'win' | 'lose' | 'tie' {
-    if (player === opponent) return 'tie';
-    if (
-      (player === 'rock' && opponent === 'scissors') ||
-      (player === 'paper' && opponent === 'rock') ||
-      (player === 'scissors' && opponent === 'paper')
-    ) {
-      return 'win';
-    }
-    return 'lose';
+    this.duelBot = null;
+    this.duelBusy = false;
+    playSfx('defeat');
+    this.openPanel({
+      pill: blobEndPill(false),
+      title: blobRpsLoseTitle(),
+      copy: blobRpsLose(choice, botChoice),
+      buttons: [{ label: t('blob.restart'), onClick: () => this.startGame() }],
+    });
   }
 
   private updateHud(force = false): void {
-    if (!this.hudText || !this.player || !this.running) return;
+    if (!this.hudText || !this.player) return;
 
     const now = performance.now();
     if (!force && now - this.lastHud < 100) return;
     this.lastHud = now;
 
     const remaining = this.bots.filter((b) => b.alive).length;
-    const stage = this.player.stage;
-    const radius = this.player.radius;
-    const speed = this.player.speed;
-
-    const stageNames = ['Purple', 'Blue', 'Green', 'Rock', 'Rainbow', 'Angel'];
-    const hudLine = `Stage: ${stageNames[stage]} (${radius.toFixed(2)})  Speed: ${speed.toFixed(2)}  Remaining: ${remaining}`;
-
-    this.hudText.setText(hudLine);
-    this.stageText?.setText(`Stage: ${stageNames[stage]}`);
-    this.wrapHud();
-
-    if (stage === 4) {
-      this.hudText.setColor('#ffdb72');
-    } else if (stage === 3) {
-      this.hudText.setColor('#d8d0c4');
-    } else if (stage === 2) {
-      this.hudText.setColor('#8df4bc');
-    } else {
-      this.hudText.setColor('#b8e3ff');
-    }
-  }
-
-  private getHudHint(): string {
-    return 'MOVE: STICK OR WASD  •  EAT: BUMP INTO PREY';
+    const { stage, radius, speed } = this.player;
+    this.hudText.setText(blobHudLine(stage, radius, speed, remaining));
+    this.hudText.setColor(stage === 4 ? '#ffdb72' : stage === 3 ? '#d8d0c4' : stage === 2 ? '#8df4bc' : '#b8e3ff');
   }
 
   update(_time: number, delta: number): void {
-    if (!this.running || !this.player || !this.threeRenderer || !this.threeScene || !this.threeCamera || !this.threeClock) return;
+    if (!this.threeRenderer || !this.threeScene || !this.threeCamera || !this.threeClock) return;
 
     const dt = Math.min(delta / 1000, 0.04);
 
-    this.updatePlayer(dt);
-    this.updateBots(dt);
-    this.resolveCollisions();
-    this.updateHud();
+    if (this.running && this.player) {
+      this.updatePlayer(dt);
+      this.updateBots(dt);
+      this.resolveCollisions();
+      this.updateHud();
+    }
 
-    // Render Three.js scene
+    this.renderFrame(dt);
+  }
+
+  /** Pose every blob, move the camera and draw. Runs every frame, also behind a panel or during the ascension. */
+  private renderFrame(dt: number): void {
+    if (!this.threeRenderer || !this.threeScene || !this.threeCamera || !this.threeClock) return;
+    const time = this.threeClock.getElapsedTime();
+
+    if (this.ascension && this.player && this.playerGroup) {
+      const done = updateAscension(this.ascension, this.playerGroup, this.player, this.threeCamera, performance.now(), time);
+      this.threeRenderer.render(this.threeScene, this.threeCamera);
+      if (done) this.finishAscension();
+      return;
+    }
+
+    if (this.player && this.playerGroup) {
+      poseBlob(this.playerGroup, this.player, time, 0, true);
+    }
+    for (const bot of this.bots) {
+      if (bot.alive) poseBlob(bot.group, bot, time, bot.phase, false);
+    }
+    if (this.player) {
+      followCamera(this.threeCamera, this.player.x, this.player.z, dt);
+    }
+
     this.threeRenderer.render(this.threeScene, this.threeCamera);
   }
 
@@ -1288,19 +887,15 @@ export class BlobEvolutionScene extends Phaser.Scene {
     this.input.off('pointerup', this.onPointerUp, this);
     this.input.off('pointerupoutside', this.onPointerUp, this);
 
+    this.closePanel();
+
     // Dispose Three.js resources
     if (this.threeScene) {
-      this.threeScene.traverse((obj: THREE.Object3D) => {
-        if (obj instanceof THREE.Mesh) {
-          obj.geometry?.dispose();
-          if (Array.isArray(obj.material)) {
-            obj.material.forEach((m: THREE.Material) => m.dispose());
-          } else {
-            obj.material?.dispose();
-          }
-        }
-      });
+      clearAscension(this.threeScene, this.ascension);
+      for (const child of [...this.threeScene.children]) disposeBlob(child);
     }
+    this.ascension = null;
+    disposeBlobArt();
     this.threeRenderer?.dispose();
     this.threeRenderer = null;
     this.threeScene = null;
