@@ -17,6 +17,8 @@ export interface GameManifest {
   readonly description: string;
   /** Release status. */
   readonly status: 'live' | 'experimental';
+  /** True when the game needs a tablet or computer; its card cannot start on a phone. */
+  readonly bigScreenOnly?: boolean;
   /** Phaser scene key to start (the game's first scene). */
   readonly sceneKey: string;
   /** Lazy-load the game's scene module. */
@@ -34,6 +36,7 @@ export const GAME_REGISTRY: readonly GameManifest[] = [
     tagline: 'BUILD. COMMAND. CONQUER.',
     description: 'Fantasy real-time strategy. Pick a species, build a base and crush the enemy.',
     status: 'live',
+    bigScreenOnly: true,
     sceneKey: 'KaneBoot',
     dynamicImport: () => import('./kane/index.ts'),
   },
