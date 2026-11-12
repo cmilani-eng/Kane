@@ -222,19 +222,23 @@ export class BlobEvolutionScene extends Phaser.Scene {
 
     // Touch stick (hidden by default)
     this.createTouchStick();
+    this.layoutHud();
+  }
 
-    // Touch help text (mobile only)
-    this.add
-      .text(width - 20, height - 20, 'MOVE: STICK OR WASD  •  EAT: BUMP INTO PREY', {
-        fontFamily: 'Arial, sans-serif',
-        fontSize: '11px',
-        color: 'rgba(230, 241, 255, 0.48)',
-        stroke: '#071321',
-        strokeThickness: 2,
-      })
-      .setOrigin(1, 1)
-      .setScrollFactor(0)
-      .setDepth(10);
+  /** Keeps the top labels apart and the hint centred, whatever the canvas size. */
+  private layoutHud(): void {
+    const { width, height } = this.scale;
+    this.stageText?.setPosition(width - 30, 30);
+    this.hintText
+      ?.setPosition(width / 2, height - 60)
+      .setWordWrapWidth(Math.max(160, width - 140));
+    this.wrapHud();
+  }
+
+  /** Wraps the left HUD line so it never runs under the stage label on the right. */
+  private wrapHud(): void {
+    if (!this.hudText || !this.stageText) return;
+    this.hudText.setWordWrapWidth(Math.max(120, this.scale.width - 60 - this.stageText.width - 16));
   }
 
 
@@ -1217,6 +1221,7 @@ export class BlobEvolutionScene extends Phaser.Scene {
 
     this.hudText.setText(hudLine);
     this.stageText?.setText(`Stage: ${stageNames[stage]}`);
+    this.wrapHud();
 
     if (stage === 4) {
       this.hudText.setColor('#ffdb72');
@@ -1256,8 +1261,7 @@ export class BlobEvolutionScene extends Phaser.Scene {
     this.threeCamera.updateProjectionMatrix();
     this.threeRenderer.setSize(width, height);
 
-    // Update hint text wrap width
-    this.hintText?.setWordWrapWidth(Math.max(160, width - 140));
+    this.layoutHud();
 
     // Update touch stick position
     if (this.stickBase && this.stickKnob) {
