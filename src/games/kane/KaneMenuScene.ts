@@ -30,6 +30,7 @@ import {
   type SkirmishMapId,
 } from '../../data/skirmishMaps';
 import type { SpeciesId } from '../../data/speciesStub';
+import type { PvpLaunch } from '../../networking/matchStart';
 import {
   difficultyCopy,
   mapCopy,
@@ -49,11 +50,14 @@ import { ensureAmbientBgm } from '../../presentation/audio/bgm';
 import { playSfx } from '../../presentation/audio/sfx';
 import { hideDomHud } from '../../presentation/ui/domHud';
 import { showAuthPanel, hideAuthPanel } from '../../presentation/ui/authPanel';
-import { showCosmeticsPanel } from '../../presentation/ui/cosmeticsPanel';
+import { showCosmeticsCard } from '../../presentation/ui/cosmeticsCard';
 import { accountChipName, showDashboardPanel } from '../../presentation/ui/dashboardPanel';
-import { showLobbyPanel } from '../../presentation/ui/lobbyPanel';
+import { flags } from '../../config/flags';
+import { showLobbyCard } from '../../presentation/ui/lobbyCard';
+import { isPhoneSizedScreen } from '../../presentation/ui/screenSize';
 import { hideMenuGamesLink, showMenuGamesLink } from '../../presentation/ui/menuGamesLink';
 import { softLaunchStatusStrip } from '../../presentation/ui/softLaunchStatus';
+import { showStatsCard } from '../../presentation/ui/statsCard';
 import { showStatsPanel } from '../../presentation/ui/statsPanel';
 import { addLocalePicker } from '../../presentation/ui/localePicker';
 import { createVolumeSlider } from '../../presentation/ui/volumeSlider';
@@ -174,14 +178,15 @@ export class KaneMenuScene extends Phaser.Scene {
     this.statsOpen = true;
     playSfx('ui');
     this.resetMenuCamera();
-    showStatsPanel(
-      this,
-      () => {
-        this.statsOpen = false;
-        this.fitMenuCamera();
-      },
-      { adminTools },
-    );
+    const onClose = (): void => {
+      this.statsOpen = false;
+      this.fitMenuCamera();
+    };
+    if (adminTools) {
+      showStatsPanel(this, onClose, { adminTools });
+    } else {
+      showStatsCard(onClose);
+    }
   }
 
   private openLobby(): void {
@@ -189,9 +194,31 @@ export class KaneMenuScene extends Phaser.Scene {
     this.lobbyOpen = true;
     playSfx('ui');
     this.resetMenuCamera();
-    showLobbyPanel(this, () => {
-      this.lobbyOpen = false;
-      this.fitMenuCamera();
+    showLobbyCard(
+      () => {
+        this.lobbyOpen = false;
+        this.fitMenuCamera();
+      },
+      (launch) => this.startPvpMatch(launch),
+    );
+  }
+
+  /** A two-player match from the friend lobby: both players open the same battle. */
+  private startPvpMatch(launch: PvpLaunch): void {
+    const species = (launch.role === 'host' ? launch.hostSpecies : launch.guestSpecies) as SpeciesId;
+    this.scene.start('KaneBattlefield', {
+      species,
+      difficulty: launch.difficulty as AiDifficultyId,
+      mapId: launch.mapId,
+      pvp: {
+        code: launch.code,
+        role: launch.role,
+        uid: launch.uid,
+        peerUid: launch.peerUid,
+        seed: launch.seed,
+        hostSpecies: launch.hostSpecies as SpeciesId,
+        guestSpecies: launch.guestSpecies as SpeciesId,
+      },
     });
   }
 
@@ -200,7 +227,7 @@ export class KaneMenuScene extends Phaser.Scene {
     this.cosmeticsOpen = true;
     playSfx('ui');
     this.resetMenuCamera();
-    showCosmeticsPanel(this, () => {
+    showCosmeticsCard(() => {
       this.cosmeticsOpen = false;
       this.fitMenuCamera();
     });
@@ -230,6 +257,29 @@ export class KaneMenuScene extends Phaser.Scene {
     }
   }
 
+  /**
+   * Kane needs a big screen. On a phone the menu stays drawn, but a veil and a message cover
+   * it, and startMatch refuses to start a match (see isPhoneSizedScreen).
+   */
+  private addBigScreenNotice(width: number, height: number): void {
+    if (!isPhoneSizedScreen(width, height)) return;
+    this.add
+      .rectangle(width / 2, height / 2, width, height, 0x0a1220, 0.84)
+      .setScrollFactor(0)
+      .setDepth(400);
+    this.add
+      .text(width / 2, height / 2, t('menu.bigScreen'), {
+        fontFamily: 'system-ui, sans-serif',
+        fontSize: '18px',
+        color: '#fff8e8',
+        align: 'center',
+        wordWrap: { width: width * 0.8 },
+      })
+      .setOrigin(0.5)
+      .setScrollFactor(0)
+      .setDepth(401);
+  }
+
   private paintGlow(
     bg: Phaser.GameObjects.Graphics,
     x: number,
@@ -247,6 +297,8 @@ export class KaneMenuScene extends Phaser.Scene {
     const { width, height } = this.scale;
     this.menuZoom = 1;
     this.resetMenuCamera();
+    this.addBigScreenNotice(width, height);
+    // iPhone 17 landscape is wide (~874) and short (~402). Percentage rows overlap.
     if (height < 500) {
       this.buildShortLayout(intro, width, height);
       return;
@@ -434,7 +486,7 @@ export class KaneMenuScene extends Phaser.Scene {
       y: Math.max(40, height * 0.055),
       depth: 40,
     });
-    this.addTipsToggle(88, Math.max(40, height * 0.055));
+    this.addTipsToggle(128, Math.max(40, height * 0.055));
 
     const strip = this.add
       .text(width / 2, narrow ? volumeY + 24 : height * 0.81, softLaunchStatusStrip(), {
@@ -448,17 +500,19 @@ export class KaneMenuScene extends Phaser.Scene {
     const chipsY = narrow ? strip.y + strip.height + 22 : height * 0.855;
 
     const gap = Math.min(88, width * 0.22);
-    this.add
-      .text(width / 2 - gap * 1.5, chipsY, t('menu.friends'), {
-        fontFamily: 'system-ui, sans-serif',
-        fontSize: '12px',
-        color: '#fff8e8',
-        backgroundColor: '#2a3a50',
-        padding: { x: 10, y: 7 },
-      })
-      .setOrigin(0.5)
-      .setInteractive({ useHandCursor: true })
-      .on('pointerup', () => this.openLobby());
+    if (flags.multiplayerLobby) {
+      this.add
+        .text(width / 2 - gap * 1.5, chipsY, t('menu.friends'), {
+          fontFamily: 'system-ui, sans-serif',
+          fontSize: '12px',
+          color: '#fff8e8',
+          backgroundColor: '#2a3a50',
+          padding: { x: 10, y: 7 },
+        })
+        .setOrigin(0.5)
+        .setInteractive({ useHandCursor: true })
+        .on('pointerup', () => this.openLobby());
+    }
     this.add
       .text(width / 2 - gap * 0.5, chipsY, t('menu.cosmetics'), {
         fontFamily: 'system-ui, sans-serif',
@@ -571,7 +625,7 @@ export class KaneMenuScene extends Phaser.Scene {
       y: 42,
       depth: 40,
     });
-    this.addTipsToggle(78, 42);
+    this.addTipsToggle(124, 42);
 
     this.drawDifficultyRow(width, 78, true);
 
@@ -675,7 +729,9 @@ export class KaneMenuScene extends Phaser.Scene {
         .setInteractive({ useHandCursor: true })
         .on('pointerup', onClick);
 
-    link(width / 2 - gap * 1.5, t('menu.friends'), '#2a3a50', () => this.openLobby());
+    if (flags.multiplayerLobby) {
+      link(width / 2 - gap * 1.5, t('menu.friends'), '#2a3a50', () => this.openLobby());
+    }
     link(width / 2 - gap * 0.5, t('menu.cosmetics'), '#3a4a2a', () => this.openCosmetics());
     this.accountLabel = link(width / 2 + gap * 0.5, t('menu.account'), '#3a2a4a', () =>
       this.openAccount(),
@@ -760,7 +816,11 @@ export class KaneMenuScene extends Phaser.Scene {
       bg.fillRoundedRect(-buttonW / 2, -btnH / 2, buttonW, btnH, btnRadius);
       bg.lineStyle(2, btnStroke, 1);
       bg.strokeRoundedRect(-buttonW / 2, -btnH / 2, buttonW, btnH, btnRadius);
-      bg.setInteractive({ useHandCursor: true });
+      bg.setInteractive({
+        hitArea: new Phaser.Geom.Rectangle(-buttonW / 2, -btnH / 2, buttonW, btnH),
+        hitAreaCallback: Phaser.Geom.Rectangle.Contains,
+        useHandCursor: true,
+      });
       this.add
         .text(x, compact ? y : y - 8, d.label, {
           fontFamily: 'Georgia, "Times New Roman", serif',
@@ -808,7 +868,11 @@ export class KaneMenuScene extends Phaser.Scene {
       bg.fillRoundedRect(-buttonW / 2, -btnH / 2, buttonW, btnH, btnRadius);
       bg.lineStyle(2, btnStroke, 1);
       bg.strokeRoundedRect(-buttonW / 2, -btnH / 2, buttonW, btnH, btnRadius);
-      bg.setInteractive({ useHandCursor: true });
+      bg.setInteractive({
+        hitArea: new Phaser.Geom.Rectangle(-buttonW / 2, -btnH / 2, buttonW, btnH),
+        hitAreaCallback: Phaser.Geom.Rectangle.Contains,
+        useHandCursor: true,
+      });
       this.add
         .text(x, compact ? y : y - 8, m.label, {
           fontFamily: 'Georgia, "Times New Roman", serif',
@@ -853,6 +917,7 @@ export class KaneMenuScene extends Phaser.Scene {
   }
 
   private startMatch(species: SpeciesId): void {
+    if (isPhoneSizedScreen(this.scale.width, this.scale.height)) return;
     if (this.anyOverlayOpen()) return;
     if (isCloudAccount(getCurrentAuthUser())) {
       this.launchMatch(species);
@@ -898,7 +963,11 @@ export class KaneMenuScene extends Phaser.Scene {
     const bg = this.add
       .graphics()
       .setPosition(x, y)
-      .setInteractive({ useHandCursor: true });
+      .setInteractive({
+        hitArea: new Phaser.Geom.Rectangle(-w / 2, -h / 2, w, h),
+        hitAreaCallback: Phaser.Geom.Rectangle.Contains,
+        useHandCursor: true,
+      });
     const cardFill = fill;
     const cardStroke = remembered ? 0xffe28a : stroke;
     bg.fillStyle(cardFill, 1);
