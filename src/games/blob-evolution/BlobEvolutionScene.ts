@@ -11,6 +11,23 @@ import Phaser from 'phaser';
 import * as THREE from 'three';
 import { ensureAmbientBgm } from '../../presentation/audio/bgm';
 import { playSfx } from '../../presentation/audio/sfx';
+import {
+  ARENA,
+  BOT_CHASE_RANGE,
+  BOT_COUNT,
+  BOT_RESPONSE,
+  BOT_THINK_MIN,
+  BOT_THINK_SPREAD,
+  BOT_WANDER_CHANCE,
+  PLAYER_RESPONSE,
+  PLAYER_START_STAGE,
+  approach,
+  botStagePlan,
+  canEat,
+  findChaseTarget,
+  spawnPoint,
+  wanderTarget,
+} from './blobRules';
 
 const STAGES = [
   { name: 'Purple', color: 0x8b4fd4, radius: 0.42, speed: 2.35 },
@@ -21,19 +38,20 @@ const STAGES = [
   { name: 'Angel', color: 0xfff0a8, radius: 1.35, speed: 5.9 },
 ] as const;
 
-const ARENA = 34;
-const BOT_COUNT = 42;
-
 interface Bot {
   stage: number;
   radius: number;
+  /** Top speed in arena units per second. */
   speed: number;
   x: number;
   z: number;
+  /** Velocity in arena units per second. */
   vx: number;
   vz: number;
   tx: number;
   tz: number;
+  /** Seconds until a bot next decides where to go. */
+  think: number;
   alive: boolean;
   group: THREE.Group;
 }
@@ -532,39 +550,37 @@ export class BlobEvolutionScene extends Phaser.Scene {
     this.bots = [];
 
     // Create player
+    const startStage = PLAYER_START_STAGE;
     this.player = {
-      stage: 0,
-      radius: STAGES[0].radius,
-      speed: STAGES[0].speed,
+      stage: startStage,
+      radius: STAGES[startStage].radius,
+      speed: STAGES[startStage].speed,
       x: 0,
       z: 0,
       vx: 0,
       vz: 0,
       tx: 0,
       tz: 0,
+      think: 0,
       alive: true,
-      group: this.makeBlob(0, true),
+      group: this.makeBlob(startStage, true),
     };
     this.playerGroup = this.player.group;
     this.threeScene.add(this.playerGroup);
 
-    // Create bots
-    for (let i = 0; i < BOT_COUNT; i++) {
-      this.spawnBot(i);
+    // Create bots: half Purple, half Blue, scattered across the arena
+    for (const stage of botStagePlan(BOT_COUNT)) {
+      this.spawnBot(stage);
     }
 
     this.running = true;
     this.updateHud(true);
   }
 
-  private spawnBot(index: number): void {
+  private spawnBot(stage: number): void {
     if (!this.threeScene) return;
 
-    const stage = index < 8 ? 0 : index < 20 ? 1 : index < 30 ? 2 : 3;
-    const angle = Math.random() * Math.PI * 2;
-    const dist = 12 + Math.random() * (ARENA - 14);
-    const x = Math.cos(angle) * dist;
-    const z = Math.sin(angle) * dist;
+    const { x, z } = spawnPoint();
 
     const bot: Bot = {
       stage,
@@ -574,8 +590,9 @@ export class BlobEvolutionScene extends Phaser.Scene {
       z,
       vx: 0,
       vz: 0,
-      tx: x + (Math.random() - 0.5) * 10,
-      tz: z + (Math.random() - 0.5) * 10,
+      tx: x,
+      tz: z,
+      think: 0,
       alive: true,
       group: this.makeBlob(stage),
     };
@@ -734,9 +751,7 @@ export class BlobEvolutionScene extends Phaser.Scene {
   }
 
   private canEat(eaterStage: number, preyStage: number): boolean {
-    if (eaterStage === 4 && preyStage < 4) return true; // Rainbow eats all below
-    if (eaterStage === 5) return true; // Angel eats everything
-    return eaterStage > preyStage; // Normal: only eat strictly lower stage
+    return canEat(eaterStage, preyStage);
   }
 
   private playerEat(bot: Bot): void {
@@ -878,19 +893,14 @@ export class BlobEvolutionScene extends Phaser.Scene {
   private updatePlayer(dt: number): void {
     if (!this.player || !this.player.alive) return;
 
+    // Velocity eases toward (direction × top speed) and is applied per second,
+    // so the blob moves at the same pace at any frame rate.
     const input = this.getMoveDirection();
-    const speed = this.player.speed * dt * 8;
+    this.player.vx = approach(this.player.vx, input.x * this.player.speed, dt, PLAYER_RESPONSE);
+    this.player.vz = approach(this.player.vz, input.z * this.player.speed, dt, PLAYER_RESPONSE);
 
-    this.player.vx += input.x * speed;
-    this.player.vz += input.z * speed;
-
-    // Damping
-    this.player.vx *= 0.92;
-    this.player.vz *= 0.92;
-
-    // Apply velocity
-    this.player.x += this.player.vx;
-    this.player.z += this.player.vz;
+    this.player.x += this.player.vx * dt;
+    this.player.z += this.player.vz * dt;
 
     // Boundary clamp
     const lim = ARENA - this.player.radius * 0.8;
@@ -914,39 +924,38 @@ export class BlobEvolutionScene extends Phaser.Scene {
     for (const bot of this.bots) {
       if (!bot.alive) continue;
 
-      // Simple AI: wander + seek player if close
-      if (Math.random() < 0.01) {
-        bot.tx = bot.x + (Math.random() - 0.5) * 20;
-        bot.tz = bot.z + (Math.random() - 0.5) * 20;
-        const lim = ARENA - bot.radius * 0.8;
-        bot.tx = Phaser.Math.Clamp(bot.tx, -lim, lim);
-        bot.tz = Phaser.Math.Clamp(bot.tz, -lim, lim);
-      }
-
-      if (this.player) {
-        const d = this.distance(bot, this.player);
-        if (d < 25) {
-          const dx = this.player.x - bot.x;
-          const dz = this.player.z - bot.z;
-          const dist = Math.hypot(dx, dz) || 1;
-          bot.tx = bot.x + (dx / dist) * 8;
-          bot.tz = bot.z + (dz / dist) * 8;
+      // A bot re-decides every quarter to two thirds of a second: hunt the nearest
+      // thing it can eat (the player only if it can eat them), otherwise wander.
+      bot.think -= dt;
+      if (bot.think <= 0) {
+        bot.think = BOT_THINK_MIN + Math.random() * BOT_THINK_SPREAD;
+        const chase = findChaseTarget(bot, this.player, this.bots, BOT_CHASE_RANGE);
+        if (chase) {
+          bot.tx = chase.x;
+          bot.tz = chase.z;
+        } else if (Math.random() < BOT_WANDER_CHANCE) {
+          const wander = wanderTarget(bot);
+          bot.tx = wander.x;
+          bot.tz = wander.z;
         }
       }
 
-      const dx = bot.tx - bot.x;
-      const dz = bot.tz - bot.z;
+      let dx = bot.tx - bot.x;
+      let dz = bot.tz - bot.z;
       const dist = Math.hypot(dx, dz);
-      if (dist > 0.5) {
-        bot.vx += (dx / dist) * bot.speed * dt * 5;
-        bot.vz += (dz / dist) * bot.speed * dt * 5;
+      if (dist > 0.2) {
+        dx /= dist;
+        dz /= dist;
+      } else {
+        dx = 0;
+        dz = 0;
       }
 
-      bot.vx *= 0.9;
-      bot.vz *= 0.9;
+      bot.vx = approach(bot.vx, dx * bot.speed, dt, BOT_RESPONSE);
+      bot.vz = approach(bot.vz, dz * bot.speed, dt, BOT_RESPONSE);
 
-      bot.x += bot.vx;
-      bot.z += bot.vz;
+      bot.x += bot.vx * dt;
+      bot.z += bot.vz * dt;
 
       const lim = ARENA - bot.radius * 0.8;
       if (bot.x > lim || bot.x < -lim) {
