@@ -8,6 +8,19 @@
  * Tested by: src/games/blob-evolution/blobRules.test.ts
  */
 
+/** The evolution chain. `radius` is the collision size, `speed` the top speed in units per second. */
+export const STAGES = [
+  { name: 'Purple', color: 0x8b4fd4, radius: 0.42, speed: 2.35 },
+  { name: 'Blue', color: 0x1e8ef0, radius: 0.58, speed: 3.05 },
+  { name: 'Green', color: 0x2fbf6e, radius: 0.77, speed: 3.85 },
+  { name: 'Rock', color: 0x9a9386, radius: 0.98, speed: 4.55 },
+  { name: 'Rainbow', color: 0xffffff, radius: 1.18, speed: 5.35 },
+  { name: 'Angel', color: 0xfff0a8, radius: 1.35, speed: 5.9 },
+] as const;
+
+/** The last stage; reached by winning, never by eating. */
+export const ANGEL_STAGE = 5;
+
 export const ARENA = 34;
 export const BOT_COUNT = 42;
 
@@ -109,4 +122,15 @@ export function wanderTarget(bot: Mover, random: () => number = Math.random): { 
     x: clamp(bot.x + (random() - 0.5) * BOT_WANDER_RANGE),
     z: clamp(bot.z + (random() - 0.5) * BOT_WANDER_RANGE),
   };
+}
+
+export const RPS_CHOICES = ['rock', 'paper', 'scissors'] as const;
+export type RpsChoice = (typeof RPS_CHOICES)[number];
+
+const BEATS: Record<RpsChoice, RpsChoice> = { rock: 'scissors', paper: 'rock', scissors: 'paper' };
+
+/** Result of a rock-paper-scissors round from the player's side. */
+export function rpsOutcome(player: RpsChoice, opponent: RpsChoice): 'win' | 'lose' | 'tie' {
+  if (player === opponent) return 'tie';
+  return BEATS[player] === opponent ? 'win' : 'lose';
 }
