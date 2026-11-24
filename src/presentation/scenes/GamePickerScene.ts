@@ -41,6 +41,7 @@ import {
 } from '../ui/hubCardArt';
 import { isPhoneSizedScreen } from '../ui/screenSize';
 import {
+  cardSizes,
   cardTiltDeg,
   clampScroll,
   coverHeight,
@@ -65,7 +66,6 @@ const BLURB_KEYS: Record<string, MessageKey> = {
   'sats-quest': 'hub.sats.blurb',
 };
 
-const PAD = 26;
 const PLAY_H = 48;
 const PLAY_EDGE = 5;
 const DRAG_PX = 10;
@@ -79,6 +79,8 @@ interface PreparedCard {
   inner: Phaser.GameObjects.Container;
   /** Height the content needs, including the PLAY key and the padding. */
   natH: number;
+  /** Padding inside this card; narrower cards use less. */
+  pad: number;
   blocked: boolean;
 }
 
@@ -199,7 +201,7 @@ export class GamePickerScene extends Phaser.Scene {
 
   private rebuild(): void {
     const { width, height } = this.scale;
-    const metrics = pickerMetrics(width);
+    const metrics = pickerMetrics(width, GAME_REGISTRY.length);
     if (!metrics || height < 1) return; // no size yet: wait for the resize
     this.dpr = Math.min(2, Math.max(1, window.devicePixelRatio || 1));
     const key = `${width}x${height}|${getLocale()}|${this.dpr}`;
@@ -408,7 +410,13 @@ export class GamePickerScene extends Phaser.Scene {
 
   // ---------------------------------------------------------------- cards
 
-  private pill(label: string, fill: Fill, color: string, tiltDeg: number): Phaser.GameObjects.Container {
+  private pill(
+    label: string,
+    fill: Fill,
+    color: string,
+    tiltDeg: number,
+    maxW = Infinity,
+  ): Phaser.GameObjects.Container {
     const txt = this.text(0, 0, label.toUpperCase(), {
       fontSize: '12px',
       fontStyle: '800',
@@ -422,6 +430,7 @@ export class GamePickerScene extends Phaser.Scene {
     face.fillRoundedRect(-w / 2, -h / 2, w, h, h / 2);
     const pill = this.add.container(0, 0, [face, txt]);
     pill.setSize(w, h);
+    if (w > maxW) pill.setScale(maxW / w); // a long tagline on a narrow card shrinks to fit
     pill.setRotation(isReduceMotion() ? 0 : Phaser.Math.DegToRad(tiltDeg));
     return pill;
   }
@@ -430,39 +439,41 @@ export class GamePickerScene extends Phaser.Scene {
   private prepareCard(game: GameManifest, cardW: number, viewW: number, viewH: number): PreparedCard {
     const colors = CARD_COLORS[game.id] ?? DEFAULT_CARD_COLORS;
     const blocked = !!game.bigScreenOnly && isPhoneSizedScreen(viewW, viewH);
-    const innerW = cardW - PAD * 2;
+    const size = cardSizes(cardW);
+    const pad = size.pad;
+    const innerW = cardW - pad * 2;
     const inner = this.add.container(0, 0);
 
-    const tagline = this.pill(game.tagline, PILL_FILL, HUB_PILL, -3);
+    const tagline = this.pill(game.tagline, PILL_FILL, HUB_PILL, -3, innerW);
     const status =
       game.status === 'live'
         ? this.pill(t('hub.live'), LIVE_FILL, HUB_ACCENT, 2.5)
         : this.pill(t('hub.experimental'), GOLD_FILL, HUB_GOLD, 2.5);
-    const tagW = tagline.width;
-    const staW = status.width;
-    let y = PAD;
+    const tagW = tagline.displayWidth;
+    const staW = status.displayWidth;
+    let y = pad;
     if (game.cover) {
       const coverH = coverHeight(innerW);
       const picture = paintCover(this.coverFor(game), innerW, coverH, this.dpr);
-      inner.add(this.addArt(picture, innerW, coverH, cardW / 2, PAD + coverH / 2));
-      y += coverH + 16;
+      inner.add(this.addArt(picture, innerW, coverH, cardW / 2, pad + coverH / 2));
+      y += coverH + 14;
     }
     if (tagW + 6 + staW <= innerW) {
       const x = (cardW - (tagW + 6 + staW)) / 2;
-      tagline.setPosition(x + tagW / 2, y + tagline.height / 2);
-      status.setPosition(x + tagW + 6 + staW / 2, y + status.height / 2);
-      y += Math.max(tagline.height, status.height);
+      tagline.setPosition(x + tagW / 2, y + tagline.displayHeight / 2);
+      status.setPosition(x + tagW + 6 + staW / 2, y + status.displayHeight / 2);
+      y += Math.max(tagline.displayHeight, status.displayHeight);
     } else {
-      tagline.setPosition(cardW / 2, y + tagline.height / 2);
-      y += tagline.height + 6;
-      status.setPosition(cardW / 2, y + status.height / 2);
-      y += status.height;
+      tagline.setPosition(cardW / 2, y + tagline.displayHeight / 2);
+      y += tagline.displayHeight + 6;
+      status.setPosition(cardW / 2, y + status.displayHeight / 2);
+      y += status.displayHeight;
     }
     inner.add([tagline, status]);
     y += 12;
 
     const title = this.text(cardW / 2, y, game.title, {
-      fontSize: `${Math.round(Math.min(36, Math.max(28, viewW * 0.06)))}px`,
+      fontSize: `${size.titleSize}px`,
       fontStyle: 'bold',
       color: HUB_INK,
       align: 'center',
@@ -474,10 +485,10 @@ export class GamePickerScene extends Phaser.Scene {
 
     const blurb = BLURB_KEYS[game.id];
     const desc = this.text(cardW / 2, y, blurb ? t(blurb) : game.description, {
-      fontSize: '16px',
+      fontSize: `${size.blurbSize}px`,
       color: HUB_MUTED,
       align: 'center',
-      lineSpacing: 5,
+      lineSpacing: 4,
       wordWrap: { width: innerW },
     }).setOrigin(0.5, 0);
     inner.add(desc);
@@ -495,7 +506,7 @@ export class GamePickerScene extends Phaser.Scene {
       y += notice.height + 18;
     }
 
-    return { game, accent: colors.accent, edge: colors.edge, inner, natH: y + PLAY_H + PAD, blocked };
+    return { game, accent: colors.accent, edge: colors.edge, inner, natH: y + PLAY_H + pad, pad, blocked };
   }
 
   private finishCard(
@@ -526,7 +537,7 @@ export class GamePickerScene extends Phaser.Scene {
     face.fillStyle(hexNumber(p.accent), 1);
     face.fillRoundedRect(-keyW / 2, -PLAY_H / 2, keyW, PLAY_H, 14);
     const playFace = this.add.container(0, 0, [face, label]);
-    const play = this.add.container(0, cardH / 2 - PAD - PLAY_H / 2 - PLAY_EDGE / 2, [edge, playFace]);
+    const play = this.add.container(0, cardH / 2 - p.pad - PLAY_H / 2 - PLAY_EDGE / 2, [edge, playFace]);
     if (p.blocked) play.setAlpha(0.5);
 
     const ring = this.add.graphics();
