@@ -68,6 +68,8 @@ function evaluatePrompt(prompt: string): Rational {
 
 const SEEDS = Array.from({ length: 250 }, (_, i) => i * 7919 + 13);
 
+const gcdOf = (a: number, b: number): number => (b ? gcdOf(b, a % b) : a);
+
 describe('maths templates', () => {
   it('cover every level in both maths realms', () => {
     for (const realm of ['arithmetic', 'reasoning'] as const) {
@@ -106,6 +108,18 @@ describe('maths templates', () => {
       }
     },
   );
+
+  it('prints every fraction in its simplest form, as test papers do', () => {
+    for (const template of MATHS_TEMPLATES) {
+      for (const seed of SEEDS) {
+        const item = buildMathsItem(template, createRng(seed));
+        for (const [, n, d] of item.prompt.matchAll(/(\d+)\/(\d+)/g)) {
+          expect(gcdOf(Number(n), Number(d)), `${template.id}: ${item.prompt}`).toBe(1);
+          expect(Number(n)).toBeLessThan(Number(d));
+        }
+      }
+    }
+  });
 
   it('gives 2 marks only to long multiplication and long division, as on Paper 1', () => {
     for (const template of MATHS_TEMPLATES) {

@@ -268,6 +268,35 @@ The game follows the Blob and Skate Rush pattern:
 - **Translation.** The game's content is UK-curriculum English. The recommendation is to
   translate the picker blurb only and keep the game copy en-GB.
 
+## 12. What the first PR ships, and what is left
+
+**Shipped:**
+- **Royal Trial.** An adaptive placement per realm: arithmetic, reasoning, grammar and punctuation, spelling, and reading.
+- **Kingdom map.** It shows the child's rank and which chapters are open.
+- **Raids and mock.** Five chapters per realm, from 1.6× time down to 0.9×, plus the Clockwork Dragon mock at real pace.
+- **Spells and modes.** Stardust spells, extra-time and no-timer modes, easier-to-read text and less movement.
+- **Saving.** Progress is saved under the child's own account, with a copy on the device. "About your data" and "Delete my SATs Quest data" are in the game.
+- **Owl tutor.** The proxy is built and tested. Its client flag stays off until the function is deployed.
+
+**To switch on Ask Owl:**
+1. The project needs the Blaze plan.
+2. Run `firebase functions:secrets:set OLLAMA_API_KEY`.
+3. Check the model name against `https://ollama.com/api/tags` (the default is `gpt-oss:20b`).
+4. Run `firebase deploy --only functions:satsTutor`.
+5. Set `SATS_LLM_TUTOR_ENABLED = true` in `src/games/sats-quest/satsTutor.ts`.
+6. Optionally, add a Firestore TTL policy on `expireAt` for `satsLlmUsage` and `satsLlmCache`.
+
+The Firestore rules for `users/{uid}/sats` must also be deployed before cloud saves work. Until then, progress stays on the device.
+
+**Follow-ups:**
+- More reading passages. There is one per level today.
+- More GPS and spelling items.
+- Typed constructed-response reading questions.
+- LLM-themed word problems: only the wording varies, and the numbers and answer stay code-checked.
+- Teacher and parent views.
+- Revisit the sign-up copy, which still says "13+ framing".
+- A proper privacy notice and legal review.
+
 ## Sources
 
 - KS2 mathematics test framework (2016, current): https://www.gov.uk/government/publications/key-stage-2-mathematics-test-framework

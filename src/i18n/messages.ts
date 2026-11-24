@@ -193,6 +193,8 @@ export const enGB = {
   'soft.hubPathTip': 'Hub · {path}',
   'hub.blob.blurb':
     'Start as a tiny blob and eat your way up the chain to become the Angel.',
+  'hub.sats.blurb':
+    'A fairy-tale quest for Year 6: beat the guardians with SATs-style maths, grammar, spelling and reading questions before the clock runs out.',
   'legal.privacyTitle': 'Privacy (stub)',
   'legal.privacyMeta':
     'KANE · Privacy — stub policy for the soft-launch fantasy RTS. Ads stay off; local-first play.',
@@ -1021,6 +1023,8 @@ export const ptBR = {
   'soft.hubPathTip': 'Hub · {path}',
   'hub.blob.blurb':
     'Comece como uma bolha minúscula e coma até o topo para virar o Anjo.',
+  'hub.sats.blurb':
+    'Uma aventura de conto de fadas para o Year 6 da Inglaterra: vença os guardiões com questões de matemática, gramática, ortografia e leitura no estilo dos SATs, contra o relógio. O jogo é em inglês.',
   'legal.privacyTitle': 'Privacidade (rascunho)',
   'legal.privacyMeta':
     'KANE · Privacidade — política rascunho do RTS de fantasia no lançamento. Anúncios desligados; jogo local primeiro.',
@@ -1845,6 +1849,8 @@ export const es = {
   'soft.hubPathTip': 'Hub · {path}',
   'hub.blob.blurb':
     'Empieza como una masa diminuta y come hasta la cima para convertirte en el Ángel.',
+  'hub.sats.blurb':
+    'Una aventura de cuento de hadas para Year 6 en Inglaterra: vence a los guardianes con preguntas de matemáticas, gramática, ortografía y lectura al estilo de los SATs, contra el reloj. El juego está en inglés.',
   'legal.privacyTitle': 'Privacidad (borrador)',
   'legal.privacyMeta':
     'KANE · Privacidad — política en borrador del RTS de fantasía en el lanzamiento. Anuncios apagados; juego local primero.',

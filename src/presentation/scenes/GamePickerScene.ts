@@ -54,6 +54,7 @@ const CARD_COLORS: Record<string, { accent: string; edge: string }> = {
   kane: { accent: '#ffd23f', edge: '#a8791a' },
   'blob-evolution': { accent: '#9dff6a', edge: '#4a9a2c' },
   'skate-rush': { accent: '#ff7ac8', edge: '#a3306f' },
+  'sats-quest': { accent: '#c9a7ff', edge: '#7a52c7' },
 };
 const DEFAULT_CARD_COLORS = { accent: '#7be0ff', edge: '#328da8' };
 
@@ -61,6 +62,7 @@ const BLURB_KEYS: Record<string, MessageKey> = {
   kane: 'hub.kane.blurb',
   'blob-evolution': 'hub.blob.blurb',
   'skate-rush': 'hub.skate.blurb',
+  'sats-quest': 'hub.sats.blurb',
 };
 
 const PAD = 26;

@@ -63,6 +63,16 @@ export const GAME_REGISTRY: readonly GameManifest[] = [
     sceneKey: 'SkateRush',
     dynamicImport: () => import('./skate-rush/index.ts'),
   },
+  {
+    id: 'sats-quest',
+    title: 'SATs Quest',
+    tagline: 'Learn. Quest. Beat the clock.',
+    description: 'A fairy-tale quest that turns Year 6 SATs practice into boss battles against the clock.',
+    status: 'experimental',
+    cover: 'covers/sats-quest.svg',
+    sceneKey: 'SatsQuest',
+    dynamicImport: () => import('./sats-quest/index.ts'),
+  },
 ] as const;
 
 /** Helper to find a game by id. */

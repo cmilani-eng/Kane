@@ -88,6 +88,13 @@ function clock(totalMinutes: number): string {
   return `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`;
 }
 
+/** A numerator from 1 to d − 1 sharing no factor with d, so the printed fraction is in its simplest form. */
+function properNumerator(rng: Rng, d: number): number {
+  const options: number[] = [];
+  for (let a = 1; a < d; a++) if (gcd(a, d) === 1) options.push(a);
+  return pick(rng, options);
+}
+
 /** A whole number from lo..hi whose last digit is not zero (so long multiplication has two rows). */
 function noZeroOnes(rng: Rng, lo: number, hi: number): number {
   let v = int(rng, lo, hi);
@@ -310,8 +317,8 @@ const ARITHMETIC: MathsTemplate[] = [
     code: '5F4',
     make: (rng) => {
       const d = pick(rng, [5, 7, 8, 9, 11, 12]);
-      const a = int(rng, 1, d - 1);
-      const b = int(rng, 1, d - 1);
+      const a = properNumerator(rng, d);
+      const b = properNumerator(rng, d);
       const sum = rat(a + b, d);
       return {
         prompt: `${a}/${d} + ${b}/${d} =`,
@@ -470,8 +477,8 @@ const ARITHMETIC: MathsTemplate[] = [
       const d1 = pick(rng, [2, 3, 4, 5]);
       const m = pick(rng, [2, 3]);
       const d2 = d1 * m;
-      const a = int(rng, 1, d1 - 1);
-      const b = int(rng, 1, d2 - 1);
+      const a = properNumerator(rng, d1);
+      const b = properNumerator(rng, d2);
       const sum = add(rat(a, d1), rat(b, d2));
       return {
         prompt: `${a}/${d1} + ${b}/${d2} =`,
@@ -587,8 +594,8 @@ const ARITHMETIC: MathsTemplate[] = [
         [3, 7],
       ] as const;
       const [d1, d2] = pick(rng, pairs);
-      const a = int(rng, 1, d1 - 1);
-      const b = int(rng, 1, d2 - 1);
+      const a = properNumerator(rng, d1);
+      const b = properNumerator(rng, d2);
       const common = lcm(d1, d2);
       const subtract = rng() < 0.4 && a * d2 !== b * d1;
       const [hi, lo] = !subtract || a / d1 > b / d2 ? [[a, d1], [b, d2]] : [[b, d2], [a, d1]];
@@ -667,9 +674,9 @@ const ARITHMETIC: MathsTemplate[] = [
     code: '6F5a',
     make: (rng) => {
       const b = int(rng, 2, 9);
-      const a = int(rng, 1, b - 1);
+      const a = properNumerator(rng, b);
       const d = int(rng, 2, 9);
-      const c = int(rng, 1, d - 1);
+      const c = properNumerator(rng, d);
       const product = mul(rat(a, b), rat(c, d));
       return {
         prompt: `${a}/${b} × ${c}/${d} =`,
@@ -692,7 +699,7 @@ const ARITHMETIC: MathsTemplate[] = [
     make: (rng) => {
       const w = int(rng, 1, 3);
       const b = int(rng, 2, 6);
-      const a = int(rng, 1, b - 1);
+      const a = properNumerator(rng, b);
       const k = int(rng, 2, 6);
       const improper = w * b + a;
       const product = mul(rat(improper, b), rat(k));
@@ -727,9 +734,9 @@ const ARITHMETIC: MathsTemplate[] = [
       ] as const;
       const [b1, b2] = pick(rng, pairs);
       const w1 = int(rng, 3, 5);
-      const a1 = int(rng, 1, b1 - 1);
+      const a1 = properNumerator(rng, b1);
       const w2 = int(rng, 1, 2);
-      const a2 = int(rng, 1, b2 - 1);
+      const a2 = properNumerator(rng, b2);
       const x = add(rat(w1), rat(a1, b1));
       const y = add(rat(w2), rat(a2, b2));
       const result = sub(x, y);
@@ -757,7 +764,7 @@ const ARITHMETIC: MathsTemplate[] = [
     code: '6F5b',
     make: (rng) => {
       const b = int(rng, 2, 9);
-      const a = int(rng, 1, b - 1);
+      const a = properNumerator(rng, b);
       const k = int(rng, 2, 6);
       const q = div(rat(a, b), rat(k));
       return {
