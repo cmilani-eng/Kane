@@ -1,5 +1,18 @@
 import { describe, expect, it } from 'vitest';
-import { cardTiltDeg, clampScroll, maxScroll, nextFocus, pickerMetrics } from './pickerLayout';
+import { cardTiltDeg, clampScroll, coverHeight, maxScroll, nextFocus, pickerMetrics } from './pickerLayout';
+
+describe('coverHeight', () => {
+  it('keeps a card picture at 5:3', () => {
+    expect(coverHeight(500)).toBe(300);
+    expect(coverHeight(394)).toBe(236);
+  });
+
+  it('stays in proportion as cards narrow on a phone', () => {
+    for (const width of [240, 283, 320, 394, 468]) {
+      expect(coverHeight(width) / width).toBeCloseTo(0.6, 1);
+    }
+  });
+});
 
 describe('pickerMetrics', () => {
   it('waits while the canvas has no size', () => {

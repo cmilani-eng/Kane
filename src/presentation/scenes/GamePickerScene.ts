@@ -36,12 +36,14 @@ import {
   paintBlob,
   paintCardGlow,
   paintCardPanel,
+  paintCover,
   paintTitle,
 } from '../ui/hubCardArt';
 import { isPhoneSizedScreen } from '../ui/screenSize';
 import {
   cardTiltDeg,
   clampScroll,
+  coverHeight,
   maxScroll,
   nextFocus,
   pickerMetrics,
@@ -111,6 +113,9 @@ export class GamePickerScene extends Phaser.Scene {
   private localeUnsub: (() => void) | null = null;
   private loadingText: Phaser.GameObjects.Text | null = null;
   private starting = false;
+  /** Card pictures by URL: null while loading (the card shows a placeholder) or if it failed. */
+  private covers = new Map<string, HTMLImageElement | null>();
+  private closed = false;
 
   constructor() {
     super('GamePicker');
@@ -118,6 +123,8 @@ export class GamePickerScene extends Phaser.Scene {
 
   create(): void {
     this.starting = false;
+    this.closed = false;
+    for (const game of GAME_REGISTRY) this.coverFor(game); // start loading the pictures now
     this.focusIndex = -1;
     this.scrollY = 0;
     this.builtFor = '';
@@ -135,6 +142,7 @@ export class GamePickerScene extends Phaser.Scene {
   }
 
   private onShutdown(): void {
+    this.closed = true;
     this.input.keyboard?.off('keydown', this.onKey, this);
     this.input.keyboard?.removeCapture('TAB');
     this.input.off('wheel', this.onWheel, this);
@@ -157,6 +165,28 @@ export class GamePickerScene extends Phaser.Scene {
     const game = autoGame ? GAME_REGISTRY.find((g) => g.id === autoGame) : undefined;
     if (!game || this.isBlocked(game)) return;
     this.time.delayedCall(300, () => void this.startGame(game));
+  }
+
+  /**
+   * A card's picture, or null while it is still loading. Until it arrives the card draws a
+   * placeholder of the same size, and the page is rebuilt once when the picture is ready.
+   */
+  private coverFor(game: GameManifest): HTMLImageElement | null {
+    if (!game.cover) return null;
+    const url = `${import.meta.env.BASE_URL}${game.cover}`;
+    if (this.covers.has(url)) return this.covers.get(url) ?? null;
+    this.covers.set(url, null);
+    const image = new Image();
+    image.decoding = 'async';
+    image.onload = () => {
+      this.covers.set(url, image);
+      if (this.closed) return;
+      this.builtFor = '';
+      this.rebuild();
+    };
+    // A missing picture just leaves the placeholder: the card still works.
+    image.src = url;
+    return null;
   }
 
   private isBlocked(game: GameManifest): boolean {
@@ -409,6 +439,12 @@ export class GamePickerScene extends Phaser.Scene {
     const tagW = tagline.width;
     const staW = status.width;
     let y = PAD;
+    if (game.cover) {
+      const coverH = coverHeight(innerW);
+      const picture = paintCover(this.coverFor(game), innerW, coverH, this.dpr);
+      inner.add(this.addArt(picture, innerW, coverH, cardW / 2, PAD + coverH / 2));
+      y += coverH + 16;
+    }
     if (tagW + 6 + staW <= innerW) {
       const x = (cardW - (tagW + 6 + staW)) / 2;
       tagline.setPosition(x + tagW / 2, y + tagline.height / 2);

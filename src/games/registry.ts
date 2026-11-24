@@ -19,6 +19,8 @@ export interface GameManifest {
   readonly status: 'live' | 'experimental';
   /** True when the game needs a tablet or computer; its card cannot start on a phone. */
   readonly bigScreenOnly?: boolean;
+  /** Card picture: a file under `public/`, relative to the site root (e.g. `covers/kane.jpg`). */
+  readonly cover?: string;
   /** Phaser scene key to start (the game's first scene). */
   readonly sceneKey: string;
   /** Lazy-load the game's scene module. */
@@ -37,6 +39,7 @@ export const GAME_REGISTRY: readonly GameManifest[] = [
     description: 'Fantasy real-time strategy. Pick a species, build a base and crush the enemy.',
     status: 'live',
     bigScreenOnly: true,
+    cover: 'covers/kane.jpg',
     sceneKey: 'KaneBoot',
     dynamicImport: () => import('./kane/index.ts'),
   },
@@ -46,6 +49,7 @@ export const GAME_REGISTRY: readonly GameManifest[] = [
     tagline: 'Eat. Evolve. Ascend.',
     description: 'Start as a tiny blob and eat your way up the chain to become the Angel.',
     status: 'experimental',
+    cover: 'covers/blob-evolution.jpg',
     sceneKey: 'BlobEvolution',
     dynamicImport: () => import('./blob-evolution/index.ts'),
   },
@@ -55,6 +59,7 @@ export const GAME_REGISTRY: readonly GameManifest[] = [
     tagline: 'Skate. Flip. Survive.',
     description: 'Endless skating across four worlds. Collect coins, upgrade your deck, flip and survive.',
     status: 'experimental',
+    cover: 'covers/skate-rush.jpg',
     sceneKey: 'SkateRush',
     dynamicImport: () => import('./skate-rush/index.ts'),
   },
