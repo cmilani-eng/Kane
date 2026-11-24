@@ -1,5 +1,20 @@
 import { describe, expect, it } from 'vitest';
-import { cardTiltDeg, clampScroll, coverHeight, maxScroll, nextFocus, pickerMetrics } from './pickerLayout';
+import {
+  cardSizes,
+  cardTiltDeg,
+  clampScroll,
+  coverHeight,
+  maxScroll,
+  nextFocus,
+  pickerMetrics,
+} from './pickerLayout';
+
+describe('cardSizes', () => {
+  it('uses less padding and smaller text on narrow cards', () => {
+    expect(cardSizes(236)).toEqual({ pad: 18, titleSize: 24, blurbSize: 14 });
+    expect(cardSizes(360)).toEqual({ pad: 24, titleSize: 30, blurbSize: 15 });
+  });
+});
 
 describe('coverHeight', () => {
   it('keeps a card picture at 5:3', () => {
@@ -21,31 +36,50 @@ describe('pickerMetrics', () => {
     expect(pickerMetrics(Number.NaN)).toBeNull();
   });
 
-  it('puts two cards side by side on a desktop and caps the column at 920', () => {
-    const m = pickerMetrics(1280)!;
-    expect(m.columns).toBe(2);
-    expect(m.contentW).toBe(920);
-    expect(m.cardW).toBe(446);
-    expect(m.titleSize).toBe(64);
+  it('shows six games in one row on a 15-16 inch laptop, so nothing needs scrolling', () => {
+    for (const width of [1366, 1440, 1536, 1728, 1920]) {
+      const m = pickerMetrics(width, 6)!;
+      expect(m.columns).toBe(6);
+      expect(m.cardW).toBeGreaterThanOrEqual(200);
+    }
+    const wide = pickerMetrics(1728, 6)!;
+    expect(wide.contentW).toBe(1500);
+    expect(wide.cardW).toBe(236);
+    expect(wide.titleSize).toBe(64);
   });
 
-  it('keeps two columns on a portrait tablet', () => {
-    const m = pickerMetrics(768)!;
-    expect(m.columns).toBe(2);
-    expect(m.cardW).toBeGreaterThanOrEqual(280);
-    expect(m.cardW * 2 + m.gap).toBeLessThanOrEqual(m.contentW);
+  it('keeps cards a comfortable size when there are only a few games', () => {
+    const four = pickerMetrics(1728, 4)!;
+    expect(four.columns).toBe(4);
+    expect(four.cardW).toBe(360);
+    expect(pickerMetrics(1728, 3)!.columns).toBe(3);
+    expect(pickerMetrics(1728, 1)!.columns).toBe(1);
   });
 
-  it('stacks the cards in one column when two would be under 280px each', () => {
-    const m = pickerMetrics(500)!;
-    expect(m.columns).toBe(1);
-    expect(m.cardW).toBe(460);
+  it('uses fewer, wider columns on smaller screens', () => {
+    expect(pickerMetrics(1024, 6)!.columns).toBe(4);
+    expect(pickerMetrics(768, 6)!.columns).toBe(3);
+    expect(pickerMetrics(768, 6)!.cardW).toBe(224);
   });
 
-  it('caps a single card so it does not stretch across a wide column', () => {
-    const m = pickerMetrics(600)!;
-    expect(m.columns).toBe(1);
-    expect(m.cardW).toBeLessThanOrEqual(520);
+  it('stacks the cards in one column on a phone, capped so a card does not stretch', () => {
+    const phone = pickerMetrics(375, 6)!;
+    expect(phone.columns).toBe(1);
+    expect(phone.cardW).toBe(335);
+    const wider = pickerMetrics(450, 6)!;
+    expect(wider.columns).toBe(1);
+    expect(wider.cardW).toBe(360);
+  });
+
+  it('never makes a multi-column card narrower than 200px, and the row always fits', () => {
+    for (let width = 320; width <= 2400; width += 40) {
+      for (let count = 1; count <= 8; count++) {
+        const m = pickerMetrics(width, count)!;
+        if (m.columns > 1) expect(m.cardW).toBeGreaterThanOrEqual(200);
+        expect(m.columns * m.cardW + (m.columns - 1) * m.gap).toBeLessThanOrEqual(m.contentW);
+        expect(m.columns).toBeLessThanOrEqual(Math.max(1, count));
+      }
+    }
   });
 
   it('scales the title between 40 and 64', () => {

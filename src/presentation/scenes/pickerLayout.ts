@@ -7,34 +7,41 @@
 export interface PickerMetrics {
   /** Side gutter in px. */
   margin: number;
-  /** Width of the card column area in px (the old picker capped it at 920). */
+  /** Width of the card area in px. */
   contentW: number;
   /** Gap between cards in px. */
   gap: number;
-  /** 2 when two cards fit side by side, else 1. */
-  columns: 1 | 2;
+  /** How many cards fit side by side (1 to 4). */
+  columns: number;
   cardW: number;
   /** Size of the gradient "Games" title in px. */
   titleSize: number;
 }
 
-const MAX_CONTENT_W = 920;
-const MIN_CARD_W = 280;
-const GAP = 28;
-const MAX_SINGLE_CARD_W = 520;
+const MAX_CONTENT_W = 1500;
+const MIN_CARD_W = 200;
+const GAP = 16;
+/** Up to six cards in one row, so a 15-16 inch laptop shows six games without scrolling. */
+const MAX_COLUMNS = 6;
+const MAX_CARD_W = 360;
 
 function clamp(min: number, value: number, max: number): number {
   return Math.max(min, Math.min(max, value));
 }
 
-/** Returns null while the canvas has no size yet, so the scene waits for a resize. */
-export function pickerMetrics(width: number): PickerMetrics | null {
+/**
+ * Returns null while the canvas has no size yet, so the scene waits for a resize.
+ * `count` is how many games there are: with only a few, the cards stay a comfortable size
+ * instead of spreading thin across the row.
+ */
+export function pickerMetrics(width: number, count = MAX_COLUMNS): PickerMetrics | null {
   if (!Number.isFinite(width) || width < 1) return null;
   const margin = clamp(20, Math.round(width * 0.04), 36);
   const contentW = Math.max(1, Math.min(MAX_CONTENT_W, width - margin * 2));
-  const columns = contentW >= MIN_CARD_W * 2 + GAP ? 2 : 1;
+  const fitting = clamp(1, Math.floor((contentW + GAP) / (MIN_CARD_W + GAP)), MAX_COLUMNS);
+  const columns = Math.min(fitting, Math.max(1, count));
   const raw = Math.floor((contentW - GAP * (columns - 1)) / columns);
-  const cardW = columns === 1 ? Math.min(MAX_SINGLE_CARD_W, raw) : raw;
+  const cardW = Math.min(MAX_CARD_W, raw);
   return {
     margin,
     contentW,
@@ -72,4 +79,10 @@ export const COVER_ASPECT = 5 / 3;
 /** Height of a card's picture for the width it is drawn at. */
 export function coverHeight(width: number): number {
   return Math.round(width / COVER_ASPECT);
+}
+
+/** Padding and text sizes inside a card: narrower cards (several per row) use smaller ones. */
+export function cardSizes(cardW: number): { pad: number; titleSize: number; blurbSize: number } {
+  const narrow = cardW < 320;
+  return { pad: narrow ? 18 : 24, titleSize: narrow ? 24 : 30, blurbSize: narrow ? 14 : 15 };
 }
