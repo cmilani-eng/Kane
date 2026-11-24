@@ -65,3 +65,11 @@ export function nextFocus(current: number, count: number, step: 1 | -1): number 
   if (current < 0) return step === 1 ? 0 : count - 1;
   return (current + step + count) % count;
 }
+
+/** Card pictures are 5:3, like the old DOM cards' `aspect-[5/3]` image. */
+export const COVER_ASPECT = 5 / 3;
+
+/** Height of a card's picture for the width it is drawn at. */
+export function coverHeight(width: number): number {
+  return Math.round(width / COVER_ASPECT);
+}

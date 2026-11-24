@@ -24,6 +24,8 @@ export const GOLD_FILL = { color: 0xffe28a, alpha: 0.13 } as const;
 export const CARD_RADIUS = 24;
 /** Transparent margin around a painted card so its shadow and glow are not clipped. */
 export const CARD_ART_PAD = 110;
+/** Corner radius of a card's picture (the old cards' `rounded-2xl`). */
+export const COVER_RADIUS = 16;
 
 function makeCanvas(w: number, h: number, dpr: number): [HTMLCanvasElement, CanvasRenderingContext2D] {
   const canvas = document.createElement('canvas');
@@ -90,6 +92,40 @@ export function paintCardGlow(w: number, h: number, accent: string, dpr: number)
   ctx.beginPath();
   ctx.roundRect(pad, pad, w, h, CARD_RADIUS);
   ctx.fill();
+  return canvas;
+}
+
+/**
+ * A card's picture, rounded and cropped to fill like CSS `object-fit: cover`. With no image yet
+ * (it is still loading, or failed) it paints the card's own navy so the card keeps its size.
+ */
+export function paintCover(image: HTMLImageElement | null, w: number, h: number, dpr: number): HTMLCanvasElement {
+  const [canvas, ctx] = makeCanvas(w, h, dpr);
+  ctx.scale(dpr, dpr);
+
+  ctx.save();
+  ctx.beginPath();
+  ctx.roundRect(0, 0, w, h, COVER_RADIUS);
+  ctx.clip();
+  if (image && image.naturalWidth > 0 && image.naturalHeight > 0) {
+    const k = Math.max(w / image.naturalWidth, h / image.naturalHeight);
+    const dw = image.naturalWidth * k;
+    const dh = image.naturalHeight * k;
+    ctx.drawImage(image, (w - dw) / 2, (h - dh) / 2, dw, dh);
+  } else {
+    const g = ctx.createLinearGradient(0, 0, w, h);
+    g.addColorStop(0, 'rgb(26, 52, 84)');
+    g.addColorStop(1, 'rgb(12, 26, 46)');
+    ctx.fillStyle = g;
+    ctx.fillRect(0, 0, w, h);
+  }
+  ctx.restore();
+
+  ctx.strokeStyle = 'rgba(255, 255, 255, 0.14)';
+  ctx.lineWidth = 1;
+  ctx.beginPath();
+  ctx.roundRect(0.5, 0.5, w - 1, h - 1, COVER_RADIUS - 0.5);
+  ctx.stroke();
   return canvas;
 }
 
