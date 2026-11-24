@@ -6,6 +6,7 @@ import {
   type RulesTestEnvironment,
 } from '@firebase/rules-unit-testing';
 import { afterAll, beforeAll, beforeEach, describe, it } from 'vitest';
+import { applyPlacement, applyRaid, newProgress, sessionDoc } from '../src/games/sats-quest/satsSave';
 
 // Runs against the Firestore emulator: `npm run test:rules` (needs Java 21).
 // Expectations follow docs/firestore-security-rules.md; the rules file is a draft.
@@ -149,5 +150,116 @@ describe('signed in as alice', () => {
     await assertFails(as('alice').doc('moderationEvents/e1').set({ any: 'thing' }));
     await assertFails(as('alice').doc('somethingElse/x').get());
     await assertFails(as('alice').doc('somethingElse/x').set({ any: 'thing' }));
+  });
+});
+
+// SATs Quest fixtures come from the client's own builders, so the rules and the client
+// shape cannot drift apart without this file failing.
+const satsProgress = () =>
+  applyRaid(
+    applyPlacement(newProgress(NOW), 'arithmetic', 0.37, [
+      { key: 'k', code: '6C7a', correct: true, marks: 2, marksAvailable: 2, ms: 900 },
+    ], NOW + 1),
+    'arithmetic',
+    3,
+    2,
+    7,
+    [],
+    NOW + 2,
+  ) as unknown as Record<string, unknown>;
+const satsSession = () =>
+  sessionDoc('raid', 'arithmetic', 3, NOW, NOW + 60_000, [
+    { key: 'k', code: '6C7a', correct: true, marks: 2, marksAvailable: 2, ms: 900 },
+    { key: 'j', code: '6F4', correct: false, marks: 0, marksAvailable: 1, ms: 900 },
+  ], 2, 'standard') as unknown as Record<string, unknown>;
+
+describe('SATs Quest progress', () => {
+  const progressPath = 'users/alice/sats/progress';
+
+  it('lets alice create, read, update and delete her own progress', async () => {
+    const doc = as('alice').doc(progressPath);
+    await assertSucceeds(doc.set(newProgress(NOW) as unknown as Record<string, unknown>));
+    await assertSucceeds(doc.set(satsProgress()));
+    await assertSucceeds(doc.get());
+    await assertSucceeds(doc.update({ xp: 500, updatedAtMs: NOW + 9 }));
+    await assertSucceeds(doc.delete());
+  });
+
+  it("keeps bob's progress private and lets nobody signed out in", async () => {
+    await env.withSecurityRulesDisabled(async (ctx) => {
+      await ctx.firestore().doc('users/bob/sats/progress').set(satsProgress());
+    });
+    await assertFails(as('alice').doc('users/bob/sats/progress').get());
+    await assertFails(as('alice').doc('users/bob/sats/progress').set(satsProgress()));
+    await assertFails(as('alice').doc('users/bob/sats/progress').delete());
+    await assertFails(signedOut().doc('users/bob/sats/progress').get());
+    await assertFails(as('alice').collectionGroup('sats').get());
+  });
+
+  it('only accepts the single progress document', async () => {
+    await assertFails(as('alice').doc('users/alice/sats/other').set(satsProgress()));
+  });
+
+  it.each<[string, (p: Record<string, unknown>) => Record<string, unknown>]>([
+    ['an extra field such as a real name', (p) => ({ ...p, realName: 'Alice Smith' })],
+    ['a missing field', ({ xp: _omitted, ...rest }) => rest],
+    ['an unknown hero', (p) => ({ ...p, hero: 'pirate' })],
+    ['negative XP', (p) => ({ ...p, xp: -1 })],
+    ['an unknown timer mode', (p) => ({ ...p, settings: { timer: 'turbo', dyslexiaFont: false } })],
+    ['a stored answer inside settings', (p) => ({ ...p, settings: { timer: 'off', dyslexiaFont: false, lastAnswer: '42' } })],
+    ['an extra realm', (p) => ({ ...p, realms: { ...(p.realms as object), science: (p.realms as Record<string, unknown>).arithmetic } })],
+    [
+      'an unknown band',
+      (p) => {
+        const realms = p.realms as Record<string, Record<string, unknown>>;
+        return { ...p, realms: { ...realms, grammar: { ...realms.grammar, band: 'genius' } } };
+      },
+    ],
+    [
+      'a chapter beyond 5',
+      (p) => {
+        const realms = p.realms as Record<string, Record<string, unknown>>;
+        return { ...p, realms: { ...realms, reading: { ...realms.reading, unlocked: 6 } } };
+      },
+    ],
+    [
+      'too many content codes',
+      (p) => ({ ...p, domainStats: Object.fromEntries(Array.from({ length: 81 }, (_, i) => [`C${i}`, { a: 1, c: 1 }])) }),
+    ],
+  ])('rejects progress with %s', async (_label, change) => {
+    await assertFails(as('alice').doc(progressPath).set(change(satsProgress())));
+  });
+});
+
+describe('SATs Quest sessions', () => {
+  it('lets alice write a session summary once, read it and delete it, but not edit it', async () => {
+    const doc = as('alice').doc('users/alice/satsSessions/s1');
+    await assertSucceeds(doc.set(satsSession()));
+    await assertSucceeds(doc.get());
+    await assertSucceeds(as('alice').collection('users/alice/satsSessions').get());
+    await assertFails(doc.update({ marks: 3 }));
+    await assertSucceeds(doc.delete());
+  });
+
+  it("cannot read or write bob's sessions", async () => {
+    await assertFails(as('alice').doc('users/bob/satsSessions/s1').set(satsSession()));
+    await assertFails(as('alice').collection('users/bob/satsSessions').get());
+  });
+
+  it.each<[string, (s: Record<string, unknown>) => Record<string, unknown>]>([
+    ['more correct answers than questions', (s) => ({ ...s, correct: 5, items: 2 })],
+    ['more marks than were available', (s) => ({ ...s, marks: 9 })],
+    ['an end before its start', (s) => ({ ...s, endedAtMs: NOW - 1 })],
+    ['a stored answer', (s) => ({ ...s, answers: ['9,022'] })],
+    ['an unknown kind', (s) => ({ ...s, kind: 'cheat' })],
+  ])('rejects a session with %s', async (_label, change) => {
+    await assertFails(as('alice').doc('users/alice/satsSessions/s1').set(change(satsSession())));
+  });
+
+  it('keeps the tutor cache and usage counters server-only', async () => {
+    for (const path of ['satsLlmCache/abc', 'satsLlmUsage/alice_2026-11-24']) {
+      await assertFails(as('alice').doc(path).get());
+      await assertFails(as('alice').doc(path).set({ count: 0 }));
+    }
   });
 });

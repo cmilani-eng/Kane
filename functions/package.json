@@ -1,0 +1,22 @@
+{
+  "name": "kane-functions",
+  "private": true,
+  "description": "Kane Cloud Functions. satsTutor: authenticated, rate-limited Ollama Cloud proxy for SATs Quest.",
+  "type": "module",
+  "main": "lib/index.js",
+  "engines": {
+    "node": "22"
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "typecheck": "tsc -p tsconfig.json --noEmit"
+  },
+  "dependencies": {
+    "firebase-admin": "^14.5.1",
+    "firebase-functions": "^7.4.0"
+  },
+  "devDependencies": {
+    "@types/node": "^22.0.0",
+    "typescript": "~5.7.3"
+  }
+}
