@@ -11,6 +11,7 @@ import { KaneBootScene } from './games/kane/KaneBootScene';
 import { KaneMenuScene } from './games/kane/KaneMenuScene';
 import { KaneBattlefieldScene } from './games/kane/KaneBattlefieldScene';
 import { BlobEvolutionScene } from './games/blob-evolution/BlobEvolutionScene';
+import { SkateRushScene } from './games/skate-rush/SkateRushScene';
 import { GamePickerScene } from './presentation/scenes/GamePickerScene';
 
 const parent = document.getElementById('app');
@@ -41,7 +42,7 @@ const config: Phaser.Types.Core.GameConfig = {
     mouse: true,
   },
   // GamePicker (hub) first → Kane scenes eagerly registered for direct scene.start() transitions
-  scene: [GamePickerScene, KaneBootScene, KaneMenuScene, KaneBattlefieldScene, BlobEvolutionScene],
+  scene: [GamePickerScene, KaneBootScene, KaneMenuScene, KaneBattlefieldScene, BlobEvolutionScene, SkateRushScene],
 };
 
 const game = new Phaser.Game(config);

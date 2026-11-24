@@ -1,9 +1,9 @@
 /**
- * Blob Evolution — the centred "boxes" (start, rock-paper-scissors, game over) drawn in
- * Phaser with the look of the original DOM panels: navy 145deg rounded card, pill tag,
- * big tight title, muted copy and chunky 3D cyan keys.
+ * Shared game panels — the centred "boxes" (start, choices, game over) drawn in Phaser with
+ * the look of the original DOM panels: navy 145deg rounded card, pill tag, big tight title,
+ * muted copy and chunky 3D cyan keys. Any Phaser game on the site can open one.
  *
- * Called by: src/games/blob-evolution/BlobEvolutionScene.ts
+ * Called by: src/games/blob-evolution/BlobEvolutionScene.ts, src/games/skate-rush/SkateRushScene.ts
  */
 import Phaser from 'phaser';
 import {
@@ -15,16 +15,18 @@ import {
   HUB_PILL,
   HUB_SUBTLE,
   PILL_FILL,
-} from '../../presentation/ui/hubCardArt';
+} from './hubCardArt';
 
-export interface BlobPanelButton {
+export interface GamePanelButton {
   label: string;
   onClick: () => void;
   /** Rock/paper/scissors keys: wider, taller, bigger label. */
   choice?: boolean;
+  /** The key Enter presses. Without one, Enter presses the first key that is not a `choice`. */
+  primary?: boolean;
 }
 
-export interface BlobPanelSpec {
+export interface GamePanelSpec {
   pill: string;
   title: string;
   copy?: string;
@@ -33,7 +35,7 @@ export interface BlobPanelSpec {
   /** Live gold status line (rock-paper-scissors result). `''` reserves the space. */
   result?: string;
   note?: string;
-  buttons: BlobPanelButton[];
+  buttons: GamePanelButton[];
 }
 
 const PANEL_MAX_W = 520;
@@ -102,15 +104,15 @@ function paintPanelFace(w: number, h: number, dpr: number): HTMLCanvasElement {
 let panelSerial = 0;
 
 /** One open panel. Re-lays itself out on resize; `destroy()` removes everything it made. */
-export class BlobPanel {
+export class GamePanel {
   private readonly scene: Phaser.Scene;
-  private spec: BlobPanelSpec;
+  private spec: GamePanelSpec;
   private readonly textureKey: string;
   private root: Phaser.GameObjects.Container | null = null;
   private dim: Phaser.GameObjects.Rectangle | null = null;
   private destroyed = false;
 
-  constructor(scene: Phaser.Scene, spec: BlobPanelSpec) {
+  constructor(scene: Phaser.Scene, spec: GamePanelSpec) {
     this.scene = scene;
     this.spec = spec;
     this.textureKey = `blob-panel-${++panelSerial}`;
@@ -121,7 +123,12 @@ export class BlobPanel {
 
   /** Update the gold status line (rock-paper-scissors result). */
   setResult(text: string): void {
-    this.spec = { ...this.spec, result: text };
+    this.update({ result: text });
+  }
+
+  /** Change any part of the panel (a key's label, the copy) and lay it out again. */
+  update(patch: Partial<GamePanelSpec>): void {
+    this.spec = { ...this.spec, ...patch };
     this.layout();
   }
 
@@ -134,7 +141,7 @@ export class BlobPanel {
   }
 
   private readonly onEnter = (): void => {
-    const primary = this.spec.buttons.find((b) => !b.choice);
+    const primary = this.spec.buttons.find((b) => b.primary) ?? this.spec.buttons.find((b) => !b.choice);
     primary?.onClick();
   };
 
@@ -220,7 +227,7 @@ export class BlobPanel {
     y += 16;
     const keys = spec.buttons.map((b) => this.makeKey(b));
     const gap = 10;
-    const rows: { keys: ReturnType<BlobPanel['makeKey']>[]; w: number; h: number }[] = [];
+    const rows: { keys: ReturnType<GamePanel['makeKey']>[]; w: number; h: number }[] = [];
     for (const key of keys) {
       const row = rows[rows.length - 1];
       if (row && row.w + gap + key.width <= innerW) {
@@ -249,7 +256,9 @@ export class BlobPanel {
       .image(0, 0, this.textureKey)
       .setDisplaySize(m.width + SHADOW_PAD * 2, panelH + SHADOW_PAD * 2);
 
-    const root = scene.add.container(viewW / 2, viewH / 2, [face]).setDepth(DEPTH);
+    // A tall panel on a short screen (a phone turned sideways) shrinks to fit instead of running off it.
+    const fit = Math.min(1, Math.max(0.4, (viewH - 16) / panelH));
+    const root = scene.add.container(viewW / 2, viewH / 2, [face]).setDepth(DEPTH).setScale(fit);
     for (const item of items) {
       // Content was laid out from the panel's top edge; shift it to be centred on the container.
       const obj = item as Phaser.GameObjects.GameObject & { y: number };
@@ -260,7 +269,7 @@ export class BlobPanel {
   };
 
   /** A chunky 3D key. The hit target is a separate invisible rectangle so every state redraws freely. */
-  private makeKey(button: BlobPanelButton): { container: Phaser.GameObjects.Container; width: number; height: number } {
+  private makeKey(button: GamePanelButton): { container: Phaser.GameObjects.Container; width: number; height: number } {
     const scene = this.scene;
     const size = button.choice ? 18 : 15;
     const label = this.text(button.label, size, HUB_INK_DARK, { fontStyle: '900' }).setOrigin(0.5);

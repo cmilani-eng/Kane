@@ -49,6 +49,15 @@ export const GAME_REGISTRY: readonly GameManifest[] = [
     sceneKey: 'BlobEvolution',
     dynamicImport: () => import('./blob-evolution/index.ts'),
   },
+  {
+    id: 'skate-rush',
+    title: 'Skate Rush 3',
+    tagline: 'Skate. Flip. Survive.',
+    description: 'Endless skating across four worlds. Collect coins, upgrade your deck, flip and survive.',
+    status: 'experimental',
+    sceneKey: 'SkateRush',
+    dynamicImport: () => import('./skate-rush/index.ts'),
+  },
 ] as const;
 
 /** Helper to find a game by id. */
