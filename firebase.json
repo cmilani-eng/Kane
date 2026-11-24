@@ -87,7 +87,9 @@
         { "source": "/kane", "destination": "/?game=kane", "type": 302 },
         { "source": "/kane/", "destination": "/?game=kane", "type": 302 },
         { "source": "/blob-evolution", "destination": "/?game=blob-evolution", "type": 302 },
-        { "source": "/blob-evolution/", "destination": "/?game=blob-evolution", "type": 302 }
+        { "source": "/blob-evolution/", "destination": "/?game=blob-evolution", "type": 302 },
+        { "source": "/skate-rush", "destination": "/?game=skate-rush", "type": 302 },
+        { "source": "/skate-rush/", "destination": "/?game=skate-rush", "type": 302 }
       ],
       "rewrites": [
         { "source": "/privacy", "destination": "/games/privacy.html" },

@@ -38,7 +38,7 @@ import {
   startAscension,
   updateAscension,
 } from './blobArt';
-import { BlobPanel, type BlobPanelSpec, createBackPill } from './blobPanels';
+import { GamePanel, type GamePanelSpec, createBackPill } from '../../presentation/ui/gamePanel';
 import {
   ANGEL_STAGE,
   ARENA,
@@ -104,7 +104,7 @@ export class BlobEvolutionScene extends Phaser.Scene {
   private hintText: Phaser.GameObjects.Text | null = null;
   private touchHelpText: Phaser.GameObjects.Text | null = null;
 
-  private panel: BlobPanel | null = null;
+  private panel: GamePanel | null = null;
   private ascension: AngelAscension | null = null;
   /** Blocks a second click on a rock-paper-scissors key while a win is being shown. */
   private rpsLocked = false;
@@ -537,9 +537,9 @@ export class BlobEvolutionScene extends Phaser.Scene {
     });
   }
 
-  private openPanel(spec: BlobPanelSpec): void {
+  private openPanel(spec: GamePanelSpec): void {
     this.closePanel();
-    this.panel = new BlobPanel(this, spec);
+    this.panel = new GamePanel(this, spec);
   }
 
   private closePanel(): void {
