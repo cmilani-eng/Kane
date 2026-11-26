@@ -273,7 +273,8 @@ export const enGB = {
   'skate.world.space': 'SPACE',
   'skate.wallet': 'Wallet: {n} coins',
   'skate.walletBest': 'Wallet: {coins} coins · 🏆 Best {best}',
-  'skate.controls': 'Space / ↑ / tap = jump · second jump = aerial flip + speed burst',
+  'skate.controls':
+    'Space / ↑ / tap = jump (two at most)\nSecond jump = aerial flip + speed burst\nLow ceiling? Jump only once!',
   'skate.start': 'START SKATING',
   'skate.upgrades': 'UPGRADES',
   'skate.score': 'SCORE',
@@ -1103,7 +1104,8 @@ export const ptBR = {
   'skate.world.space': 'ESPAÇO',
   'skate.wallet': 'Carteira: {n} moedas',
   'skate.walletBest': 'Carteira: {coins} moedas · 🏆 Recorde {best}',
-  'skate.controls': 'Espaço / ↑ / toque = pular · segundo pulo = giro no ar + impulso de velocidade',
+  'skate.controls':
+    'Espaço / ↑ / toque = pular (no máximo duas vezes)\nSegundo pulo = giro no ar + impulso de velocidade\nTeto baixo? Pule só uma vez!',
   'skate.start': 'COMEÇAR A PATINAR',
   'skate.upgrades': 'MELHORIAS',
   'skate.score': 'PONTOS',
@@ -1928,7 +1930,8 @@ export const es = {
   'skate.world.space': 'ESPACIO',
   'skate.wallet': 'Cartera: {n} monedas',
   'skate.walletBest': 'Cartera: {coins} monedas · 🏆 Récord {best}',
-  'skate.controls': 'Espacio / ↑ / toque = saltar · segundo salto = giro en el aire + impulso de velocidad',
+  'skate.controls':
+    'Espacio / ↑ / toque = saltar (dos veces como máximo)\nSegundo salto = giro en el aire + impulso de velocidad\n¿Techo bajo? ¡Salta solo una vez!',
   'skate.start': 'EMPEZAR A PATINAR',
   'skate.upgrades': 'MEJORAS',
   'skate.score': 'PUNTOS',
