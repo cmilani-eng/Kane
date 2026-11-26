@@ -61,6 +61,64 @@ export function approach(current: number, target: number, dt: number, response: 
   return current + (target - current) * Math.min(1, dt * response);
 }
 
+/** A blob that moves under its own steering. Positions and velocities are changed in place. */
+export interface MovingBody {
+  x: number;
+  z: number;
+  /** Velocity in arena units per second. */
+  vx: number;
+  vz: number;
+  radius: number;
+}
+
+/** A blob may overlap the arena wall a little: its centre stops this share of its radius short. */
+const WALL_REACH = 0.8;
+
+function clampToWall(value: number, lim: number): number {
+  return Math.min(lim, Math.max(-lim, value));
+}
+
+/**
+ * One frame of the player's movement. Velocity eases toward (input × top speed) and is applied
+ * per second. `speedFactor` scales the ground covered (a puddle), not the steering, so full pace
+ * is back as soon as it returns to 1.
+ */
+export function stepPlayer(body: MovingBody, inputX: number, inputZ: number, topSpeed: number, dt: number, speedFactor = 1): void {
+  body.vx = approach(body.vx, inputX * topSpeed, dt, PLAYER_RESPONSE);
+  body.vz = approach(body.vz, inputZ * topSpeed, dt, PLAYER_RESPONSE);
+
+  const lim = ARENA - body.radius * WALL_REACH;
+  body.x = clampToWall(body.x + body.vx * dt * speedFactor, lim);
+  body.z = clampToWall(body.z + body.vz * dt * speedFactor, lim);
+}
+
+/** One frame of a bot's movement toward the unit direction (dirX, dirZ). It rebounds off the wall. */
+export function stepBot(
+  bot: MovingBody & { speed: number; tx: number; tz: number },
+  dirX: number,
+  dirZ: number,
+  dt: number,
+  speedFactor = 1,
+): void {
+  bot.vx = approach(bot.vx, dirX * bot.speed, dt, BOT_RESPONSE);
+  bot.vz = approach(bot.vz, dirZ * bot.speed, dt, BOT_RESPONSE);
+
+  bot.x += bot.vx * dt * speedFactor;
+  bot.z += bot.vz * dt * speedFactor;
+
+  const lim = ARENA - bot.radius * WALL_REACH;
+  if (bot.x > lim || bot.x < -lim) {
+    bot.vx *= -0.7;
+    bot.tx = -bot.tx * 0.8;
+    bot.x = clampToWall(bot.x, lim);
+  }
+  if (bot.z > lim || bot.z < -lim) {
+    bot.vz *= -0.7;
+    bot.tz = -bot.tz * 0.8;
+    bot.z = clampToWall(bot.z, lim);
+  }
+}
+
 /** Half the bots are Purple, the other half Blue, in random order. */
 export function botStagePlan(count: number, random: () => number = Math.random): number[] {
   const purple = Math.floor(count / 2);
