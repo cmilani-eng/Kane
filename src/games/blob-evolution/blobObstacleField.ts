@@ -6,7 +6,7 @@
  * Tested by: blobObstacleField.test.ts
  */
 import type * as THREE from 'three';
-import { type HazardModel, type SceneryModel, disposeObstacleModel, makeHazardModel, makeSceneryModel } from './blobObstacleArt';
+import { type HazardModel, type SceneryModel, disposeModel, makeHazardModel, makeSceneryModel } from './blobObstacleArt';
 import {
   type Body,
   type Hazard,
@@ -17,6 +17,7 @@ import {
   planHarmlessObstacles,
   stepHazardField,
 } from './blobObstacles';
+import { ARENA } from './blobRules';
 
 interface HazardView {
   hazard: Hazard;
@@ -43,11 +44,11 @@ export class BlobObstacleField {
     return this.state.hazards;
   }
 
-  /** A new game: new scenery in new places, no hazards, and the timers start over. */
-  reset(): void {
+  /** A new game on a map of half-width `arena`: new scenery, no hazards, timers from the start. */
+  reset(arena: number = ARENA): void {
     this.dispose();
-    this.state = createHazardField(this.random);
-    this.harmless = planHarmlessObstacles(pickHarmlessCount(this.random), this.random);
+    this.state = createHazardField(this.random, arena);
+    this.harmless = planHarmlessObstacles(pickHarmlessCount(this.random), this.random, arena);
     for (const obstacle of this.harmless) {
       const model = makeSceneryModel(obstacle);
       this.scene.add(model.group);
@@ -86,7 +87,7 @@ export class BlobObstacleField {
 
   private remove(group: THREE.Group): void {
     this.scene.remove(group);
-    disposeObstacleModel(group);
+    disposeModel(group);
   }
 
   private hasView(hazard: Hazard): boolean {

@@ -39,6 +39,17 @@ const HAZARD_LOSE_KEYS = {
   redBlob: { title: 'blob.caught.redBlob.title', body: 'blob.caught.redBlob.body' },
 } as const satisfies Record<string, { title: MessageKey; body: MessageKey }>;
 
+const MAP_KEYS = {
+  dark: 'blob.map.dark',
+  playground: 'blob.map.playground',
+  castle: 'blob.map.castle',
+} as const satisfies Record<string, MessageKey>;
+
+/** The size and name of a map, for its key on the start panel. */
+export function blobMapLabel(id: keyof typeof MAP_KEYS): string {
+  return t(MAP_KEYS[id]);
+}
+
 /** Which obstacles kill and which only get in the way, for the start panel. */
 export function blobHazardNote(): string {
   return t('blob.hazardNote');

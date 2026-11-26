@@ -21,6 +21,7 @@ import {
   blobHazardNote,
   blobHudHint,
   blobHudLine,
+  blobMapLabel,
   blobRpsLose,
   blobRpsLoseTitle,
   blobRpsOpen,
@@ -30,7 +31,6 @@ import {
 } from '../../../games/blob-evolution/blobCopy';
 import {
   type AngelAscension,
-  buildArena,
   clearAscension,
   disposeBlob,
   disposeBlobArt,
@@ -40,6 +40,7 @@ import {
   startAscension,
   updateAscension,
 } from './blobArt';
+import { type ArenaScenery, buildArena } from './blobMapArt';
 import { BlobObstacleField } from './blobObstacleField';
 import {
   type HazardKind,
@@ -53,12 +54,13 @@ import {
 import { GamePanel, type GamePanelSpec, createBackPill } from '../../presentation/ui/gamePanel';
 import {
   ANGEL_STAGE,
-  ARENA,
   BOT_CHASE_RANGE,
-  BOT_COUNT,
   BOT_THINK_MIN,
   BOT_THINK_SPREAD,
   BOT_WANDER_CHANCE,
+  MAPS,
+  MAP_IDS,
+  type MapId,
   PLAYER_START_STAGE,
   RAINBOW_STAGE,
   RPS_CHOICES,
@@ -117,6 +119,9 @@ export class BlobEvolutionScene extends Phaser.Scene {
 
   private panel: GamePanel | null = null;
   private obstacles: BlobObstacleField | null = null;
+  /** The map being played, or the last one chosen. Phaser reuses the scene, so it is remembered. */
+  private mapId: MapId = 'dark';
+  private arena: ArenaScenery | null = null;
   /** The way a bot is about to head, reused every frame. */
   private readonly steer = { x: 0, z: 0 };
   private ascension: AngelAscension | null = null;
@@ -166,7 +171,7 @@ export class BlobEvolutionScene extends Phaser.Scene {
     const { width, height } = this.scale;
 
     this.threeScene = new THREE.Scene();
-    buildArena(this.threeScene);
+    this.arena = buildArena(this.threeScene, MAPS[this.mapId]);
     this.obstacles = new BlobObstacleField(this.threeScene);
 
     this.threeCamera = new THREE.PerspectiveCamera(52, width / height, 0.1, 180);
@@ -388,13 +393,27 @@ export class BlobEvolutionScene extends Phaser.Scene {
       chain: blobChain(),
       // The gold line, so what can kill you stands out.
       result: blobHazardNote(),
-      note: t('blob.note'),
-      buttons: [{ label: t('blob.start'), onClick: () => this.startGame() }],
+      note: `${t('blob.note')}\n${t('blob.chooseMap')}`,
+      // One key per map, small to large. Enter starts the last one chosen.
+      buttons: MAP_IDS.map((id) => ({ label: blobMapLabel(id), primary: id === this.mapId, onClick: () => this.startGame(id) })),
     });
   }
 
-  private startGame(): void {
+  private get map() {
+    return MAPS[this.mapId];
+  }
+
+  /** Swap the scenery if the chosen map is not the one standing. */
+  private useMap(mapId: MapId): void {
+    if (!this.threeScene || (mapId === this.mapId && this.arena)) return;
+    this.arena?.dispose();
+    this.mapId = mapId;
+    this.arena = buildArena(this.threeScene, this.map);
+  }
+
+  private startGame(mapId: MapId = this.mapId): void {
     this.closePanel();
+    this.useMap(mapId);
     if (this.threeScene) clearAscension(this.threeScene, this.ascension);
     this.ascension = null;
     this.duelBot = null;
@@ -441,10 +460,10 @@ export class BlobEvolutionScene extends Phaser.Scene {
     this.threeScene.add(this.playerGroup);
 
     // New trees and puddles in new places, and no hazards yet.
-    this.obstacles?.reset();
+    this.obstacles?.reset(this.map.half);
 
     // Create bots: half Purple, half Blue, scattered across the arena
-    for (const stage of botStagePlan(BOT_COUNT)) {
+    for (const stage of botStagePlan(this.map.bots)) {
       this.spawnBot(stage);
     }
 
@@ -455,7 +474,7 @@ export class BlobEvolutionScene extends Phaser.Scene {
   private spawnBot(stage: number): void {
     if (!this.threeScene) return;
 
-    const { x, z } = spawnPoint();
+    const { x, z } = spawnPoint(Math.random, 5, this.map.half);
 
     const bot: Bot = {
       stage,
@@ -563,7 +582,10 @@ export class BlobEvolutionScene extends Phaser.Scene {
       pill: blobEndPill(won),
       title,
       copy: body,
-      buttons: [{ label: t('blob.playAgain'), onClick: () => this.startGame() }],
+      buttons: [
+        { label: t('blob.playAgain'), onClick: () => this.startGame() },
+        { label: t('blob.changeMap'), onClick: () => this.showStartPanel() },
+      ],
     });
   }
 
@@ -585,7 +607,7 @@ export class BlobEvolutionScene extends Phaser.Scene {
     const input = this.getMoveDirection();
     if (input.x !== 0 || input.z !== 0) this.player.facing = Math.atan2(input.x, input.z);
     const slowed = puddleSpeedFactor(this.player.x, this.player.z, this.obstacles?.harmless ?? []);
-    stepPlayer(this.player, input.x, input.z, this.player.speed, dt, slowed);
+    stepPlayer(this.player, input.x, input.z, this.player.speed, dt, slowed, this.map.half);
   }
 
   private updateBots(dt: number): void {
@@ -602,7 +624,7 @@ export class BlobEvolutionScene extends Phaser.Scene {
           bot.tx = chase.x;
           bot.tz = chase.z;
         } else if (Math.random() < BOT_WANDER_CHANCE) {
-          const wander = wanderTarget(bot);
+          const wander = wanderTarget(bot, Math.random, this.map.half);
           bot.tx = wander.x;
           bot.tz = wander.z;
         }
@@ -624,7 +646,7 @@ export class BlobEvolutionScene extends Phaser.Scene {
       steerAroundObstacles(bot, dx, dz, this.obstacles?.hazards ?? [], harmless, this.steer);
       if (this.steer.x !== 0 || this.steer.z !== 0) bot.facing = Math.atan2(this.steer.x, this.steer.z);
 
-      stepBot(bot, this.steer.x, this.steer.z, dt, puddleSpeedFactor(bot.x, bot.z, harmless));
+      stepBot(bot, this.steer.x, this.steer.z, dt, puddleSpeedFactor(bot.x, bot.z, harmless), this.map.half);
     }
   }
 
@@ -714,8 +736,8 @@ export class BlobEvolutionScene extends Phaser.Scene {
       b.tz = b.z - dz * 2.5;
     }
 
-    const limA = ARENA - a.radius * 0.8;
-    const limB = ARENA - b.radius * 0.8;
+    const limA = this.map.half - a.radius * 0.8;
+    const limB = this.map.half - b.radius * 0.8;
     a.x = Phaser.Math.Clamp(a.x, -limA, limA);
     a.z = Phaser.Math.Clamp(a.z, -limA, limA);
     b.x = Phaser.Math.Clamp(b.x, -limB, limB);
@@ -854,7 +876,10 @@ export class BlobEvolutionScene extends Phaser.Scene {
       pill: blobEndPill(false),
       title: blobRpsLoseTitle(),
       copy: blobRpsLose(choice, botChoice),
-      buttons: [{ label: t('blob.restart'), onClick: () => this.startGame() }],
+      buttons: [
+        { label: t('blob.restart'), onClick: () => this.startGame() },
+        { label: t('blob.changeMap'), onClick: () => this.showStartPanel() },
+      ],
     });
   }
 
@@ -910,6 +935,7 @@ export class BlobEvolutionScene extends Phaser.Scene {
     if (this.player) {
       followCamera(this.threeCamera, this.player.x, this.player.z, dt);
     }
+    this.arena?.update(this.player?.x ?? 0, this.player?.z ?? 0, time);
     this.obstacles?.render(time);
 
     this.threeRenderer.render(this.threeScene, this.threeCamera);
@@ -956,6 +982,8 @@ export class BlobEvolutionScene extends Phaser.Scene {
     // Dispose Three.js resources
     this.obstacles?.dispose();
     this.obstacles = null;
+    this.arena?.dispose();
+    this.arena = null;
     if (this.threeScene) {
       clearAscension(this.threeScene, this.ascension);
       // The blobs left in the scene are freed here too.

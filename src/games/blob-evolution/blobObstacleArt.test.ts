@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 import { describe, expect, it } from 'vitest';
-import { disposeObstacleModel, makeHazardModel, makeSceneryModel } from './blobObstacleArt';
+import { disposeModel, makeHazardModel, makeSceneryModel } from './blobObstacleArt';
 import {
   HAZARD_KINDS,
   HAZARD_SPECS,
@@ -44,7 +44,7 @@ function expectAllFreed(root: THREE.Object3D): void {
   expect(all.size).toBeGreaterThan(0);
   const freed = new Set<unknown>();
   for (const item of all) item.addEventListener('dispose', () => freed.add(item));
-  disposeObstacleModel(root);
+  disposeModel(root);
   expect(freed.size).toBe(all.size);
 }
 

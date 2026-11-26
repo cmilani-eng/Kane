@@ -4,7 +4,7 @@
  * a yellow sign. Trees and puddles are green and blue and have no red on them.
  *
  * The models use only geometry and materials (no image textures), and each one owns all of
- * its own, so `disposeObstacleModel` can free it completely when it leaves the arena.
+ * its own, so `disposeModel` can free it completely when it leaves the arena.
  * `pose` and `animate` run every frame and allocate nothing.
  *
  * Called by: src/games/blob-evolution/blobObstacleField.ts
@@ -88,7 +88,7 @@ function dashedRing(radius: number, width: number, pieces: number, material: THR
 }
 
 /** Free every geometry, material, texture and instance buffer under a model. */
-export function disposeObstacleModel(root: THREE.Object3D): void {
+export function disposeModel(root: THREE.Object3D): void {
   const owned = new Set<{ dispose(): void }>();
   root.traverse((obj) => {
     if (obj instanceof THREE.InstancedMesh) owned.add(obj);

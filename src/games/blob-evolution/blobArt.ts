@@ -1,13 +1,13 @@
 /**
- * Blob Evolution — the 3D look: per-stage skins and accessories, the arena, the
- * idle wobble and the Angel ascension. Ported from the original game
+ * Blob Evolution — the 3D look of the blobs: per-stage skins and accessories, the
+ * idle wobble, the follow camera and the Angel ascension (the arenas are in blobMapArt.ts). Ported from the original game
  * (games/blob-evolution/main.js) so blobs look the way they were tuned.
  * Three.js only; no game rules and no Phaser.
  *
  * Called by: src/games/blob-evolution/BlobEvolutionScene.ts
  */
 import * as THREE from 'three';
-import { ANGEL_STAGE, ARENA } from './blobRules';
+import { ANGEL_STAGE } from './blobRules';
 
 // ---------------------------------------------------------------- skins
 
@@ -391,57 +391,6 @@ export function poseBlob(group: THREE.Group, pose: Pose, t: number, phase: numbe
   group.position.set(pose.x, pose.radius * 0.77 + bob, pose.z);
   group.rotation.y = pose.facing;
   group.scale.set(pose.radius * squash, pose.radius / squash, pose.radius * squash);
-}
-
-// ---------------------------------------------------------------- arena
-
-/** Night arena: lights, floor, grid, glowing boundary and drifting stars. */
-export function buildArena(scene: THREE.Scene): void {
-  scene.background = new THREE.Color(0x071321);
-  scene.fog = new THREE.Fog(0x071321, 35, 90);
-
-  scene.add(new THREE.HemisphereLight(0xb8dcff, 0x1a2938, 2.0));
-
-  const sun = new THREE.DirectionalLight(0xffffff, 3.0);
-  sun.position.set(-12, 24, 10);
-  sun.castShadow = true;
-  sun.shadow.mapSize.set(2048, 2048);
-  sun.shadow.camera.left = -45;
-  sun.shadow.camera.right = 45;
-  sun.shadow.camera.top = 45;
-  sun.shadow.camera.bottom = -45;
-  scene.add(sun);
-
-  const fill = new THREE.PointLight(0x3a9cff, 35, 55);
-  fill.position.set(15, 9, -12);
-  scene.add(fill);
-
-  const floor = new THREE.Mesh(new THREE.PlaneGeometry(100, 100), new THREE.MeshStandardMaterial({ color: 0x10263a, roughness: 0.92, metalness: 0.05 }));
-  floor.rotation.x = -Math.PI / 2;
-  floor.position.y = -0.16;
-  floor.receiveShadow = true;
-  scene.add(floor);
-
-  const grid = new THREE.GridHelper(ARENA * 2, 34, 0x2a5974, 0x1b3a50);
-  grid.position.y = -0.145;
-  scene.add(grid);
-
-  const boundary = new THREE.Mesh(
-    new THREE.TorusGeometry(ARENA, 0.16, 10, 160),
-    new THREE.MeshStandardMaterial({ color: 0x47b8d7, emissive: 0x14546a, emissiveIntensity: 0.65 }),
-  );
-  boundary.rotation.x = Math.PI / 2;
-  boundary.position.y = -0.08;
-  scene.add(boundary);
-
-  for (let i = 0; i < 70; i++) {
-    const star = new THREE.Mesh(
-      new THREE.SphereGeometry(0.035 + Math.random() * 0.045, 6, 6),
-      new THREE.MeshBasicMaterial({ color: 0x8ccfff, transparent: true, opacity: 0.45 }),
-    );
-    star.position.set((Math.random() - 0.5) * 95, 2 + Math.random() * 17, (Math.random() - 0.5) * 95);
-    scene.add(star);
-  }
 }
 
 // ---------------------------------------------------------------- camera
