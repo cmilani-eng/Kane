@@ -17,6 +17,8 @@ import {
   blobChoiceLabel,
   blobEaten,
   blobEndPill,
+  blobHazardLose,
+  blobHazardNote,
   blobHudHint,
   blobHudLine,
   blobRpsLose,
@@ -38,28 +40,37 @@ import {
   startAscension,
   updateAscension,
 } from './blobArt';
+import { BlobObstacleField } from './blobObstacleField';
+import {
+  type HazardKind,
+  applySuction,
+  bounceOffTrees,
+  deadlyHazardFor,
+  hazardMayTake,
+  puddleSpeedFactor,
+  steerAroundObstacles,
+} from './blobObstacles';
 import { GamePanel, type GamePanelSpec, createBackPill } from '../../presentation/ui/gamePanel';
 import {
   ANGEL_STAGE,
   ARENA,
   BOT_CHASE_RANGE,
   BOT_COUNT,
-  BOT_RESPONSE,
   BOT_THINK_MIN,
   BOT_THINK_SPREAD,
   BOT_WANDER_CHANCE,
-  PLAYER_RESPONSE,
   PLAYER_START_STAGE,
   RAINBOW_STAGE,
   RPS_CHOICES,
   type RpsChoice,
   STAGES,
-  approach,
   botStagePlan,
   canEat,
   findChaseTarget,
   rpsOutcome,
   spawnPoint,
+  stepBot,
+  stepPlayer,
   wanderTarget,
 } from './blobRules';
 
@@ -105,6 +116,9 @@ export class BlobEvolutionScene extends Phaser.Scene {
   private touchHelpText: Phaser.GameObjects.Text | null = null;
 
   private panel: GamePanel | null = null;
+  private obstacles: BlobObstacleField | null = null;
+  /** The way a bot is about to head, reused every frame. */
+  private readonly steer = { x: 0, z: 0 };
   private ascension: AngelAscension | null = null;
   /** Blocks a second click on a rock-paper-scissors key while a win is being shown. */
   private rpsLocked = false;
@@ -153,6 +167,7 @@ export class BlobEvolutionScene extends Phaser.Scene {
 
     this.threeScene = new THREE.Scene();
     buildArena(this.threeScene);
+    this.obstacles = new BlobObstacleField(this.threeScene);
 
     this.threeCamera = new THREE.PerspectiveCamera(52, width / height, 0.1, 180);
     this.threeCamera.position.set(0, 17, 20);
@@ -371,6 +386,8 @@ export class BlobEvolutionScene extends Phaser.Scene {
       title: 'Blob Evolution',
       copy: t('blob.startBlurb'),
       chain: blobChain(),
+      // The gold line, so what can kill you stands out.
+      result: blobHazardNote(),
       note: t('blob.note'),
       buttons: [{ label: t('blob.start'), onClick: () => this.startGame() }],
     });
@@ -422,6 +439,9 @@ export class BlobEvolutionScene extends Phaser.Scene {
     };
     this.playerGroup = this.player.group;
     this.threeScene.add(this.playerGroup);
+
+    // New trees and puddles in new places, and no hazards yet.
+    this.obstacles?.reset();
 
     // Create bots: half Purple, half Blue, scattered across the arena
     for (const stage of botStagePlan(BOT_COUNT)) {
@@ -508,12 +528,22 @@ export class BlobEvolutionScene extends Phaser.Scene {
     this.openEndPanel(false, eaten.title, eaten.body);
   }
 
+  /** Caught by a black hole, a tornado or the giant red blob: the same end panel, naming the cause. */
+  private loseToHazard(kind: HazardKind): void {
+    this.running = false;
+    playSfx('defeat');
+    const caught = blobHazardLose(kind);
+    this.openEndPanel(false, caught.title, caught.body);
+  }
+
   /** The last blob standing ascends: it becomes the Angel and the ascension plays before the win panel. */
   private checkVictory(): void {
     if (!this.running || this.ascension || !this.threeScene) return;
     if (!this.bots.every((b) => !b.alive)) return;
 
     this.running = false;
+    // Nothing deadly is left on stage for the ascension.
+    this.obstacles?.clearHazards();
     this.evolvePlayer(ANGEL_STAGE);
     if (this.playerGroup) {
       this.ascension = startAscension(this.threeScene, this.playerGroup, performance.now());
@@ -551,19 +581,11 @@ export class BlobEvolutionScene extends Phaser.Scene {
     if (!this.player || !this.player.alive) return;
 
     // Velocity eases toward (direction × top speed) and is applied per second,
-    // so the blob moves at the same pace at any frame rate.
+    // so the blob moves at the same pace at any frame rate. A puddle shortens the ground covered.
     const input = this.getMoveDirection();
     if (input.x !== 0 || input.z !== 0) this.player.facing = Math.atan2(input.x, input.z);
-    this.player.vx = approach(this.player.vx, input.x * this.player.speed, dt, PLAYER_RESPONSE);
-    this.player.vz = approach(this.player.vz, input.z * this.player.speed, dt, PLAYER_RESPONSE);
-
-    this.player.x += this.player.vx * dt;
-    this.player.z += this.player.vz * dt;
-
-    // Boundary clamp
-    const lim = ARENA - this.player.radius * 0.8;
-    this.player.x = Phaser.Math.Clamp(this.player.x, -lim, lim);
-    this.player.z = Phaser.Math.Clamp(this.player.z, -lim, lim);
+    const slowed = puddleSpeedFactor(this.player.x, this.player.z, this.obstacles?.harmless ?? []);
+    stepPlayer(this.player, input.x, input.z, this.player.speed, dt, slowed);
   }
 
   private updateBots(dt: number): void {
@@ -592,29 +614,58 @@ export class BlobEvolutionScene extends Phaser.Scene {
       if (dist > 0.2) {
         dx /= dist;
         dz /= dist;
-        bot.facing = Math.atan2(dx, dz);
       } else {
         dx = 0;
         dz = 0;
       }
 
-      bot.vx = approach(bot.vx, dx * bot.speed, dt, BOT_RESPONSE);
-      bot.vz = approach(bot.vz, dz * bot.speed, dt, BOT_RESPONSE);
+      // Every frame, not only when it thinks: run from hazards and go round trees.
+      const harmless = this.obstacles?.harmless ?? [];
+      steerAroundObstacles(bot, dx, dz, this.obstacles?.hazards ?? [], harmless, this.steer);
+      if (this.steer.x !== 0 || this.steer.z !== 0) bot.facing = Math.atan2(this.steer.x, this.steer.z);
 
-      bot.x += bot.vx * dt;
-      bot.z += bot.vz * dt;
+      stepBot(bot, this.steer.x, this.steer.z, dt, puddleSpeedFactor(bot.x, bot.z, harmless));
+    }
+  }
 
-      const lim = ARENA - bot.radius * 0.8;
-      if (bot.x > lim || bot.x < -lim) {
-        bot.vx *= -0.7;
-        bot.tx = -bot.tx * 0.8;
-        bot.x = Phaser.Math.Clamp(bot.x, -lim, lim);
+  /**
+   * One frame of the deadly obstacles: let their time pass, pull blobs toward black holes and
+   * take whoever is touching one. Only called while the game is running.
+   */
+  private updateHazards(dt: number): void {
+    if (!this.obstacles || !this.player) return;
+
+    if (this.obstacles.step(dt, this.player)) playSfx('alert');
+    const { hazards } = this.obstacles;
+    if (hazards.length === 0) return;
+
+    applySuction(this.player, hazards, dt);
+    const killer = deadlyHazardFor(this.player, hazards);
+    if (killer) {
+      this.loseToHazard(killer.kind);
+      return;
+    }
+
+    let alive = 0;
+    for (let i = 0; i < this.bots.length; i++) if (this.bots[i].alive) alive++;
+    for (let i = 0; i < this.bots.length; i++) {
+      const bot = this.bots[i];
+      if (!bot.alive) continue;
+      applySuction(bot, hazards, dt);
+      if (hazardMayTake(alive) && deadlyHazardFor(bot, hazards)) {
+        this.removeBot(bot);
+        alive--;
       }
-      if (bot.z > lim || bot.z < -lim) {
-        bot.vz *= -0.7;
-        bot.tz = -bot.tz * 0.8;
-        bot.z = Phaser.Math.Clamp(bot.z, -lim, lim);
-      }
+    }
+  }
+
+  /** Trees are solid. Runs last, so no pull or shove from another blob can leave one inside. */
+  private bounceOffScenery(): void {
+    if (!this.obstacles || !this.player) return;
+    const { harmless } = this.obstacles;
+    bounceOffTrees(this.player, harmless);
+    for (let i = 0; i < this.bots.length; i++) {
+      if (this.bots[i].alive) bounceOffTrees(this.bots[i], harmless);
     }
   }
 
@@ -825,10 +876,13 @@ export class BlobEvolutionScene extends Phaser.Scene {
 
     const dt = Math.min(delta / 1000, 0.04);
 
+    // Everything that moves or kills runs only here, so panels, the duel and the ascension freeze it.
     if (this.running && this.player) {
       this.updatePlayer(dt);
       this.updateBots(dt);
+      this.updateHazards(dt);
       this.resolveCollisions();
+      this.bounceOffScenery();
       this.updateHud();
     }
 
@@ -856,6 +910,7 @@ export class BlobEvolutionScene extends Phaser.Scene {
     if (this.player) {
       followCamera(this.threeCamera, this.player.x, this.player.z, dt);
     }
+    this.obstacles?.render(time);
 
     this.threeRenderer.render(this.threeScene, this.threeCamera);
   }
@@ -889,9 +944,21 @@ export class BlobEvolutionScene extends Phaser.Scene {
 
     this.closePanel();
 
+    // Phaser reuses this object next time, so end the game here: left running, it would play on
+    // behind the next start panel, where a hazard could end it.
+    this.running = false;
+    this.player = null;
+    this.playerGroup = null;
+    this.bots = [];
+    this.duelBot = null;
+    this.duelBusy = false;
+
     // Dispose Three.js resources
+    this.obstacles?.dispose();
+    this.obstacles = null;
     if (this.threeScene) {
       clearAscension(this.threeScene, this.ascension);
+      // The blobs left in the scene are freed here too.
       for (const child of [...this.threeScene.children]) disposeBlob(child);
     }
     this.ascension = null;

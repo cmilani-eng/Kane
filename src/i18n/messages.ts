@@ -253,6 +253,17 @@ export const enGB = {
   'blob.stage.rock': 'Rock',
   'blob.stage.rainbow': 'Rainbow',
   'blob.stage.angel': 'Angel',
+  'blob.hazardNote':
+    'DEADLY: black holes, tornadoes and giant red blobs. Harmless: trees bounce you and puddles slow you down.',
+  'blob.caught.blackHole.title': 'Swallowed!',
+  'blob.caught.blackHole.body':
+    'The black hole pulled you in. Its pull grows stronger the closer you get, so turn away early.',
+  'blob.caught.tornado.title': 'Swept away!',
+  'blob.caught.tornado.body':
+    'A tornado caught you. It changes direction often, so give it plenty of room.',
+  'blob.caught.redBlob.title': 'Squashed!',
+  'blob.caught.redBlob.body':
+    'The giant red blob got you. Keep your distance until it disappears.',
   'hub.skate.blurb': 'Endless skating across four worlds. Collect coins, flip and survive.',
   'skate.pill': 'Endless runner',
   'skate.copy':
@@ -1084,6 +1095,17 @@ export const ptBR = {
   'blob.stage.rock': 'Pedra',
   'blob.stage.rainbow': 'Arco-íris',
   'blob.stage.angel': 'Anjo',
+  'blob.hazardNote':
+    'MORTAIS: buracos negros, tornados e bolhas vermelhas gigantes. Inofensivos: árvores fazem você quicar e poças deixam você mais lento.',
+  'blob.caught.blackHole.title': 'Engolido!',
+  'blob.caught.blackHole.body':
+    'O buraco negro puxou você. A atração aumenta quanto mais perto você chega, então desvie cedo.',
+  'blob.caught.tornado.title': 'Levado pelo vento!',
+  'blob.caught.tornado.body':
+    'Um tornado pegou você. Ele muda de direção toda hora, então passe bem longe.',
+  'blob.caught.redBlob.title': 'Esmagado!',
+  'blob.caught.redBlob.body':
+    'A bolha vermelha gigante pegou você. Mantenha distância até ela sumir.',
   'hub.skate.blurb': 'Patinação sem fim por quatro mundos. Colete moedas, faça manobras e sobreviva.',
   'skate.pill': 'Corrida sem fim',
   'skate.copy':
@@ -1910,6 +1932,17 @@ export const es = {
   'blob.stage.rock': 'Roca',
   'blob.stage.rainbow': 'Arcoíris',
   'blob.stage.angel': 'Ángel',
+  'blob.hazardNote':
+    'MORTALES: agujeros negros, tornados y masas rojas gigantes. Inofensivos: los árboles te hacen rebotar y los charcos te frenan.',
+  'blob.caught.blackHole.title': '¡Engullido!',
+  'blob.caught.blackHole.body':
+    'El agujero negro te atrapó. Tira más fuerte cuanto más te acercas, así que aléjate pronto.',
+  'blob.caught.tornado.title': '¡Arrastrado!',
+  'blob.caught.tornado.body':
+    'Un tornado te alcanzó. Cambia de rumbo a menudo, así que pasa bien lejos.',
+  'blob.caught.redBlob.title': '¡Aplastado!',
+  'blob.caught.redBlob.body':
+    'La masa roja gigante te alcanzó. Mantén la distancia hasta que desaparezca.',
   'hub.skate.blurb': 'Patinaje sin fin por cuatro mundos. Recoge monedas, haz piruetas y sobrevive.',
   'skate.pill': 'Carrera sin fin',
   'skate.copy':
