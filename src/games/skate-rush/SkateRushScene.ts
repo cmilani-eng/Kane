@@ -201,7 +201,7 @@ export class SkateRushScene extends Phaser.Scene {
   private readonly onKeyDown = (event: KeyboardEvent): void => {
     if (event.code !== 'Space' && event.code !== 'ArrowUp') return;
     event.preventDefault();
-    if (event.repeat) return; // holding the key would otherwise burn all three jumps at once
+    if (event.repeat) return; // holding the key would otherwise use up both jumps at once, fatal under a low ceiling
     if (this.phase === 'menu') this.startRun();
     else if (this.phase === 'playing') this.doJump();
   };
