@@ -1,7 +1,7 @@
 /**
  * Blob Evolution — the 3D look of the blobs: per-stage skins and accessories, the
- * idle wobble, the follow camera and the Angel ascension (the arenas are in blobMapArt.ts). Ported from the original game
- * (games/blob-evolution/main.js) so blobs look the way they were tuned.
+ * idle wobble, the follow camera and the Angel ascension (the arenas are in blobMapArt.ts).
+ * Ported from the original game (games/blob-evolution/main.js) so blobs look the way they were tuned.
  * Three.js only; no game rules and no Phaser.
  *
  * Called by: src/games/blob-evolution/BlobEvolutionScene.ts
@@ -397,12 +397,13 @@ export function poseBlob(group: THREE.Group, pose: Pose, t: number, phase: numbe
 
 /**
  * Ease the camera behind the player. `dt` keeps the follow speed the same at any
- * frame rate (0.075 per frame was the tuned feel at 60 fps).
+ * frame rate (0.075 per frame was the tuned feel at 60 fps). `lookAhead` aims that
+ * many units past the player, tilting the view up so a big map's far wall shows.
  */
-export function followCamera(camera: THREE.PerspectiveCamera, x: number, z: number, dt: number): void {
+export function followCamera(camera: THREE.PerspectiveCamera, x: number, z: number, dt: number, lookAhead = 0): void {
   const k = 1 - Math.pow(1 - 0.075, dt * 60);
   camera.position.lerp(new THREE.Vector3(x + 1.5, 15.5, z + 19.5), k);
-  camera.lookAt(x, 0, z);
+  camera.lookAt(x, 0, z - lookAhead);
 }
 
 // ---------------------------------------------------------------- Angel ascension

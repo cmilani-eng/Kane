@@ -1,5 +1,6 @@
 import * as THREE from 'three';
 import { describe, expect, it } from 'vitest';
+import { followCamera } from './blobArt';
 import { buildArena } from './blobMapArt';
 import { ARENA, MAPS, MAP_IDS } from './blobRules';
 
@@ -67,6 +68,30 @@ describe('the map scenery', () => {
     const before = sunOf(arena.group).position.clone();
     arena.update(20, -20, 3);
     expect(sunOf(arena.group).position).toEqual(before);
+  });
+
+  /** Where a point shows on screen (-1 to 1 both ways), seen from the start of a game. */
+  function onScreen(lookAhead: number, point: THREE.Vector3): THREE.Vector3 {
+    const camera = new THREE.PerspectiveCamera(52, 4 / 3, 0.1, 180);
+    for (let i = 0; i < 600; i++) followCamera(camera, 0, 0, 1 / 60, lookAhead);
+    camera.updateMatrixWorld(true);
+    return point.clone().project(camera);
+  }
+
+  it.each(THEMED)('shows the far edge of the $id from the start, with the blob still in view', (map) => {
+    const { arena } = build(map);
+    const farEdge = onScreen(arena.lookAhead, new THREE.Vector3(0, 1.2, -(map.half + 0.5)));
+    expect(farEdge.y).toBeLessThan(0.95);
+    const player = onScreen(arena.lookAhead, new THREE.Vector3(0, 0.5, 0));
+    expect(player.y).toBeLessThan(0);
+    expect(player.y).toBeGreaterThan(-0.5);
+    // Without looking ahead, that edge would be off the top of the screen on the castle.
+    if (map.id === 'castle') expect(onScreen(0, new THREE.Vector3(0, 1.2, -(map.half + 0.5))).y).toBeGreaterThan(1);
+  });
+
+  it('leaves the original view as it was', () => {
+    expect(build(MAPS.dark).arena.lookAhead).toBe(0);
+    expect(onScreen(0, new THREE.Vector3(0, 0, 0)).y).toBeCloseTo(0, 2);
   });
 
   it.each(THEMED)('carries the shadows along with the player on the $id', (map) => {

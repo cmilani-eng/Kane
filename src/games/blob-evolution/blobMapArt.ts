@@ -16,6 +16,8 @@ import { ARENA, type BlobMap, type MapId } from './blobRules';
 export interface ArenaScenery {
   /** Everything the map put in the scene. */
   group: THREE.Group;
+  /** How far past the player the camera aims on this map (see `followCamera`). */
+  lookAhead: number;
   /** Each frame: keeps shadows round the player on the big maps and moves the scenery. */
   update(playerX: number, playerZ: number, t: number): void;
   /** Take it all out of the scene and free it. */
@@ -35,6 +37,8 @@ interface Theme {
   ambient: number;
   sunColour: number;
   sunStrength: number;
+  /** The camera aims this far past the player, so the far edge of a big map is on screen. */
+  lookAhead: number;
   build(group: THREE.Group, half: number): Animate | null;
 }
 
@@ -416,7 +420,10 @@ function buildPlayground(group: THREE.Group, half: number): Animate {
 const STONE = 0x9c9486;
 const STONE_DARK = 0x6f685e;
 const ROOF = 0x39497d;
+/** Banners and flags only: they stand outside the play area. */
 const ROYAL = 0x5b3a8e;
+/** The carpet and crests. Dark slate, so Purple blobs and the black hole stand out on it. */
+const CARPET = 0x333a49;
 const GOLD = 0xd9ae45;
 
 /** Flagstones, a royal carpet from the gate and gold crests, all painted on the courtyard. */
@@ -438,7 +445,7 @@ function paveCourtyard(group: THREE.Group, half: number): void {
   joints.position.y = -0.149;
   group.add(joints);
 
-  const carpet = matte(ROYAL, { roughness: 0.9 });
+  const carpet = matte(CARPET, { roughness: 0.9 });
   const trim = paint(GOLD, 0.95);
   const from = -half + 0.2;
   const to = -7;
@@ -446,7 +453,7 @@ function paveCourtyard(group: THREE.Group, half: number): void {
   for (const side of [-2.35, 2.35]) line(group, trim, side, from, side, to, -0.141, 0.24);
 
   const crest = (x: number, z: number, scale: number): void => {
-    onGround(group, new THREE.CircleGeometry(5.6 * scale, 48), matte(0x4a3a63), x, -0.143, z);
+    onGround(group, new THREE.CircleGeometry(5.6 * scale, 48), carpet, x, -0.143, z);
     onGround(group, new THREE.RingGeometry(5.2 * scale, 5.65 * scale, 56), trim, x, -0.14, z);
     onGround(group, new THREE.RingGeometry(2.9 * scale, 3.1 * scale, 48), trim, x, -0.138, z);
     for (const turn of [0, Math.PI / 4]) {
@@ -575,9 +582,9 @@ function buildCastle(group: THREE.Group, half: number): Animate {
 // ---------------------------------------------------------------- putting a map up
 
 const THEMES: Record<MapId, Theme> = {
-  dark: { sky: 0x071321, fogNear: 35, fogFar: 90, skyLight: 0xb8dcff, groundLight: 0x1a2938, ambient: 2, sunColour: 0xffffff, sunStrength: 3, build: buildNight },
-  playground: { sky: 0x9ad8ff, fogNear: 55, fogFar: 150, skyLight: 0xe4f3ff, groundLight: 0x5d7f4c, ambient: 1.7, sunColour: 0xfff2d2, sunStrength: 2.4, build: buildPlayground },
-  castle: { sky: 0x2b2346, fogNear: 50, fogFar: 135, skyLight: 0xcdc2ff, groundLight: 0x3d3027, ambient: 1.7, sunColour: 0xffd2a0, sunStrength: 2.5, build: buildCastle },
+  dark: { sky: 0x071321, fogNear: 35, fogFar: 90, skyLight: 0xb8dcff, groundLight: 0x1a2938, ambient: 2, sunColour: 0xffffff, sunStrength: 3, lookAhead: 0, build: buildNight },
+  playground: { sky: 0x9ad8ff, fogNear: 55, fogFar: 150, skyLight: 0xe4f3ff, groundLight: 0x5d7f4c, ambient: 1.7, sunColour: 0xfff2d2, sunStrength: 2.4, lookAhead: 5, build: buildPlayground },
+  castle: { sky: 0x2b2346, fogNear: 50, fogFar: 135, skyLight: 0xcdc2ff, groundLight: 0x3d3027, ambient: 1.7, sunColour: 0xffd2a0, sunStrength: 2.5, lookAhead: 7, build: buildCastle },
 };
 
 /** Where the sun sits, measured from the spot it lights. */
@@ -609,6 +616,7 @@ export function buildArena(scene: THREE.Scene, map: BlobMap): ArenaScenery {
 
   return {
     group,
+    lookAhead: theme.lookAhead,
     update(playerX, playerZ, t) {
       if (sunFollows) {
         sun.position.set(playerX + SUN_OFFSET.x, SUN_OFFSET.y, playerZ + SUN_OFFSET.z);

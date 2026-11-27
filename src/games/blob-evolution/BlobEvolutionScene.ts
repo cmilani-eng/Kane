@@ -208,9 +208,10 @@ export class BlobEvolutionScene extends Phaser.Scene {
       .text(118, 108, blobHudHint(), {
         fontFamily: 'Arial, sans-serif',
         fontSize: '10px',
-        color: '#91a9c1',
+        // Pale with a dark edge, so it reads on the bright playground as well as at night.
+        color: '#dbe9f7',
         stroke: '#071321',
-        strokeThickness: 3,
+        strokeThickness: 4,
         wordWrap: { width: Math.max(160, width - 140) },
       })
       .setScrollFactor(0)
@@ -220,7 +221,9 @@ export class BlobEvolutionScene extends Phaser.Scene {
       .text(width - 16, height - 14, t('blob.touchHelp'), {
         fontFamily: 'Arial, sans-serif',
         fontSize: '11px',
-        color: 'rgba(230, 241, 255, 0.48)',
+        color: 'rgba(230, 241, 255, 0.85)',
+        stroke: '#071321',
+        strokeThickness: 3,
         align: 'right',
         wordWrap: { width: width * 0.46 },
       })
@@ -933,7 +936,7 @@ export class BlobEvolutionScene extends Phaser.Scene {
       if (bot.alive) poseBlob(bot.group, bot, time, bot.phase, false);
     }
     if (this.player) {
-      followCamera(this.threeCamera, this.player.x, this.player.z, dt);
+      followCamera(this.threeCamera, this.player.x, this.player.z, dt, this.arena?.lookAhead);
     }
     this.arena?.update(this.player?.x ?? 0, this.player?.z ?? 0, time);
     this.obstacles?.render(time);
