@@ -1,6 +1,8 @@
 /**
  * Pause overlay camera sector tip (HUD label only).
- * Distinct from minimap Cam · sector mark — frozen at pause open.
+ * Format: Cam · {sector} — view-center 3×3 frozen at pause open.
+ * Distinct from Focus · / Hero · / Selected · / Scout ·; same copy as
+ * minimap Cam tip but own pause-scoped key (`pause.camSectorTip`).
  */
 import type { MapSectorId } from '../../gameplay/battlefield/mapSector';
 import { t } from '../../i18n';

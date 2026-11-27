@@ -1,6 +1,7 @@
 /**
  * Selection health tip (HUD label only).
- * Live current/max HP as HP · {pct}% — distinct from Max HP · / HP chip.
+ * Live current/max HP as HP · {pct}% — middot (U+00B7).
+ * Distinct from Max HP · / Supply · / DPS · / Range · peers and HP chip.
  */
 import { t } from '../../i18n';
 

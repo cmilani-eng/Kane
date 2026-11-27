@@ -1,6 +1,8 @@
 /**
  * Catalog max-HP tip (HUD label only).
- * Format: Max HP · {n} — distinct from live HP · pct% and HP chip.
+ * Format: Max HP · {n} — middot (U+00B7).
+ * Distinct from Supply · / DPS · / Range · peers and from live HP · pct% /
+ * HP chip.
  */
 import { getUnitType, type UnitTypeId } from '../../data/units';
 import { t } from '../../i18n';

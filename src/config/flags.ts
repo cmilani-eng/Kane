@@ -24,6 +24,12 @@ export const flags = {
   /** Prefer email Auth for Account / cloud progression when SDK ready. */
   firebaseAuthUi: true as const,
   /**
+   * Friend lobby. Host and join use the live lobbies when Firebase is configured, and
+   * fall back to a short "online service needed" message when it is not. Matches do
+   * not start yet, so a joined lobby only shows the seat.
+   */
+  multiplayerLobby: true as const,
+  /**
    * Point stubs at local emulator ports (see `firebase.json`).
    * Also overridable via `VITE_FIREBASE_USE_EMULATORS=true`.
    * Local SP Vite path works with this false.

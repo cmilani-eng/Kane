@@ -10,20 +10,6 @@
         "**/src/**",
         "**/*.map"
       ],
-      "rewrites": [
-        {
-          "source": "/kane/**",
-          "destination": "/kane/index.html"
-        },
-        {
-          "source": "/blob-evolution/**",
-          "destination": "/blob-evolution/index.html"
-        },
-        {
-          "source": "**",
-          "destination": "/index.html"
-        }
-      ],
       "headers": [
         {
           "source": "/assets/**",
@@ -96,7 +82,31 @@
           ]
         }
       ],
-      "cleanUrls": true
+      "cleanUrls": true,
+      "redirects": [
+        { "source": "/kane", "destination": "/?game=kane", "type": 302 },
+        { "source": "/kane/", "destination": "/?game=kane", "type": 302 },
+        { "source": "/blob-evolution", "destination": "/?game=blob-evolution", "type": 302 },
+        { "source": "/blob-evolution/", "destination": "/?game=blob-evolution", "type": 302 },
+        { "source": "/skate-rush", "destination": "/?game=skate-rush", "type": 302 },
+        { "source": "/skate-rush/", "destination": "/?game=skate-rush", "type": 302 },
+        { "source": "/sats-quest", "destination": "/?game=sats-quest", "type": 302 },
+        { "source": "/sats-quest/", "destination": "/?game=sats-quest", "type": 302 }
+      ],
+      "rewrites": [
+        { "source": "/privacy", "destination": "/games/privacy.html" },
+        { "source": "/privacy.html", "destination": "/games/privacy.html" },
+        { "source": "/terms", "destination": "/games/terms.html" },
+        { "source": "/terms.html", "destination": "/games/terms.html" }
+      ]
+    }
+  ],
+  "functions": [
+    {
+      "source": "functions",
+      "codebase": "default",
+      "ignore": ["node_modules", ".git", "firebase-debug.log", "firebase-debug.*.log", "*.local", "src/**/*.test.ts"],
+      "predeploy": ["npm --prefix \"$RESOURCE_DIR\" run build"]
     }
   ],
   "emulators": {

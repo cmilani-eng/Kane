@@ -1,6 +1,9 @@
 /**
  * Minimap population tip (presentation only).
- * Living player unit count — distinct from Supply · used/cap tip.
+ * Format: Pop · {n} — middot (U+00B7).
+ * Living player unit count — distinct from Supply · used/cap /
+ * Army · / Selected · minimap peers; same en/pt-BR/es copy as pause
+ * Pop tip (`pause.populationTip` / `pausePopulationTipLine`), own key.
  */
 import { t } from '../../i18n';
 

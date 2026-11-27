@@ -99,16 +99,24 @@ function paintVision(
 }
 
 /** Rebuild current vision from player units + completed buildings. */
+/**
+ * Whose vision the fog uses. Fog changes what scouts reveal, which changes the match, so
+ * both clients must use the same rule: in a two-player match both teams reveal.
+ */
+function revealsFor(world: BattlefieldWorld, team: string): boolean {
+  return team === 'player' || (world.pvp && team === 'enemy');
+}
+
 export function tickFog(world: BattlefieldWorld, fog: FogState): void {
   fog.exploredDirty = false;
   fog.newExploreCount = 0;
   fog.visible.fill(0);
   for (const u of world.units) {
-    if (u.team !== 'player' || u.hp <= 0) continue;
+    if (!revealsFor(world, u.team) || u.hp <= 0) continue;
     paintVision(fog, u.x, u.y, u.vision);
   }
   for (const b of world.buildings) {
-    if (b.team !== 'player' || !b.complete || b.hp <= 0) continue;
+    if (!revealsFor(world, b.team) || !b.complete || b.hp <= 0) continue;
     const hall = getBuildingType(b.typeId).isMainHall;
     paintVision(fog, b.x, b.y, hall ? 280 : 160);
   }

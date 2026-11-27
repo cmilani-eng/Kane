@@ -56,7 +56,12 @@ export function createVolumeSlider(opts: VolumeSliderOpts): VolumeSliderHandle {
     .setStrokeStyle(1, 0x3a4555)
     .setScrollFactor(scrollFactor)
     .setDepth(depth)
-    .setInteractive({ useHandCursor: true });
+    // An explicit hit area keeps the track hit-testable even when its width is 0 mid-layout.
+    .setInteractive({
+      hitArea: new Phaser.Geom.Rectangle(0, 0, width, trackH),
+      hitAreaCallback: Phaser.Geom.Rectangle.Contains,
+      useHandCursor: true,
+    });
   objects.push(track);
 
   const fill = scene.add

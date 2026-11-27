@@ -30,6 +30,7 @@ import {
 } from '../../database/moderationStub';
 import { rollupDailyMatchStatsFunctionStub } from '../../server/dailyRollupFunctionStub';
 import { playSfx } from '../audio/sfx';
+import { drawPickerWindow } from './pickerWindow';
 import { adminToolsBody } from './statsAdminCopy';
 
 export interface StatsPanelOptions {
@@ -182,10 +183,7 @@ export function showStatsPanel(
   const bottom = cy + panelH / 2;
   const left = cx - panelW / 2 + 24;
 
-  const panel = scene.add
-    .rectangle(cx, cy, panelW, panelH, 0x122033, 0.98)
-    .setStrokeStyle(2, 0xf0c75e, 0.85)
-    .setDepth(301);
+  const panel = drawPickerWindow(scene, cx, cy, panelW, panelH, 301);
 
   const accent = scene.add
     .rectangle(cx, top + 3, panelW - 4, 4, 0xf0c75e, 0.9)

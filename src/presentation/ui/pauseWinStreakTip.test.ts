@@ -5,6 +5,7 @@ import { endWinStreakTipLine } from './endWinStreakTip';
 import { lobbyRecordTipLine } from './lobbyRecordTip';
 import { lobbyWinStreakTipLine } from './lobbyWinStreakTip';
 import { pauseBestApmTipLine } from './pauseBestApmTip';
+import { pauseBestWinStreakTipLine } from './pauseBestWinStreakTip';
 import { pauseLossStreakTipLine } from './pauseLossStreakTip';
 import { pauseWinRateTipLine } from './pauseWinRateTip';
 import { pauseWinStreakTipLine } from './pauseWinStreakTip';
@@ -41,7 +42,7 @@ describe('pauseWinStreakTipLine', () => {
     expect(pauseWinStreakTipLine(-1)).toBeNull();
   });
 
-  it('labels Streak · n with middot, distinct from Loss streak · / Win rate · / Best APM · / Record ·', () => {
+  it('labels Streak · n with middot, distinct from Loss streak · / Best streak · / Win rate · / Best APM · / Record ·', () => {
     rememberMatchPrefs('nobles', 'normal', 'crossing', 90_000, true);
     rememberMatchPrefs('brutes', 'easy', 'ridge', 60_000, true);
     expect(pauseWinStreakTipLine(2)).toBe(t('pause.winStreakTip', { n: 2 }));
@@ -52,11 +53,17 @@ describe('pauseWinStreakTipLine', () => {
     expect(pauseWinStreakTipLine(2)).toBe(endWinStreakTipLine());
     expect(lobbyWinStreakTipLine()).toBe(t('lobby.winStreakTip', { n: 2 }));
     expect(endWinStreakTipLine()).toBe(t('end.winStreakTip', { n: 2 }));
-    // Distinct from peer career tips (pause Loss streak / Win rate / Best APM; lobby Record).
+    // Distinct from peer career tips (pause Loss / Best streak / Win rate / Best APM; lobby Record).
     expect(pauseWinStreakTipLine(2)).not.toBe(pauseLossStreakTipLine(2));
     expect(pauseLossStreakTipLine(2)).toBe(t('pause.lossStreakTip', { n: 2 }));
     expect(pauseLossStreakTipLine(2)).toBe('Loss streak · 2');
     expect(pauseLossStreakTipLine(2)).toMatch(/^Loss streak \u00b7 /);
+    expect(pauseWinStreakTipLine(2)).not.toBe(pauseBestWinStreakTipLine(2));
+    expect(pauseBestWinStreakTipLine(2)).toBe(
+      t('pause.bestWinStreakTip', { n: 2 }),
+    );
+    expect(pauseBestWinStreakTipLine(2)).toBe('Best streak · 2');
+    expect(pauseBestWinStreakTipLine(2)).toMatch(/^Best streak \u00b7 /);
     expect(pauseWinStreakTipLine(2)).not.toBe(pauseWinRateTipLine(2, 2));
     expect(pauseWinRateTipLine(2, 2)).toBe(t('pause.winRateTip', { n: 100 }));
     expect(pauseWinRateTipLine(2, 2)).toMatch(/^Win rate \u00b7 /);
@@ -69,7 +76,7 @@ describe('pauseWinStreakTipLine', () => {
     expect(lobbyRecordTipLine()).toMatch(/^Record \u00b7 /);
   });
 
-  it('localizes Streak middot for pt-BR and es; stays distinct from Loss streak / Win rate / Best APM / Record', () => {
+  it('localizes Streak middot for pt-BR and es; stays distinct from Loss streak / Best streak / Win rate / Best APM / Record', () => {
     rememberMatchPrefs('nobles', 'normal', 'crossing', 90_000, true);
     rememberMatchPrefs('brutes', 'easy', 'ridge', 60_000, true);
     setLocale('pt-BR');
@@ -85,6 +92,11 @@ describe('pauseWinStreakTipLine', () => {
       t('pause.lossStreakTip', { n: 2 }),
     );
     expect(pauseLossStreakTipLine(2)).toMatch(/^Sequência de derrotas \u00b7 /);
+    expect(pauseWinStreakTipLine(2)).not.toBe(pauseBestWinStreakTipLine(2));
+    expect(pauseBestWinStreakTipLine(2)).toBe(
+      t('pause.bestWinStreakTip', { n: 2 }),
+    );
+    expect(pauseBestWinStreakTipLine(2)).toMatch(/^Melhor sequência \u00b7 /);
     expect(pauseWinStreakTipLine(2)).not.toBe(pauseWinRateTipLine(2, 2));
     expect(pauseWinRateTipLine(2, 2)).toBe(t('pause.winRateTip', { n: 100 }));
     expect(pauseWinStreakTipLine(2)).not.toBe(pauseBestApmTipLine(48));
@@ -106,6 +118,11 @@ describe('pauseWinStreakTipLine', () => {
       t('pause.lossStreakTip', { n: 2 }),
     );
     expect(pauseLossStreakTipLine(2)).toMatch(/^Racha de derrotas \u00b7 /);
+    expect(pauseWinStreakTipLine(2)).not.toBe(pauseBestWinStreakTipLine(2));
+    expect(pauseBestWinStreakTipLine(2)).toBe(
+      t('pause.bestWinStreakTip', { n: 2 }),
+    );
+    expect(pauseBestWinStreakTipLine(2)).toMatch(/^Mejor racha \u00b7 /);
     expect(pauseWinStreakTipLine(2)).not.toBe(pauseWinRateTipLine(2, 2));
     expect(pauseWinRateTipLine(2, 2)).toBe(t('pause.winRateTip', { n: 100 }));
     expect(pauseWinStreakTipLine(2)).not.toBe(pauseBestApmTipLine(48));

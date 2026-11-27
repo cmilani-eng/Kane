@@ -1,7 +1,9 @@
 /**
  * Pause overlay career loss-streak tip (HUD label only).
- * Frozen matchPrefs.lossStreak at pause open — distinct surface from
- * lobby Loss streak · and pause Streak · tips.
+ * Format: Loss streak · {n} — middot (U+00B7).
+ * Frozen matchPrefs.lossStreak at pause open. Same en/pt-BR/es copy as
+ * lobby/end Loss streak · tips; distinct i18n key / surface. Distinct from
+ * Streak · / Best streak · / Losses · peers.
  */
 import { t } from '../../i18n';
 

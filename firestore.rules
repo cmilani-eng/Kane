@@ -32,6 +32,80 @@ service cloud.firestore {
         && eq.weirdos.size() > 0 && eq.weirdos.size() <= 64;
     }
 
+    // ---- SATs Quest (KS2 practice) — minimal, owner-only progress ----
+    // Mirrors src/games/sats-quest/satsSave.ts (isProgressShape / sessionDoc).
+    // No answers, names, ages or schools are stored. The owner may delete everything.
+    function validSatsBand(b) {
+      return b in ['unplaced', 'towards', 'expected', 'higher'];
+    }
+
+    function validSatsTimer(t) {
+      return t in ['standard', 'extra', 'off'];
+    }
+
+    function validSatsRealm(r) {
+      let keys = ['placed', 'band', 'ability', 'unlocked', 'stars'];
+      return r is map
+        && r.keys().hasOnly(keys)
+        && r.keys().hasAll(keys)
+        && r.placed is bool
+        && validSatsBand(r.band)
+        && r.ability is number
+        && r.ability >= -4 && r.ability <= 4
+        && r.unlocked is int
+        && r.unlocked >= 1 && r.unlocked <= 5
+        && r.stars is list
+        && r.stars.size() == 5;
+    }
+
+    function validSatsProgress(d) {
+      let keys = ['schemaVersion', 'hero', 'heroColor', 'realms', 'mockBest', 'xp',
+                  'settings', 'domainStats', 'createdAtMs', 'updatedAtMs'];
+      let realms = ['arithmetic', 'reasoning', 'grammar', 'spelling', 'reading'];
+      return d.keys().hasOnly(keys)
+        && d.keys().hasAll(keys)
+        && d.schemaVersion == 1
+        && (d.hero == null || d.hero in ['knight', 'wizard', 'fairy', 'ranger'])
+        && d.heroColor in ['rose', 'amber', 'emerald', 'sky', 'violet', 'silver']
+        && d.realms is map
+        && d.realms.keys().hasOnly(realms)
+        && d.realms.keys().hasAll(realms)
+        && validSatsRealm(d.realms.arithmetic)
+        && validSatsRealm(d.realms.reasoning)
+        && validSatsRealm(d.realms.grammar)
+        && validSatsRealm(d.realms.spelling)
+        && validSatsRealm(d.realms.reading)
+        && d.mockBest is int && d.mockBest >= 0 && d.mockBest <= 3
+        && d.xp is int && d.xp >= 0 && d.xp <= 10000000
+        && d.settings is map
+        && d.settings.keys().hasOnly(['timer', 'dyslexiaFont'])
+        && d.settings.keys().hasAll(['timer', 'dyslexiaFont'])
+        && validSatsTimer(d.settings.timer)
+        && d.settings.dyslexiaFont is bool
+        && d.domainStats is map
+        && d.domainStats.size() <= 80
+        && d.createdAtMs is int
+        && d.updatedAtMs is int;
+    }
+
+    function validSatsSession(d) {
+      let keys = ['kind', 'realm', 'chapter', 'startedAtMs', 'endedAtMs', 'items',
+                  'correct', 'marks', 'marksAvailable', 'stars', 'timer'];
+      return d.keys().hasOnly(keys)
+        && d.keys().hasAll(keys)
+        && d.kind in ['placement', 'raid', 'mock']
+        && d.realm in ['arithmetic', 'reasoning', 'grammar', 'spelling', 'reading', 'mixed']
+        && d.chapter is int && d.chapter >= 0 && d.chapter <= 5
+        && d.startedAtMs is int
+        && d.endedAtMs is int && d.endedAtMs >= d.startedAtMs
+        && d.items is int && d.items >= 0 && d.items <= 60
+        && d.correct is int && d.correct >= 0 && d.correct <= d.items
+        && d.marks is int && d.marks >= 0
+        && d.marksAvailable is int && d.marksAvailable >= d.marks && d.marksAvailable <= 120
+        && d.stars is int && d.stars >= 0 && d.stars <= 3
+        && validSatsTimer(d.timer);
+    }
+
     // ---- Player account tree (SP MVP — client-trusted writes) ----
     // Anonymous guests and email users: same isSelf(uid) gate on users/{uid}.
     match /users/{uid} {
@@ -101,6 +175,33 @@ service cloud.firestore {
           && request.resource.data.bySpecies.keys().hasOnly(['brutes', 'nobles', 'weirdos']);
         allow delete: if false;
       }
+
+      // SATs Quest progress: one document, users/{uid}/sats/progress.
+      match /sats/{docId} {
+        allow read: if isSelf(uid);
+        allow create, update: if isSelf(uid)
+          && docId == 'progress'
+          && validSatsProgress(request.resource.data);
+        allow delete: if isSelf(uid);
+      }
+
+      // SATs Quest session summaries: counts only, written once, deletable by the owner.
+      match /satsSessions/{sessionId} {
+        allow read: if isSelf(uid);
+        allow create: if isSelf(uid) && validSatsSession(request.resource.data);
+        allow update: if false;
+        allow delete: if isSelf(uid);
+      }
+    }
+
+    // SATs tutor proxy cache and usage counters: written only by the satsTutor
+    // Cloud Function (Admin SDK bypasses rules). Clients can never read or write them.
+    match /satsLlmCache/{id} {
+      allow read, write: if false;
+    }
+
+    match /satsLlmUsage/{id} {
+      allow read, write: if false;
     }
 
     // ---- Legacy draft paths ----

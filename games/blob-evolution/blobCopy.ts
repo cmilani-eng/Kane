@@ -33,6 +33,34 @@ export function blobEaten(): { title: string; body: string } {
   return { title: t('blob.endTitleLose'), body: t('blob.endBodyLose') };
 }
 
+const HAZARD_LOSE_KEYS = {
+  blackHole: { title: 'blob.caught.blackHole.title', body: 'blob.caught.blackHole.body' },
+  tornado: { title: 'blob.caught.tornado.title', body: 'blob.caught.tornado.body' },
+  redBlob: { title: 'blob.caught.redBlob.title', body: 'blob.caught.redBlob.body' },
+} as const satisfies Record<string, { title: MessageKey; body: MessageKey }>;
+
+const MAP_KEYS = {
+  dark: 'blob.map.dark',
+  playground: 'blob.map.playground',
+  castle: 'blob.map.castle',
+} as const satisfies Record<string, MessageKey>;
+
+/** The size and name of a map, for its key on the start panel. */
+export function blobMapLabel(id: keyof typeof MAP_KEYS): string {
+  return t(MAP_KEYS[id]);
+}
+
+/** Which obstacles kill and which only get in the way, for the start panel. */
+export function blobHazardNote(): string {
+  return t('blob.hazardNote');
+}
+
+/** The end panel after a deadly obstacle, naming what caught the player. */
+export function blobHazardLose(kind: keyof typeof HAZARD_LOSE_KEYS): { title: string; body: string } {
+  const keys = HAZARD_LOSE_KEYS[kind];
+  return { title: t(keys.title), body: t(keys.body) };
+}
+
 export function blobWin(): { title: string; body: string } {
   return { title: t('blob.endTitleWin'), body: t('blob.endBodyWin') };
 }

@@ -1,6 +1,10 @@
 /**
  * Minimap match-clock tip (presentation only).
- * Live match elapsed — distinct surface from pause/end Time · tips.
+ * Format: Time · mm:ss — middot (U+00B7).
+ * Live match elapsed on the minimap chrome.
+ * Distinct from APM · / Avg time · / Vision · peers;
+ * same en/pt-BR/es copy as pause/end Time · tips (`pause.clockTip` /
+ * `end.durationTip`), own key (`hud.minimapClock`).
  */
 import { t } from '../../i18n';
 import { formatMatchClock } from './matchClock';

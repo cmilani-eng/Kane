@@ -3,6 +3,8 @@
  * es is neutral Spanish (not es-ES or es-419).
  * A missing key falls back to en-GB so the player never sees a raw key.
  */
+import type { BuildingTypeId } from '../data/buildings';
+import type { UnitTypeId } from '../data/units';
 import { CATALOGS, enGB, type MessageKey } from './messages';
 
 export type { MessageKey } from './messages';
@@ -117,6 +119,67 @@ export function speciesCopy(id: SpeciesId): { name: string; motto: string; mecha
 
 export function speciesName(id: SpeciesId): string {
   return speciesCopy(id).name;
+}
+
+const UNIT_NAME_KEY = {
+  scavenger: 'unit.scavenger.name',
+  bonker: 'unit.bonker.name',
+  rock_thrower: 'unit.rock_thrower.name',
+  big_bonker: 'unit.big_bonker.name',
+  wolf_rider: 'unit.wolf_rider.name',
+  stomper: 'unit.stomper.name',
+  boom_goblin: 'unit.boom_goblin.name',
+  gruk: 'unit.gruk.name',
+  serf: 'unit.serf.name',
+  tin_knight: 'unit.tin_knight.name',
+  bolt_boy: 'unit.bolt_boy.name',
+  hammer_dwarf: 'unit.hammer_dwarf.name',
+  boar_knight: 'unit.boar_knight.name',
+  walking_tank: 'unit.walking_tank.name',
+  boom_cart: 'unit.boom_cart.name',
+  boniface: 'unit.boniface.name',
+  goo_worker: 'unit.goo_worker.name',
+  bloblet: 'unit.bloblet.name',
+  eyebat: 'unit.eyebat.name',
+  shroom_mage: 'unit.shroom_mage.name',
+  floaty: 'unit.floaty.name',
+  grabber: 'unit.grabber.name',
+  crystal_freak: 'unit.crystal_freak.name',
+  zoggle: 'unit.zoggle.name',
+} as const satisfies Record<UnitTypeId, MessageKey>;
+
+const BUILDING_NAME_KEY = {
+  junkyard: 'building.junkyard.name',
+  bonker_hut: 'building.bonker_hut.name',
+  beast_pen: 'building.beast_pen.name',
+  scrap_works: 'building.scrap_works.name',
+  big_boss_den: 'building.big_boss_den.name',
+  royal_keep: 'building.royal_keep.name',
+  barracks: 'building.barracks.name',
+  archery_hall: 'building.archery_hall.name',
+  stable: 'building.stable.name',
+  engineering_yard: 'building.engineering_yard.name',
+  watchtower: 'building.watchtower.name',
+  royal_academy: 'building.royal_academy.name',
+  weird_core: 'building.weird_core.name',
+  blob_factory: 'building.blob_factory.name',
+  eye_nest: 'building.eye_nest.name',
+  mushroom_lab: 'building.mushroom_lab.name',
+  mutation_pool: 'building.mutation_pool.name',
+  magic_bubble: 'building.magic_bubble.name',
+  portal_of_chaos: 'building.portal_of_chaos.name',
+} as const satisfies Record<BuildingTypeId, MessageKey>;
+
+/** Display name. Data tables stay English. GRUK, KING BONIFACE, and ZOGGLE stay as written. */
+export function unitDisplayName(id: UnitTypeId): string {
+  const key = (UNIT_NAME_KEY as Partial<Record<string, MessageKey>>)[id];
+  return key ? t(key) : id;
+}
+
+/** Display name. The building id and the data-table name stay English. */
+export function buildingDisplayName(id: BuildingTypeId): string {
+  const key = (BUILDING_NAME_KEY as Partial<Record<string, MessageKey>>)[id];
+  return key ? t(key) : id;
 }
 
 export function difficultyCopy(id: DifficultyId): { label: string; blurb: string } {

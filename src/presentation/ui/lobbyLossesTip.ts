@@ -1,6 +1,8 @@
 /**
  * Lobby tip for career losses from match prefs (played − won).
- * Distinct from Played / Win rate / Streak tips.
+ * Losses · n (U+00B7); en/pt-BR/es middot; same copy as end Losses ·,
+ * distinct key/surface (no pause Losses tip); distinct from Played · /
+ * Record · / Wins · / Win rate · / Loss streak ·.
  */
 import { loadMatchPrefs } from '../../database/matchPrefs';
 import { t } from '../../i18n';

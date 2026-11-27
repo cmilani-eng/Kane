@@ -122,38 +122,138 @@ describe('signed in as alice', () => {
       await assertFails(as('alice').ref(`lobbies/${code}`).set(lobby()));
     });
 
-    it('stops another player reading or overwriting her lobby', async () => {
+    it('lets a friend see an open lobby by its code and join it', async () => {
       await assertSucceeds(as('alice').ref('lobbies/ABCD').set(lobby()));
-      await assertFails(read(as('bob'), 'lobbies/ABCD'));
+      await assertSucceeds(read(as('bob'), 'lobbies/ABCD'));
+      await assertSucceeds(
+        as('bob').ref('lobbies/ABCD').set({ ...lobby(), guestUid: 'bob', status: 'full' }),
+      );
+    });
+
+    it('does not let a stranger take the host seat, close the lobby, or add a second guest', async () => {
+      await assertSucceeds(as('alice').ref('lobbies/ABCD').set(lobby()));
       await assertFails(as('bob').ref('lobbies/ABCD').set({ ...lobby(), hostUid: 'bob' }));
+      await assertFails(as('bob').ref('lobbies/ABCD').set({ ...lobby(), status: 'closed' }));
+      await assertSucceeds(
+        as('bob').ref('lobbies/ABCD').set({ ...lobby(), guestUid: 'bob', status: 'full' }),
+      );
+      await assertFails(
+        as('carol').ref('lobbies/ABCD').set({ ...lobby(), guestUid: 'carol', status: 'full' }),
+      );
+    });
+
+    it('does not let a friend seat somebody else as the guest', async () => {
+      await assertSucceeds(as('alice').ref('lobbies/ABCD').set(lobby()));
+      await assertFails(
+        as('bob').ref('lobbies/ABCD').set({ ...lobby(), guestUid: 'carol', status: 'full' }),
+      );
+    });
+
+    it('lets only the host close the lobby', async () => {
+      await assertSucceeds(as('alice').ref('lobbies/ABCD').set(lobby()));
+      await assertSucceeds(as('alice').ref('lobbies/ABCD').set({ ...lobby(), status: 'closed' }));
+    });
+
+    it('lets the host close a lobby that already has a guest, keeping the guest seat', async () => {
+      await assertSucceeds(as('alice').ref('lobbies/ABCD').set(lobby()));
+      await assertSucceeds(
+        as('bob').ref('lobbies/ABCD').set({ ...lobby(), guestUid: 'bob', status: 'full' }),
+      );
+      await assertSucceeds(
+        as('alice').ref('lobbies/ABCD').set({ ...lobby(), guestUid: 'bob', status: 'closed' }),
+      );
+    });
+
+    it('does not let the host replace the guest seat with someone else', async () => {
+      await assertSucceeds(as('alice').ref('lobbies/ABCD').set(lobby()));
+      await assertSucceeds(
+        as('bob').ref('lobbies/ABCD').set({ ...lobby(), guestUid: 'bob', status: 'full' }),
+      );
+      await assertFails(
+        as('alice').ref('lobbies/ABCD').set({ ...lobby(), guestUid: 'carol', status: 'closed' }),
+      );
+    });
+
+    it('does not show a lobby that is full or closed to strangers', async () => {
+      await env.withSecurityRulesDisabled(async (ctx) => {
+        await ctx.database().ref('lobbies/WXYZ').set({
+          ...lobby(),
+          guestUid: 'bob',
+          status: 'full',
+        });
+      });
+      await assertFails(read(as('carol'), 'lobbies/WXYZ'));
     });
   });
 
   describe('matches', () => {
+    const lobby = () => ({ hostUid: 'alice', createdAt: past(), status: 'open' });
+    const setup = () => ({ seed: 7, mapId: 'crossing', difficulty: 'normal', hostSpecies: 'brutes', startedAt: past() });
+
+    /** A full lobby: alice hosts, bob is seated. The match node is keyed by the lobby code. */
     beforeEach(async () => {
-      await env.withSecurityRulesDisabled(async (ctx) => {
-        await ctx.database().ref('matches/m1').set({
-          hostUid: 'alice',
-          lobbyCode: 'ABCD',
-          createdAt: 1,
-          players: { alice: { joinedAt: 1 } },
-        });
-      });
+      await assertSucceeds(as('alice').ref('lobbies/ABCD').set(lobby()));
+      await assertSucceeds(as('bob').ref('lobbies/ABCD').set({ ...lobby(), guestUid: 'bob', status: 'full' }));
     });
 
-    it('lets a listed player read the match and nobody else', async () => {
-      await assertSucceeds(read(as('alice'), 'matches/m1'));
-      await assertFails(read(as('bob'), 'matches/m1'));
+    it('the host writes the match setup and both players can read it', async () => {
+      await assertSucceeds(as('alice').ref('matches/ABCD/setup').set(setup()));
+      await assertSucceeds(read(as('alice'), 'matches/ABCD/setup'));
+      await assertSucceeds(read(as('bob'), 'matches/ABCD/setup'));
     });
 
-    it("cannot write a command in another player's name", async () => {
-      const command = { kind: 'move', payload: '{}', seq: 0 };
-      await assertFails(as('alice').ref('matches/m1/commands/1/bob').set(command));
+    it('the guest cannot write the match setup', async () => {
+      await assertFails(as('bob').ref('matches/ABCD/setup').set(setup()));
     });
 
-    it('cannot write a command when not in the match', async () => {
-      const command = { kind: 'move', payload: '{}', seq: 0 };
-      await assertFails(as('carol').ref('matches/m1/commands/1/carol').set(command));
+    it('rejects a setup with missing fields', async () => {
+      const { seed: _seed, ...partial } = setup();
+      await assertFails(as('alice').ref('matches/ABCD/setup').set(partial));
+    });
+
+    it('a stranger cannot read the match', async () => {
+      await assertSucceeds(as('alice').ref('matches/ABCD/setup').set(setup()));
+      await assertFails(read(as('carol'), 'matches/ABCD'));
+    });
+
+    it('the guest records their own species, and only theirs', async () => {
+      await assertSucceeds(as('bob').ref('matches/ABCD/guestSpecies').set('nobles'));
+      await assertFails(as('alice').ref('matches/ABCD/guestSpecies').set('weirdos'));
+    });
+
+    it('each player writes only their own orders for a tick', async () => {
+      await assertSucceeds(as('alice').ref('matches/ABCD/cmd/alice/12').set('[]'));
+      await assertSucceeds(as('bob').ref('matches/ABCD/cmd/bob/12').set('[]'));
+      await assertFails(as('alice').ref('matches/ABCD/cmd/bob/12').set('[]'));
+      await assertFails(as('bob').ref('matches/ABCD/cmd/alice/12').set('[]'));
+    });
+
+    it('a stranger cannot write orders into the match', async () => {
+      await assertFails(as('carol').ref('matches/ABCD/cmd/carol/1').set('[]'));
+    });
+
+    it('orders are keyed by a whole-number tick and must be text', async () => {
+      await assertFails(as('alice').ref('matches/ABCD/cmd/alice/twelve').set('[]'));
+      await assertFails(as('alice').ref('matches/ABCD/cmd/alice/12').set({ c: '[]' }));
+    });
+
+    it('each player records their own state hash, and only theirs', async () => {
+      await assertSucceeds(as('alice').ref('matches/ABCD/hash/alice/30').set('a1b2c3d4'));
+      await assertFails(as('bob').ref('matches/ABCD/hash/alice/30').set('ffffffff'));
+    });
+
+    it('each player marks their own presence as here or away, and only theirs', async () => {
+      await assertSucceeds(as('alice').ref('matches/ABCD/presence/alice').set('here'));
+      await assertSucceeds(as('bob').ref('matches/ABCD/presence/bob').set('away'));
+      await assertSucceeds(read(as('alice'), 'matches/ABCD/presence/bob'));
+      await assertFails(as('alice').ref('matches/ABCD/presence/bob').set('here'));
+      await assertFails(as('bob').ref('matches/ABCD/presence/alice').set('away'));
+    });
+
+    it('presence takes only the two values here and away, and a stranger cannot mark presence', async () => {
+      await assertFails(as('alice').ref('matches/ABCD/presence/alice').set('gone'));
+      await assertFails(as('alice').ref('matches/ABCD/presence/alice').set({ at: 1 }));
+      await assertFails(as('carol').ref('matches/ABCD/presence/carol').set('here'));
     });
   });
 });

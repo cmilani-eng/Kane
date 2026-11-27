@@ -5,6 +5,7 @@ import { checkSite, checkSiteWithRetries, expectedSecurityHeaders } from './chec
 
 const BASE = 'https://example.test';
 const ASSET = '/assets/index-abc.js';
+const MISSING = '/assets/missing-file-check.js';
 const security = expectedSecurityHeaders(firebaseJson) as Record<string, string>;
 
 type Overrides = Record<string, { headers?: Record<string, string | null>; status?: number; body?: string }>;
@@ -22,7 +23,8 @@ function site(overrides: Overrides = {}) {
     };
     const sent = Object.fromEntries(Object.entries(headers).filter(([, v]) => v !== null)) as Record<string, string>;
     const body = override.body ?? (path === '/' ? `<script src="${ASSET}"></script>` : '');
-    return new Response(body, { status: override.status ?? 200, headers: sent });
+    const status = override.status ?? (path === MISSING ? 404 : 200);
+    return new Response(body, { status, headers: sent });
   };
 }
 
@@ -81,22 +83,27 @@ describe('checkSite', () => {
     expect(problems).toEqual(['no hashed /assets/*.js file is linked from any page']);
   });
 
-  it('checks every game page in games.json', async () => {
+  it('reports a missing file that is answered with 200 instead of 404', async () => {
+    const problems = await check(site({ [MISSING]: { status: 200 } }));
+    expect(problems).toEqual([`${MISSING}: status 200, expected 404`]);
+  });
+
+  it('checks every game page in games.json, with and without the trailing slash', async () => {
     const seen: string[] = [];
     const fetchImpl = site();
     await check(async (url) => {
       seen.push(url.pathname);
       return fetchImpl(url);
     });
-    for (const { id } of games) expect(seen).toContain(`/${id}/`);
+    for (const { id } of games) expect(seen).toEqual(expect.arrayContaining([`/${id}`, `/${id}/`]));
   });
 });
 
 describe('checkSiteWithRetries', () => {
   const options = { firebaseJson, games };
   const fast = { attempts: 3, delayMs: 0 };
-  // `/`, one page per game, `/privacy`, `/terms`, the manifest, then the hashed asset.
-  const requestsPerPass = 1 + games.length + 3 + 1;
+  // `/`, two pages per game, `/privacy`, `/terms`, the manifest, the hashed asset, the missing file.
+  const requestsPerPass = 1 + games.length * 2 + 3 + 1 + 1;
 
   it('succeeds when a later attempt sees the new release', async () => {
     let calls = 0;

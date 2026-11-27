@@ -126,7 +126,7 @@ export function tickBattlefieldAi(
     p.attacks &&
     ai.phase === 'army' &&
     p.pokeChance > 0 &&
-    Math.random() < p.pokeChance;
+    world.rng() < p.pokeChance;
 
   if (p.attacks && (ai.phase === 'attack' || poke)) {
     const targetKeep = world.buildings.find(
@@ -146,8 +146,8 @@ export function tickBattlefieldAi(
       if (u.attackTargetId != null) continue;
       if (dist(u.x, u.y, keep.x, keep.y) > 160) {
         setUnitPath(world, u, {
-          x: keep.x + (Math.random() - 0.5) * 80,
-          y: keep.y + (Math.random() - 0.5) * 80,
+          x: keep.x + (world.rng() - 0.5) * 80,
+          y: keep.y + (world.rng() - 0.5) * 80,
         });
       }
     }

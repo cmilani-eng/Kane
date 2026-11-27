@@ -1,6 +1,8 @@
 /**
  * Catalog building full build-time tip in whole seconds (HUD label only).
- * Format: Build · {n}s — distinct from live construction remaining / progress tips.
+ * Format: Build · {n}s — middot (U+00B7).
+ * Distinct from Build · pct% · secs left / Building pct · secs / place · Ns /
+ * Size · / Queue · peers; selection-only catalog tip (no lobby/pause twin).
  */
 import { getBuildingType, type BuildingTypeId } from '../../data/buildings';
 import { t } from '../../i18n';

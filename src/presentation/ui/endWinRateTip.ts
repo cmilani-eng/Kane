@@ -1,7 +1,9 @@
 /**
  * End-screen career win-rate tip (HUD label only).
- * Wins / finished games from match prefs — distinct surface from lobby Win rate tip
- * and from end Efficiency tip.
+ * Format: Win rate · {n}% — middot (U+00B7).
+ * Distinct from Played · / Record · / Streak · / Wins · peers and from
+ * lobby/pause Win rate · tip surfaces (same copy, distinct i18n key).
+ * Also distinct from end Efficiency · tip.
  */
 import { loadMatchPrefs } from '../../database/matchPrefs';
 import { t } from '../../i18n';

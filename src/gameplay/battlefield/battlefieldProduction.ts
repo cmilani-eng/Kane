@@ -52,7 +52,8 @@ export function cancelQueuedTrain(
   building: BattlefieldBuilding,
   index?: number,
 ): QueueCancelRefund | null {
-  if (building.team !== 'player' || building.hp <= 0) return null;
+  // The caller picks the building: a viewer cancels only their own queue.
+  if (building.hp <= 0) return null;
   const q = building.trainQueue;
   if (q.length === 0) return null;
   const i =
@@ -116,7 +117,7 @@ function spawnNear(
     (b.team === 'player'
       ? { primary: 0x4a7a3a, accent: 0xd4782e }
       : { primary: 0x8a4a9a, accent: 0xc4a0e0 });
-  const angle = Math.random() * Math.PI * 2;
+  const angle = world.rng() * Math.PI * 2;
   const dist = b.radius + 24;
   const u: BattlefieldUnit = spawnUnit(world, {
     team: b.team as BattlefieldTeam,

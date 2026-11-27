@@ -3,6 +3,8 @@ import { resetLocaleForTests, setLocale } from '../../src/i18n';
 import {
   blobChain,
   blobEaten,
+  blobHazardLose,
+  blobHazardNote,
   blobHudLine,
   blobRpsTie,
   blobStageName,
@@ -52,5 +54,24 @@ describe('blob evolution copy', () => {
     expect(tie).not.toContain('Both chose');
 
     expect(blobEaten().title).toContain('comieron');
+  });
+
+  it('names every deadly obstacle on the start panel and says what caught you, in each language', () => {
+    const deadly = {
+      'en-GB': ['black holes', 'tornadoes', 'red blobs'],
+      'pt-BR': ['buracos negros', 'tornados', 'bolhas vermelhas'],
+      es: ['agujeros negros', 'tornados', 'masas rojas'],
+    } as const;
+    for (const [locale, names] of Object.entries(deadly)) {
+      setLocale(locale as keyof typeof deadly);
+      for (const name of names) expect(blobHazardNote()).toContain(name);
+      const endings = (['blackHole', 'tornado', 'redBlob'] as const).map((kind) => blobHazardLose(kind));
+      expect(new Set(endings.map((e) => e.title)).size).toBe(3);
+      expect(new Set(endings.map((e) => e.body)).size).toBe(3);
+    }
+    setLocale('en-GB');
+    expect(blobHazardLose('blackHole').body).toContain('black hole');
+    expect(blobHazardLose('tornado').body).toContain('tornado');
+    expect(blobHazardLose('redBlob').body).toContain('red blob');
   });
 });

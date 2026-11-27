@@ -1,5 +1,6 @@
 /**
  * Presentation — unit sprite-sheet animation registration (Phaser 4).
+ * Animation keys are prefixed to avoid collisions in single-engine build.
  */
 import Phaser from 'phaser';
 
@@ -9,12 +10,14 @@ export const ANIM = {
   rangedWalk: 'anim-ranged-walk',
 } as const;
 
-export function registerUnitAnims(scene: Phaser.Scene): void {
+export function registerUnitAnims(scene: Phaser.Scene, prefix = ''): void {
   const mk = (key: string, sheet: string) => {
-    if (scene.anims.exists(key)) return;
+    const fullKey = `${prefix}${key}`;
+    const fullSheet = `${prefix}${sheet}`;
+    if (scene.anims.exists(fullKey)) return;
     scene.anims.create({
-      key,
-      frames: scene.anims.generateFrameNumbers(sheet, { start: 0, end: 3 }),
+      key: fullKey,
+      frames: scene.anims.generateFrameNumbers(fullSheet, { start: 0, end: 3 }),
       frameRate: 8,
       repeat: -1,
     });

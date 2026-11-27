@@ -1,6 +1,9 @@
 /**
  * Lobby tip for the most-played faction from match prefs speciesPlays.
- * Distinct from last-faction / selected motto and from end Favorite tip surface.
+ * Format: Favorite · {name} — middot (U+00B7); most-played species from
+ * matchPrefs.speciesPlays.
+ * Distinct from Plays · / Wins · / Streak · and from Last · / end Favorite
+ * surfaces (same en copy as pause/end Favorite ·; distinct i18n key).
  */
 import { loadMatchPrefs } from '../../database/matchPrefs';
 import type { SpeciesId } from '../../data/speciesStub';

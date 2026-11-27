@@ -1,6 +1,8 @@
 /**
- * Catalog move-cadence tip — Slow / Medium / Fast bucket (HUD label only).
- * Distinct from the numeric tiles/s speed tip.
+ * Catalog move-cadence tip (HUD label only).
+ * Format: Pace · {pace} — middot (U+00B7); Slow / Medium / Fast bucket.
+ * Distinct from Speed · / Rate · / Atk CD ·;
+ * selection-only tip (no lobby/pause twin).
  */
 import type { UnitTypeId } from '../../data/units';
 import { t } from '../../i18n';

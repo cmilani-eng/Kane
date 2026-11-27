@@ -1,7 +1,9 @@
 /**
  * End-screen APM tip (HUD label only).
+ * Format: APM · {n} — middot (U+00B7).
  * Actions per minute from player command tally ÷ match minutes.
- * Distinct surface from pause APM · tip and Time · duration tip.
+ * Distinct from Avg APM · / Best APM · / Time · peers; same en/pt-BR/es
+ * copy as pause APM · tip (distinct i18n key / surface).
  */
 import { t } from '../../i18n';
 

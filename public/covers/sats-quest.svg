@@ -1,0 +1,106 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1290 774" role="img" aria-hidden="true">
+  <defs>
+    <linearGradient id="sky" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#1b1140"/>
+      <stop offset="1" stop-color="#4a3388"/>
+    </linearGradient>
+    <radialGradient id="glow" cx="0.5" cy="0.5" r="0.5">
+      <stop offset="0" stop-color="#fff0c8" stop-opacity="0.45"/>
+      <stop offset="1" stop-color="#fff0c8" stop-opacity="0"/>
+    </radialGradient>
+    <radialGradient id="orb" cx="0.38" cy="0.35" r="0.7">
+      <stop offset="0" stop-color="#e2fffa"/>
+      <stop offset="1" stop-color="#3fb8b0"/>
+    </radialGradient>
+    <radialGradient id="orbGlow" cx="0.5" cy="0.5" r="0.5">
+      <stop offset="0" stop-color="#8ff3ea" stop-opacity="0.55"/>
+      <stop offset="1" stop-color="#8ff3ea" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+
+  <rect width="1290" height="774" fill="url(#sky)"/>
+
+  <!-- stars -->
+  <g fill="#fff6dc" opacity="0.85">
+    <circle cx="70" cy="60" r="2.4"/><circle cx="160" cy="140" r="1.6"/><circle cx="240" cy="48" r="2"/>
+    <circle cx="330" cy="110" r="1.4"/><circle cx="410" cy="36" r="2.2"/><circle cx="470" cy="170" r="1.6"/>
+    <circle cx="560" cy="80" r="2.4"/><circle cx="640" cy="30" r="1.5"/><circle cx="700" cy="150" r="2"/>
+    <circle cx="780" cy="64" r="1.6"/><circle cx="860" cy="120" r="2.2"/><circle cx="920" cy="40" r="1.4"/>
+    <circle cx="1180" cy="70" r="2.2"/><circle cx="1240" cy="190" r="1.6"/><circle cx="110" cy="250" r="1.8"/>
+    <circle cx="380" cy="230" r="1.4"/><circle cx="620" cy="220" r="1.8"/><circle cx="1150" cy="280" r="1.4"/>
+    <circle cx="40" cy="330" r="1.6"/><circle cx="520" cy="300" r="1.2"/>
+  </g>
+
+  <!-- moon -->
+  <circle cx="1060" cy="150" r="190" fill="url(#glow)"/>
+  <circle cx="1060" cy="150" r="66" fill="#fff3cf"/>
+
+  <!-- far hill and castle -->
+  <path d="M0 560 Q 320 500 640 545 T 1290 525 V774 H0Z" fill="#160d33" opacity="0.75"/>
+  <g fill="#120a2c">
+    <rect x="210" y="430" width="200" height="140"/>
+    <rect x="190" y="360" width="40" height="210"/>
+    <rect x="390" y="360" width="40" height="210"/>
+    <rect x="286" y="320" width="48" height="250"/>
+    <path d="M182 360 L210 300 L238 360Z"/>
+    <path d="M382 360 L410 300 L438 360Z"/>
+    <path d="M278 320 L310 248 L342 320Z"/>
+  </g>
+  <g fill="#ffd27a" opacity="0.85">
+    <rect x="302" y="356" width="16" height="26" rx="8"/>
+    <rect x="240" y="470" width="16" height="26" rx="8"/>
+    <rect x="364" y="470" width="16" height="26" rx="8"/>
+  </g>
+
+  <!-- near hill -->
+  <path d="M0 640 Q 400 585 760 628 T 1290 610 V774 H0Z" fill="#0b0620"/>
+
+  <!-- Riddle Troll (Number Forest) -->
+  <g transform="translate(600 560)">
+    <path d="M-62 -44 L-118 -78 L-78 -8Z" fill="#5fb86a"/>
+    <path d="M62 -44 L118 -78 L78 -8Z" fill="#5fb86a"/>
+    <ellipse cx="0" cy="0" rx="82" ry="86" fill="#5fb86a"/>
+    <circle cx="-27" cy="-22" r="16" fill="#fff"/><circle cx="27" cy="-22" r="16" fill="#fff"/>
+    <circle cx="-24" cy="-20" r="8" fill="#1b1530"/><circle cx="30" cy="-20" r="8" fill="#1b1530"/>
+    <path d="M-26 26 Q 0 50 26 26" stroke="#1b1530" stroke-width="5" fill="none" stroke-linecap="round"/>
+    <rect x="6" y="30" width="11" height="13" fill="#fff"/>
+  </g>
+
+  <!-- Grammar Gryphon (Word Castle) -->
+  <g transform="translate(830 515)">
+    <ellipse cx="-74" cy="-14" rx="40" ry="64" fill="#c8933a" transform="rotate(-28 -74 -14)"/>
+    <ellipse cx="74" cy="-14" rx="40" ry="64" fill="#c8933a" transform="rotate(28 74 -14)"/>
+    <ellipse cx="0" cy="0" rx="66" ry="76" fill="#e8b54a"/>
+    <circle cx="-23" cy="-20" r="14" fill="#fff"/><circle cx="23" cy="-20" r="14" fill="#fff"/>
+    <circle cx="-20" cy="-18" r="7" fill="#1b1530"/><circle cx="26" cy="-18" r="7" fill="#1b1530"/>
+    <path d="M-15 6 L15 6 L0 30Z" fill="#f07c2a"/>
+  </g>
+
+  <!-- Echo Sprite (Echo Glade) -->
+  <g transform="translate(1040 420)">
+    <circle cx="0" cy="0" r="120" fill="url(#orbGlow)"/>
+    <ellipse cx="-66" cy="-24" rx="30" ry="52" fill="#c8fff3" opacity="0.6" transform="rotate(-40 -66 -24)"/>
+    <ellipse cx="66" cy="-24" rx="30" ry="52" fill="#c8fff3" opacity="0.6" transform="rotate(40 66 -24)"/>
+    <circle cx="0" cy="0" r="64" fill="url(#orb)"/>
+    <circle cx="-21" cy="-8" r="12" fill="#fff"/><circle cx="21" cy="-8" r="12" fill="#fff"/>
+    <circle cx="-18" cy="-6" r="6" fill="#1b1530"/><circle cx="24" cy="-6" r="6" fill="#1b1530"/>
+    <path d="M-16 24 Q 0 38 16 24" stroke="#1b1530" stroke-width="4" fill="none" stroke-linecap="round"/>
+  </g>
+
+  <!-- hero: a wizard token -->
+  <g transform="translate(180 660)">
+    <circle cx="0" cy="0" r="48" fill="#a78bfa" stroke="#ffffff" stroke-width="5" stroke-opacity="0.85"/>
+    <path d="M-30 14 L0 -58 L30 14Z" fill="#3b2a73"/>
+    <rect x="-36" y="10" width="72" height="12" rx="6" fill="#3b2a73"/>
+    <circle cx="-6" cy="-14" r="5" fill="#ffd37a"/><circle cx="8" cy="-34" r="3.5" fill="#ffd37a"/>
+  </g>
+
+  <!-- floating sums and letters -->
+  <g fill="#ffd37a" font-family="Georgia, serif" font-weight="700" opacity="0.9">
+    <text x="470" y="400" font-size="46">×</text>
+    <text x="715" y="360" font-size="40">÷</text>
+    <text x="930" y="300" font-size="40">Aa</text>
+    <text x="545" y="290" font-size="34">¾</text>
+    <text x="1150" y="560" font-size="38">?</text>
+  </g>
+</svg>

@@ -13,7 +13,7 @@ Kane's match code stays in `src/`. A move under `games/kane/` waits until a seco
 | `/blob-evolution/` | Blob Evolution 3D. `games/blob-evolution/index.html` loads `./main.js` (Vite-bundled). Experimental. |
 | Installed app | `public/manifest.webmanifest` keeps `id` `/` and `scope` `./`, and starts at `./kane/`. An existing install stays the same app and opens Kane. |
 
-`/kane` without a slash redirects to `/kane/`. Hosting rewrites for each game sit above the `**` catch-all, which serves the picker.
+Hosting serves `/kane` and `/kane/` from the same built page (`cleanUrls`); only the dev server redirects `/kane` to `/kane/`. Hosting has no rewrites, so an unknown path or a missing file returns a real 404 instead of the picker. `games/registry.test.ts` fails if a rewrite is added that would catch one.
 
 ## Folders
 
@@ -35,6 +35,6 @@ Vite's project root is `games/`. `publicDir` is `public/`, and `outDir` is `dist
 
 1. Create `games/<id>/index.html`.
 2. Add a row to `games/games.json` (`id`, `title`, `tagline`, `description`, `build`, `status`).
-3. Add a `/<id>/**` rewrite in `firebase.json` above the `**` catch-all.
+3. Nothing else: Hosting serves the built page. Do not add a rewrite.
 
 `vite` games are bundled. `static` games are copied to `dist/<id>/` untouched.

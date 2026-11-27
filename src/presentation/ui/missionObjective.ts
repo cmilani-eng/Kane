@@ -28,7 +28,14 @@ export function missionObjectiveText(state: MissionState): string {
   return t(`mission.objective.${state.objectiveId}`);
 }
 
-/** Pause overlay Objective · {text} tip from mission state. */
+/**
+ * Pause overlay Objective · {text} tip from mission state.
+ * Middot (U+00B7) between label and mission text. Same Objective ·
+ * template as end result tip, distinct key/surface
+ * (`pause.objectiveTip` vs `end.objectiveTip`) and body copy.
+ * Distinct from {label} · {blurb} difficulty / Map · / species motto /
+ * setup line (double-spaced middots).
+ */
 export function pauseObjectiveTipLine(state: MissionState): string {
   return t('pause.objectiveTip', { text: missionObjectiveText(state) });
 }

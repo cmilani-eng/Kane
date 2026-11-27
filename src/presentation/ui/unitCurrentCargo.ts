@@ -1,7 +1,8 @@
 /**
  * Live current-cargo tip for selected workers (HUD label only).
- * Distinct from Cargo · n max catalog tip, Yield · n per trip, and the
- * longer carry-line deposit copy.
+ * Format: Cargo · empty / Cargo · {n}/{cap} (U+00B7 middot) — distinct from
+ * Cargo · n max catalog tip, Yield · n per trip, and the longer carry-line
+ * deposit copy.
  */
 import type { BattlefieldUnit } from '../../gameplay/battlefield/battlefieldWorld';
 import { t } from '../../i18n';

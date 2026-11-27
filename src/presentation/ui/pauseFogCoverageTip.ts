@@ -1,7 +1,8 @@
 /**
  * Pause overlay fog coverage tip (HUD label only).
- * Same fogExploredCoveragePct as minimap — frozen at pause open.
- * Distinct from Fog · ns age tip.
+ * Format: Fog · {pct}% (middot U+00B7) — explored fog cells frozen at pause open.
+ * Distinct from Fog · ns / Fog age · / Vision · / Selected ·; same copy as
+ * minimap Fog tip but own pause-scoped key (`pause.fogCoverageTip`).
  */
 import { t } from '../../i18n';
 

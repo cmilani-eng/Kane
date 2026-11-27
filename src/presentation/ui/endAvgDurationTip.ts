@@ -1,7 +1,8 @@
 /**
  * End-screen career average match-duration tip (HUD label only).
- * matchPrefs.avgDurationMs after prefs write — distinct surface from
- * lobby/pause Avg time · and this-match end Time · tips.
+ * Format: Avg time · {clock} — middot (U+00B7).
+ * Distinct from Last · / Best · / Time · / ~min match-length peers;
+ * same en/pt-BR/es copy as lobby/pause Avg time · (distinct i18n key / surface).
  */
 import { loadMatchPrefs } from '../../database/matchPrefs';
 import { t } from '../../i18n';

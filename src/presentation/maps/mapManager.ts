@@ -30,9 +30,9 @@ export function createSkirmishMap(
     width: cols,
     height: rows,
   });
-  const tileset = map.addTilesetImage('tileset-kane', 'tileset-kane', tileW, tileH, 0, 0, 1);
+  const tileset = map.addTilesetImage('kane_tileset', 'kane_tileset', tileW, tileH, 0, 0, 1);
   if (!tileset) {
-    throw new Error('tileset-kane missing — generate in Boot before Game');
+    throw new Error('kane_tileset missing — generate in KaneBoot before Game');
   }
   const layer = map.createBlankLayer('ground', tileset, 0, 0, cols, rows, tileW, tileH);
   if (!layer) {

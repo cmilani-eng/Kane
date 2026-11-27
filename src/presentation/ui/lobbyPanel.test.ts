@@ -57,10 +57,11 @@ describe('lobby status copy', () => {
     expect(lobbyMapTipLine()).toBe(
       t('lobby.mapTip', { label: map.label, blurb: map.blurb }),
     );
-    expect(lobbyMapTipLine()).toContain('Ridge');
-    expect(lobbyMapTipLine()).toContain('Diagonal bases');
+    expect(lobbyMapTipLine()).toBe('Ridge · Diagonal bases · shifted belt');
+    expect(lobbyMapTipLine()).toMatch(/^Ridge \u00b7 /);
+    expect(lobbyMapTipLine()).toContain(' \u00b7 ');
     setLocale('pt-BR');
-    expect(lobbyMapTipLine()).toContain('Cume');
+    expect(lobbyMapTipLine()).toMatch(/^Cume \u00b7 /);
   });
 
   it('pairs species, map, and difficulty for lobby setup context', () => {
@@ -73,20 +74,22 @@ describe('lobby status copy', () => {
     rememberMatchPrefs('weirdos', 'normal', 'crossing');
     setLocale('en-GB');
     const tip = lobbyFactionTipLine();
-    expect(tip).toContain('The Weirdos');
-    expect(tip).toContain('WE KNOW WHAT WE ARE DOING');
+    expect(tip).toBe('The Weirdos · WE KNOW WHAT WE ARE DOING. PROBABLY.');
+    expect(tip).toMatch(/^The Weirdos \u00b7 /);
+    expect(tip).toContain(' \u00b7 ');
     setLocale('pt-BR');
-    expect(lobbyFactionTipLine()).toContain('Os Doidos');
+    expect(lobbyFactionTipLine()).toMatch(/^Os Doidos \u00b7 /);
   });
 
   it('surfaces the selected difficulty label · blurb tip', () => {
     rememberMatchPrefs('nobles', 'easy', 'ridge');
     setLocale('en-GB');
     const tip = lobbyDifficultyTipLine();
-    expect(tip).toContain('Easy');
-    expect(tip).toContain('Newcomer cushion');
+    expect(tip).toBe('Easy · Newcomer cushion · slow AI eco');
+    expect(tip).toMatch(/^Easy \u00b7 /);
+    expect(tip).toContain(' \u00b7 ');
     setLocale('es');
-    expect(lobbyDifficultyTipLine()).toMatch(/Fácil|Margen/);
+    expect(lobbyDifficultyTipLine()).toMatch(/^Fácil \u00b7 /);
   });
 
   it('estimates match length from recent summaries, else a default tip', () => {

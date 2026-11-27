@@ -1,6 +1,9 @@
 /**
  * Live production-queue tip for buildings that train units (HUD label only).
- * Distinct from the longer queue-row ETA / cancel copy.
+ * Formats: Queue · empty / Training · {name} / Queue · {n} — middot (U+00B7).
+ * Distinct from Build · time / Build · progress / Size · / live Training ETA
+ * (`sel.training`) / live Queue {n} row (`sel.queue`); selection-only tip
+ * (no lobby/pause twin).
  */
 import { t } from '../../i18n';
 

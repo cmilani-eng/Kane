@@ -22,6 +22,7 @@ import {
   type AiDifficultyId,
 } from './aiDifficulty';
 import { seedCoreFragments } from './battlefieldCoreFragments';
+import { createRng, type Rng } from './battlefieldRng';
 import { createDefaultNodes } from './battlefieldEconomy';
 import { createFogState, isVisible } from './battlefieldFog';
 import { setUnitPath } from './battlefieldPathfinding';
@@ -121,6 +122,14 @@ export interface BattlefieldUnit {
 
 export interface BattlefieldWorld {
   nextId: number;
+  /** Every random choice in the simulation draws from here (see battlefieldRng.ts). */
+  rng: Rng;
+  /** Time since the fog was last rebuilt, in simulation milliseconds. */
+  fogAccMs: number;
+  /** A two-player match: the enemy team is driven by the other player's orders, not the AI. */
+  pvp: boolean;
+  /** Which team this client selects and orders. Selection is local, so it never reaches the simulation. */
+  controlTeam: BattlefieldTeam;
   units: BattlefieldUnit[];
   buildings: BattlefieldBuilding[];
   nodes: ResourceNode[];
@@ -426,12 +435,18 @@ export function createBattlefieldWorld(
   playerSpecies: SpeciesId = 'brutes',
   difficulty: AiDifficultyId = 'normal',
   mapId?: string | null,
+  seed = 1,
+  enemySpeciesOverride?: SpeciesId,
 ): BattlefieldWorld {
-  const enemySpecies = oppositePlayable(playerSpecies);
+  const enemySpecies = enemySpeciesOverride ?? oppositePlayable(playerSpecies);
   const ai = getAiDifficulty(difficulty);
   const layout = getSkirmishMap(mapId);
   const world: BattlefieldWorld = {
     nextId: 1,
+    rng: createRng(seed),
+    fogAccMs: 0,
+    pvp: false,
+    controlTeam: 'player',
     units: [],
     buildings: [],
     nodes: [],
@@ -526,7 +541,7 @@ export function selectAt(
   y: number,
   additive = false,
 ): boolean {
-  const best = findPlayerUnitAt(world, x, y);
+  const best = findUnitAtForTeam(world, x, y, world.controlTeam);
   if (!additive) clearSelection(world);
   if (best) {
     if (additive) best.selected = !best.selected;
@@ -547,10 +562,20 @@ export function findPlayerUnitAt(
   x: number,
   y: number,
 ): BattlefieldUnit | null {
+  return findUnitAtForTeam(world, x, y, 'player');
+}
+
+/** The nearest living unit of `team` under (x, y), or null. */
+export function findUnitAtForTeam(
+  world: BattlefieldWorld,
+  x: number,
+  y: number,
+  team: BattlefieldTeam,
+): BattlefieldUnit | null {
   let best: BattlefieldUnit | null = null;
   let bestD = Infinity;
   for (const u of world.units) {
-    if (!isLivingPlayerUnit(u)) continue;
+    if (u.team !== team || u.hp <= 0) continue;
     const d = dist(u.x, u.y, x, y);
     if (d <= u.radius + 12 && d < bestD) {
       best = u;
@@ -593,7 +618,7 @@ export function selectInRect(
   const maxY = Math.max(y1, y2);
   if (!additive) clearSelection(world);
   for (const u of world.units) {
-    if (u.team !== 'player') continue;
+    if (u.team !== world.controlTeam) continue;
     if (u.x >= minX && u.x <= maxX && u.y >= minY && u.y <= maxY) {
       u.selected = true;
     }
@@ -611,8 +636,24 @@ export function issueMoveSelected(
   y: number,
 ): void {
   const selected = world.units.filter((u) => u.selected && u.team === 'player');
+  moveUnitsForTeam(world, 'player', selected, x, y);
+}
+
+/**
+ * Moves `units` (all of `team`) in formation to (x, y). Both the local player's
+ * orders and a remote player's relayed orders run through here, so both sides
+ * change the world the same way.
+ */
+export function moveUnitsForTeam(
+  world: BattlefieldWorld,
+  team: BattlefieldTeam,
+  units: readonly BattlefieldUnit[],
+  x: number,
+  y: number,
+): void {
+  const selected = units;
   if (selected.length === 0) return;
-  recordPlayerAction(world);
+  if (team === 'player') recordPlayerAction(world);
   selected.forEach((u, i) => {
     u.attackTargetId = null;
     u.gatherNodeId = null;
@@ -731,10 +772,11 @@ function softSeparateUnits(world: BattlefieldWorld): void {
   }
 }
 
+/** The viewer's own selection. A friend in a two-player match controls the enemy team. */
 export function selectedCount(world: BattlefieldWorld): number {
-  return world.units.filter((u) => u.selected).length;
+  return world.units.filter((u) => u.selected && u.team === world.controlTeam).length;
 }
 
 export function selectedUnits(world: BattlefieldWorld): BattlefieldUnit[] {
-  return world.units.filter((u) => u.selected && u.team === 'player');
+  return world.units.filter((u) => u.selected && u.team === world.controlTeam);
 }

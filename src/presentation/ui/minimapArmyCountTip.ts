@@ -1,7 +1,9 @@
 /**
  * Minimap army size tip (presentation only).
- * Living player combat units — distinct surface from pause Army · tip,
- * HUD Army button, and idle army chip.
+ * Format: Army · {n} — middot (U+00B7).
+ * Living player combat units — distinct surface from pause Army · tip
+ * (`pause.armyTip` / `pauseArmySizeTipLine`), HUD Army button, idle army
+ * chip, and Selected · / Vision · / Fog · minimap peers.
  */
 import { t } from '../../i18n';
 

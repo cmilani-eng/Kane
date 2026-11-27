@@ -1,7 +1,9 @@
 /**
  * End-screen career games-played tip (HUD label only).
- * Finished-match count from match prefs — distinct surface from lobby Played tip
- * and from end.speciesTip (Played · faction).
+ * Format: Played · {n} — middot (U+00B7).
+ * Finished-match count from match prefs — distinct from Record · / Streak · /
+ * Win rate · / Best streak · peers and from end.speciesTip (Played · faction);
+ * same en copy as lobby/pause Played · (distinct i18n key / surface).
  */
 import { loadMatchPrefs } from '../../database/matchPrefs';
 import { t } from '../../i18n';

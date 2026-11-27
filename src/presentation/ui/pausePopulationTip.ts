@@ -1,6 +1,9 @@
 /**
  * Pause overlay population tip (HUD label only).
- * Living player unit count at pause — distinct from Supply · used/cap tip.
+ * Format: Pop · {n} — middot (U+00B7).
+ * Living player unit count at pause — distinct from Supply · used/cap /
+ * Army · / Selected · pause peers; same en/pt-BR/es copy as minimap
+ * Pop tip (`hud.minimapPop` / `minimapPopulationTipText`), own key.
  */
 import { t } from '../../i18n';
 

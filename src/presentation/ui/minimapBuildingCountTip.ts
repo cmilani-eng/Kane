@@ -1,6 +1,9 @@
 /**
  * Minimap building count tip (presentation only).
- * Living player buildings — distinct from army / supply and from pause Buildings tip.
+ * Format: Buildings · {n} — middot (U+00B7).
+ * Living player buildings — distinct surface from pause Buildings · tip
+ * (`pause.buildingsTip` / `pauseBuildingCountTipLine`), and from
+ * Army · / Enemies · / Selected · minimap peers.
  */
 import { t } from '../../i18n';
 

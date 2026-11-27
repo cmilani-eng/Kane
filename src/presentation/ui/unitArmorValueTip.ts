@@ -1,6 +1,7 @@
 /**
  * Unit numeric armor tip for selection stats (HUD label only).
- * Format: Armor · {n} — distinct from Armor · {role} class tip.
+ * Format: Armor · {n} — middot (U+00B7).
+ * Distinct from Armor · {role} class tip and building Armor · Structure.
  */
 import { unitArmorValue } from '../../data/unitArmorValue';
 import type { UnitTypeId } from '../../data/units';

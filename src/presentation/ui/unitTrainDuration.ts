@@ -1,5 +1,8 @@
 /**
  * Catalog train-duration tip in whole seconds (HUD label only).
+ * Format: Train · {n}s — middot (U+00B7).
+ * Distinct from Gold · / Crystal · / Atk CD · / Build · {n}s / trainSec peers;
+ * selection-only catalog tip (no lobby/pause twin).
  */
 import { getUnitType, type UnitTypeId } from '../../data/units';
 import { t } from '../../i18n';

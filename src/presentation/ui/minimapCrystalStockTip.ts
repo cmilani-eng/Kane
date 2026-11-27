@@ -1,6 +1,8 @@
 /**
  * Minimap crystal-stock tip (presentation only).
- * Live player magic crystals — distinct from pause Gold · Crystal combo tip.
+ * Format: Crystal · {n} — middot (U+00B7).
+ * Live player magic crystals — distinct from Gold · / Selected · minimap
+ * peers and pause Gold · Crystal combo tip.
  */
 import { t } from '../../i18n';
 

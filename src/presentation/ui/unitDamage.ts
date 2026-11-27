@@ -1,6 +1,8 @@
 /**
  * Catalog attack-damage tip (HUD label only).
- * Format: Damage · {n} — distinct from the ATK inline chip and DPS tip.
+ * Format: Damage · {n} — middot (U+00B7).
+ * Distinct from DPS · / Atk CD · / Splash · / Range · peers and from
+ * the ATK inline chip.
  */
 import { getUnitType, type UnitTypeId } from '../../data/units';
 import { t } from '../../i18n';

@@ -1,7 +1,8 @@
 /**
  * Pause overlay selected-unit sector tip (HUD label only).
- * Centroid of living player selection → 3×3 map sector, frozen at open.
- * Distinct from Cam · sector and Selected · n tips.
+ * Format: Focus · {sector} — middot (U+00B7); selection centroid 3×3
+ * frozen at pause open. Distinct from Cam · / Hero · / Selected · /
+ * Scout ·; own pause-scoped key (`pause.selectedSectorTip`).
  */
 import {
   mapSectorAt,
@@ -26,7 +27,7 @@ export function pauseSelectedSectorAt(
   return mapSectorAt(sx / n, sy / n);
 }
 
-/** Focus · {sector} — selection centroid sector when pause opened. */
+/** Focus · {sector} (U+00B7) — selection centroid sector when pause opened. */
 export function pauseSelectedSectorTipLine(sector: MapSectorId): string {
   return t('pause.selectedSectorTip', { sector });
 }

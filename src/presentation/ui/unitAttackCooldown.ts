@@ -1,6 +1,8 @@
 /**
  * Catalog attack-cooldown tip in seconds (HUD label only).
- * Format: Atk CD · {n}s — distinct from Rate · /s, DPS ·, and hero Cooldown Ns.
+ * Format: Atk CD · {n}s — middot (U+00B7).
+ * Distinct from Rate · /s / DPS · / hero Cooldown Ns / Train · {n}s;
+ * selection-only tip (no lobby/pause twin).
  */
 import { getUnitType, type UnitTypeId } from '../../data/units';
 import { t } from '../../i18n';

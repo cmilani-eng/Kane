@@ -1,7 +1,9 @@
 /**
  * End-screen best win-streak tip (HUD label only).
- * Peak consecutive wins from match prefs — distinct from current Streak tip
- * and lobby Best streak tip.
+ * Format: Best streak · {n} — middot (U+00B7).
+ * Peak consecutive wins from match prefs (max of bestWinStreak / winStreak) —
+ * distinct from Streak · / Loss streak · / Best APM · peers and from
+ * lobby/pause Best streak · tips (same en copy; distinct i18n key / surface).
  */
 import { loadMatchPrefs } from '../../database/matchPrefs';
 import { t } from '../../i18n';

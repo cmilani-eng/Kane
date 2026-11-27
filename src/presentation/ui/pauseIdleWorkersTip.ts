@@ -1,6 +1,10 @@
 /**
  * Pause overlay idle-workers tip (HUD label only).
- * Same countIdleWorkers filter as minimap Idle tip — frozen at pause open.
+ * Format: Idle · {n} — middot (U+00B7).
+ * Idle gatherer count frozen at pause open — distinct from Army · /
+ * Pop · / Selected · pause peers; same en/pt-BR/es copy as minimap
+ * Idle tip (`hud.minimapIdle` / `minimapIdleWorkerTipText`), own key.
+ * Same countIdleWorkers filter as minimap Idle tip.
  */
 import { t } from '../../i18n';
 

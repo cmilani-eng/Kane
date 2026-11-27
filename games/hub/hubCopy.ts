@@ -1,4 +1,10 @@
 import { t, type MessageKey } from '../../src/i18n';
+import { isPhoneSizedScreen } from '../../src/presentation/ui/screenSize';
+
+/** Kane needs a big screen, so its card cannot start a match on a phone. Blob Evolution plays anywhere. */
+export function hubPlayBlocked(gameId: string, width: number, height: number): boolean {
+  return gameId === 'kane' && isPhoneSizedScreen(width, height);
+}
 
 const HUB_BLURB: Record<string, MessageKey> = {
   kane: 'hub.kane.blurb',
@@ -44,12 +50,3 @@ export function hubBlurb(id: string, fallback: string): string {
   return key ? t(key) : fallback;
 }
 
-/** Soft-launch play path tip for the Kane hub card (`/kane/`). */
-export function hubKanePathTip(path = '/kane/'): string {
-  return t('hub.kanePathTip', { path });
-}
-
-/** Soft-launch play path tip for the Blob Evolution hub card (`/blob-evolution/`). */
-export function hubBlobPathTip(path = '/blob-evolution/'): string {
-  return t('hub.blobPathTip', { path });
-}

@@ -14,7 +14,14 @@ import {
 } from '../../data/heroes';
 import { RESOURCES } from '../../data/resources';
 import { SPECIES_MATCHUP_TIP, type SpeciesId } from '../../data/speciesStub';
-import { getLocale, speciesCopy, speciesName, t } from '../../i18n';
+import {
+  buildingDisplayName,
+  getLocale,
+  speciesCopy,
+  speciesName,
+  t,
+  unitDisplayName,
+} from '../../i18n';
 import { getUnitType, type UnitTypeId } from '../../data/units';
 import { buildingArmorClassLabel } from './buildingArmorClass';
 import {
@@ -585,7 +592,7 @@ export function buildSelectionView(
       const canPay = canAfford(wallet, cost);
       return {
         typeId,
-        name: u.name,
+        name: unitDisplayName(typeId),
         costGold: u.costGold,
         costCrystals: u.costCrystals,
         trainSec: trainFullSec(u.trainMs),
@@ -602,7 +609,7 @@ export function buildSelectionView(
             const canPay = canAfford(wallet, pdef.cost);
             return {
               typeId,
-              name: pdef.name,
+              name: buildingDisplayName(typeId),
               costGold,
               costCrystals,
               canPay,
@@ -630,7 +637,7 @@ export function buildSelectionView(
     const flavorBase = `${species.name} · ${species.mechanic} · ${matchupLine(bdef.speciesId)}`;
     return {
       kind: 'building',
-      title: b.name,
+      title: buildingDisplayName(b.typeId),
       flavor: ready
         ? flavorBase
         : `${flavorBase} · ${t('sel.buildingPct', {
@@ -653,7 +660,7 @@ export function buildSelectionView(
       prodQueueTip: buildingProdQueueLabel(
         trains.length > 0,
         b.trainQueue.length,
-        head?.name ?? null,
+        head ? unitDisplayName(head.id) : null,
       ),
       ready,
       buildPct,
@@ -664,7 +671,7 @@ export function buildSelectionView(
       progressPct,
       remainSec,
       totalSec,
-      headName: head?.name ?? null,
+      headName: head ? unitDisplayName(head.id) : null,
       rallyArmed,
       hasRally: trains.length > 0,
       hasCustomRally:
@@ -723,7 +730,7 @@ export function buildSelectionView(
     return {
       kind: 'units',
       count: 1,
-      title: u.name,
+      title: unitDisplayName(u.typeId),
       flavor: `${species.name} · ${matchupLine(u.speciesId)}`,
       hp: u.hp,
       maxHp: u.maxHp,
@@ -773,7 +780,7 @@ export function buildSelectionView(
   const typeCounts = typeCountLine(alive, 3);
   const title = mixed
     ? typeCounts
-    : `${alive[0]!.name} ×${alive.length}`;
+    : `${unitDisplayName(alive[0]!.typeId)} ×${alive.length}`;
   const speciesIds = new Set(alive.map((u) => u.speciesId));
   const flavor = mixed
     ? speciesIds.size === 1
@@ -857,7 +864,7 @@ export function typeCountLine(
     if (u.hp <= 0) continue;
     const cur = counts.get(u.typeId);
     if (cur) cur.n += 1;
-    else counts.set(u.typeId, { name: u.name, n: 1 });
+    else counts.set(u.typeId, { name: unitDisplayName(u.typeId), n: 1 });
   }
   const parts = [...counts.values()].sort((a, b) => b.n - a.n || a.name.localeCompare(b.name));
   if (parts.length === 0) return t('sel.mixed', { n: 0 });
@@ -1971,7 +1978,7 @@ export function renderSelectionPanel(view: SelectionPanelView): boolean {
                 .map((id, i) => {
                   const u = getUnitType(id);
                   const label = u.name.slice(0, 2).toUpperCase();
-                  return `<button type="button" class="kane-sel-qicon${i === 0 ? ' is-active' : ''}" data-act="cancelQueue" data-queue-index="${i}" title="${t('sel.cancelOne', { name: escapeHtml(u.name) })}">${label}<span class="kane-sel-qnum">${i + 1}</span></button>`;
+                  return `<button type="button" class="kane-sel-qicon${i === 0 ? ' is-active' : ''}" data-act="cancelQueue" data-queue-index="${i}" title="${t('sel.cancelOne', { name: escapeHtml(unitDisplayName(id)) })}">${label}<span class="kane-sel-qnum">${i + 1}</span></button>`;
                 })
                 .join('') +
               (overflow > 0

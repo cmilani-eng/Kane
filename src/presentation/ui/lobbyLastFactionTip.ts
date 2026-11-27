@@ -1,6 +1,7 @@
 /**
  * Lobby tip for the last-played / remembered faction from match prefs.
- * Format: Last · {name} — distinct from Favorite ·, Played · n, and
+ * Format: Last · {name} — middot (U+00B7).
+ * Distinct from Favorite · / Played · / Last · duration / Last · Won-Lost /
  * selected faction motto tip (`lobby.factionTip`).
  */
 import { loadMatchPrefs } from '../../database/matchPrefs';

@@ -31,7 +31,7 @@ import {
 
 type CombatTarget = BattlefieldUnit | BattlefieldBuilding;
 
-function findTarget(
+export function findTarget(
   world: BattlefieldWorld,
   id: number | null,
 ): CombatTarget | null {

@@ -15,3 +15,6 @@ ui-debug.log
 .vscode/*
 !.vscode/extensions.json
 .idea
+
+# Machine-specific preview server config (absolute paths), never committed
+.claude/launch.json

@@ -1,7 +1,8 @@
 /**
  * End-screen career peak APM tip (HUD label only).
- * matchPrefs.bestApm after prefs write — distinct surface from
- * lobby/pause Best APM ·, end Avg APM ·, and this-match end APM · tips.
+ * Format: Best APM · {n} — middot (U+00B7).
+ * Distinct from Avg APM · / APM · (match-rate) / Avg time · peers;
+ * same en/pt-BR/es copy as lobby/pause Best APM · (distinct i18n key / surface).
  */
 import { loadMatchPrefs } from '../../database/matchPrefs';
 import { t } from '../../i18n';

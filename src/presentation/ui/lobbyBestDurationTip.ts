@@ -1,6 +1,8 @@
 /**
  * Lobby tip for the shortest winning match duration from match prefs.
- * Distinct from last-duration, Avg time ·, and ~min match-length tips.
+ * Format: Best · mm:ss — middot (U+00B7).
+ * Distinct from Last · / Avg time · / Time · / Best map · /
+ * ~min match-length peers (lobby-only; no end/pause Best · twin).
  */
 import { loadMatchPrefs } from '../../database/matchPrefs';
 import { t } from '../../i18n';

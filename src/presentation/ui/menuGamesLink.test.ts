@@ -41,9 +41,9 @@ describe('menuGamesLink', () => {
     expect(menuGamesLinkCopy().text).toBe('← Juegos');
   });
 
-  it('wires the menu DOM twin and MenuScene show/hide', () => {
+  it('wires the menu DOM twin and KaneMenuScene show/hide', () => {
     const ui = resolve(import.meta.dirname, 'menuGamesLink.ts');
-    const scene = resolve(import.meta.dirname, '../scenes/MenuScene.ts');
+    const scene = resolve(import.meta.dirname, '../../games/kane/KaneMenuScene.ts');
     const mod = readFileSync(ui, 'utf8');
     const menu = readFileSync(scene, 'utf8');
     expect(mod).toContain(MENU_GAMES_LINK_ID);

@@ -33,17 +33,15 @@ export interface AuthPanelOpts {
 }
 
 const ROOT_ID = 'kane-auth-panel';
-const CARD_GLINT =
-  "before:pointer-events-none before:absolute before:inset-x-0.5 before:top-0.5 before:h-1 before:bg-kane-gold/90 before:content-['']";
 const ROOT_CLASS = [
   'fixed inset-0 z-[10000] flex items-center justify-center bg-kane-scrim p-4 font-sans',
   'short:items-start short:overflow-auto short:px-3 short:py-2',
 ].join(' ');
 const CARD_CLASS = [
-  'relative box-border w-[min(400px,100%)] rounded border-2 border-kane-gold/85 bg-kane-card',
-  'px-5 pt-[22px] pb-[18px] text-kane-ink',
-  'short:w-[min(720px,100%)] short:px-4 short:pt-3 short:pb-2.5',
-  CARD_GLINT,
+  'relative box-border w-[min(400px,100%)] rounded-[28px] border border-white/10',
+  'bg-[linear-gradient(145deg,#12253c,#081221)] px-7 pt-7 pb-6 text-kane-ink',
+  'shadow-[0_24px_80px_rgba(0,0,0,0.45)]',
+  'short:w-[min(720px,100%)] short:rounded-[20px] short:px-4 short:pt-3 short:pb-2.5',
 ].join(' ');
 const LABEL = 'mt-2.5 mb-1 block text-[11px] text-kane-muted short:mt-1 short:mb-0.5';
 const INPUT = [
@@ -52,7 +50,7 @@ const INPUT = [
 ].join(' ');
 const BUTTON = 'cursor-pointer border-none font-sans disabled:cursor-wait disabled:opacity-55';
 const BIG_BUTTON = `${BUTTON} min-h-12 px-3.5 py-[11px] text-center leading-[1.25] whitespace-normal short:flex-[1_1_140px]`;
-const PRIMARY = `${BIG_BUTTON} bg-kane-moss text-sm text-kane-gold`;
+const PRIMARY = `${BIG_BUTTON} rounded-[14px] bg-[#9dff6a] text-sm font-black uppercase text-[#06121f] shadow-[0_5px_0_#4a9a2c] hover:brightness-110`;
 const GHOST = `${BIG_BUTTON} bg-kane-slate text-[13px] text-kane-parchment`;
 const LINKISH = `${BUTTON} bg-transparent p-1.5 text-xs/normal text-kane-ice`;
 
