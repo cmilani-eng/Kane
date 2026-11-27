@@ -291,6 +291,15 @@ export const enGB = {
   'skate.walletBest': 'Wallet: {coins} coins · 🏆 Best {best}',
   'skate.controls':
     'Space / ↑ / tap = jump (two at most)\nSecond jump = aerial flip + speed burst\nLow ceiling? Jump only once!',
+  'skate.level.pill': 'Difficulty',
+  'skate.level.title': 'CHOOSE A LEVEL',
+  'skate.level.help':
+    'Easy: the classic ride\nMedium: faster, with tougher enemies\nHard: every enemy is a boss\nExtreme: far faster, bosses twice as strong',
+  'skate.level.note': 'Extreme is nearly impossible… but only nearly.',
+  'skate.level.easy': 'EASY',
+  'skate.level.medium': 'MEDIUM',
+  'skate.level.hard': 'HARD',
+  'skate.level.extreme': 'EXTREME',
   'skate.start': 'START SKATING',
   'skate.upgrades': 'UPGRADES',
   'skate.score': 'SCORE',
@@ -1138,6 +1147,15 @@ export const ptBR = {
   'skate.walletBest': 'Carteira: {coins} moedas · 🏆 Recorde {best}',
   'skate.controls':
     'Espaço / ↑ / toque = pular (no máximo duas vezes)\nSegundo pulo = giro no ar + impulso de velocidade\nTeto baixo? Pule só uma vez!',
+  'skate.level.pill': 'Dificuldade',
+  'skate.level.title': 'ESCOLHA O NÍVEL',
+  'skate.level.help':
+    'Fácil: o rolê clássico\nMédio: mais rápido, com inimigos mais fortes\nDifícil: todo inimigo é um chefão\nExtremo: bem mais rápido, chefões duas vezes mais fortes',
+  'skate.level.note': 'O Extremo é quase impossível… mas só quase.',
+  'skate.level.easy': 'FÁCIL',
+  'skate.level.medium': 'MÉDIO',
+  'skate.level.hard': 'DIFÍCIL',
+  'skate.level.extreme': 'EXTREMO',
   'skate.start': 'COMEÇAR A PATINAR',
   'skate.upgrades': 'MELHORIAS',
   'skate.score': 'PONTOS',
@@ -1980,6 +1998,15 @@ export const es = {
   'skate.walletBest': 'Cartera: {coins} monedas · 🏆 Récord {best}',
   'skate.controls':
     'Espacio / ↑ / toque = saltar (dos veces como máximo)\nSegundo salto = giro en el aire + impulso de velocidad\n¿Techo bajo? ¡Salta solo una vez!',
+  'skate.level.pill': 'Dificultad',
+  'skate.level.title': 'ELIGE EL NIVEL',
+  'skate.level.help':
+    'Fácil: el paseo clásico\nMedio: más rápido y con enemigos más duros\nDifícil: cada enemigo es un jefe\nExtremo: mucho más rápido, jefes el doble de fuertes',
+  'skate.level.note': 'El Extremo es casi imposible… pero solo casi.',
+  'skate.level.easy': 'FÁCIL',
+  'skate.level.medium': 'MEDIO',
+  'skate.level.hard': 'DIFÍCIL',
+  'skate.level.extreme': 'EXTREMO',
   'skate.start': 'EMPEZAR A PATINAR',
   'skate.upgrades': 'MEJORAS',
   'skate.score': 'PUNTOS',

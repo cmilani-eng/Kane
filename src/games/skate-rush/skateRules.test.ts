@@ -3,14 +3,11 @@ import {
   BOSS_THROW,
   CEILING_TYPES,
   CEILING_Y,
-  GAP_EASY,
-  GAP_HARD,
   GAP_HARD_SCORE,
   GROUND,
   HAZARD_TYPES,
-  HOPPERS,
+  HOP_LENGTH,
   PATTERNS,
-  RUSHERS,
   SKATER_X,
   SWOOP,
   UNDER,
@@ -31,6 +28,11 @@ import {
   type Item,
   type Run,
 } from './skateRules';
+import { LEVELS } from './skateLevels';
+
+/** Every test here plays the default level, Easy. */
+const EASY = LEVELS.easy;
+const { rushers: RUSHERS, gapEasy: GAP_EASY, gapHard: GAP_HARD } = EASY;
 
 /** Deterministic random source. */
 function seeded(seed: number): () => number {
@@ -333,12 +335,12 @@ describe('enemies', () => {
   it.each(['animal', 'robot'] as const)('%s hops, and its hitbox goes with it', (type) => {
     const lifts: number[] = [];
     const tops: number[] = [];
-    for (let x = 0; x < HOPPERS[type].length; x += 5) {
+    for (let x = 0; x < HOP_LENGTH[type]; x += 5) {
       const o = item({ type, x });
       lifts.push(liftOf(o));
       tops.push(hazardBox(o, 0).y + liftOf(o));
     }
-    expect(Math.max(...lifts)).toBeCloseTo(HOPPERS[type].lift, 0);
+    expect(Math.max(...lifts)).toBeCloseTo(EASY.hops[type], 0);
     expect(Math.min(...lifts)).toBeLessThan(4);
     for (const top of tops) expect(top).toBeCloseTo(tops[0]);
   });
@@ -356,13 +358,13 @@ describe('enemies', () => {
 
   it.each(['bird', 'drone', 'alien'] as const)('%s dives at a skater on the ground', (type) => {
     const run = quietRun();
-    run.items.push(item({ type, x: SKATER_X + SWOOP.trigger + 60, y: 170 }));
+    run.items.push(item({ type, x: SKATER_X + EASY.swoop.trigger + 60, y: 170 }));
     const [o] = run.items;
     steps(run, 5);
     expect(o.target).toBeUndefined();
     expect(Math.abs(o.y - 170)).toBeLessThanOrEqual(SWOOP.bob);
     run.shield = true;
-    while (o.x > SKATER_X + SWOOP.end) steps(run, 1);
+    while (o.x > SKATER_X + EASY.swoop.end) steps(run, 1);
     expect(o.target).toBe(GROUND - 29);
     expect(o.y).toBeCloseTo(GROUND - 29);
   });
@@ -371,7 +373,7 @@ describe('enemies', () => {
     const run = quietRun();
     run.player.y = 120;
     run.player.vy = 0;
-    run.items.push(item({ type: 'bird', x: SKATER_X + SWOOP.trigger, y: 170 }));
+    run.items.push(item({ type: 'bird', x: SKATER_X + EASY.swoop.trigger, y: 170 }));
     steps(run, 1);
     expect(run.items[0].target).toBe(SWOOP.minY);
     steps(run, 40);
@@ -390,7 +392,7 @@ describe('enemies', () => {
     const run = quietRun();
     spawnPattern(run, 'boss', half);
     const [boss] = run.items;
-    while (boss.x > SKATER_X + BOSS_THROW.at) steps(run, 1);
+    while (boss.x > SKATER_X + EASY.throwAt[0]) steps(run, 1);
     steps(run, 10);
     const bombs = run.items.filter((o) => o.type === 'bomb');
     expect(bombs).toHaveLength(1);
