@@ -1,11 +1,12 @@
 /**
- * Test helper for Skate Rush 3: a bot that looks for a way through. It plays the real rules and
- * backtracks. To stand in for a human it may only press on a coarse grid of steps, and it never
- * leans on a Shield.
+ * Test helper for Skate Rush 3: bots that play the real rules. To stand in for a human they may
+ * only press on a coarse grid of steps, and they never lean on a Shield.
+ *  - `findWayThrough` backtracks over everything, including what has not appeared yet.
+ *  - `playAsSeen` plans only around what is on screen, a reaction time after it appears.
  *
- * Called by: src/games/skate-rush/skateFairness.test.ts
+ * Called by: src/games/skate-rush/skateFairness.testkit.ts, skatePairs.testkit.ts, skateEasy.test.ts
  */
-import { SKATER_X, hazardBox, isCeiling, jump, stepRun, type Item, type Random, type Run } from './skateRules';
+import { MAX_JUMPS, SKATER_X, VIEW_W, hazardBox, isCeiling, jump, stepRun, type Item, type Random, type Run } from './skateRules';
 
 /** A random source whose position can be copied, so the bot can go back in time. */
 export interface Dice {
@@ -47,10 +48,16 @@ export interface Search {
   done: (run: Run) => boolean;
   /** Give up after trying this many moves. */
   budget: number;
+  /** Called before each step, for a test that puts hazards on the track itself. */
+  beforeStep?: (run: Run) => void;
+  /** The most jumps the bot may use in one airtime: all of them unless told otherwise. */
+  jumps?: number;
 }
 
 export interface Outcome {
   ok: boolean;
+  /** When it got through: whether it pressed, at each step. */
+  presses: boolean[];
   /** The furthest step any attempt survived to, and what was on screen there. */
   furthest: number;
   blockedBy: string;
@@ -76,18 +83,20 @@ interface Node {
   dice: Dice;
   /** Moves still to try from here: whether to press at this step. */
   moves: boolean[];
+  /** Whether it pressed on the step that led here. */
+  pressed: boolean;
 }
 
 function movesFrom(run: Run, search: Search): boolean[] {
-  const canPress = run.frame % search.grid === search.offset && run.player.jumps < 2;
-  // Popped from the end, so waiting is tried first.
+  const canPress = run.frame % search.grid === search.offset && run.player.jumps < (search.jumps ?? MAX_JUMPS);
+  // The depth-first search pops from the end, so it tries waiting first.
   return canPress ? [true, false] : [false];
 }
 
 /** Depth-first search for a sequence of presses that stays alive until `done`. */
 export function findWayThrough(start: Run, startDice: Dice, search: Search): Outcome {
   const dead = new Set<string>();
-  const stack: Node[] = [{ run: copyRun(start), dice: { ...startDice }, moves: movesFrom(start, search) }];
+  const stack: Node[] = [{ run: copyRun(start), dice: { ...startDice }, moves: movesFrom(start, search), pressed: false }];
   let tried = 0;
   let furthest = start.frame;
   let blockedBy = '';
@@ -103,6 +112,7 @@ export function findWayThrough(start: Run, startDice: Dice, search: Search): Out
     tried++;
     const run = copyRun(node.run);
     const dice = { ...node.dice };
+    search.beforeStep?.(run);
     advance(run, dice, press);
     if (run.over) {
       if (run.frame > furthest) {
@@ -111,11 +121,70 @@ export function findWayThrough(start: Run, startDice: Dice, search: Search): Out
       }
       continue;
     }
-    if (search.done(run)) return { ok: true, furthest: run.frame, blockedBy: '' };
+    if (search.done(run)) {
+      const presses = [...stack.slice(1).map((n) => n.pressed), press];
+      return { ok: true, presses, furthest: run.frame, blockedBy: '' };
+    }
     if (dead.has(stateKey(run, dice))) continue;
-    stack.push({ run, dice, moves: movesFrom(run, search) });
+    stack.push({ run, dice, moves: movesFrom(run, search), pressed: press });
   }
-  return { ok: false, furthest, blockedBy };
+  return { ok: false, presses: [], furthest, blockedBy };
+}
+
+const isPickup = (o: Item): boolean => o.type === 'coin' || o.type === 'power';
+
+/**
+ * A way past everything on the track and back to the ground, chosen the way a player would. A
+ * second jump is kept for when one will not do, and the search tries waiting first, so it jumps
+ * as late as it can: either way the skater is soon free to answer whatever turns up next.
+ */
+function planAsAPlayerWould(view: Run, dice: Dice, search: Search): Outcome {
+  const plan = (jumps: number): Outcome =>
+    findWayThrough(view, dice, {
+      grid: search.grid,
+      offset: search.offset,
+      budget: search.budget,
+      jumps,
+      done: (r) => allBehind(r) && r.player.jumps === 0,
+    });
+  const withOne = plan(1);
+  return withOne.ok ? withOne : plan(MAX_JUMPS);
+}
+
+/**
+ * Play like someone who cannot see the future: plan a way past the hazards taken in so far, as if
+ * nothing else were coming, and plan again each time something new has been on screen for
+ * `reaction` steps. A hazard it has not taken in yet is still really there.
+ */
+export function playAsSeen(start: Run, startDice: Dice, search: Search & { reaction: number }): Outcome {
+  const run = copyRun(start);
+  const dice = { ...startDice };
+  const seenAt = new Map<Item, number>();
+  const takenIn = new Set<Item>();
+  let plan: boolean[] = [];
+
+  while (!search.done(run)) {
+    let news = false;
+    for (const o of run.items) {
+      if (isPickup(o) || takenIn.has(o)) continue;
+      if (o.x <= VIEW_W && !seenAt.has(o)) seenAt.set(o, run.frame);
+      const since = seenAt.get(o);
+      if (since !== undefined && run.frame - since >= search.reaction) {
+        takenIn.add(o);
+        news = true;
+      }
+    }
+    if (news || plan.length === 0) {
+      const view = copyRun({ ...run, items: run.items.filter((o) => takenIn.has(o) || (isPickup(o) && o.x <= VIEW_W)) });
+      view.spawn = 1e9;
+      const found = planAsAPlayerWould(view, dice, search);
+      if (!found.ok) return { ok: false, presses: [], furthest: run.frame, blockedBy: describeItems(run) };
+      plan = found.presses;
+    }
+    advance(run, dice, plan.shift() ?? false);
+    if (run.over) return { ok: false, presses: [], furthest: run.frame, blockedBy: describeItems(run) };
+  }
+  return { ok: true, presses: [], furthest: run.frame, blockedBy: '' };
 }
 
 /** When one spawn's hazards are level with the skater: the first step and the last. */
@@ -127,32 +196,35 @@ export interface Visit {
 
 /**
  * Watch a run without playing it (hits are ignored) and note when each spawn's hazards pass the
- * skater. Low ceilings are left out: one jump is safe anywhere under them. A boss's bomb counts
- * as part of the boss. With `turboEvery`, Turbo keeps cutting in while hazards are on their way.
+ * skater. Low ceilings are left out: one jump is safe anywhere under them. A bomb counts as part
+ * of whoever threw it. With `turboEvery`, Turbo keeps cutting in while hazards are on their way.
  */
 export function hazardVisits(start: Run, dice: Dice, steps: number, turboEvery = 0): Visit[] {
   const run = copyRun(start);
   const visits: Visit[] = [];
   const owner = new Map<Item, Visit>();
-  let boss: Visit | undefined;
 
   while (run.frame < steps) {
     if (turboEvery > 0 && run.frame % turboEvery === 0) run.turbo = 240;
+    const stillToThrow = new Map(run.items.map((o) => [o, o.throws?.length ?? 0]));
     advance(run, dice, false);
     run.over = false;
+    // New bombs are in the same order as the enemies that threw them this step.
+    const throwers = run.items.filter((o) => (stillToThrow.get(o) ?? 0) > (o.throws?.length ?? 0));
     let spawned: Visit | undefined;
     for (const o of run.items) {
       if (o.type === 'coin' || o.type === 'power' || isCeiling(o.type)) continue;
       let visit = owner.get(o);
       if (!visit) {
-        if (o.type === 'bomb') visit = boss;
-        else {
+        if (o.type === 'bomb') {
+          const thrower = throwers.shift();
+          visit = thrower && owner.get(thrower);
+        } else {
           if (!spawned) {
             spawned = { first: Infinity, last: 0, types: [] };
             visits.push(spawned);
           }
           visit = spawned;
-          if (o.type === 'boss') boss = visit;
         }
         if (!visit) continue;
         owner.set(o, visit);
