@@ -21,8 +21,31 @@ export const STAGES = [
 /** The last stage; reached by winning, never by eating. */
 export const ANGEL_STAGE = 5;
 
+/** Half the width of the square play area, and the opponents, on the original (small) map. */
 export const ARENA = 34;
 export const BOT_COUNT = 42;
+
+/** The maps a player can choose, small to large. */
+export const MAP_IDS = ['dark', 'playground', 'castle'] as const;
+export type MapId = (typeof MAP_IDS)[number];
+
+export interface BlobMap {
+  id: MapId;
+  /** Half the width of the square play area, in arena units. */
+  half: number;
+  /** Opponents at the start. */
+  bots: number;
+}
+
+/**
+ * Bigger maps get more blobs, but fewer for their size: enough to keep finding prey without
+ * the cost of filling a castle as tightly as the small arena (and each blob is drawn).
+ */
+export const MAPS: Record<MapId, BlobMap> = {
+  dark: { id: 'dark', half: ARENA, bots: BOT_COUNT },
+  playground: { id: 'playground', half: 46, bots: 56 },
+  castle: { id: 'castle', half: 60, bots: 70 },
+};
 
 /** The player begins as a Blue blob (stage 1) and can eat the Purple ones. */
 export const PLAYER_START_STAGE = 1;
@@ -81,13 +104,21 @@ function clampToWall(value: number, lim: number): number {
 /**
  * One frame of the player's movement. Velocity eases toward (input × top speed) and is applied
  * per second. `speedFactor` scales the ground covered (a puddle), not the steering, so full pace
- * is back as soon as it returns to 1.
+ * is back as soon as it returns to 1. `arena` is the map's half-width.
  */
-export function stepPlayer(body: MovingBody, inputX: number, inputZ: number, topSpeed: number, dt: number, speedFactor = 1): void {
+export function stepPlayer(
+  body: MovingBody,
+  inputX: number,
+  inputZ: number,
+  topSpeed: number,
+  dt: number,
+  speedFactor = 1,
+  arena: number = ARENA,
+): void {
   body.vx = approach(body.vx, inputX * topSpeed, dt, PLAYER_RESPONSE);
   body.vz = approach(body.vz, inputZ * topSpeed, dt, PLAYER_RESPONSE);
 
-  const lim = ARENA - body.radius * WALL_REACH;
+  const lim = arena - body.radius * WALL_REACH;
   body.x = clampToWall(body.x + body.vx * dt * speedFactor, lim);
   body.z = clampToWall(body.z + body.vz * dt * speedFactor, lim);
 }
@@ -99,6 +130,7 @@ export function stepBot(
   dirZ: number,
   dt: number,
   speedFactor = 1,
+  arena: number = ARENA,
 ): void {
   bot.vx = approach(bot.vx, dirX * bot.speed, dt, BOT_RESPONSE);
   bot.vz = approach(bot.vz, dirZ * bot.speed, dt, BOT_RESPONSE);
@@ -106,7 +138,7 @@ export function stepBot(
   bot.x += bot.vx * dt * speedFactor;
   bot.z += bot.vz * dt * speedFactor;
 
-  const lim = ARENA - bot.radius * WALL_REACH;
+  const lim = arena - bot.radius * WALL_REACH;
   if (bot.x > lim || bot.x < -lim) {
     bot.vx *= -0.7;
     bot.tx = -bot.tx * 0.8;
@@ -132,10 +164,10 @@ export function botStagePlan(count: number, random: () => number = Math.random):
 }
 
 /** A random spot in the arena that is at least `clear` units from the centre (the player). */
-export function spawnPoint(random: () => number = Math.random, clear = 5): { x: number; z: number } {
+export function spawnPoint(random: () => number = Math.random, clear = 5, arena: number = ARENA): { x: number; z: number } {
   for (let tries = 0; tries < 50; tries++) {
-    const x = (random() - 0.5) * ARENA * 1.75;
-    const z = (random() - 0.5) * ARENA * 1.75;
+    const x = (random() - 0.5) * arena * 1.75;
+    const z = (random() - 0.5) * arena * 1.75;
     if (Math.hypot(x, z) >= clear) return { x, z };
   }
   return { x: clear, z: 0 };
@@ -173,8 +205,8 @@ export function findChaseTarget(
 }
 
 /** A nearby wander point, kept two units inside the arena wall. */
-export function wanderTarget(bot: Mover, random: () => number = Math.random): { x: number; z: number } {
-  const lim = ARENA - 2;
+export function wanderTarget(bot: Mover, random: () => number = Math.random, arena: number = ARENA): { x: number; z: number } {
+  const lim = arena - 2;
   const clamp = (v: number) => Math.min(lim, Math.max(-lim, v));
   return {
     x: clamp(bot.x + (random() - 0.5) * BOT_WANDER_RANGE),

@@ -71,8 +71,8 @@ function fitsAmong(x: number, z: number, radius: number, layout: readonly Harmle
 }
 
 /** A random place for a new piece of scenery; fixed rings are the fallback if luck runs out. */
-function harmlessSpot(radius: number, layout: readonly HarmlessObstacle[], random: Random): Spot {
-  const lim = ARENA - HARMLESS_WALL_MARGIN - radius;
+function harmlessSpot(radius: number, layout: readonly HarmlessObstacle[], random: Random, arena: number): Spot {
+  const lim = arena - HARMLESS_WALL_MARGIN - radius;
   for (let tries = 0; tries < 60; tries++) {
     const x = (random() * 2 - 1) * lim;
     const z = (random() * 2 - 1) * lim;
@@ -91,17 +91,17 @@ function harmlessSpot(radius: number, layout: readonly HarmlessObstacle[], rando
 }
 
 /**
- * Lay out `count` trees and puddles in a random mix. None sits on the start point, against
- * the wall or too close to another.
+ * Lay out `count` trees and puddles in a random mix over a map of half-width `arena`. None sits
+ * on the start point, against the wall or too close to another.
  */
-export function planHarmlessObstacles(count: number, random: Random = Math.random): HarmlessObstacle[] {
+export function planHarmlessObstacles(count: number, random: Random = Math.random, arena: number = ARENA): HarmlessObstacle[] {
   const layout: HarmlessObstacle[] = [];
   const wanted = Math.min(HARMLESS_MAX, Math.max(0, Math.floor(count)));
   for (let i = 0; i < wanted; i++) {
     const kind: HarmlessKind = random() < 0.5 ? 'tree' : 'puddle';
     const { min, max } = HARMLESS_SIZE[kind];
     const radius = min + random() * (max - min);
-    const { x, z } = harmlessSpot(radius, layout, random);
+    const { x, z } = harmlessSpot(radius, layout, random, arena);
     layout.push({ kind, x, z, radius });
   }
   return layout;
@@ -183,6 +183,8 @@ export interface Hazard extends Body {
 
 export interface HazardField {
   hazards: Hazard[];
+  /** Half the width of the map they live on. */
+  arena: number;
   /** Seconds of play until the next one. Only counts down while there is room for it. */
   spawnIn: number;
   nextId: number;
@@ -234,9 +236,10 @@ const HAZARD_STEER_RESPONSE = 3;
 /** The widest change of direction, in radians (135° either way). */
 const HAZARD_TURN_ARC = Math.PI * 1.5;
 
-export function createHazardField(random: Random = Math.random): HazardField {
+export function createHazardField(random: Random = Math.random, arena: number = ARENA): HazardField {
   return {
     hazards: [],
+    arena,
     spawnIn: HAZARD_FIRST_SPAWN_MIN + random() * HAZARD_FIRST_SPAWN_SPREAD,
     nextId: 1,
     carry: 0,
@@ -280,7 +283,7 @@ function hazardSpot(
 ): Spot | null {
   const { radius } = HAZARD_SPECS[kind];
   const near = minSpawnDistance(kind, player.radius);
-  const lim = ARENA - radius;
+  const lim = field.arena - radius;
   for (let tries = 0; tries < 40; tries++) {
     const angle = random() * Math.PI * 2;
     const distance = near + random() * Math.max(0, HAZARD_SPAWN_RANGE - near);
@@ -310,7 +313,7 @@ function trySpawn(field: HazardField, player: Body, harmless: readonly HarmlessO
 }
 
 /** Wander: ease toward the chosen direction, change it now and then, and rebound off the wall. */
-function wander(hazard: Hazard, h: number, random: Random): void {
+function wander(hazard: Hazard, h: number, random: Random, arena: number): void {
   const spec = HAZARD_SPECS[hazard.kind];
   if (spec.speed === 0) return;
 
@@ -324,7 +327,7 @@ function wander(hazard: Hazard, h: number, random: Random): void {
   hazard.x += hazard.vx * h;
   hazard.z += hazard.vz * h;
 
-  const lim = ARENA - hazard.radius;
+  const lim = arena - hazard.radius;
   if (Math.abs(hazard.x) > lim) {
     hazard.x = Math.sign(hazard.x) * lim;
     hazard.vx = -hazard.vx;
@@ -350,7 +353,7 @@ function tick(field: HazardField, h: number, player: Body, harmless: readonly Ha
     } else if (hazard.age >= HAZARD_LIFETIME_SECONDS - EPSILON) {
       hazards.splice(i, 1);
     } else {
-      wander(hazard, h, random);
+      wander(hazard, h, random, field.arena);
     }
   }
 
