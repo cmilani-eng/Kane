@@ -3,7 +3,8 @@
  * the look of the original DOM panels: navy 145deg rounded card, pill tag, big tight title,
  * muted copy and chunky 3D cyan keys. Any Phaser game on the site can open one.
  *
- * Called by: src/games/blob-evolution/BlobEvolutionScene.ts, src/games/skate-rush/SkateRushScene.ts
+ * Called by: src/games/blob-evolution/BlobEvolutionScene.ts, src/games/skate-rush/SkateRushScene.ts,
+ * src/games/chess-masters/ChessMastersScene.ts
  */
 import Phaser from 'phaser';
 import {
@@ -24,6 +25,8 @@ export interface GamePanelButton {
   choice?: boolean;
   /** The key Enter presses. Without one, Enter presses the first key that is not a `choice`. */
   primary?: boolean;
+  /** Start a new row of keys here, to keep groups apart. */
+  newRow?: boolean;
 }
 
 export interface GamePanelSpec {
@@ -228,9 +231,9 @@ export class GamePanel {
     const keys = spec.buttons.map((b) => this.makeKey(b));
     const gap = 10;
     const rows: { keys: ReturnType<GamePanel['makeKey']>[]; w: number; h: number }[] = [];
-    for (const key of keys) {
+    for (const [index, key] of keys.entries()) {
       const row = rows[rows.length - 1];
-      if (row && row.w + gap + key.width <= innerW) {
+      if (row && !spec.buttons[index]?.newRow && row.w + gap + key.width <= innerW) {
         row.keys.push(key);
         row.w += gap + key.width;
         row.h = Math.max(row.h, key.height);
