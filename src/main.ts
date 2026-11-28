@@ -14,6 +14,7 @@ import { BlobEvolutionScene } from './games/blob-evolution/BlobEvolutionScene';
 import { SkateRushScene } from './games/skate-rush/SkateRushScene';
 import { SatsQuestScene } from './games/sats-quest/SatsQuestScene';
 import { GamePickerScene } from './presentation/scenes/GamePickerScene';
+import { releaseKeyCapturesBetweenScenes } from './presentation/input/keyCaptures';
 
 const parent = document.getElementById('app');
 if (!parent) {
@@ -47,6 +48,7 @@ const config: Phaser.Types.Core.GameConfig = {
 };
 
 const game = new Phaser.Game(config);
+releaseKeyCapturesBetweenScenes(game);
 
 // Ensure Phaser canvas renders on top of Three.js canvas (used by BlobEvolution)
 const phaserCanvas = game.canvas as HTMLCanvasElement;
