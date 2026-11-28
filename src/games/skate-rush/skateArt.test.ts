@@ -4,8 +4,9 @@
  */
 import { describe, expect, it } from 'vitest';
 import { drawFrame } from './skateArt';
+import { COURSE_IDS } from './skateCourses';
 import { LEVEL_IDS, type LevelId } from './skateLevels';
-import { ENEMY_TYPES, createRun, spawnPattern, stepRun, type Pattern, type Run } from './skateRules';
+import { ENEMY_TYPES, createRun, spawnPattern, stepRun, type Run, type Spawnable } from './skateRules';
 
 interface Drawn {
   crowns: number;
@@ -36,12 +37,56 @@ function draw(run: Run): Drawn {
   return drawn;
 }
 
-function withOnly(level: LevelId, pattern: Pattern): Run {
+function withOnly(level: LevelId, pattern: Spawnable): Run {
   const run = createRun('basic', level);
   run.spawn = 1e9;
   spawnPattern(run, pattern, () => 0.5);
   return run;
 }
+
+/** Where the map's dot is drawn, if a course map is in the picture at all. */
+function mapDot(run: Run): { maps: number; x: number; y: number } {
+  const seen = { maps: 0, x: Number.NaN, y: Number.NaN };
+  const record: Record<string, unknown> = {
+    fillText: (text: string) => {
+      if (text === '⏱') seen.maps++;
+    },
+    // The dot is the only circle of radius 6.
+    arc: (x: number, y: number, radius: number) => {
+      if (radius === 6) Object.assign(seen, { x, y });
+    },
+    createLinearGradient: () => ({ addColorStop: () => undefined }),
+  };
+  const canvas = new Proxy(record, {
+    get: (target, key: string) => target[key] ?? (() => undefined),
+    set: () => true,
+  }) as unknown as CanvasRenderingContext2D;
+  drawFrame(canvas, run, 'cyan');
+  return seen;
+}
+
+describe('the map of a timing course', () => {
+  it.each(COURSE_IDS)('%s is mapped as soon as it is sent, before any of it is on screen', (id) => {
+    expect(mapDot(withOnly('extreme', id)).maps).toBe(1);
+  });
+
+  it('is not drawn when no course is coming', () => {
+    for (const level of LEVEL_IDS) expect(mapDot(withOnly(level, 'spikes')).maps, level).toBe(0);
+  });
+
+  it('has a dot that waits, then moves along the course, and rises when the skater jumps', () => {
+    const run = withOnly('extreme', 'tunnel');
+    const waiting = mapDot(run);
+    for (const o of run.items) o.x -= 200;
+    expect(mapDot(run).x).toBe(waiting.x);
+    // Now the skater is well into it.
+    for (const o of run.items) o.x -= 1500;
+    const inside = mapDot(run);
+    expect(inside.x).toBeGreaterThan(waiting.x + 100);
+    run.player.y -= 100;
+    expect(mapDot(run).y).toBeLessThan(inside.y);
+  });
+});
 
 describe('bosses in the picture', () => {
   it.each(ENEMY_TYPES)('%s wears a crown and holds its bombs on Hard and Extreme', (type) => {

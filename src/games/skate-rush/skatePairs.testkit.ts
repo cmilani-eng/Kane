@@ -2,9 +2,9 @@
  * Skate Rush 3 — two patterns back to back, as close together as a level can ever send them.
  * Whole runs only sample the sequences the dice happen to give; this tries every pair.
  *
- * Called by: src/games/skate-rush/skateFairness.testkit.ts
+ * Called by: src/games/skate-rush/skateFairness.testkit.ts, skateSight.testkit.ts, skateCourses.test.ts
  */
-import { BOARD_IDS, createRun, cruiseSpeed, spawnPattern, type BoardId, type Pattern } from './skateRules';
+import { BOARD_IDS, createRun, cruiseSpeed, spawnPattern, type BoardId, type Spawnable } from './skateRules';
 import { LEVELS, type LevelId } from './skateLevels';
 import { allBehind, findWayThrough, roll, type Outcome } from './skateSolver.testkit';
 
@@ -28,7 +28,7 @@ export function passPair(
   level: LevelId,
   board: BoardId,
   speed: PairSpeed,
-  [first, second]: readonly [Pattern, Pattern],
+  [first, second]: readonly [Spawnable, Spawnable],
   seed: number,
   grid: number,
   offset: number,

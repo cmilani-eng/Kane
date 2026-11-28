@@ -38,6 +38,8 @@ export interface Level {
   readonly gapHard: readonly [number, number];
   /** Extra steps after a boss, or any pattern that may call for a second jump, to land again. */
   readonly rest: number;
+  /** The chance that a spawn is a timing course (skateCourses.ts) instead of a single pattern. */
+  readonly courses: number;
 }
 
 const EASY: Level = {
@@ -55,6 +57,7 @@ const EASY: Level = {
   gapEasy: [84, 128],
   gapHard: [62, 88],
   rest: 30,
+  courses: 0,
 };
 
 /** A faster skater, and every enemy a notch up: quicker charges, higher hops, later dives. */
@@ -83,9 +86,9 @@ const STRENGTH = 2;
 const stronger = ({ bonus, trigger }: Rush): Rush => ({ bonus: bonus * STRENGTH, trigger });
 
 /**
- * Much faster than Hard, with bosses twice as strong and hazards closer together. Tuned to the
- * edge of what can be done: the bot that plays only from what is on screen still gets through
- * reacting in 0.2 s, and never does in 0.25 s. Much faster or closer, and it fails even at 0.2 s.
+ * Much faster than Hard, with bosses twice as strong, hazards closer together, and one spawn in
+ * three a timing course. Tuned to the edge of what can be done: the bot that plays only from what
+ * is on screen still gets through reacting in 0.2 s, and never does in 0.25 s.
  */
 const EXTREME: Level = {
   ...HARD,
@@ -100,6 +103,7 @@ const EXTREME: Level = {
   gapEasy: [64, 92],
   gapHard: [50, 66],
   rest: 16,
+  courses: 1 / 3,
 };
 
 export const LEVELS: Readonly<Record<LevelId, Level>> = {

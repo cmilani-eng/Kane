@@ -2,11 +2,25 @@
  * Test helper for Skate Rush 3: bots that play the real rules. To stand in for a human they may
  * only press on a coarse grid of steps, and they never lean on a Shield.
  *  - `findWayThrough` backtracks over everything, including what has not appeared yet.
- *  - `playAsSeen` plans only around what is on screen, a reaction time after it appears.
+ *  - `playAsSeen` plans only around what is on screen, a reaction time after it appears. On screen
+ *    includes the whole of the timing course the map shows.
  *
- * Called by: src/games/skate-rush/skateFairness.testkit.ts, skatePairs.testkit.ts, skateEasy.test.ts
+ * Called by: src/games/skate-rush/skateFairness.testkit.ts, skatePairs.testkit.ts, skateEasy.test.ts,
+ * skateTiming.testkit.ts, skateCourses.test.ts
  */
-import { MAX_JUMPS, SKATER_X, VIEW_W, hazardBox, isCeiling, jump, stepRun, type Item, type Random, type Run } from './skateRules';
+import {
+  MAX_JUMPS,
+  SKATER_X,
+  VIEW_W,
+  courseAhead,
+  hazardBox,
+  isCeiling,
+  jump,
+  stepRun,
+  type Item,
+  type Random,
+  type Run,
+} from './skateRules';
 
 /** A random source whose position can be copied, so the bot can go back in time. */
 export interface Dice {
@@ -154,7 +168,8 @@ function planAsAPlayerWould(view: Run, dice: Dice, search: Search): Outcome {
 /**
  * Play like someone who cannot see the future: plan a way past the hazards taken in so far, as if
  * nothing else were coming, and plan again each time something new has been on screen for
- * `reaction` steps. A hazard it has not taken in yet is still really there.
+ * `reaction` steps. A hazard it has not taken in yet is still really there. The pieces of the
+ * timing course on the map are on screen with it, however far off they still are.
  */
 export function playAsSeen(start: Run, startDice: Dice, search: Search & { reaction: number }): Outcome {
   const run = copyRun(start);
@@ -165,9 +180,10 @@ export function playAsSeen(start: Run, startDice: Dice, search: Search & { react
 
   while (!search.done(run)) {
     let news = false;
+    const mapped = courseAhead(run);
     for (const o of run.items) {
       if (isPickup(o) || takenIn.has(o)) continue;
-      if (o.x <= VIEW_W && !seenAt.has(o)) seenAt.set(o, run.frame);
+      if ((o.x <= VIEW_W || mapped?.has(o)) && !seenAt.has(o)) seenAt.set(o, run.frame);
       const since = seenAt.get(o);
       if (since !== undefined && run.frame - since >= search.reaction) {
         takenIn.add(o);
