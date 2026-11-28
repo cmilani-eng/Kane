@@ -2,8 +2,10 @@
  * Skate Rush 3 — the Phaser scene.
  * The rules live in skateRules.ts (pure, tested), the original cartoon artwork in skateArt.ts
  * (drawn on a 2D canvas and shown here as a texture), saved progress in skateStore.ts, and the
- * menu / shop / game-over boxes are the shared game panels. This file only wires them together:
- * input, a fixed 60 Hz step so the game plays the same on any screen, the HUD and the phases.
+ * menu / level / shop / game-over boxes are the shared game panels. This file only wires them
+ * together: input, a fixed 60 Hz step so the game plays the same on any screen, the HUD (with
+ * Extreme's taunts, from skateTaunts.ts) and the phases. The difficulty levels themselves are in
+ * skateLevels.ts.
  *
  * Called by: src/games/skate-rush/index.ts (registry), src/main.ts
  */
@@ -31,6 +33,8 @@ import {
   type SkaterId,
   type World,
 } from './skateRules';
+import { LEVEL_IDS, type LevelId } from './skateLevels';
+import { TAUNT_KEYS, tauntFor } from './skateTaunts';
 import { emptyProgress, finishRun, loadProgress, purchase, saveProgress, type Progress } from './skateStore';
 
 const COVER_KEY = 'skate-rush-cover';
@@ -53,6 +57,12 @@ const BOARD_KEYS: Record<BoardId, MessageKey> = {
   jump: 'skate.board.jump',
   magnet: 'skate.board.magnet',
 };
+const LEVEL_KEYS: Record<LevelId, MessageKey> = {
+  easy: 'skate.level.easy',
+  medium: 'skate.level.medium',
+  hard: 'skate.level.hard',
+  extreme: 'skate.level.extreme',
+};
 const WORLD_KEYS: Record<World['id'], MessageKey> = {
   city: 'skate.world.city',
   desert: 'skate.world.desert',
@@ -60,7 +70,7 @@ const WORLD_KEYS: Record<World['id'], MessageKey> = {
   space: 'skate.world.space',
 };
 
-type Phase = 'menu' | 'shop' | 'playing' | 'over';
+type Phase = 'menu' | 'levels' | 'shop' | 'playing' | 'over';
 
 const dprOf = (): number => Math.min(window.devicePixelRatio || 1, 2);
 
@@ -69,6 +79,8 @@ export class SkateRushScene extends Phaser.Scene {
   private progress: Progress = emptyProgress();
   private skater: SkaterId = 'cyan';
   private board: BoardId = 'basic';
+  /** The level last played: Enter or Space on the level panel picks it again. */
+  private level: LevelId = 'easy';
   private run: Run | null = null;
   /** Time not yet spent on fixed steps, in seconds. */
   private acc = 0;
@@ -78,6 +90,11 @@ export class SkateRushScene extends Phaser.Scene {
   private frameImage: Phaser.GameObjects.Image | null = null;
   private cover: Phaser.GameObjects.Image | null = null;
   private hud: Phaser.GameObjects.Text[] = [];
+  /** Extreme's put-down, under the HUD, and what it says now. */
+  private taunt: Phaser.GameObjects.Text | null = null;
+  private said: MessageKey | undefined;
+  /** Which one the run under way started with. */
+  private firstTaunt = 0;
   private jumpKey: Phaser.GameObjects.Container | null = null;
   private panel: GamePanel | null = null;
   private stage = { x: 0, y: 0, w: VIEW_W, h: VIEW_H };
@@ -137,6 +154,12 @@ export class SkateRushScene extends Phaser.Scene {
     this.hud = [0, 1, 2, 3].map(() =>
       this.add.text(0, 0, '', style).setDepth(10).setShadow(0, 2, '#000000', 5, true, true).setResolution(dprOf()).setVisible(false),
     );
+    this.taunt = this.add
+      .text(0, 0, '', { ...style, color: '#fecaca', backgroundColor: '#7f1d1dd9', padding: { x: 10, y: 3 }, align: 'center' })
+      .setOrigin(0.5, 0)
+      .setDepth(10)
+      .setResolution(dprOf())
+      .setVisible(false);
 
     // A picture of the JUMP key. Taps are handled for the whole screen, so it needs no hit area of its own.
     const face = this.add.graphics();
@@ -170,6 +193,8 @@ export class SkateRushScene extends Phaser.Scene {
     const size = `${Math.round(Math.min(15, Math.max(11, vw * 0.018)))}px`;
     for (const text of this.hud) text.setFontSize(size);
     this.layoutHud();
+    // On a row of its own, right under the HUD's.
+    this.taunt?.setFontSize(size).setWordWrapWidth(Math.max(120, w - 24)).setPosition(cx, this.stage.y + 32);
   };
 
   /** Spread the four readouts across the top of the game, like the original's flex row. */
@@ -188,7 +213,16 @@ export class SkateRushScene extends Phaser.Scene {
     this.frameImage?.setVisible(on);
     this.cover?.setVisible(!on);
     for (const text of this.hud) text.setVisible(on);
+    // Only a run has anything to say, so showing it is left to `render`.
+    if (!on) this.sayTaunt(undefined);
     this.jumpKey?.setVisible(on);
+  }
+
+  private sayTaunt(key: MessageKey | undefined): void {
+    if (key === this.said) return;
+    this.said = key;
+    this.taunt?.setVisible(key !== undefined);
+    if (key !== undefined) this.taunt?.setText(`😈 ${t(key)}`);
   }
 
   // ---------------------------------------------------------------- input
@@ -202,7 +236,8 @@ export class SkateRushScene extends Phaser.Scene {
     if (event.code !== 'Space' && event.code !== 'ArrowUp') return;
     event.preventDefault();
     if (event.repeat) return; // holding the key would otherwise use up both jumps at once, fatal under a low ceiling
-    if (this.phase === 'menu') this.startRun();
+    if (this.phase === 'menu') this.showLevels();
+    else if (this.phase === 'levels') this.startRun();
     else if (this.phase === 'playing') this.doJump();
   };
 
@@ -215,7 +250,8 @@ export class SkateRushScene extends Phaser.Scene {
   private startRun(): void {
     this.closePanel();
     if (!this.progress.owned.includes(this.board)) this.board = 'basic';
-    this.run = createRun(this.board);
+    this.run = createRun(this.board, this.level);
+    this.firstTaunt = Math.floor(Math.random() * TAUNT_KEYS.length);
     this.phase = 'playing';
     this.acc = 0;
     this.lastHud = '';
@@ -255,10 +291,11 @@ export class SkateRushScene extends Phaser.Scene {
     if (!this.ctx2d) return;
     drawFrame(this.ctx2d, run, this.skater);
     this.frameTexture?.refresh();
+    this.sayTaunt(tauntFor(run, this.firstTaunt));
 
     const world = WORLDS[run.worldIndex];
     const parts = [
-      `${world.emoji} ${t(WORLD_KEYS[world.id])}`,
+      `${world.emoji} ${t(WORLD_KEYS[world.id])} · ${t(LEVEL_KEYS[run.level])}`,
       `${t('skate.score')} ${Math.floor(run.score)}`,
       `🪙 ${run.runCoins}`,
       `❤️ ${run.shield ? '🛡️' : '1'}`,
@@ -276,7 +313,7 @@ export class SkateRushScene extends Phaser.Scene {
     this.phase = 'over';
     this.jumpKey?.setVisible(false);
     this.openPanel({
-      pill: t('skate.over.pill'),
+      pill: `${t('skate.over.pill')} · ${t(LEVEL_KEYS[run.level])}`,
       title: t('skate.over.title'),
       copy: t('skate.over.stats', { score: Math.floor(run.score), coins: run.runCoins, wallet: this.progress.coins }),
       chain: this.leaderText(),
@@ -328,10 +365,40 @@ export class SkateRushScene extends Phaser.Scene {
       buttons: [
         { label: `${t('skate.skater')}: ${SKATERS[this.skater].name} ›`, onClick: () => this.cycleSkater() },
         { label: `${t('skate.board')}: ${t(BOARD_KEYS[this.board])} ›`, onClick: () => this.cycleBoard() },
-        { label: t('skate.start'), primary: true, onClick: () => this.startRun() },
+        { label: t('skate.start'), primary: true, onClick: () => this.showLevels() },
         { label: t('skate.upgrades'), onClick: () => this.showShop() },
       ],
     };
+  }
+
+  private showLevels(): void {
+    this.phase = 'levels';
+    this.panel?.update(this.levelSpec());
+  }
+
+  private levelSpec(): GamePanelSpec {
+    return {
+      pill: t('skate.level.pill'),
+      title: t('skate.level.title'),
+      copy: t('skate.level.help'),
+      // This panel is the menu's, reused, so lines only the menu has must be cleared explicitly.
+      chain: undefined,
+      result: undefined,
+      note: t('skate.level.note'),
+      buttons: [
+        ...LEVEL_IDS.map((id) => ({
+          label: t(LEVEL_KEYS[id]),
+          primary: id === this.level,
+          onClick: () => this.playLevel(id),
+        })),
+        { label: t('skate.back'), onClick: () => this.showMenu() },
+      ],
+    };
+  }
+
+  private playLevel(level: LevelId): void {
+    this.level = level;
+    this.startRun();
   }
 
   private cycleSkater(): void {
@@ -402,6 +469,8 @@ export class SkateRushScene extends Phaser.Scene {
     this.ctx2d = null;
     this.jumpKey = null;
     this.hud = [];
+    this.taunt = null;
+    this.said = undefined;
     this.run = null;
   };
 }

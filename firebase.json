@@ -91,7 +91,9 @@
         { "source": "/skate-rush", "destination": "/?game=skate-rush", "type": 302 },
         { "source": "/skate-rush/", "destination": "/?game=skate-rush", "type": 302 },
         { "source": "/sats-quest", "destination": "/?game=sats-quest", "type": 302 },
-        { "source": "/sats-quest/", "destination": "/?game=sats-quest", "type": 302 }
+        { "source": "/sats-quest/", "destination": "/?game=sats-quest", "type": 302 },
+        { "source": "/chess-masters", "destination": "/?game=chess-masters", "type": 302 },
+        { "source": "/chess-masters/", "destination": "/?game=chess-masters", "type": 302 }
       ],
       "rewrites": [
         { "source": "/privacy", "destination": "/games/privacy.html" },

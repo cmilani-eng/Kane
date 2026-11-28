@@ -73,6 +73,16 @@ export const GAME_REGISTRY: readonly GameManifest[] = [
     sceneKey: 'SatsQuest',
     dynamicImport: () => import('./sats-quest/index.ts'),
   },
+  {
+    id: 'chess-masters',
+    title: 'Chess Masters',
+    tagline: 'Think. Power up. Checkmate.',
+    description: 'Chess with a twist: grab power-ups, upgrade your pieces and pick your mode.',
+    status: 'live',
+    cover: 'covers/chess-masters.svg',
+    sceneKey: 'ChessMasters',
+    dynamicImport: () => import('./chess-masters/index.ts'),
+  },
 ] as const;
 
 /** Helper to find a game by id. */

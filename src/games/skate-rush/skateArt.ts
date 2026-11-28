@@ -3,17 +3,21 @@
  * Ported line for line from the standalone page so the look is unchanged: the same colours,
  * shapes and motion. Added in the same style: a tell on every enemy that does something (ears
  * hop, brows charge, horns pounce, a spring bounces, wheels roll), a "!" just before it does,
- * and the boss's bomb. The scene draws a frame here every step and shows the canvas as a texture.
+ * and the boss's bomb. On the upper levels any enemy can be a boss: the same creature, bigger,
+ * crowned, and holding the bombs it has still to throw. A timing course on its way is mapped along
+ * the bottom (skateCourseArt.ts). The scene draws a frame here every step and shows the canvas as
+ * a texture.
  *
  * Called by: src/games/skate-rush/SkateRushScene.ts
+ * Tested by: src/games/skate-rush/skateArt.test.ts
  */
 import { drawCeiling } from './skateCeilingArt';
+import { drawCourseMap } from './skateCourseArt';
+import { BOSS_SCALE, LEVELS, type LevelId } from './skateLevels';
 import {
-  BOSS_THROW,
   GROUND,
   SKATERS,
   SKATER_X,
-  SWOOP,
   VIEW_H,
   VIEW_W,
   WORLDS,
@@ -22,6 +26,7 @@ import {
   isRushing,
   liftOf,
   type Item,
+  type ItemType,
   type Run,
   type SkaterId,
 } from './skateRules';
@@ -242,20 +247,64 @@ function drawItem(ctx: Ctx, o: Item, frame: number): void {
       ctx.fillRect(x + 23, G - 29, 27, 7);
       ctx.font = '20px sans-serif';
       ctx.fillText('👑', x + 20, G - 78);
-      if (!o.thrown) {
-        // The bomb it is about to throw, held up in front.
-        ctx.strokeStyle = '#7c3aed';
-        ctx.lineWidth = 8;
-        ctx.beginPath();
-        ctx.moveTo(x + 4, G - 42);
-        ctx.lineTo(x - 14, G - 60);
-        ctx.stroke();
-        ctx.save();
-        ctx.translate(-34, -BOSS_THROW.lift);
-        drawBomb(ctx, x, frame);
-        ctx.restore();
-      }
       return;
+  }
+}
+
+/** How far above its feet (or, for a flyer, its middle) each enemy's head reaches. */
+const HEAD_TOP: Partial<Record<ItemType, number>> = {
+  chaser: 48,
+  monster: 55,
+  animal: 58,
+  roller: 43,
+  robot: 43,
+  drone: 19,
+  alien: 19,
+  bird: 12,
+};
+
+/** A boss version of an enemy: the same creature, bigger about its middle, wearing the crown. */
+function drawBossVersion(ctx: Ctx, o: Item, frame: number): void {
+  const middle = o.x + o.w / 2;
+  const anchor = isFlyer(o.type) ? o.y : GROUND;
+  ctx.save();
+  ctx.translate(middle, anchor);
+  ctx.scale(BOSS_SCALE, BOSS_SCALE);
+  ctx.translate(-middle, -anchor);
+  drawItem(ctx, o, frame);
+  ctx.font = '20px sans-serif';
+  ctx.textAlign = 'center';
+  ctx.fillText('👑', middle, anchor - (HEAD_TOP[o.type] ?? 48) - 2);
+  ctx.textAlign = 'left';
+  ctx.restore();
+}
+
+/** Where a boss holds its bombs: each one's middle, from its left edge and the ground. */
+function heldAt(o: Item, i: number): [number, number] {
+  // Flyers carry theirs slung underneath, side by side.
+  if (isFlyer(o.type)) return [o.x + 12 + i * 28, o.y + 32];
+  // The others hold them up in front, each next one a little further out and higher.
+  const [out, up] = o.type === 'boss' ? [20, 64] : [14, 52];
+  return [o.x - out - i * 22, GROUND - up - i * 20];
+}
+
+/** The bombs a boss has still to throw, held where they can be counted. */
+function drawHeldBombs(ctx: Ctx, o: Item, count: number, frame: number): void {
+  for (let i = 0; i < count; i++) {
+    const [cx, cy] = heldAt(o, i);
+    // An arm (or, under a flyer, a string) out to the bomb.
+    const flyer = isFlyer(o.type);
+    ctx.strokeStyle = flyer ? '#e2e8f0' : o.type === 'boss' ? '#7c3aed' : '#475569';
+    ctx.lineWidth = flyer ? 2 : o.type === 'boss' ? 8 : 6;
+    ctx.beginPath();
+    ctx.moveTo(o.x + (flyer ? 25 : 6), flyer ? o.y : GROUND - (o.type === 'boss' ? 42 : 30));
+    ctx.lineTo(cx + (flyer ? 0 : 6), cy + (flyer ? -12 : 4));
+    ctx.stroke();
+    ctx.save();
+    // `drawBomb` draws one resting on the ground, its middle 14 along and 14 up.
+    ctx.translate(cx - o.x - 14, cy - (GROUND - 14));
+    drawBomb(ctx, o.x, frame);
+    ctx.restore();
   }
 }
 
@@ -333,18 +382,21 @@ function drawRaised(ctx: Ctx, o: Item, frame: number): void {
   }
   ctx.save();
   ctx.translate(0, -lift);
-  drawItem(ctx, o, frame);
+  if (o.crowned) drawBossVersion(ctx, o, frame);
+  else drawItem(ctx, o, frame);
+  if (o.throws?.length) drawHeldBombs(ctx, o, o.throws.length, frame);
   ctx.restore();
 }
 
 /** How many pixels of travel the "!" shows for before an enemy does its trick. */
 const WARNING_REACH = 220;
 
-/** The distance ahead at which this enemy will charge, dive or throw, if it still has to. */
-function nextTrick(o: Item): number | undefined {
-  if (o.type === 'boss') return o.thrown ? undefined : BOSS_THROW.at;
-  if (isFlyer(o.type)) return o.target === undefined ? SWOOP.trigger : undefined;
-  return o.type === 'chaser' || o.type === 'monster' ? o.trigger : undefined;
+/** The distances ahead at which this enemy has still to throw, dive or charge. */
+function tricksToCome(o: Item, level: LevelId): number[] {
+  const throws = [...(o.throws ?? [])];
+  if (isFlyer(o.type) && o.target === undefined) return [...throws, LEVELS[level].swoop.trigger];
+  if ((o.type === 'chaser' || o.type === 'monster') && o.trigger !== undefined) return [...throws, o.trigger];
+  return throws;
 }
 
 function drawAlert(ctx: Ctx, x: number, y: number, frame: number): void {
@@ -358,8 +410,8 @@ function drawAlert(ctx: Ctx, x: number, y: number, frame: number): void {
 }
 
 /** Dashes from a diving flyer to the height it has locked on to. */
-function drawDivePath(ctx: Ctx, o: Item, target: number): void {
-  const levelAt = SKATER_X + SWOOP.end + 25;
+function drawDivePath(ctx: Ctx, o: Item, target: number, end: number): void {
+  const levelAt = SKATER_X + end + 25;
   ctx.strokeStyle = 'rgba(251, 113, 133, 0.85)';
   ctx.lineWidth = 3;
   ctx.setLineDash([8, 7]);
@@ -374,14 +426,16 @@ function drawDivePath(ctx: Ctx, o: Item, target: number): void {
 }
 
 /** What an enemy is about to do, or is doing, drawn over everything else on the track. */
-function drawCue(ctx: Ctx, o: Item, frame: number): void {
+function drawCue(ctx: Ctx, o: Item, level: LevelId, frame: number): void {
   const ahead = aheadOf(o);
-  const trick = nextTrick(o);
-  if (trick !== undefined && ahead > trick && ahead <= trick + WARNING_REACH) {
-    const above = isFlyer(o.type) ? o.y - 38 : GROUND - (o.type === 'boss' ? 120 : 82);
+  if (tricksToCome(o, level).some((at) => ahead > at && ahead <= at + WARNING_REACH)) {
+    // Above the crown, on a boss.
+    const lift = o.crowned ? 20 : 0;
+    const above = isFlyer(o.type) ? o.y - 38 - lift : GROUND - (o.type === 'boss' ? 120 : 82) - lift;
     drawAlert(ctx, o.x + o.w / 2, above, frame);
   }
-  if (isFlyer(o.type) && o.target !== undefined && ahead > SWOOP.end) drawDivePath(ctx, o, o.target);
+  const { end } = LEVELS[level].swoop;
+  if (isFlyer(o.type) && o.target !== undefined && ahead > end) drawDivePath(ctx, o, o.target, end);
   if (isRushing(o) && o.type !== 'bomb' && ahead > 0) {
     ctx.fillStyle = 'rgba(255, 255, 255, 0.55)';
     const lift = liftOf(o);
@@ -452,7 +506,7 @@ function drawPlayer(ctx: Ctx, run: Run, skater: SkaterId): void {
 export function drawFrame(ctx: Ctx, run: Run, skater: SkaterId): void {
   drawBackground(ctx, run);
   for (const o of run.items) drawRaised(ctx, o, run.frame);
-  for (const o of run.items) drawCue(ctx, o, run.frame);
+  for (const o of run.items) drawCue(ctx, o, run.level, run.frame);
   for (const q of run.particles) {
     ctx.globalAlpha = Math.max(0, q.life / 27);
     ctx.fillStyle = q.col;
@@ -460,4 +514,5 @@ export function drawFrame(ctx: Ctx, run: Run, skater: SkaterId): void {
   }
   ctx.globalAlpha = 1;
   drawPlayer(ctx, run, skater);
+  drawCourseMap(ctx, run, skater);
 }
