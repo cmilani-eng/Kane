@@ -4,13 +4,15 @@
  * shapes and motion. Added in the same style: a tell on every enemy that does something (ears
  * hop, brows charge, horns pounce, a spring bounces, wheels roll), a "!" just before it does,
  * and the boss's bomb. On the upper levels any enemy can be a boss: the same creature, bigger,
- * crowned, and holding the bombs it has still to throw. The scene draws a frame here every step
- * and shows the canvas as a texture.
+ * crowned, and holding the bombs it has still to throw. A timing course on its way is mapped along
+ * the bottom (skateCourseArt.ts). The scene draws a frame here every step and shows the canvas as
+ * a texture.
  *
  * Called by: src/games/skate-rush/SkateRushScene.ts
  * Tested by: src/games/skate-rush/skateArt.test.ts
  */
 import { drawCeiling } from './skateCeilingArt';
+import { drawCourseMap } from './skateCourseArt';
 import { BOSS_SCALE, LEVELS, type LevelId } from './skateLevels';
 import {
   GROUND,
@@ -512,4 +514,5 @@ export function drawFrame(ctx: Ctx, run: Run, skater: SkaterId): void {
   }
   ctx.globalAlpha = 1;
   drawPlayer(ctx, run, skater);
+  drawCourseMap(ctx, run, skater);
 }

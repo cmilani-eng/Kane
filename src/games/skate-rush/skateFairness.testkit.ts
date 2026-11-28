@@ -2,9 +2,10 @@
  * Skate Rush 3 — fairness, proved by playing, for one difficulty level.
  *  1. Under every low ceiling, on every deck, at the slowest and fastest speeds: one jump gets
  *     through, and no second jump does.
- *  2. Every pattern, alone, has a way through that does not need frame-perfect presses.
+ *  2. Every pattern, and every timing course the level sends, has a way through on its own that
+ *     does not need frame-perfect presses.
  *  3. Whole seeded runs, where patterns follow each other as in the game, can be survived.
- *  4. Every pair of patterns has a way through, as close together as the level can send them.
+ *  4. Every pair of those has a way through, as close together as the level can send them.
  *  5. There is always some time between one spawn's hazards and the next one's.
  *  6. The bot above knows what is coming before it appears, which no person does. A second bot
  *     plans only around what is on screen, a reaction time after it appears, and survives too.
@@ -26,11 +27,12 @@ import {
   stepRun,
   type BoardId,
   type Item,
-  type Pattern,
   type Run,
+  type Spawnable,
   type UnderPattern,
 } from './skateRules';
-import type { LevelId } from './skateLevels';
+import { COURSE_IDS } from './skateCourses';
+import { LEVELS, type LevelId } from './skateLevels';
 import { advance, allBehind, copyRun, findWayThrough, hazardVisits, roll, type Dice } from './skateSolver.testkit';
 import { PAIR_SPEEDS, PHYSICS_DECKS, passPair } from './skatePairs.testkit';
 import { SIGHT_RUNS, survivesOnSight } from './skateSight.testkit';
@@ -57,7 +59,7 @@ const SPEEDS = [
 type Speed = (typeof SPEEDS)[number];
 
 /** A run on which only the asked-for pattern ever appears. */
-function onePattern(level: LevelId, board: BoardId, speed: Speed, pattern: Pattern, seed: number): Run {
+function onePattern(level: LevelId, board: BoardId, speed: Speed, pattern: Spawnable, seed: number): Run {
   const run = createRun(board, level);
   run.frame = speed.frame;
   run.turbo = speed.turbo;
@@ -160,6 +162,9 @@ const RUN_STEPS = 15000;
 const SEEDS = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12];
 
 export function describeFairness(level: LevelId, fair: Fairness): void {
+  /** Everything the level can send. */
+  const sends: readonly Spawnable[] = LEVELS[level].courses > 0 ? [...PATTERNS, ...COURSE_IDS] : PATTERNS;
+
   describe(`${level}: under a low ceiling`, () => {
     const cases = (Object.keys(UNDER) as UnderPattern[]).flatMap((pattern) =>
       BOARD_IDS.flatMap((board) => SPEEDS.map((speed) => ({ pattern, board, speed, name: speed.name }))),
@@ -178,7 +183,7 @@ export function describeFairness(level: LevelId, fair: Fairness): void {
   });
 
   describe(`${level}: every pattern on its own`, () => {
-    const cases = PATTERNS.flatMap((pattern) => BOARD_IDS.map((board) => ({ pattern, board })));
+    const cases = sends.flatMap((pattern) => BOARD_IDS.map((board) => ({ pattern, board })));
 
     it.each(cases)(
       '$pattern can be passed on the $board deck at any speed',
@@ -240,11 +245,11 @@ export function describeFairness(level: LevelId, fair: Fairness): void {
   });
 
   describe(`${level}: every pair of patterns, as close together as they come`, () => {
-    it.each(PATTERNS)(
+    it.each(sends)(
       '%s, then anything, can be passed',
       (first) => {
         const failures: string[] = [];
-        for (const second of PATTERNS) {
+        for (const second of sends) {
           for (const speed of PAIR_SPEEDS) {
             for (const board of PHYSICS_DECKS) {
               for (let offset = 0; offset < fair.grid; offset++) {
@@ -303,7 +308,7 @@ export function describeFairness(level: LevelId, fair: Fairness): void {
   describe(`${level}: time to see it coming`, () => {
     it(`gives at least ${fair.warning} steps of warning for everything`, () => {
       const late: string[] = [];
-      for (const pattern of PATTERNS) {
+      for (const pattern of sends) {
         for (const board of BOARD_IDS) {
           for (const speed of SPEEDS) {
             for (const seed of [1, 2, 3, 4]) {

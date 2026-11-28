@@ -14,14 +14,17 @@
  *  - low ceilings, which one jump passes under and any second jump hits;
  *  - enemies that rush, charge, pounce, hop, dive and throw instead of only scrolling past;
  *  - spawn gaps that tighten as the score rises.
+ * Extreme also sends timing courses (skateCourses.ts): set pieces that need well-timed presses.
  * Four difficulty levels (skateLevels.ts) set the speed and how hard the enemies are; on the
  * upper two every enemy is a boss that throws bombs.
  * The `skateFairness*.test.ts` files play every pattern and many whole runs on every level to
  * prove each has a way through.
  *
- * Called by: src/games/skate-rush/SkateRushScene.ts, skateArt.ts, skateStore.ts
- * Tested by: src/games/skate-rush/skateRules.test.ts, skateLevels.test.ts, skateEasy.test.ts
+ * Called by: src/games/skate-rush/SkateRushScene.ts, skateArt.ts, skateCourseArt.ts, skateStore.ts
+ * Tested by: src/games/skate-rush/skateRules.test.ts, skateLevels.test.ts, skateEasy.test.ts,
+ * skateCourses.test.ts
  */
+import { COURSES, COURSE_IDS, NOTICE_STEPS, type CourseId } from './skateCourses';
 import { BOSS_SCALE, LEVELS, type LevelId, type Rush } from './skateLevels';
 
 export type Random = () => number;
@@ -53,6 +56,8 @@ const SPEED_DECK_BONUS = 0.5;
 export const CEILING_Y = 134;
 /** How far a ceiling's hitbox reaches above the screen, so that nobody can fly over it. */
 const CEILING_REACH = 1000;
+/** Spikes are drawn as teeth this wide, so a bed of them is a whole number of teeth. */
+const SPIKE_TOOTH = 25;
 /**
  * A ceiling starts this many steps of travel before the hazard under it, and carries on this
  * many after it. Much shorter, and a well-timed second jump could slip in or out around it.
@@ -152,6 +157,8 @@ export type UnderPattern = keyof typeof UNDER;
 /** What can spawn: every solo hazard, "double" (spikes followed by a bird) and the low ceilings. */
 export const PATTERNS = [...SOLO_HAZARDS, 'double', 'under-bridge', 'under-lasernet', 'under-maces'] as const;
 export type Pattern = (typeof PATTERNS)[number];
+/** A pattern, or on a level that has them, a whole timing course. */
+export type Spawnable = Pattern | CourseId;
 
 const FLYERS: readonly ItemType[] = ['drone', 'bird', 'alien'];
 
@@ -172,6 +179,7 @@ export const isFlyer = (type: ItemType): boolean => FLYERS.includes(type);
 export const isEnemy = (type: ItemType): boolean => (ENEMY_TYPES as readonly ItemType[]).includes(type);
 export const isCeiling = (type: ItemType): type is CeilingType => (CEILING_TYPES as readonly ItemType[]).includes(type);
 const isUnder = (pattern: Pattern): pattern is UnderPattern => pattern in UNDER;
+const isCourse = (what: Spawnable): what is CourseId => what in COURSES;
 const isRusherType = (type: ItemType): type is 'roller' | 'chaser' | 'monster' =>
   type === 'roller' || type === 'chaser' || type === 'monster';
 const isHopperType = (type: ItemType): type is 'animal' | 'robot' => type === 'animal' || type === 'robot';
@@ -205,6 +213,9 @@ export interface Item {
   thrownAt?: number;
   /** How high a bomb was when it left a flying boss. */
   drop?: number;
+  /** The timing course this is a piece of, and how many pixels behind the course's front it is. */
+  course?: CourseId;
+  into?: number;
 }
 
 export interface Particle {
@@ -262,6 +273,8 @@ export interface Spawned {
   tail: number;
   /** Extra steps to leave afterwards. */
   rest: number;
+  /** Pixels further on than usual that its coins and power-up go, to leave a course clear. */
+  past?: number;
 }
 
 const rand = (random: Random, a: number, b: number): number => a + random() * (b - a);
@@ -403,7 +416,49 @@ function lowCeiling(run: Run, pattern: UnderPattern, random: Random): [Item, Ite
   ];
 }
 
-export function spawnPattern(run: Run, pattern: Pattern, random: Random): Spawned {
+/** Lay a course out at the cruising speed of the moment, so that it keeps its rhythm. */
+function spawnCourse(run: Run, id: CourseId): Spawned {
+  const speed = cruiseSpeed(run);
+  const back = NOTICE_STEPS * speed;
+  let end = 0;
+  for (const { type, at, long } of COURSES[id]) {
+    const w = type === 'spikes' ? Math.round((long * speed) / SPIKE_TOOTH) * SPIKE_TOOTH : long * speed;
+    const h = isCeiling(type) ? CEILING_Y : 0;
+    const into = at * speed;
+    run.items.push({ type, x: VIEW_W + 20 + back + into, y: 0, w, h, phase: 0, course: id, into });
+    end = Math.max(end, back + into + w);
+  }
+  return { tail: end - 50, rest: LEVELS[run.level].rest, past: end };
+}
+
+/** A timing course still to be got through: which, how far off, and which items are its pieces. */
+export interface CourseAhead {
+  id: CourseId;
+  /** Steps until its front reaches the skater: below zero once the skater is in it. */
+  steps: number;
+  has: (o: Item) => boolean;
+}
+
+/** The nearest timing course with a piece the skater has not yet passed: the one on the map. */
+export function courseAhead(run: Run): CourseAhead | undefined {
+  const frontOf = (o: Item): number => o.x - (o.into ?? 0);
+  let nearest: Item | undefined;
+  for (const o of run.items) {
+    if (o.course === undefined || o.x + o.w < SKATER_X + 9) continue;
+    if (!nearest || frontOf(o) < frontOf(nearest)) nearest = o;
+  }
+  if (nearest?.course === undefined) return undefined;
+  const front = frontOf(nearest);
+  return {
+    id: nearest.course,
+    steps: (front - SKATER_X - CONTACT_AHEAD) / run.speed,
+    // Pieces of one course scroll together, so they agree on where its front is.
+    has: (o) => o.course !== undefined && Math.abs(frontOf(o) - front) < 1,
+  };
+}
+
+export function spawnPattern(run: Run, pattern: Spawnable, random: Random): Spawned {
+  if (isCourse(pattern)) return spawnCourse(run, pattern);
   if (isUnder(pattern)) {
     const [ceiling, ground] = lowCeiling(run, pattern, random);
     run.items.push(ceiling, ground);
@@ -422,8 +477,13 @@ export function spawnPattern(run: Run, pattern: Pattern, random: Random): Spawne
   return { tail: Math.max(0, plain.w - 50) + delay, rest: item.throws ? LEVELS[run.level].rest : 0 };
 }
 
+const pick = <T>(from: readonly T[], random: Random): T => from[Math.floor(random() * from.length)];
+
 export function spawnItem(run: Run, random: Random): Spawned {
-  return spawnPattern(run, PATTERNS[Math.floor(random() * PATTERNS.length)], random);
+  const { courses } = LEVELS[run.level];
+  // Only a level with courses rolls for one, so the others get the spawns they always did.
+  if (courses > 0 && random() < courses) return spawnPattern(run, pick(COURSE_IDS, random), random);
+  return spawnPattern(run, pick(PATTERNS, random), random);
 }
 
 /** Steps from one spawn to the next, before the room the pattern itself needs. */
@@ -611,9 +671,9 @@ export function stepRun(run: Run, random: Random, sparks: Random = random): RunE
 
   run.spawn--;
   if (run.spawn <= 0) {
-    const { tail, rest } = spawnItem(run, random);
-    if (random() < 0.72) spawnCoins(run, VIEW_W + 100);
-    if (random() < 0.22) spawnPower(run, VIEW_W + 360, random);
+    const { tail, rest, past = 0 } = spawnItem(run, random);
+    if (random() < 0.72) spawnCoins(run, VIEW_W + 100 + past);
+    if (random() < 0.22) spawnPower(run, VIEW_W + 360 + past, random);
     run.spawn = spawnGap(run.score, random, run.level) + tail / cruiseSpeed(run) + rest;
   }
 

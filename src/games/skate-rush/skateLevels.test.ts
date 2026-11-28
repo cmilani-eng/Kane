@@ -58,6 +58,7 @@ describe('the four levels', () => {
       gapEasy: [84, 128],
       gapHard: [62, 88],
       rest: 30,
+      courses: 0,
     });
   });
 
